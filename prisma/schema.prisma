@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Platform {
+  INSTAGRAM
+  FACEBOOK
+  LINKEDIN
+  TWITTER
+  TIKTOK
+  YOUTUBE
+}
+
+enum AccountStatus {
+  CONNECTED
+  EXPIRED
+  REVOKED
+  ERROR
+}
+
+enum PostStatus {
+  DRAFT
+  QUEUED
+  PROCESSING
+  PUBLISHED
+  FAILED
+  PARTIALLY_FAILED
+  CANCELLED
+}
+
+enum FetchStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  RATE_LIMITED
+}
+
+enum NotificationType {
+  EMAIL
+  WEBHOOK
+  PUSH
+  IN_APP
+}
+
+enum NotificationStatus {
+  SENT
+  FAILED
+  RETRYING
+  PENDING
+}
+
+enum WebhookEvent {
+  POST_PUBLISHED
+  POST_FAILED
+  POST_VIRAL
+  QUOTA_WARNING
+}
+
+model User {
+  id                String          @id @default(uuid())
+  email             String          @unique
+  passwordHash      String          @map("password_hash")
+  name              String?
+  avatarUrl         String?         @map("avatar_url")
+  role              String          @default("user") @map("role")
+  socialAccounts    SocialAccount[]
+  oauthStates       OAuthState[]
+  posts             Post[]
+  webhooks          WebhookSubscription[]
+  notifications     Notification[]
+  notificationLogs NotificationLog[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("users")
+  @@index([email])
+  @@index([role])
+}
+
+model SocialAccount {
+  id                String        @id @default(uuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform          Platform
+  externalAccountId String        @map("external_account_id")
+  accessToken       String        @map("access_token")
+  refreshToken      String?       @map("refresh_token")
+  tokenExpiry       DateTime      @map("token_expiry")
+  scopes            String[]      @default([])
+  status            AccountStatus @default(CONNECTED)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  lastRefreshed     DateTime?     @map("last_refreshed")
+  metadata          Json?
+
+  @@map("social_accounts")
+  @@unique([userId, platform, externalAccountId])
+  @@index([userId, status])
+  @@index([tokenExpiry])
+}
+
+model OAuthState {
+  id         String   @id @default(uuid())
+  platform   Platform
+  stateToken String   @unique @map("state_token")
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime @map("expires_at")
+  pendingData Json?    @map("pending_data")
+  isCompleted Boolean  @default(false) @map("is_completed")
+
+  @@map("oauth_states")
+  @@index([stateToken, expiresAt])
+}
+
+model Post {
+  id               String         @id @default(uuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String?
+  rawContent       String         @map("raw_content")
+  mediaUrls        String[]       @map("media_urls")
+  platforms        String[]
+  timezone         String
+  scheduledAt     DateTime?      @map("scheduled_at")
+  publishedAt      DateTime?      @map("published_at")
+  status           PostStatus     @default(DRAFT)
+  platformResults  Json[]         @map("platform_results")
+  platformOptions  Json?          @map("platform_options")
+  retryCount       Int            @default(0) @map("retry_count")
+  maxRetries       Int            @default(3) @map("max_retries")
+  media            PostMedia[]
+  analytics        PostAnalytics[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("posts")
+  @@index([userId, status])
+  @@index([scheduledAt])
+  @@index([userId, scheduledAt])
+  @@index([publishedAt])
+}
+
+model PostMedia {
+  id                String   @id @default(uuid())
+  postId            String
+  post              Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  originalUrl       String   @map("original_url")
+  platformVariants  Json     @map("platform_variants")
+  mimeType          String   @map("mime_type")
+  sizeBytes         Int      @map("size_bytes")
+  dimensions        Json
+  validatedAt       DateTime @default(now())
+
+  @@map("post_media")
+  @@index([postId])
+}
+
+model PostAnalytics {
+  id             String       @id @default(uuid())
+  postId         String
+  post           Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  platform       Platform
+  publishedAt    DateTime     @map("published_at")
+  metrics        Json         @map("metrics")
+  lastFetchedAt  DateTime     @map("last_fetched_at")
+  fetchStatus    FetchStatus  @default(PENDING)
+  fetchError     String?      @map("fetch_error")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("post_analytics")
+  @@unique([postId, platform])
+  @@index([postId])
+  @@index([fetchStatus])
+}
+
+model WebhookSubscription {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpointUrl   String   @map("endpoint_url")
+  events        String[] @default([])
+  secret        String   @map("secret")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("webhook_subscriptions")
+  @@index([userId, isActive])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now())
+
+  @@map("notifications")
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+model NotificationLog {
+  id             String             @id @default(uuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           NotificationType   @map("notification_type")
+  event          String             @map("event_type")
+  payload        Json?              @map("payload")
+  status         NotificationStatus @default(PENDING)
+  attempts       Int                @default(0) @map("attempts")
+  lastAttemptAt  DateTime?          @map("last_attempt_at")
+  errorMessage   String?            @map("error_message")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@map("notification_logs")
+  @@index([userId, status])
+  @@index([status])
+}
+
+model AdminAuditLog {
+  id            String   @id @default(uuid())
+  actorUserId   String?  @map("actor_user_id")
+  actorEmail    String?  @map("actor_email")
+  action        String   @map("action")
+  resourceType  String   @map("resource_type")
+  resourceId    String?  @map("resource_id")
+  metadata      Json?
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  createdAt     DateTime @default(now())
+
+  @@map("admin_audit_logs")
+  @@index([createdAt])
+  @@index([actorUserId])
+  @@index([resourceType, resourceId])
+}
+
+model AnalyticsRollup {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  date        DateTime @map("date")
+  period      String   @map("period")
+  platform    String?  @map("platform")
+  totalPosts  Int      @default(0) @map("total_posts")
+  published   Int      @default(0) @map("published")
+  failed      Int      @default(0) @map("failed")
+  totalLikes  Int      @default(0) @map("total_likes")
+  totalComments Int    @default(0) @map("total_comments")
+  totalShares Int      @default(0) @map("total_shares")
+  totalReach  Int      @default(0) @map("total_reach")
+  engagementRate Float @default(0) @map("engagement_rate")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("analytics_rollups")
+  @@unique([userId, date, period, platform])
+  @@index([userId, date, period])
+}

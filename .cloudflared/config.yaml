@@ -1,0 +1,22 @@
+tunnel: f16a31a0-253c-4a86-a9c9-d0c19e321944
+credentials-file: /Users/mdaqil/Documents/Anyshare/.cloudflared/credentials.json
+
+ingress:
+  # Backend routes
+  - hostname: lcsw.dpdns.org
+    path: /oauth
+    service: http://localhost:3001
+  - hostname: lcsw.dpdns.org
+    path: /api
+    service: http://localhost:3001
+  - hostname: lcsw.dpdns.org
+    path: /admin
+    service: http://localhost:3001
+  - hostname: lcsw.dpdns.org
+    path: /uploads
+    service: http://localhost:3001
+  # Frontend (default)
+  - hostname: lcsw.dpdns.org
+    service: http://localhost:3000
+  # Fallback
+  - service: http_status:404
