@@ -68,6 +68,30 @@ const platforms: PlatformConfig[] = [
     hoverColor: 'hover:bg-red-700',
     description: 'Upload and manage your YouTube videos'
   },
+  {
+    id: 'threads',
+    name: 'Threads',
+    icon: '🧵',
+    color: 'bg-black',
+    hoverColor: 'hover:bg-gray-800',
+    description: 'Share text and media on Threads'
+  },
+  {
+    id: 'pinterest',
+    name: 'Pinterest',
+    icon: '📌',
+    color: 'bg-red-600',
+    hoverColor: 'hover:bg-red-700',
+    description: 'Pin your ideas and images to your Pinterest boards'
+  },
+  {
+    id: 'snapchat',
+    name: 'Snapchat',
+    icon: '👻',
+    color: 'bg-yellow-400',
+    hoverColor: 'hover:bg-yellow-500',
+    description: 'Post Stories and Spotlight content to your Snapchat Public Profile'
+  }
 ];
 
 export default function SocialAccountsPage() {
@@ -86,6 +110,8 @@ export default function SocialAccountsPage() {
   const [selectionStateToken, setSelectionStateToken] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
 
+  const [selectionPlatform, setSelectionPlatform] = useState<string | null>(null);
+
   useEffect(() => {
     const status = searchParams.get('status');
     const msg = searchParams.get('message');
@@ -93,21 +119,22 @@ export default function SocialAccountsPage() {
     if (status === 'success') {
       setSuccessMessage('Account connected successfully!');
       queryClient.invalidateQueries({ queryKey: ['social-accounts'] });
-      // Clear URL params without refreshing
-      window.history.replaceState(null, '', '/dashboard/social-accounts');
+      router.replace('/dashboard/social-accounts');
     } else if (status === 'select') {
       const state = searchParams.get('state');
+      const platform = searchParams.get('platform');
       if (state) {
         setSelectionStateToken(state);
+        setSelectionPlatform(platform);
         setIsSelectionModalOpen(true);
         fetchPendingAccounts(state);
       }
-      window.history.replaceState(null, '', '/dashboard/social-accounts');
+      router.replace('/dashboard/social-accounts');
     } else if (status === 'error') {
       setError(msg || 'Failed to authorize account.');
-      window.history.replaceState(null, '', '/dashboard/social-accounts');
+      router.replace('/dashboard/social-accounts');
     }
-  }, [searchParams, queryClient]);
+  }, [searchParams, queryClient, router]);
 
   const fetchPendingAccounts = async (stateToken: string) => {
     try {
@@ -199,7 +226,9 @@ export default function SocialAccountsPage() {
 
   const getAccountsForPlatform = (platformId: string) => {
     return accounts.filter(
-      (account) => account.platform.toLowerCase() === platformId.toLowerCase()
+      (account) =>
+        account.platform.toLowerCase() === platformId.toLowerCase() &&
+        account.status !== 'REVOKED'
     );
   };
 
@@ -282,7 +311,7 @@ export default function SocialAccountsPage() {
                 Select Accounts to Connect
               </CardTitle>
               <CardDescription>
-                We found multiple {searchParams.get('platform') || 'social'} accounts. 
+                We found multiple {selectionPlatform || 'social'} accounts. 
                 Please select the ones you want to manage in Anyshare.
               </CardDescription>
             </CardHeader>

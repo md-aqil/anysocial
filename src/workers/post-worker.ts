@@ -7,8 +7,12 @@ import { facebookAdapter } from '../adapters/facebook.adapter.js';
 import { twitterAdapter } from '../adapters/twitter.adapter.js';
 import { linkedinAdapter } from '../adapters/linkedin.adapter.js';
 import { youtubeAdapter } from '../adapters/youtube.adapter.js';
+import { threadsAdapter } from '../adapters/threads.adapter.js';
+import { pinterestAdapter } from '../adapters/pinterest.adapter.js';
+import { snapchatAdapter } from '../adapters/snapchat.adapter.js';
 import { logger } from '../logger/pino.js';
 import { tokenCrypto } from '../crypto/token-crypto.service.js';
+import { oauthService } from '../modules/oauth/oauth.service.js';
 
 export class PostWorker {
   private worker: Worker;
@@ -56,7 +60,7 @@ export class PostWorker {
       }
 
       // 2. Fetch OAuth tokens for this platform
-      const socialAccount = await prisma.socialAccount.findFirst({
+      let socialAccount = await prisma.socialAccount.findFirst({
         where: {
           userId,
           platform: platform.toUpperCase() as any,
@@ -66,6 +70,23 @@ export class PostWorker {
 
       if (!socialAccount) {
         throw new Error(`No connected ${platform} account found`);
+      }
+
+      // Proactively refresh token if expired or expiring in the next 5 minutes
+      const now = new Date();
+      const expiresAt = socialAccount.tokenExpiry ? new Date(socialAccount.tokenExpiry) : null;
+      const isExpiredOrExpiringSoon = !expiresAt || expiresAt.getTime() < (now.getTime() + 5 * 60 * 1000);
+
+      if (isExpiredOrExpiringSoon && socialAccount.refreshToken) {
+        logger.info({ event: 'proactive_token_refresh', platform, accountId: socialAccount.id });
+        try {
+          await oauthService.refreshToken(socialAccount.id);
+          // Re-fetch with new token
+          socialAccount = await prisma.socialAccount.findUnique({ where: { id: socialAccount.id } }) ?? socialAccount;
+        } catch (refreshErr: any) {
+          logger.warn({ event: 'proactive_refresh_failed', platform, error: refreshErr.message });
+          // Continue with the existing token — the adapter will handle 401 on retry
+        }
       }
 
       // Decrypt access token
@@ -82,6 +103,8 @@ export class PostWorker {
       payload.platformSpecificFields = {
         accessToken,
         pageId: socialAccount.externalAccountId,
+        accountId: socialAccount.id,
+        userId,
         ...customOptions
       };
 
@@ -155,7 +178,10 @@ export class PostWorker {
       FACEBOOK: facebookAdapter,
       TWITTER: twitterAdapter,
       LINKEDIN: linkedinAdapter,
-      YOUTUBE: youtubeAdapter
+      YOUTUBE: youtubeAdapter,
+      THREADS: threadsAdapter,
+      PINTEREST: pinterestAdapter,
+      SNAPCHAT: snapchatAdapter
     };
 
     const adapter = adapters[platform.toUpperCase()];

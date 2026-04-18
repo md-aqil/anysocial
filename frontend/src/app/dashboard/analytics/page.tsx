@@ -114,7 +114,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(summary.platformBreakdown).map(([platform, metrics]) => (
+              {Object.entries(summary.platformBreakdown).map(([platform, metrics]: [string, any]) => (
                 <div key={platform} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div

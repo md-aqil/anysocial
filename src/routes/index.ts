@@ -8,6 +8,7 @@ import { configRoutes } from './config.routes.js';
 import { adminHealthRoutes } from '../admin/health.routes.js';
 import { adminAuditRoutes } from '../admin/audit.routes.js';
 import { jwtAuth } from '../middleware/jwt-auth.js';
+import { aiGenerationRoutes } from './ai-generation.routes.js';
 
 const router = Router();
 
@@ -41,5 +42,8 @@ router.use('/api/config', configRoutes);
 // Admin routes
 router.use('/admin', adminHealthRoutes);
 router.use('/admin/audit', adminAuditRoutes);
+
+// AI Generation routes
+router.use('/api/ai', aiGenerationRoutes);
 
 export const routes = router;

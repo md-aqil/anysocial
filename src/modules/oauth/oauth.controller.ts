@@ -18,9 +18,8 @@ function logToFile(message: string) {
 
 export class OAuthController {
   async getConfig(req: Request, res: Response): Promise<void> {
-    const configuredPlatforms = Object.keys(Platform).filter((platform) => {
+    const configuredPlatforms = Object.keys(platformConfigs).filter((platform) => {
       const config = platformConfigs[platform as keyof typeof platformConfigs];
-      if (!config) return false;
       return !!process.env[config.clientIdKey];
     });
     res.json({ configuredPlatforms });
@@ -29,6 +28,7 @@ export class OAuthController {
     try {
       const { platform } = req.params;
       const userId = (req as any).userId;
+      const returnTo = req.query.returnTo as string;
 
       // Validate platform
       if (!Object.values(Platform).includes(platform.toUpperCase() as Platform)) {
@@ -40,7 +40,8 @@ export class OAuthController {
       const { authUrl, state } = await oauthService.generateAuthUrl(
         platform.toUpperCase() as Platform,
         userId,
-        redirectUri
+        redirectUri,
+        returnTo
       );
 
       res.json({ authUrl, state });
@@ -79,14 +80,20 @@ export class OAuthController {
 
       const redirectUri = `${process.env.BASE_URL}/oauth/${platform.toLowerCase()}/callback`;
 
+      const oauthState = await prisma.oAuthState.findUnique({
+        where: { stateToken: state as string }
+      });
+      let frontendUrl = process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000';
+      if (oauthState?.pendingData && (oauthState.pendingData as any).returnTo) {
+        frontendUrl = (oauthState.pendingData as any).returnTo;
+      }
+
       const result = await oauthService.handleCallback(
         platform.toUpperCase() as Platform,
         code as string,
         state as string,
         redirectUri
       );
-
-      const frontendUrl = process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000';
       
       if (result.needsSelection) {
         res.redirect(`${frontendUrl}/dashboard/social-accounts?status=select&state=${state}&platform=${platform}`);
@@ -99,7 +106,16 @@ export class OAuthController {
       console.error('!!!! OAUTH CALLBACK FAILED !!!!');
       console.error(error);
       
-      const frontendUrl = process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000';
+      let frontendUrl = process.env.FRONTEND_URL?.split(',')[0] || 'http://localhost:3000';
+      try {
+        const oauthState = await prisma.oAuthState.findUnique({
+          where: { stateToken: state as string }
+        });
+        if (oauthState?.pendingData && (oauthState.pendingData as any).returnTo) {
+          frontendUrl = (oauthState.pendingData as any).returnTo;
+        }
+      } catch (e) {}
+      
       const message = error instanceof OAuthError ? error.message : 'Internal_Server_Error';
       res.redirect(`${frontendUrl}/dashboard/social-accounts?status=error&message=${encodeURIComponent(message)}`);
     }
@@ -165,6 +181,16 @@ export class OAuthController {
       } else {
         res.status(500).json({ error: 'Internal server error' });
       }
+    }
+  }
+
+  async getPinterestBoards(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const boards = await oauthService.getPinterestBoards(id);
+      res.json({ boards });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   }
 

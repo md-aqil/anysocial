@@ -39,6 +39,19 @@ export const PLATFORM_RULES: Record<string, PlatformRule> = {
     maxFileSize: 100 * 1024 * 1024 // 100MB
   },
 
+  THREADS: {
+    maxChars: 500,
+    maxMediaCount: 10,
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'video/mp4'],
+    aspectRatios: [1.0, 1.777, 0.8, 0.75, 1.333, 1.91, 0.562], // standard
+    minDimensions: { width: 400, height: 400 },
+    hashtagLimit: 0, // Threads uses regular text logic mainly
+    mentionFormat: '@username',
+    videoDurationLimit: 300, // 5 minutes max
+    linkPolicy: 'ignore', 
+    maxFileSize: 100 * 1024 * 1024
+  },
+
   FACEBOOK: {
     maxChars: 63206, // Facebook limits
     maxMediaCount: 10,
@@ -69,7 +82,7 @@ export const PLATFORM_RULES: Record<string, PlatformRule> = {
     maxChars: 280,
     maxMediaCount: 4,
     allowedMimeTypes: ['image/jpeg', 'image/png', 'video/mp4', 'image/gif'],
-    aspectRatios: [2.0, 1.0, 0.5], // 2:1, 1:1, 1:2
+    aspectRatios: [1.777, 1.333, 1.0, 0.8, 0.562, 2.0, 0.5], // 16:9, 4:3, 1:1, 4:5, 9:16, 2:1, 1:2
     minDimensions: { width: 600, height: 335 },
     hashtagLimit: 280, // Counted in character limit
     mentionFormat: '@username',
@@ -95,13 +108,39 @@ export const PLATFORM_RULES: Record<string, PlatformRule> = {
     maxChars: 5000, // Description
     maxMediaCount: 1, // Single video
     allowedMimeTypes: ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo'],
-    aspectRatios: [1.777], // 16:9 recommended
-    minDimensions: { width: 1280, height: 720 }, // 720p minimum
+    aspectRatios: [1.777, 0.562, 1.0], // 16:9, 9:16 (Shorts), 1:1
+    minDimensions: { width: 480, height: 480 },
     hashtagLimit: 15,
     mentionFormat: '@channelname',
     videoDurationLimit: 43200, // 12 hours
     linkPolicy: 'count-as-chars',
     maxFileSize: 256 * 1024 * 1024 * 1024 // 256GB
+  },
+
+  PINTEREST: {
+    maxChars: 800,
+    maxMediaCount: 5, // Supports carousels up to 5 images
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'video/mp4'],
+    aspectRatios: [0.666, 1.0, 1.5, 0.562], // 2:3 (optimal), 1:1, 3:2, 9:16
+    minDimensions: { width: 200, height: 200 },
+    hashtagLimit: 20,
+    mentionFormat: '@username',
+    videoDurationLimit: 900, // 15 minutes
+    linkPolicy: 'count-as-chars',
+    maxFileSize: 2 * 1024 * 1024 * 1024 // 2GB
+  },
+
+  SNAPCHAT: {
+    maxChars: 160,
+    maxMediaCount: 1,
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'video/mp4'],
+    aspectRatios: [0.5625], // 9:16
+    minDimensions: { width: 540, height: 960 },
+    hashtagLimit: 0,
+    mentionFormat: '@username',
+    videoDurationLimit: 300,
+    linkPolicy: 'ignore',
+    maxFileSize: 100 * 1024 * 1024
   }
 };
 

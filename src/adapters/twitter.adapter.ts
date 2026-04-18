@@ -139,7 +139,17 @@ export class TwitterAdapter implements PlatformAdapter {
       }
 
       // Step 2: Create tweet(s)
-      const thread = (payload.metadata.thread as string[]) || [payload.caption];
+      let thread = (payload.metadata.thread as string[]) || [payload.caption];
+      
+      // Override if the user requested TRUNCATE mode from the frontend
+      if (payload.platformSpecificFields.threadMode === 'TRUNCATE') {
+        let firstTweet = thread[0];
+        if (thread.length > 1 && !firstTweet.endsWith('…')) {
+          firstTweet = firstTweet.substring(0, 277) + '…';
+        }
+        thread = [firstTweet];
+      }
+
       let lastTweetId: string | undefined;
 
       for (let i = 0; i < thread.length; i++) {
@@ -158,6 +168,14 @@ export class TwitterAdapter implements PlatformAdapter {
           };
         }
 
+        // Apply reply settings only to the root tweet (if requested)
+        if (i === 0 && payload.platformSpecificFields.replySettings) {
+          // valid values: 'everyone', 'mentionedUsers', 'following'
+          if (payload.platformSpecificFields.replySettings !== 'everyone') {
+            tweetData.reply_settings = payload.platformSpecificFields.replySettings;
+          }
+        }
+
         // Reply to previous tweet if threading
         if (lastTweetId) {
           tweetData.reply = {
@@ -166,6 +184,7 @@ export class TwitterAdapter implements PlatformAdapter {
         }
 
         // Create tweet
+        console.log(`[TWITTER-DEBUG] Posting tweet ${i + 1}/${thread.length}...`);
         const response = await axios.post(
           'https://api.twitter.com/2/tweets',
           tweetData,
@@ -177,7 +196,12 @@ export class TwitterAdapter implements PlatformAdapter {
           }
         );
 
-        lastTweetId = response.data.data.id;
+        console.log(`[TWITTER-DEBUG] Tweet response:`, JSON.stringify(response.data));
+        lastTweetId = response.data?.data?.id;
+
+        if (!lastTweetId) {
+          console.error(`[TWITTER-DEBUG] Failed to extract tweet ID from response! Full response: ${JSON.stringify(response.data)}`);
+        }
 
         // If not last tweet, wait briefly to avoid rate limits
         if (!isLastTweet) {
@@ -187,11 +211,12 @@ export class TwitterAdapter implements PlatformAdapter {
 
       return {
         success: true,
-        platformPostId: lastTweetId!,
-        url: `https://twitter.com/user/status/${lastTweetId}`
+        platformPostId: lastTweetId || 'unknown_id',
+        url: `https://twitter.com/user/status/${lastTweetId || 'unknown_id'}`
       };
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    } catch (error: any) {
+      const errorMessage = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      console.error('[TWITTER-DEBUG] Publish Error:', errorMessage);
       return {
         success: false,
         platformPostId: '',

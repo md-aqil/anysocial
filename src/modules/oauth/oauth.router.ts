@@ -36,4 +36,7 @@ router.get('/:platform/:id/status', oauthController.status.bind(oauthController)
 // List all connected accounts
 router.get('/accounts', oauthController.listAccounts.bind(oauthController));
 
+// Pinterest specific: Get boards
+router.get('/pinterest-boards/:id', oauthController.getPinterestBoards.bind(oauthController));
+
 export const oauthRouter = router;

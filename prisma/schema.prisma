@@ -14,6 +14,7 @@ enum Platform {
   TWITTER
   TIKTOK
   YOUTUBE
+  THREADS
 }
 
 enum AccountStatus {

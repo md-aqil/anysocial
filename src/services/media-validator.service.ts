@@ -162,10 +162,18 @@ export class MediaValidatorService {
 
     // Check media count (validation happens at service level, but we check type here)
     if (type === 'video') {
-      // Check video duration (we'll bypass strict duration check if we can't probe it)
-      if (duration > rules.videoDurationLimit) {
+      // Platform/post-type-aware duration limit
+      let effectiveDurationLimit = rules.videoDurationLimit;
+      if (platform === 'INSTAGRAM') {
+        const igType = options?.postType || 'FEED';
+        if (igType === 'REEL') effectiveDurationLimit = 90;       // Reels: up to 90s
+        else if (igType === 'STORY') effectiveDurationLimit = 15;  // Stories: 15s per clip
+        // FEED stays at 60s
+      }
+
+      if (duration > 0 && duration > effectiveDurationLimit) {
         errors.push(
-          `Video duration exceeds maximum ${rules.videoDurationLimit}s for ${platform}`
+          `Video duration exceeds maximum ${effectiveDurationLimit}s for ${platform}${platform === 'INSTAGRAM' ? ` (${options?.postType || 'FEED'})` : ''}`
         );
       }
     }

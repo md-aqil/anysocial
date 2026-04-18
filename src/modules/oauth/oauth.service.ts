@@ -40,7 +40,8 @@ export class OAuthService {
   async generateAuthUrl(
     platform: Platform,
     userId: string,
-    redirectUri: string
+    redirectUri: string,
+    returnTo?: string
   ): Promise<{ authUrl: string; state: string }> {
     const config = getPlatformConfig(platform);
     const state = generateStateToken();
@@ -61,7 +62,8 @@ export class OAuthService {
         platform,
         stateToken: state,
         userId,
-        expiresAt
+        expiresAt,
+        pendingData: returnTo ? { returnTo } : undefined
       }
     });
 
@@ -73,7 +75,7 @@ export class OAuthService {
       state
     };
 
-    if (config.configIdKey && process.env[config.configIdKey] && platform !== 'INSTAGRAM') {
+    if (config.configIdKey && process.env[config.configIdKey]) {
       params.config_id = process.env[config.configIdKey]!;
     } else {
       params.scope = config.scopes.join(' ');
@@ -158,31 +160,7 @@ export class OAuthService {
     
     logToFile(`DISCOVERED: platform=${platform}, count=${accountInfos.length}, ids=${accountInfos.map(a => a.id).join(',')}`);
 
-    // If it's a platform that supports multiple accounts (FB/IG), 
-    // we save them to pendingData and ask for selection
-    if (['FACEBOOK', 'INSTAGRAM'].includes(platform)) {
-      await prisma.oAuthState.update({
-        where: { stateToken: state },
-        data: {
-          pendingData: {
-            tokenData,
-            accountInfos
-          }
-        }
-      });
-
-      return {
-        success: true,
-        needsSelection: true,
-        accounts: accountInfos.map(info => ({
-          externalId: info.id,
-          name: info.name,
-          username: info.username
-        }))
-      };
-    }
-
-    // Default: Auto-connect (original logic)
+    // Default: Auto-connect all discovered accounts
     const accounts = [];
     for (const info of accountInfos) {
       const externalAccountId = info.id;
@@ -233,6 +211,7 @@ export class OAuthService {
         }
       });
       accounts.push(sanitizeAccount(account));
+      await this.queueRefresh(account.id, tokenExpiry);
     }
 
     // Mark state as completed since we connected immediately and delete it
@@ -304,6 +283,7 @@ export class OAuthService {
         }
       });
       results.push(sanitizeAccount(account));
+      await this.queueRefresh(account.id, tokenExpiry);
     }
 
     // Mark as completed and delete
@@ -340,16 +320,24 @@ export class OAuthService {
 
       const body = new URLSearchParams({
         grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-        client_id: clientId,
-        client_secret: clientSecret
+        refresh_token: refreshToken
       });
 
-      const response = await axios.post(config.tokenUrl, body.toString(), {
-        headers: config.extraTokenExchangeHeaders || {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      });
+      const headers: Record<string, string> = {
+        ...(config.extraTokenExchangeHeaders || {}),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      };
+
+      if (account.platform === 'TWITTER') {
+        const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+        headers['Authorization'] = `Basic ${basicAuth}`;
+        body.append('client_id', clientId);
+      } else {
+        body.append('client_id', clientId);
+        body.append('client_secret', clientSecret);
+      }
+
+      const response = await axios.post(config.tokenUrl, body.toString(), { headers });
 
       const tokenData = response.data as TokenResponse;
 
@@ -397,6 +385,8 @@ export class OAuthService {
         accountId,
         nextRefresh: tokenExpiry.toISOString()
       });
+
+      await this.queueRefresh(accountId, tokenExpiry);
     } catch (error: any) {
       logger.error({
         event: 'refresh_failed',
@@ -421,6 +411,25 @@ export class OAuthService {
         'REFRESH_FAILED'
       );
     }
+  }
+
+  async getPinterestBoards(accountId: string): Promise<any[]> {
+    const account = await prisma.socialAccount.findUnique({
+      where: { id: accountId }
+    });
+
+    if (!account || account.platform !== 'PINTEREST') {
+      throw new Error('Invalid account for Pinterest boards');
+    }
+
+    const encryptedToken = JSON.parse(account.accessToken);
+    const accessToken = tokenCrypto.decrypt(encryptedToken);
+
+    const response = await axios.get('https://api.pinterest.com/v5/boards', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    return response.data.items;
   }
 
   async revokeAccount(accountId: string, userId: string): Promise<void> {
@@ -496,21 +505,30 @@ export class OAuthService {
     const body = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: redirectUri,
-      client_id: clientId,
-      client_secret: clientSecret
+      redirect_uri: redirectUri
     });
+
+    const headers: Record<string, string> = {
+      ...(config.extraTokenExchangeHeaders || {}),
+      'Content-Type': 'application/x-www-form-urlencoded'
+    };
+
+    if (platform === 'TWITTER') {
+      const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      headers['Authorization'] = `Basic ${basicAuth}`;
+      // For PKCE with Confidential Client on Twitter, client_id requires Basic Auth.
+      body.append('client_id', clientId); 
+    } else {
+      body.append('client_id', clientId);
+      body.append('client_secret', clientSecret);
+    }
 
     if (codeVerifier) {
       body.append('code_verifier', codeVerifier);
     }
 
     try {
-      const response = await axios.post(config.tokenUrl, body.toString(), {
-        headers: config.extraTokenExchangeHeaders || {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      });
+      const response = await axios.post(config.tokenUrl, body.toString(), { headers });
 
       return response.data as TokenResponse;
     } catch (error: any) {
@@ -654,6 +672,32 @@ export class OAuthService {
           return [{ id: channel?.id, name: channel?.snippet?.title }];
         }
 
+        case 'THREADS': {
+          const response = await axios.get('https://graph.threads.net/v1.0/me', {
+            params: { access_token: accessToken, fields: 'id,name,username' }
+          });
+          return [{ id: response.data.id, name: response.data.name, username: response.data.username }];
+        }
+
+        case 'PINTEREST': {
+          const response = await axios.get('https://api.pinterest.com/v5/user_account', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          return [{ id: response.data.username, name: response.data.username, username: response.data.username }];
+        }
+
+        case 'SNAPCHAT': {
+          const response = await axios.get('https://businessapi.snapchat.com/v1/me/public_profiles', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          // response.data.public_profiles is an array
+          return response.data.public_profiles.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            username: p.username || p.name
+          }));
+        }
+
         default:
           throw new OAuthError(
             `Unsupported platform: ${platformStr}`,
@@ -695,6 +739,17 @@ export class OAuthService {
 
     await axios.post(revokeUrl, null, {
       params: { token }
+    });
+  }
+  private async queueRefresh(accountId: string, tokenExpiry: Date): Promise<void> {
+    // Refresh 5 minutes BEFORE expiry
+    const refreshTime = tokenExpiry.getTime() - 5 * 60 * 1000;
+    await redis.zadd('token_refresh_queue', refreshTime, accountId);
+    
+    logger.debug({
+      event: 'account_queued_for_refresh',
+      accountId,
+      refreshAt: new Date(refreshTime).toISOString()
     });
   }
 }

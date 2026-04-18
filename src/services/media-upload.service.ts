@@ -135,14 +135,16 @@ export class LocalDiskStorageService implements StorageProvider {
       .toBuffer();
   }
 
-  async conformVideo(inputPath: string, targetRatio: number): Promise<string> {
+  async conformVideo(inputPath: string, targetRatio: number): Promise<{ videoPath: string; thumbnailPath?: string }> {
     if (!this.isFfmpegAvailable()) {
       console.warn('FFmpeg/ffprobe not found. Skipping auto-conform and using original video.');
-      return inputPath;
+      return { videoPath: inputPath };
     }
     
     const filename = `${uuidv4()}-conformed.mp4`;
+    const thumbName = `${uuidv4()}-thumb.jpg`;
     const outputPath = path.join(this.uploadDir, filename);
+    const thumbnailPath = path.join(this.uploadDir, thumbName);
 
     return new Promise((resolve, reject) => {
       ffmpeg.ffprobe(inputPath, (err, metadata) => {
@@ -171,23 +173,42 @@ export class LocalDiskStorageService implements StorageProvider {
 
         ffmpeg(inputPath)
           .complexFilter([
-            // Layer 1: Scaled & blurred background (high blur power for dreamy effect)
+            // Layer 1: Scaled & blurred background
             `[0:v]scale=${w}:${h},boxblur=luma_radius=20:luma_power=4[bg]`,
             // Layer 2: Original scaled to fit, centred
             `[0:v]scale=${w}:${h}:force_original_aspect_ratio=decrease[fg]`,
             // Combine layers
             `[bg][fg]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[outv]`
           ])
-          .map('[outv]')       // video output
-          .map('0:a?')         // audio (optional — won't fail if source has no audio)
+          .map('[outv]')
+          .map('0:a?')
           .videoCodec('libx264')
           .audioCodec('aac')
           .outputOptions([
-            '-pix_fmt yuv420p',    // yuv420p for broadest device compatibility
-            '-movflags +faststart' // place moov atom at file start for streaming/mobile
+            '-pix_fmt yuv420p',
+            '-movflags +faststart'
           ])
           .output(outputPath)
-          .on('end', () => resolve(outputPath))
+          .on('end', async () => {
+            // Extract thumbnail after video is processed
+            try {
+              await new Promise((res, rej) => {
+                ffmpeg(outputPath)
+                  .screenshots({
+                    timestamps: [1], // 1 second in
+                    filename: thumbName,
+                    folder: this.uploadDir,
+                    size: '1280x720'
+                  })
+                  .on('end', res)
+                  .on('error', rej);
+              });
+              resolve({ videoPath: outputPath, thumbnailPath });
+            } catch (thumbErr) {
+              console.warn('Thumbnail extraction failed, continuing without custom thumb');
+              resolve({ videoPath: outputPath });
+            }
+          })
           .on('error', (err) => reject(err))
           .run();
       });

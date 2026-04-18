@@ -18,6 +18,8 @@ import {
   BarChart3,
   Webhook,
   Share2,
+  Sparkles,
+  Calendar,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
@@ -25,7 +27,9 @@ import { useTheme } from 'next-themes';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Accounts', href: '/dashboard/social-accounts', icon: Share2 },
-  { name: 'Posts', href: '/dashboard/posts', icon: FileText },
+  { name: 'Magic Gen', href: '/dashboard/generate', icon: Sparkles },
+  { name: 'Drafts', href: '/dashboard/drafts', icon: FileText },
+  { name: 'Posts', href: '/dashboard/posts', icon: Calendar },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
 ];
 

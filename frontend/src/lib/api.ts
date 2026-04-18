@@ -5,9 +5,11 @@ interface RequestOptions extends RequestInit {
 }
 
 class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  details?: any[];
+  constructor(public status: number, message: string, details?: any[]) {
     super(message);
     this.name = 'ApiError';
+    this.details = details;
   }
 }
 
@@ -36,7 +38,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'An error occurred' }));
-    throw new ApiError(response.status, error.error || 'An error occurred');
+    throw new ApiError(response.status, error.error || 'An error occurred', error.details);
   }
 
   return response.json();
@@ -79,7 +81,7 @@ export const api = {
       request<{ configuredPlatforms: string[] }>('/oauth/config'),
 
     connect: (platform: string) =>
-      request<{ authUrl: string; state: string }>(`/oauth/${platform}/connect`, {
+      request<{ authUrl: string; state: string }>(`/oauth/${platform}/connect?returnTo=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`, {
         method: 'POST',
       }),
 
@@ -109,6 +111,9 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ accountIds }),
       }),
+
+    getPinterestBoards: (id: string) =>
+      request<{ boards: any[] }>(`/oauth/pinterest-boards/${id}`),
   },
 
   posts: {
@@ -116,6 +121,8 @@ export const api = {
       request<{ posts: Post[] }>('/api/posts', { params: params as Record<string, string> }),
 
     get: (id: string) => request<Post>(`/api/posts/${id}`),
+
+    createDraft: (data: CreatePostInput) => api.posts.create({ ...data, publishNow: false, scheduledAt: undefined }),
 
     create: async (data: CreatePostInput): Promise<Post> => {
       const formData = new FormData();
@@ -130,7 +137,18 @@ export const api = {
       formData.append('data', JSON.stringify(postData));
       
       if (data.platformOptions) {
-        formData.append('platformOptions', JSON.stringify(data.platformOptions));
+        // Extract File objects (can't JSON.stringify them) before serializing
+        const opts = { ...data.platformOptions };
+        const youtubeThumbnail = opts.YOUTUBE?.customThumbnail as File | null | undefined;
+        if (opts.YOUTUBE) {
+          opts.YOUTUBE = { ...opts.YOUTUBE, customThumbnail: undefined };
+        }
+        formData.append('platformOptions', JSON.stringify(opts));
+
+        // Append thumbnail separately as a multipart file field
+        if (youtubeThumbnail instanceof File) {
+          formData.append('youtubeThumbnail', youtubeThumbnail);
+        }
       }
 
       if (data.media && data.media.length > 0) {
@@ -140,16 +158,23 @@ export const api = {
       }
 
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const response = await fetch(`${API_BASE}/api/posts`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-        credentials: 'include',
-      });
+
+      let response: Response;
+      try {
+        response = await fetch(`${API_BASE}/api/posts`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+          credentials: 'include',
+        });
+      } catch (networkErr: any) {
+        // Network-level failure (server down, CORS preflight fail, no internet)
+        throw new ApiError(0, `Network error: Cannot reach ${API_BASE}. Is the server running?`);
+      }
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'An error occurred' }));
-        throw new ApiError(response.status, error.error || 'An error occurred');
+        const error = await response.json().catch(() => ({ error: `Server error ${response.status}` }));
+        throw new ApiError(response.status, error.error || 'An error occurred', error.details);
       }
 
       return response.json();
@@ -253,6 +278,25 @@ export const api = {
     getRules: () => request<Record<string, any>>('/api/config/platform-rules'),
     getPlatformRules: (platform: string) =>
       request<any>(`/api/config/platform-rules/${platform}`),
+  },
+  ai: {
+    proposeDirections: (data: any) =>
+      request<{ directions: any[] }>('/api/ai/propose-directions', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    generateBrief: (data: { directionId: string; productDetails: any }) =>
+      request<{ brief: any }>('/api/ai/generate-brief', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    generateAssets: (data: { brief: any; productDetails: any }) =>
+      request<{ taskId: string }>('/api/ai/generate-assets', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    getStatus: (taskId: string) =>
+      request<{ status: string; asset?: any }>(`/api/ai/status/${taskId}`),
   },
 };
 

@@ -22,6 +22,16 @@ export const platformConfigs: Record<string, PlatformOAuthConfig> = {
     tokenExpirySeconds: 5184000 // 60 days
   },
   
+  THREADS: {
+    authUrl: 'https://www.threads.net/oauth/authorize',
+    tokenUrl: 'https://graph.threads.net/oauth/access_token',
+    scopes: ['threads_basic', 'threads_content_publish'],
+    clientIdKey: 'THREADS_CLIENT_ID', // Must be the specific Threads App ID, not Meta App ID
+    clientSecretKey: 'THREADS_CLIENT_SECRET',
+    usePKCE: false,
+    tokenExpirySeconds: 5184000 // 60 days
+  },
+  
   FACEBOOK: {
     authUrl: 'https://www.facebook.com/v21.0/dialog/oauth',
     tokenUrl: 'https://graph.facebook.com/v21.0/oauth/access_token',
@@ -73,6 +83,24 @@ export const platformConfigs: Record<string, PlatformOAuthConfig> = {
     clientSecretKey: 'YOUTUBE_CLIENT_SECRET',
     usePKCE: false,
     extraTokenExchangeHeaders: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  },
+
+  PINTEREST: {
+    authUrl: 'https://www.pinterest.com/oauth/',
+    tokenUrl: 'https://api.pinterest.com/v5/oauth/token',
+    scopes: ['user_accounts:read', 'boards:read', 'pins:read', 'pins:write'],
+    clientIdKey: 'PINTEREST_CLIENT_ID',
+    clientSecretKey: 'PINTEREST_CLIENT_SECRET',
+    usePKCE: false
+  },
+
+  SNAPCHAT: {
+    authUrl: 'https://accounts.snapchat.com/login/oauth2/authorize',
+    tokenUrl: 'https://accounts.snapchat.com/login/oauth2/access_token',
+    scopes: ['snapchat-marketing-api', 'snapchat-profile-api'],
+    clientIdKey: 'SNAPCHAT_CLIENT_ID',
+    clientSecretKey: 'SNAPCHAT_CLIENT_SECRET',
+    usePKCE: false
   }
 };
 

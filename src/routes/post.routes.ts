@@ -6,12 +6,12 @@ import multer from 'multer';
 
 const router = Router();
 
-// Configure multer for memory storage
+// Configure multer for memory storage — accepts both media and youtubeThumbnail fields
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 500 * 1024 * 1024, // 500MB
-    files: 10
+    files: 11 // 10 media + 1 thumbnail
   }
 });
 
@@ -34,7 +34,7 @@ const requireAuth = jwtAuth;
  * POST /api/posts
  * Create a new post (draft or scheduled)
  */
-router.post('/', requireAuth, upload.array('media', 10), async (req: Request, res: Response) => {
+router.post('/', requireAuth, upload.any(), async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
 
@@ -53,16 +53,25 @@ router.post('/', requireAuth, upload.array('media', 10), async (req: Request, re
     const { content, title, platforms, scheduledAt, timezone, publishNow } = validationResult.data;
     
     // Extract optional platformOptions safely from form body since we appended it separately
-    let platformOptions = {};
+    let platformOptions: Record<string, any> = {};
     if (req.body.platformOptions) {
       try {
         platformOptions = JSON.parse(req.body.platformOptions);
       } catch (e) { }
     }
 
+    // Split uploaded files: 'media' vs 'youtubeThumbnail'
+    const allFiles = (req.files as Express.Multer.File[]) || [];
+    const mediaFiles = allFiles.filter(f => f.fieldname === 'media');
+    const thumbFile = allFiles.find(f => f.fieldname === 'youtubeThumbnail');
+
+    // Inject custom thumbnail buffer into platformOptions
+    if (thumbFile && platformOptions.YOUTUBE) {
+      platformOptions.YOUTUBE.customThumbnail = thumbFile.buffer;
+    }
+
     // Process uploaded media files
-    const files = req.files as Express.Multer.File[] | undefined;
-    const media = (files || []).map((file) => ({
+    const media = mediaFiles.map((file) => ({
       file: file.buffer,
       type: file.mimetype.startsWith('video') ? 'video' as const : 'image' as const,
       originalName: file.originalname
