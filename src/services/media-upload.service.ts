@@ -4,9 +4,12 @@ import fs from 'fs';
 import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 
-// Set explicit ffmpeg path for Homebrew installs on Mac
-ffmpeg.setFfmpegPath('/opt/homebrew/bin/ffmpeg');
-ffmpeg.setFfprobePath('/opt/homebrew/bin/ffprobe');
+// Try to find ffmpeg/ffprobe in common locations
+const FFMPEG_PATH = fs.existsSync('/usr/bin/ffmpeg') ? '/usr/bin/ffmpeg' : (fs.existsSync('/opt/homebrew/bin/ffmpeg') ? '/opt/homebrew/bin/ffmpeg' : 'ffmpeg');
+const FFPROBE_PATH = fs.existsSync('/usr/bin/ffprobe') ? '/usr/bin/ffprobe' : (fs.existsSync('/opt/homebrew/bin/ffprobe') ? '/opt/homebrew/bin/ffprobe' : 'ffprobe');
+
+ffmpeg.setFfmpegPath(FFMPEG_PATH);
+ffmpeg.setFfprobePath(FFPROBE_PATH);
 
 export interface MediaMeta {
   mimeType: string;
@@ -97,7 +100,8 @@ export class LocalDiskStorageService implements StorageProvider {
 
   // Check if FFmpeg is actually available on the system
   private isFfmpegAvailable(): boolean {
-    return fs.existsSync('/opt/homebrew/bin/ffmpeg') && fs.existsSync('/opt/homebrew/bin/ffprobe');
+    return (fs.existsSync(FFMPEG_PATH) || FFMPEG_PATH === 'ffmpeg') && 
+           (fs.existsSync(FFPROBE_PATH) || FFPROBE_PATH === 'ffprobe');
   }
 
   async conformImage(file: Buffer, targetRatio: number): Promise<Buffer> {

@@ -4,8 +4,14 @@ import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 import { getPlatformRules } from '../config/platform-rules.js';
 
-// Set explicit ffprobe path for Homebrew installs on Mac
-ffmpeg.setFfprobePath('/opt/homebrew/bin/ffprobe');
+// Try to find ffprobe in common locations
+const FFPROBE_PATH = fs.existsSync('/usr/bin/ffprobe') 
+  ? '/usr/bin/ffprobe' 
+  : fs.existsSync('/opt/homebrew/bin/ffprobe')
+    ? '/opt/homebrew/bin/ffprobe'
+    : 'ffprobe'; // Fallback to PATH
+
+ffmpeg.setFfprobePath(FFPROBE_PATH);
 
 function logToFile(message: string) {
   const logPath = path.join(process.cwd(), 'scratch', 'backend-debug.log');
@@ -73,8 +79,7 @@ export class MediaValidatorService {
       }
     } else {
       // Use ffprobe to get real metadata for videos if available
-      const ffprobePath = '/opt/homebrew/bin/ffprobe';
-      const hasFfprobe = fs.existsSync(ffprobePath);
+      const hasFfprobe = fs.existsSync(FFPROBE_PATH) || FFPROBE_PATH === 'ffprobe';
 
       if (!hasFfprobe) {
         logToFile('ffprobe not found. Using fallback dimensions for video validation.');
@@ -141,7 +146,7 @@ export class MediaValidatorService {
       // Frontend sends options.postType (not instagramPostType)
       const igType = options?.postType || 'FEED';
       if (igType === 'REEL' || igType === 'STORY') {
-        targetAspectRatios = [0.562, 0.5, 0.45, 0.4, 0.8]; // Support ultra-tall vertical
+        targetAspectRatios = [0.562, 0.5, 0.45, 0.4, 0.8, 1.777, 1.0, 1.333, 1.91]; // Support more ratios for Reels
         minWidth = 320; 
         minHeight = 480; // Lowered to support more dimensions
       }
