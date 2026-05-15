@@ -13,15 +13,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Configure passwordless sudo
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "${{ secrets.SSH_USERNAME }} ALL=(ALL) NOPASSWD: /bin/systemctl restart socialsched-backend, /bin/systemctl restart socialsched-frontend" | sudo tee /etc/sudoers.d/socialsched
-
       - name: SSH and Deploy
         uses: appleboy/ssh-action@master
         with:
