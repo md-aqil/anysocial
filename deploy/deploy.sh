@@ -13,10 +13,12 @@ echo "------------------------------------------------"
 # Navigate to app directory
 cd $APP_DIR
 
-# Pull latest code (reset --hard to handle any untracked build files on VPS)
+# Pull latest code (reset --hard to overwrite modified tracked files,
+# clean -fd to remove any now-ignored untracked dirs like .next, Gemini, scratch)
 echo "📥 Pulling latest code from main..."
 git fetch origin
 git reset --hard origin/main
+git clean -fd --force
 
 # Backend setup
 echo "📦 Setting up Backend..."
