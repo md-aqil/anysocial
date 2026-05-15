@@ -146,7 +146,7 @@ export class MediaValidatorService {
       // Frontend sends options.postType (not instagramPostType)
       const igType = options?.postType || 'FEED';
       if (igType === 'REEL' || igType === 'STORY') {
-        targetAspectRatios = [0.562, 0.5, 0.45, 0.4, 0.8, 1.777, 1.0, 1.333, 1.91]; // Support more ratios for Reels
+        targetAspectRatios = [0.562, 0.5, 0.45, 0.4, 0.8]; // Support ultra-tall vertical
         minWidth = 320; 
         minHeight = 480; // Lowered to support more dimensions
       }
