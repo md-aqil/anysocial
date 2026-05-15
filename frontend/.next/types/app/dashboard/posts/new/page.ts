@@ -1,4 +1,4 @@
-// File: /Users/mdaqil/Documents/Anyshare/frontend/src/app/dashboard/posts/new/page.tsx
+// File: /Users/mdaqil/Documents/socialsched.vibeship.in/frontend/src/app/dashboard/posts/new/page.tsx
 import * as entry from '../../../../../../src/app/dashboard/posts/new/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

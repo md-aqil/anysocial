@@ -300,6 +300,7 @@ export class AnalyticsAggregatorService {
 
     const summary = await this.getUserSummary(userId, 1);
     
+    /*
     const posts = await prisma.post.findMany({
       where: {
         userId,
@@ -307,6 +308,7 @@ export class AnalyticsAggregatorService {
         status: 'PUBLISHED',
       },
     });
+    */
 
     await prisma.analyticsRollup.upsert({
       where: {

@@ -62,7 +62,7 @@ export class PinterestAdapter implements PlatformAdapter {
   /**
    * Publish to Pinterest V5 API
    */
-  async publish(accountId: string, payload: PlatformPayload): Promise<PublishResult> {
+  async publish(_accountId: string, payload: PlatformPayload): Promise<PublishResult> {
     try {
       const accessToken = payload.platformSpecificFields.accessToken as string;
       const boardId = payload.platformSpecificFields.boardId as string;

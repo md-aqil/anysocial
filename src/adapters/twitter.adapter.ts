@@ -20,7 +20,7 @@ export class TwitterAdapter implements PlatformAdapter {
     // Twitter counts URLs as 23 chars each
     const urlRegex = /https?:\/\/[^\s]+/g;
     const urls = content.match(urlRegex) || [];
-    const urlCharCount = urls.length * 23;
+    // const urlCharCount = urls.length * 23;
 
     // Calculate actual character count
     let actualContent = content.replace(urlRegex, 'x'.repeat(23));
@@ -124,7 +124,7 @@ export class TwitterAdapter implements PlatformAdapter {
    * 2. Create tweet with media_ids attached
    * 3. If thread, create subsequent tweets in_reply_to previous
    */
-  async publish(accountId: string, payload: PlatformPayload): Promise<PublishResult> {
+  async publish(_accountId: string, payload: PlatformPayload): Promise<PublishResult> {
     try {
       const accessToken = payload.platformSpecificFields.accessToken as string;
 

@@ -1,0 +1,16 @@
+[Unit]
+Description=SocialSched Backend
+After=network.target
+
+[Service]
+Type=simple
+User=socialsched
+Group=socialsched-dev
+WorkingDirectory=/var/www/socialsched
+EnvironmentFile=/etc/socialsched/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

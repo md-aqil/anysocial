@@ -20,7 +20,10 @@ export class UserRepository {
 
   async create(email: string) {
     return prisma.user.create({
-      data: { email }
+      data: { 
+        email,
+        passwordHash: 'oauth-account-' + Math.random().toString(36).substring(7) 
+      }
     });
   }
 

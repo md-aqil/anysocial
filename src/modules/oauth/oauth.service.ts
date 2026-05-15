@@ -145,12 +145,15 @@ export class OAuthService {
     }
 
     // Exchange code for tokens
-    const tokenData = await this.exchangeCodeForTokens(
+    let tokenData = await this.exchangeCodeForTokens(
       platform,
       code,
       redirectUri,
       codeVerifier
     );
+
+    // Meta (FB/IG/Threads) exchange for long-lived token
+    tokenData = await this.convertToLongLived(platform, tokenData);
 
     // Get external account IDs and Names (now returns an array)
     const accountInfos = await this.getExternalAccountId(
@@ -177,7 +180,8 @@ export class OAuthService {
 
       // Calculate token expiry
       const config = getPlatformConfig(platform);
-      const expiresIn = config.tokenExpirySeconds || tokenData.expires_in;
+      // Use actual expires_in if provided, otherwise fallback to config default
+      const expiresIn = tokenData.expires_in || config.tokenExpirySeconds || 3600;
       const tokenExpiry = new Date(Date.now() + expiresIn * 1000);
 
       // Upsert social account
@@ -238,11 +242,18 @@ export class OAuthService {
       throw new OAuthError('Invalid or expired selection session', 'INVALID_SESSION', 400);
     }
 
-    const { tokenData, accountInfos } = oauthState.pendingData as any;
+    if (!oauthState.pendingData || typeof oauthState.pendingData !== 'object' || !('tokenData' in oauthState.pendingData)) {
+      throw new OAuthError('Invalid pending data', 'INVALID_SESSION', 400);
+    }
+    let tokenData = (oauthState.pendingData as any).tokenData as any;
+    const { accountInfos } = oauthState.pendingData as any;
     const platform = oauthState.platform;
     const userId = oauthState.userId!;
     const config = getPlatformConfig(platform);
     
+    // Ensure we have long-lived token if it was skipped or needs re-check
+    tokenData = await this.convertToLongLived(platform, tokenData);
+
     const results = [];
     const filteredInfos = accountInfos.filter((info: any) => selectedExternalIds.includes(info.id));
 
@@ -250,7 +261,8 @@ export class OAuthService {
       const finalAccessToken = info.overrideAccessToken || tokenData.access_token;
       const encryptedAccess = tokenCrypto.encrypt(finalAccessToken);
       const encryptedRefresh = tokenData.refresh_token ? tokenCrypto.encrypt(tokenData.refresh_token) : null;
-      const expiresIn = config.tokenExpirySeconds || tokenData.expires_in;
+      
+      const expiresIn = tokenData.expires_in || config.tokenExpirySeconds || 3600;
       const tokenExpiry = new Date(Date.now() + expiresIn * 1000);
 
       const account = await prisma.socialAccount.upsert({
@@ -544,6 +556,61 @@ export class OAuthService {
         'TOKEN_EXCHANGE_ERROR'
       );
     }
+  }
+
+  /**
+   * Meta-specific Long-Lived Token Exchange
+   */
+  private async convertToLongLived(platform: Platform, tokenData: TokenResponse): Promise<TokenResponse> {
+    const platformStr = String(platform).toUpperCase();
+    const config = getPlatformConfig(platform);
+    const clientId = process.env[config.clientIdKey]!;
+    const clientSecret = process.env[config.clientSecretKey]!;
+
+    if (platformStr === 'FACEBOOK' || platformStr === 'INSTAGRAM') {
+      try {
+        const response = await axios.get('https://graph.facebook.com/v21.0/oauth/access_token', {
+          params: {
+            grant_type: 'fb_exchange_token',
+            client_id: clientId,
+            client_secret: clientSecret,
+            fb_exchange_token: tokenData.access_token
+          }
+        });
+        return {
+          ...tokenData,
+          access_token: response.data.access_token,
+          expires_in: response.data.expires_in || tokenData.expires_in,
+          token_type: response.data.token_type || tokenData.token_type
+        };
+      } catch (e: any) {
+        logger.warn(`Failed to exchange long-lived token for ${platformStr}: ${e.message}`);
+        return tokenData;
+      }
+    }
+
+    if (platformStr === 'THREADS') {
+      try {
+        const response = await axios.get('https://graph.threads.net/access_token', {
+          params: {
+            grant_type: 'th_exchange_token',
+            client_secret: clientSecret,
+            access_token: tokenData.access_token
+          }
+        });
+        return {
+          ...tokenData,
+          access_token: response.data.access_token,
+          expires_in: response.data.expires_in || tokenData.expires_in,
+          token_type: response.data.token_type || tokenData.token_type
+        };
+      } catch (e: any) {
+        logger.warn(`Failed to exchange long-lived token for THREADS: ${e.message}`);
+        return tokenData;
+      }
+    }
+
+    return tokenData;
   }
 
   private async getExternalAccountId(

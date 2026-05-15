@@ -1,10 +1,22 @@
 # Cloudflare Tunnel Configuration
 tunnel: f16a31a0-253c-4a86-a9c9-d0c19e321944
-credentials-file: tunnel-config/credentials.json
+credentials-file: /Users/mdaqil/Documents/socialsched.vibeship.in/tunnel-config/credentials.json
 
 ingress:
-  # Main application ingress rule
+  # API, OAuth, and Uploads to Backend (3001)
+  - hostname: lcsw.dpdns.org
+    path: /api/.* 
+    service: http://localhost:3001
+  - hostname: lcsw.dpdns.org
+    path: /oauth/.*
+    service: http://localhost:3001
+  - hostname: lcsw.dpdns.org
+    path: /uploads/.*
+    service: http://localhost:3001
+
+  # Main application ingress rule (Frontend - 3000)
   - hostname: lcsw.dpdns.org
     service: http://localhost:3000
+
   # Fallback rule for any other requests
   - service: http_status:404

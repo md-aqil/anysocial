@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-const AspectRatioSchema = z.object({
-  ratio: z.number(),
-  tolerance: z.number().default(0.05)
-});
+
 
 const DimensionsSchema = z.object({
   width: z.number(),
@@ -147,7 +144,7 @@ export const PLATFORM_RULES: Record<string, PlatformRule> = {
 // Validate all platform rules at startup
 export function validatePlatformRules(): void {
   try {
-    Object.entries(PLATFORM_RULES).forEach(([platform, rules]) => {
+    Object.entries(PLATFORM_RULES).forEach(([_platform, rules]) => {
       PlatformRuleSchema.parse(rules);
     });
   } catch (error) {

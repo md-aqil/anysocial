@@ -196,7 +196,7 @@ export class WebhookDeliveryService {
     });
   }
 
-  static async testEndpoint(userId: string, endpointUrl: string): Promise<DeliveryResult> {
+  static async testEndpoint(_userId: string, endpointUrl: string): Promise<DeliveryResult> {
     const payload: WebhookPayload = {
       event: 'test',
       timestamp: new Date().toISOString(),

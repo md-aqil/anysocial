@@ -1,0 +1,38 @@
+{
+  "id": "74269058-c393-4a4f-8700-a74d04467807",
+  "platform": "FACEBOOK",
+  "stateToken": "J8u_pn5uOLRN2x6erS41Nmj2Jw4CDlFxlzd7DAmJnFw",
+  "userId": "5933e5e3-4e92-421e-93c2-4b1bb1948462",
+  "createdAt": "2026-04-18T17:58:15.822Z",
+  "expiresAt": "2026-04-18T18:08:15.779Z",
+  "pendingData": {
+    "returnTo": "http://localhost:3000",
+    "tokenData": {
+      "token_type": "bearer",
+      "access_token": "EAAStilvAv1EBREaexAyHOiZCmmDMulbNOwu3a6RxDCbUlkm9XxIClID09jsxfLHNVxvQsvpYZCLleUz9XIiOiKbH4szDP1N1xyqvZAPgon4cmpK82g64J6ylYvkUxvZAIZA0WveGETo09qGeBUkygwjpTVVC9CFGBIM0O24buVXMZCgmTFsADVkXupZCBM0nDSIZBGfseLLrcyVZAZAf1dAbNoUiKJ6aDy8C8bZCwMIlq6jvAt171efIymQIgmvKEICH1jE3QIsnHDrvMZBcFTVCPf1i4BZBA0RczahjZC"
+    },
+    "accountInfos": [
+      {
+        "id": "393350760537799",
+        "name": "InnovateX",
+        "overrideAccessToken": "EAAStilvAv1EBRBAB10PjbTVkQomCsfSKhvfVpVabscKjxbXhW9WvKg2tkR31hPDZBYSeh3vcFUcP52FrI5H20yC24ng9oUhUbKZA2wf7cbfoxBdvj6Mogzi7zGyIA9mhkZBVaIJZCI1w6JZBkdC1PoGtZBokxK19onmZA2EK2tCFoZAEokZAIHtFDMoQU6kC7FCyGrVBd"
+      },
+      {
+        "id": "346388945224804",
+        "name": "Vaclav",
+        "overrideAccessToken": "EAAStilvAv1EBRNsaoxZCZB9mbhrWZBdUYs2en0DJotiP0jZBalZBCxZBs205vQA0bePvqzsVlaGBjzcqQd41WIbxen9QSzUYMpPRWAnIR08xRHFeHPQLcRCcruugDHZCdPiEnYkCgJvIGJDzVLNtso1ZCQtjdyoq2mIWzDTbBaRxq6Nra9v3cGKie1DvJ6hVyHbyZABqC"
+      },
+      {
+        "id": "127427247112729",
+        "name": "MindBlow",
+        "overrideAccessToken": "EAAStilvAv1EBRDloxUB0E7LliywjZAAusd2nOcjarCda9kJsDI4spzMlolF7BGJlLyyUemRTyshipfOZB4aneQ39U8kAfZA0IQKoQrVIZCA2DYVXPFKVNtYZCvBI77ZAs7sdSlU9YoXFiQMtLMfBwjD9lF3A5P7QI9vdFY0CBuJbYvRhBy0dq7ZCVLBJCxTWNl1zZA4ZD"
+      },
+      {
+        "id": "648163288862615",
+        "name": "Sakht Launda Association",
+        "overrideAccessToken": "EAAStilvAv1EBRAkPpMuLszQKwrxHAoL5eowiTDpiI0VIgwrgA4I1Ul7OBBl4o93vqmtKtPDwsSbsIaF5ZBT8khevcpj56QHQf2oLFjURYDI5kHZAiG6ZBvRKz3rZCffHJtUPLAVwlhhp8uhGlWKoK8dHhZBXay4nKQaxagTKsoZCjmUBFKV3t7ypIAOY4beRaKizuE"
+      }
+    ]
+  },
+  "isCompleted": false
+}

@@ -33,8 +33,7 @@ export function errorHandler(
 
   // Generic error
   res.status(500).json({
-    error: process.env.NODE_ENV === 'production' 
-      ? 'Internal server error' 
-      : err.message
+    error: err.message,
+    stack: err.stack
   });
 }

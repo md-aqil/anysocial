@@ -85,7 +85,7 @@ export class InstagramAdapter implements PlatformAdapter {
    * 
    * For carousels, create multiple containers then publish as carousel
    */
-  async publish(accountId: string, payload: PlatformPayload): Promise<PublishResult> {
+  async publish(_accountId: string, payload: PlatformPayload): Promise<PublishResult> {
     try {
       const accessToken = payload.platformSpecificFields.accessToken as string;
       const pageId = payload.platformSpecificFields.pageId as string;
@@ -102,30 +102,41 @@ export class InstagramAdapter implements PlatformAdapter {
         const containerIds: string[] = [];
 
         for (const mediaUrl of payload.mediaUrls) {
-          const isVideo = mediaUrl.includes('.mp4');
+          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov');
           const containerEndpoint = `https://graph.facebook.com/v21.0/${pageId}/media`;
 
+          console.log(`[IG CAROUSEL] Creating item container for: ${mediaUrl}`);
+
           // Create container for each media item
-          // Note: carousel items use 'VIDEO', standalone reels use 'REELS'
-          const containerResponse = await axios.post(containerEndpoint, {
-            is_carousel_item: true,
-            media_type: isVideo ? 'VIDEO' : 'IMAGE',
-            image_url: isVideo ? undefined : mediaUrl,
-            video_url: isVideo ? mediaUrl : undefined,
-            access_token: accessToken
+          // Using params instead of body to ensure Meta API recognizes the fields
+          const containerResponse = await axios.post(containerEndpoint, null, {
+            params: {
+              is_carousel_item: true,
+              media_type: isVideo ? 'VIDEO' : 'IMAGE',
+              image_url: isVideo ? undefined : mediaUrl,
+              video_url: isVideo ? mediaUrl : undefined,
+              access_token: accessToken
+            }
           });
 
           containerIds.push(containerResponse.data.id);
+          console.log(`[IG CAROUSEL] Created item container: ${containerResponse.data.id}`);
         }
+
+        console.log(`[IG CAROUSEL] Creating parent container with ${containerIds.length} items`);
 
         // Create parent carousel container
         const carouselContainerResponse = await axios.post(
           `https://graph.facebook.com/v21.0/${pageId}/media`,
+          null,
           {
-            is_carousel: true,
-            children: containerIds.join(','),
-            caption: payload.caption,
-            access_token: accessToken
+            params: {
+              is_carousel: true,
+              media_type: 'CAROUSEL',
+              children: containerIds.join(','),
+              caption: payload.caption,
+              access_token: accessToken
+            }
           }
         );
 
@@ -147,16 +158,26 @@ export class InstagramAdapter implements PlatformAdapter {
           };
         }
 
-        console.log(`[IG PUBLISH] Attempting to publish to Page: ${pageId}`);
+        const postType = payload.platformSpecificFields.postType || 'FEED';
+        console.log(`[IG PUBLISH] Attempting to publish to Page: ${pageId} as ${postType}`);
         console.log(`[IG PUBLISH] Media URL: ${mediaUrl}`);
 
-        const containerResponse = await axios.post(containerEndpoint, {
-          media_type: isVideo ? 'REELS' : undefined,
-          image_url: isVideo ? undefined : mediaUrl,
-          video_url: isVideo ? mediaUrl : undefined,
-          caption: payload.caption,
-          share_to_feed: isVideo ? (payload.platformSpecificFields.shareToFeed ?? true) : undefined,
-          access_token: accessToken
+        let mediaType: string | undefined;
+        if (postType === 'STORY') {
+          mediaType = 'STORIES';
+        } else if (postType === 'REEL' || isVideo) {
+          mediaType = 'REELS';
+        }
+
+        const containerResponse = await axios.post(containerEndpoint, null, {
+          params: {
+            media_type: mediaType,
+            image_url: isVideo ? undefined : mediaUrl,
+            video_url: isVideo ? mediaUrl : undefined,
+            caption: postType === 'STORY' ? undefined : payload.caption, // Stories don't support standard captions in the same way
+            share_to_feed: (postType === 'REEL' || isVideo) ? (payload.platformSpecificFields.shareToFeed ?? true) : undefined,
+            access_token: accessToken
+          }
         });
 
         mediaContainerId = containerResponse.data.id;

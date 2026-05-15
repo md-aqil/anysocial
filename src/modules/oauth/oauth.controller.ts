@@ -17,7 +17,7 @@ function logToFile(message: string) {
 }
 
 export class OAuthController {
-  async getConfig(req: Request, res: Response): Promise<void> {
+  async getConfig(_req: Request, res: Response): Promise<void> {
     const configuredPlatforms = Object.keys(platformConfigs).filter((platform) => {
       const config = platformConfigs[platform as keyof typeof platformConfigs];
       return !!process.env[config.clientIdKey];
@@ -49,7 +49,7 @@ export class OAuthController {
       if (error instanceof OAuthError) {
         res.status(error.statusCode).json({ error: error.message, code: error.code });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: (error as Error).message, stack: (error as Error).stack });
       }
     }
   }
@@ -71,7 +71,14 @@ export class OAuthController {
 
     try {
       if (error) {
-        throw new OAuthError(`OAuth denied: ${error_description || error}`, 'OAUTH_DENIED');
+        let message = error_description as string || error as string;
+        
+        // Handle specific Threads "User not invited" error
+        if (platform === 'threads' && message.toLowerCase().includes('invite to test')) {
+          message = "Threads Connection Failed: Your Meta App is in Development mode. You must add this Threads account as a 'Tester' in your Meta App Dashboard (App Roles), or switch your app to 'Live' mode to allow any account to connect.";
+        }
+        
+        throw new OAuthError(`OAuth denied: ${message}`, 'OAUTH_DENIED');
       }
 
       if (!code || !state) {
@@ -146,7 +153,7 @@ export class OAuthController {
       if (error instanceof OAuthError) {
         res.status(error.statusCode).json({ error: error.message, code: error.code });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: (error as Error).message, stack: (error as Error).stack });
       }
     }
   }
@@ -163,7 +170,7 @@ export class OAuthController {
       if (error instanceof OAuthError) {
         res.status(error.statusCode).json({ error: error.message, code: error.code });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: (error as Error).message, stack: (error as Error).stack });
       }
     }
   }
@@ -179,7 +186,7 @@ export class OAuthController {
       if (error instanceof OAuthError) {
         res.status(error.statusCode).json({ error: error.message, code: error.code });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: (error as Error).message, stack: (error as Error).stack });
       }
     }
   }
@@ -214,7 +221,7 @@ export class OAuthController {
       if (error instanceof OAuthError) {
         res.status(error.statusCode).json({ error: error.message, code: error.code });
       } else {
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: (error as Error).message, stack: (error as Error).stack });
       }
     }
   }

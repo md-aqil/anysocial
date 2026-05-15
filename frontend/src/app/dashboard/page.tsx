@@ -230,6 +230,15 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+      <footer className="text-center text-sm text-muted-foreground mt-8">
+        <Link href="/privacy-policy" className="hover:underline">
+          Privacy Policy
+        </Link>
+        <span className="mx-2">|</span>
+        <Link href="/terms-of-service" className="hover:underline">
+          Terms of Service
+        </Link>
+      </footer>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Providers } from '@/components/providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SEO Genie - Social Media Management',
+  title: 'Social Sched - Social Media Management',
   description: 'Manage your social media accounts and schedule posts across multiple platforms',
 };
 

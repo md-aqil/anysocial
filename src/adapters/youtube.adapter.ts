@@ -254,7 +254,7 @@ export class YouTubeAdapter implements PlatformAdapter {
     );
   }
 
-  async deletePost(accountId: string, platformPostId: string, accessToken?: string): Promise<boolean> {
+  async deletePost(_accountId: string, platformPostId: string, accessToken?: string): Promise<boolean> {
     if (!accessToken || !platformPostId) return false;
     try {
       await axios.delete(`https://www.googleapis.com/youtube/v3/videos`, {

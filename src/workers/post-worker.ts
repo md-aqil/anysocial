@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
 import { redis } from '../db/redis.js';
 import { prisma } from '../db/prisma.js';
-import { postQueue, deadLetterQueue, type PostJobData, type PostJobResult } from '../queues/post-queue.js';
+import { deadLetterQueue, type PostJobData, type PostJobResult } from '../queues/post-queue.js';
 import { instagramAdapter } from '../adapters/instagram.adapter.js';
 import { facebookAdapter } from '../adapters/facebook.adapter.js';
 import { twitterAdapter } from '../adapters/twitter.adapter.js';
@@ -23,10 +23,10 @@ export class PostWorker {
       this.processJob.bind(this),
       {
         connection: redis,
-        concurrency: 5, // Process 5 jobs simultaneously
+        concurrency: 2, // Reduced from 5 to 2 to prevent rapid bursts
         limiter: {
-          max: 10,
-          duration: 1000 // 10 jobs per second
+          max: 3,
+          duration: 1000 // Only 3 jobs per second globally
         }
       }
     );
@@ -48,6 +48,11 @@ export class PostWorker {
       userId,
       attempt: job.attemptsMade + 1
     });
+
+    // 0. Humanized Jitter: Add a random delay (5-15 seconds) to avoid "bot-like" behavior
+    const jitterMs = Math.floor(Math.random() * 10000) + 5000;
+    logger.info({ event: 'human_jitter_delay', ms: jitterMs, postId });
+    await new Promise(resolve => setTimeout(resolve, jitterMs));
 
     try {
       // 1. Fetch post from database
@@ -156,16 +161,55 @@ export class PostWorker {
         attempt: job.attemptsMade + 1
       });
 
+      // SAFETY KILL-SWITCH: Detect Meta/Platform Spam & Restriction Errors
+      const isPolicyViolation = 
+        errorMessage.toLowerCase().includes('spam') || 
+        errorMessage.toLowerCase().includes('restricted') ||
+        errorMessage.toLowerCase().includes('policy') ||
+        errorMessage.toLowerCase().includes('inauthentic') ||
+        errorMessage.includes('368'); // Facebook/Instagram error code for "Action Blocked"
+
+      if (isPolicyViolation) {
+        logger.warn({
+          event: 'policy_killswitch_triggered',
+          platform,
+          postId,
+          error: errorMessage
+        });
+
+        // Automatically disable the account to prevent further escalation/ban
+        await prisma.socialAccount.updateMany({
+          where: {
+            userId,
+            platform: platform.toUpperCase() as any,
+            status: 'CONNECTED'
+          },
+          data: {
+            status: 'ERROR',
+            metadata: {
+              restrictionReason: 'AUTOMATED_LOCK_POLICY_VIOLATION',
+              lastErrorMessage: errorMessage,
+              lockedAt: new Date().toISOString()
+            }
+          }
+        });
+      }
+
       // Update platform result with error
       await this.updatePlatformResult(postId, platform, {
         success: false,
         platformPostId: null,
         url: null,
-        error: errorMessage,
+        error: isPolicyViolation ? `ACCOUNT_LOCKED: ${errorMessage}` : errorMessage,
         publishedAt: null
       });
 
-      throw error; // Re-throw to trigger BullMQ retry
+      // If it's a policy violation, don't retry from the queue anymore
+      if (isPolicyViolation) {
+        return { success: false, error: 'Account locked due to policy violation' } as any;
+      }
+
+      throw error; // Re-throw to trigger BullMQ retry for normal network/timeout errors
     }
   }
 

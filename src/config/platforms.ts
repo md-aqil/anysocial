@@ -35,7 +35,7 @@ export const platformConfigs: Record<string, PlatformOAuthConfig> = {
   FACEBOOK: {
     authUrl: 'https://www.facebook.com/v21.0/dialog/oauth',
     tokenUrl: 'https://graph.facebook.com/v21.0/oauth/access_token',
-    scopes: ['pages_manage_posts', 'pages_read_engagement'],
+    scopes: ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list', 'business_management'],
     clientIdKey: 'FACEBOOK_CLIENT_ID',
     clientSecretKey: 'FACEBOOK_CLIENT_SECRET',
     configIdKey: 'FACEBOOK_CONFIG_ID',

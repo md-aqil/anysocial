@@ -13,7 +13,7 @@ const defaultConfig: RateLimitConfig = {
 
 const oauthConfig: RateLimitConfig = {
   windowMs: 5 * 60 * 1000, // 5 minutes
-  maxRequests: process.env.NODE_ENV === 'development' ? 100 : 20
+  maxRequests: 100
 };
 
 export function createRateLimiter(config: RateLimitConfig = defaultConfig) {

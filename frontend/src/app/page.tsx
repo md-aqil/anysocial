@@ -10,7 +10,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">SEO Genie</h1>
+          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Social Sched</h1>
           <div className="flex gap-4">
             <Link href="/login">
               <Button variant="ghost">Login</Button>
@@ -100,7 +100,7 @@ export default function HomePage() {
 
       <footer className="border-t mt-20">
         <div className="container mx-auto px-4 py-8 text-center text-muted-foreground">
-          <p>&copy; 2024 SEO Genie. All rights reserved.</p>
+          <p>&copy; 2024 Social Sched. All rights reserved.</p>
         </div>
       </footer>
     </div>

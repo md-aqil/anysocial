@@ -53,7 +53,43 @@ export class FacebookAdapter implements PlatformAdapter {
 
       let publishResponse;
 
-      if (payload.mediaUrls.length > 0) {
+      if (payload.mediaUrls.length > 1) {
+        // Multi-media (Carousel-style) Feed Post
+        const postType = payload.platformSpecificFields.postType || 'FEED';
+        if (postType !== 'FEED') {
+          throw new Error(`Multiple media items are only supported for FEED posts on Facebook. (Got: ${postType})`);
+        }
+
+        console.log(`[FB PUBLISH] Handling multi-media post with ${payload.mediaUrls.length} items`);
+        const attachedMedia: any[] = [];
+
+        for (const mediaUrl of payload.mediaUrls) {
+          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov');
+          if (isVideo) {
+            throw new Error("Facebook carousels currently only support images in this pipeline.");
+          }
+
+          // Upload as unpublished photo
+          const imageResponse = await axios.get(mediaUrl, { responseType: 'arraybuffer' });
+          const imageBuffer = Buffer.from(imageResponse.data);
+          
+          const formData = new FormData();
+          formData.append('published', 'false');
+          formData.append('access_token', accessToken);
+          formData.append('source', new Blob([imageBuffer], { type: 'image/jpeg' }), 'upload.jpg');
+          
+          const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photos`, formData);
+          attachedMedia.push({ media_fbid: uploadResponse.data.id });
+          console.log(`[FB PUBLISH] Uploaded unpublished photo: ${uploadResponse.data.id}`);
+        }
+
+        // Publish feed post with attached media
+        publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, {
+          message: payload.caption,
+          attached_media: JSON.stringify(attachedMedia),
+          access_token: accessToken
+        });
+      } else if (payload.mediaUrls.length === 1) {
         const mediaUrl = payload.mediaUrls[0];
         const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov');
         const postType = payload.platformSpecificFields.postType || 'FEED';
@@ -74,7 +110,6 @@ export class FacebookAdapter implements PlatformAdapter {
           }
 
           // Phase 2: Binary Video Upload to Meta's rupload endpoint
-          // Bypasses tunnel/bot-crawl issues — Meta receives the bytes directly.
           const fileName = mediaUrl.split('/').pop();
           const filePath = path.join(process.cwd(), 'frontend', 'public', 'uploads', fileName!);
           
@@ -92,21 +127,16 @@ export class FacebookAdapter implements PlatformAdapter {
               'file_size': fileBuffer.length.toString(),
               'Content-Type': 'application/octet-stream'
             },
-            // Required for large video files — axios defaults cap the body size
             maxBodyLength: Infinity,
             maxContentLength: Infinity,
-            timeout: 120000 // 2-minute timeout for the binary transfer
+            timeout: 120000
           });
 
           console.log(`[FB PUBLISH] Binary upload sent for Reel ${videoId}`);
 
-          // Phase 2.5: Confirm 'upload_complete' status before calling finish.
-          // 'upload_complete' = Facebook received the binary. This is the signal to call Phase 3.
-          // NOTE: 'ready' state only appears AFTER Phase 3 (finish) triggers processing —
-          //       polling for 'ready' before Phase 3 causes a permanent deadlock.
           let uploadConfirmed = false;
           let uploadAttempts = 0;
-          const maxUploadAttempts = 15; // 30 seconds max (15 × 2s)
+          const maxUploadAttempts = 15;
 
           while (!uploadConfirmed && uploadAttempts < maxUploadAttempts) {
             uploadAttempts++;
@@ -125,18 +155,16 @@ export class FacebookAdapter implements PlatformAdapter {
                 throw new Error('Facebook binary upload was rejected by Meta servers.');
               }
             } catch (err: any) {
-              // Re-throw fatal Meta rejections; swallow transient network errors
               if (err.message.includes('rejected')) throw err;
               console.warn(`[FB PUBLISH] Upload status check error: ${err.message}`);
             }
           }
 
           if (!uploadConfirmed) {
-            throw new Error('Facebook binary upload did not confirm within 30 seconds. The file may be too large or the rupload server is unavailable.');
+            throw new Error('Facebook binary upload did not confirm within 30 seconds.');
           }
 
           // Phase 3: Finish and Publish
-          // This call triggers Meta to begin processing and immediately publish the Reel.
           console.log(`[FB PUBLISH] Calling finish/publish for Reel: ${videoId}`);
           publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/video_reels`, {
             upload_phase: 'finish',
@@ -148,21 +176,24 @@ export class FacebookAdapter implements PlatformAdapter {
           }, {
             timeout: 30000
           });
-          console.log(`[FB PUBLISH] Reel published, id: ${publishResponse.data.id || publishResponse.data.post_id}`);
         } else if (postType === 'STORY') {
           if (isVideo) {
-            publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/video_stories`, {
-              file_url: mediaUrl,
-              access_token: accessToken
+            publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/video_stories`, null, {
+              params: {
+                file_url: mediaUrl,
+                access_token: accessToken
+              }
             });
           } else {
-            publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photo_stories`, {
-              url: mediaUrl,
-              access_token: accessToken
+            publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photo_stories`, null, {
+              params: {
+                url: mediaUrl,
+                access_token: accessToken
+              }
             });
           }
         } else {
-          // Standard FEED Post
+          // Standard FEED Post (Single)
           if (isVideo) {
             publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/videos`, {
               file_url: mediaUrl,
@@ -206,7 +237,7 @@ export class FacebookAdapter implements PlatformAdapter {
     }
   }
 
-  async deletePost(accountId: string, platformPostId: string, accessToken?: string): Promise<boolean> {
+  async deletePost(_accountId: string, platformPostId: string, accessToken?: string): Promise<boolean> {
     if (!accessToken || !platformPostId) return false;
     try {
       await axios.delete(`https://graph.facebook.com/v21.0/${platformPostId}`, {

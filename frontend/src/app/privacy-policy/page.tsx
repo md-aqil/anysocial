@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Shield, Lock, Eye, Database, Mail, User, AlertTriangle } from 'lucide-react';
@@ -10,7 +11,7 @@ export default function PrivacyPolicyPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold">Privacy Policy</h1>
-          <p className="text-muted-foreground">Last updated: April 18, 2026</p>
+          <p className="text-muted-foreground">Last updated: May 13, 2026</p>
         </div>
 
         <Card>
@@ -22,12 +23,12 @@ export default function PrivacyPolicyPage() {
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">
             <p>
-              SEO Genie (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. 
-              This Privacy Policy explains how we collect, use, disclose, and safeguard your information 
+              Social Sched ("we," "our," or "us") is committed to protecting your privacy.
+              This Privacy Policy explains how we collect, use, disclose, and safeguard your information
               when you use our social media management platform.
             </p>
             <p>
-              By accessing or using our Service, you agree to this Privacy Policy. If you do not agree 
+              By accessing or using our Service, you agree to this Privacy Policy. If you do not agree
               with the terms of this policy, please do not access our Service.
             </p>
           </CardContent>
@@ -91,7 +92,7 @@ export default function PrivacyPolicyPage() {
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">
             <p>
-              We implement appropriate technical and organizational security measures to protect 
+              We implement appropriate technical and organizational security measures to protect
               your personal information against unauthorized access, alteration, disclosure, or destruction.
             </p>
             <ul className="list-disc list-inside space-y-2">
@@ -136,7 +137,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc list-inside space-y-2">
               <li>Access and receive a copy of your personal data</li>
               <li>Request correction of inaccurate personal data</li>
-              <li>Request deletion of your personal data (&quot;right to be forgotten&quot;)</li>
+              <li>Request deletion of your personal data ("right to be forgotten")</li>
               <li>Object to processing of your personal data</li>
               <li>Request restriction of processing</li>
               <li>Data portability - receive your data in a structured format</li>
@@ -144,8 +145,8 @@ export default function PrivacyPolicyPage() {
             </ul>
             <p className="text-sm">
               To exercise these rights, contact us at{' '}
-              <a href="mailto:privacy@seogenie.app" className="text-primary hover:underline">
-                privacy@seogenie.app
+              <a href="mailto:privacy@socialsched.vibeship.in" className="text-primary hover:underline">
+                privacy@socialsched.vibeship.in
               </a>
             </p>
           </CardContent>
@@ -155,13 +156,13 @@ export default function PrivacyPolicyPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
-              Children&apos;s Privacy
+              Children's Privacy
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">
             <p>
-              Our Services are not intended for children under 13 years of age. We do not 
-              knowingly collect personal information from children under 13. If you become 
+              Our Services are not intended for children under 13 years of age. We do not
+              knowingly collect personal information from children under 13. If you become
               aware that a child has provided us with personal information, please contact us.
             </p>
           </CardContent>
@@ -173,8 +174,8 @@ export default function PrivacyPolicyPage() {
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">
             <p>
-              We may update this Privacy Policy from time to time. We will notify you of any 
-              changes by posting the new policy on this page and updating the &quot;Last updated&quot; date.
+              We may update this Privacy Policy from time to time. We will notify you of any
+              changes by posting the new policy on this page and updating the "Last updated" date.
             </p>
             <p>
               We encourage you to review this Privacy Policy periodically for any changes.
@@ -189,8 +190,8 @@ export default function PrivacyPolicyPage() {
           <CardContent className="space-y-4 text-muted-foreground">
             <p>If you have any questions about this Privacy Policy, please contact us:</p>
             <ul className="list-disc list-inside space-y-2">
-              <li>Email: privacy@seogenie.app</li>
-              <li>Through our website: seogenie.app</li>
+              <li>Email: privacy@socialsched.vibeship.in</li>
+              <li>Through our website: socialsched.vibeship.in</li>
             </ul>
           </CardContent>
         </Card>

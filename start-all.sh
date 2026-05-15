@@ -12,7 +12,7 @@ echo "------------------------------------------------"
 
 # Kill existing processes to ensure a clean start
 echo "🧹 Cleaning up old processes..."
-pkill -f "cloudflared tunnel --config .cloudflared/config.yaml" 2>/dev/null
+pkill -f "cloudflared tunnel --config tunnel-config/config.yaml" 2>/dev/null
 lsof -ti :3001 | xargs kill -9 2>/dev/null
 lsof -ti :3000 | xargs kill -9 2>/dev/null
 
@@ -27,7 +27,7 @@ function cleanup() {
 }
 
 echo "🌉 Starting Cloudflare Tunnel..."
-/opt/homebrew/bin/cloudflared tunnel --config .cloudflared/config.yaml run > .cloudflared/tunnel.log 2>&1 &
+/opt/homebrew/bin/cloudflared tunnel --config tunnel-config/config.yaml run > tunnel-config/tunnel.log 2>&1 &
 sleep 2
 
 echo "📦 Starting Backend (Port 3001)..."

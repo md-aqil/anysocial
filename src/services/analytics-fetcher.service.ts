@@ -41,7 +41,7 @@ class InstagramAdapter implements PlatformAdapter {
         throw new Error(`Instagram API error: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as any;
       
       const metricsMap: Record<string, number> = {};
       for (const item of data.data || []) {
@@ -79,7 +79,7 @@ class LinkedInAdapter implements PlatformAdapter {
         throw new Error(`LinkedIn API error: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as any;
       
       const reactionSummary = data.reactionSummaries || [];
       const commentSummary = data.commentSummaries || [];
@@ -120,7 +120,7 @@ class TwitterAdapter implements PlatformAdapter {
         throw new Error(`Twitter API error: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as any;
       const metrics = data.data?.public_metrics || {};
       
       return {

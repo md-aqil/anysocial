@@ -2,8 +2,7 @@ import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
-import { getPlatformRules, isAspectRatioValid } from '../config/platform-rules.js';
-import { MediaValidationError } from '../utils/errors.js';
+import { getPlatformRules } from '../config/platform-rules.js';
 
 // Set explicit ffprobe path for Homebrew installs on Mac
 ffmpeg.setFfprobePath('/opt/homebrew/bin/ffprobe');

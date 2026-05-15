@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { storageService } from './media-upload.service.js';
-import { prisma } from '../db/prisma.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ProductDetails {
@@ -187,7 +186,7 @@ export class AiOrchestratorService {
   /**
    * Calls NVIDIA FLUX API and stages the result.
    */
-  async pollAndStageAsset(taskId: string, userId: string) {
+  async pollAndStageAsset(taskId: string, _userId: string) {
     const task = this.tasks.get(taskId);
     if (!task) throw new Error('Task not found');
     if (task.status === 'COMPLETED') return JSON.parse(task.result!);

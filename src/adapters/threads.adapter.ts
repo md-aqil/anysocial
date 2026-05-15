@@ -57,7 +57,7 @@ export class ThreadsAdapter implements PlatformAdapter {
   /**
    * Publish to Threads via Graph API
    */
-  async publish(accountId: string, payload: PlatformPayload): Promise<PublishResult> {
+  async publish(_accountId: string, payload: PlatformPayload): Promise<PublishResult> {
     try {
       const accessToken = payload.platformSpecificFields.accessToken as string;
 

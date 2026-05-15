@@ -1,0 +1,17 @@
+[Unit]
+Description=SocialSched Frontend
+After=network.target
+
+[Service]
+Type=simple
+User=socialsched
+Group=socialsched-dev
+WorkingDirectory=/var/www/socialsched/frontend
+EnvironmentFile=/etc/socialsched/.env
+Environment=PORT=3000
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

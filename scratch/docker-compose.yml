@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: socialsched-db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: socialsched-password
+      POSTGRES_USER: socialsched
+      POSTGRES_DB: oauth_service
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.2
+    container_name: socialsched-cache
+    restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  postgres-data:
+  redis-data:

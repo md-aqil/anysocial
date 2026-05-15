@@ -12,10 +12,9 @@ function logToFile(message: string) {
 }
 import { mediaValidator } from './media-validator.service.js';
 import { storageService } from './media-upload.service.js';
-import { instagramAdapter } from '../adapters/instagram.adapter.js';
 import { postQueue } from '../queues/post-queue.js';
 import { convertToUTC, validateScheduledDate } from '../utils/date-time.js';
-import { MediaValidationError, SchedulingError, QueueEnqueueError } from '../utils/errors.js';
+import { MediaValidationError, SchedulingError } from '../utils/errors.js';
 import { createHash } from 'crypto';
 import type { Post, PostStatus } from '@prisma/client';
 import ffmpeg from 'fluent-ffmpeg';
@@ -78,6 +77,37 @@ export class PostingEngineService {
       }
     } else {
       scheduledUTC = new Date(); // Publish immediately
+    }
+
+    // 1.1 Anti-Spam: Check for duplicate content within the last 5 minutes (Idempotency)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const recentDuplicate = await prisma.post.findFirst({
+      where: {
+        userId,
+        rawContent: data.content,
+        createdAt: { gte: fiveMinutesAgo },
+        status: { not: 'FAILED' }
+      }
+    });
+
+    if (recentDuplicate) {
+      throw new SchedulingError('Anti-Spam Protection: Duplicate content detected. Please wait at least 5 minutes before posting the same content again.');
+    }
+
+    // 1.2 Account Health Check: Prevent scheduling for accounts that are already restricted/errored
+    const connectedAccounts = await prisma.socialAccount.findMany({
+      where: {
+        userId,
+        platform: { in: data.platforms.map(p => p.toUpperCase() as any) },
+        status: 'CONNECTED'
+      }
+    });
+
+    const connectedPlatformNames = connectedAccounts.map(a => a.platform.toString());
+    const missingOrBroken = data.platforms.filter(p => !connectedPlatformNames.includes(p.toUpperCase()));
+
+    if (missingOrBroken.length > 0) {
+      throw new SchedulingError(`Account Health Check: The following platforms are restricted or not connected: ${missingOrBroken.join(', ')}. Please resolve Account Quality issues first.`);
     }
 
     // 2. Create post record first
