@@ -7,3 +7,6 @@ dist/
 coverage/
 .vscode/
 .idea/
+
+# Uploaded media files (orphaned orphaned entries - used by the app, not tracked in git)
+frontend/public/uploads/
