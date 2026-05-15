@@ -75,7 +75,7 @@ export class OAuthService {
       state
     };
 
-    if (config.configIdKey && process.env[config.configIdKey]) {
+    if (config.configIdKey && process.env[config.configIdKey] && platform !== 'INSTAGRAM') {
       params.config_id = process.env[config.configIdKey]!;
     } else {
       params.scope = config.scopes.join(' ');
