@@ -47,6 +47,10 @@ cd ..
 
 # Restart services
 echo "🔄 Restarting Systemd Services..."
+if ! sudo -n true 2>/dev/null; then
+  echo "Configuring passwordless sudo for user $(whoami)..."
+  echo "$(whoami) ALL=(ALL) NOPASSWD: /bin/systemctl restart $BACKEND_SERVICE, /bin/systemctl restart $FRONTEND_SERVICE" | sudo tee /etc/sudoers.d/socialsched
+fi
 sudo systemctl restart $BACKEND_SERVICE
 sudo systemctl restart $FRONTEND_SERVICE
 
