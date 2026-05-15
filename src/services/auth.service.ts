@@ -67,13 +67,13 @@ export class AuthService {
   static generateToken(user: AuthUser): string {
     return jwt.sign(
       { userId: user.id, email: user.email },
-      env.TOKEN_ENCRYPTION_KEY,
-      { expiresIn: this.JWT_EXPIRY }
+      Buffer.from(env.TOKEN_ENCRYPTION_KEY, 'hex'),
+      { expiresIn: '7d' }
     );
   }
 
   static verifyToken(token: string): JWTPayload {
-    return jwt.verify(token, env.TOKEN_ENCRYPTION_KEY) as JWTPayload;
+    return jwt.verify(token, Buffer.from(env.TOKEN_ENCRYPTION_KEY, 'hex')) as JWTPayload;
   }
 
   static async getUserById(userId: string): Promise<AuthUser | null> {
