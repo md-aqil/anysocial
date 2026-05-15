@@ -60,7 +60,7 @@ export default function DashboardLayout({
             />
             <div className="fixed inset-y-0 left-0 z-50 w-64 bg-card border-r p-4">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">SEO Genie</h2>
+                <h2 className="text-xl font-bold">socialsched</h2>
                 <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
                   <X className="h-5 w-5" />
                 </Button>
@@ -101,7 +101,7 @@ export default function DashboardLayout({
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-1 bg-card border-r">
           <div className="p-4 border-b">
-            <h2 className="text-xl font-bold">SEO Genie</h2>
+            <h2 className="text-xl font-bold">socialsched</h2>
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {navigation.map((item) => {

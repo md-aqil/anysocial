@@ -200,7 +200,7 @@ export class WebhookDeliveryService {
     const payload: WebhookPayload = {
       event: 'test',
       timestamp: new Date().toISOString(),
-      data: { message: 'Test webhook from SEO Genie' },
+      data: { message: 'Test webhook from socialsched' },
     };
 
     const secret = crypto.randomBytes(32).toString('hex');
