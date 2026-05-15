@@ -13,9 +13,10 @@ echo "------------------------------------------------"
 # Navigate to app directory
 cd $APP_DIR
 
-# Pull latest code
+# Pull latest code (reset --hard to handle any untracked build files on VPS)
 echo "📥 Pulling latest code from main..."
-git pull origin main
+git fetch origin
+git reset --hard origin/main
 
 # Backend setup
 echo "📦 Setting up Backend..."

@@ -21,6 +21,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/socialsched
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
             chmod +x deploy/deploy.sh
             ./deploy/deploy.sh

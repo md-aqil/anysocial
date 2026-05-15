@@ -8,5 +8,15 @@ coverage/
 .vscode/
 .idea/
 
-# Uploaded media files (orphaned orphaned entries - used by the app, not tracked in git)
+# Uploaded media files — user-generated, stored in PostMedia, never git-tracked
 frontend/public/uploads/
+
+# Gemini / AI workflow files — local workspace, not repo code
+Gemini/
+
+# One-off / VPS documents
+VPS_POLICY.md
+fix_platforms.py
+
+# Scratch / temp work — never commit
+scratch/
