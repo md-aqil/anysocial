@@ -67,7 +67,8 @@ export class MediaValidatorService {
             height: 0,
             aspectRatio: 0,
             mimeType: 'unknown',
-            sizeBytes: file.length
+            sizeBytes: file.length,
+            duration: 0
           }
         };
       }
@@ -288,7 +289,7 @@ export class MediaValidatorService {
         aspectRatio: height > 0 ? width / height : 0,
         mimeType: metadata.format ? this.formatToMimeType(metadata.format) : 'unknown',
         sizeBytes: file.length,
-        duration: metadata.duration
+        duration: (metadata as any).duration || 0
       };
     } catch (e) {
       // Return basic info if sharp fails (e.g. for videos)

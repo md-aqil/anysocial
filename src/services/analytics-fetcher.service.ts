@@ -161,7 +161,7 @@ class TikTokAdapter implements PlatformAdapter {
         throw new Error(`TikTok API error: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as any;
       const video = data.data?.[0] || {};
       
       return {
@@ -196,7 +196,7 @@ class YouTubeAdapter implements PlatformAdapter {
         throw new Error(`YouTube API error: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as any;
       const stats = data.items?.[0]?.statistics || {};
       
       return {
@@ -289,12 +289,12 @@ export class AnalyticsFetcherService {
             postId,
             platform,
             publishedAt: post.publishedAt || new Date(),
-            metrics,
+            metrics: metrics as any,
             lastFetchedAt: new Date(),
             fetchStatus: FetchStatus.SUCCESS,
           },
           update: {
-            metrics,
+            metrics: metrics as any,
             lastFetchedAt: new Date(),
             fetchStatus: FetchStatus.SUCCESS,
             fetchError: null,
@@ -302,7 +302,7 @@ export class AnalyticsFetcherService {
         });
 
         const cacheKey = this.getCacheKey(postId, platform);
-        await redis.setEx(cacheKey, CACHE_TTL, JSON.stringify(metrics));
+        await redis.set(cacheKey, JSON.stringify(metrics), 'EX', CACHE_TTL);
 
         results.push({
           postId,
