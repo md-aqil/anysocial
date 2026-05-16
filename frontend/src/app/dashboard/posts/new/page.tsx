@@ -137,6 +137,7 @@ export default function NewPostPage() {
     selectedPlatforms,
     activePlatform,
     togglePlatform,
+    setPlatforms,
     setActivePlatform,
     reset: resetComposer
   } = useComposerStore();
@@ -375,7 +376,10 @@ export default function NewPostPage() {
       api.posts.get(draftId).then(post => {
         setValue("content", post.rawContent);
         if (post.title) setValue("title", post.title);
-        if (post.platforms) setValue("platforms", post.platforms);
+        if (post.platforms) {
+          setValue("platforms", post.platforms);
+          setPlatforms(post.platforms);
+        }
 
         // Load platform options if any
         const draftPlatformOptions = (post as any).platformOptions;

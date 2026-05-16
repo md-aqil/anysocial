@@ -5,6 +5,7 @@ interface ComposerState {
   selectedPlatforms: string[];
   activePlatform: string | null;
   togglePlatform: (platformId: string) => void;
+  setPlatforms: (platformIds: string[]) => void;
   setActivePlatform: (platformId: string | null) => void;
   reset: () => void;
 }
@@ -28,11 +29,17 @@ export const useComposerStore = create<ComposerState>()(
           set({ activePlatform: platformId });
         }
       },
+      setPlatforms: (platformIds: string[]) => {
+        set({ selectedPlatforms: platformIds });
+        if (platformIds.length > 0 && !platformIds.includes(get().activePlatform || '')) {
+          set({ activePlatform: platformIds[0] });
+        }
+      },
       setActivePlatform: (platformId: string | null) => {
         set({ activePlatform: platformId });
       },
       reset: () => {
-        set({ selectedPlatforms: [], activePlatform: null });
+        set({ activePlatform: null });
       }
     }),
     {
