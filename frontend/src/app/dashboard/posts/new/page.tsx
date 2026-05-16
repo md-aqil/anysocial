@@ -117,6 +117,7 @@ export default function NewPostPage() {
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [showScheduler, setShowScheduler] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isAiAssisting, setIsAiAssisting] = useState(false);
   const [pinterestBoards, setPinterestBoards] = useState<any[]>([]);
   const [isLoadingBoards, setIsLoadingBoards] = useState(false);
   const [activePlatform, setActivePlatform] = useState<string | null>(null);
@@ -334,41 +335,22 @@ export default function NewPostPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const source = params.get('source');
-    const draftId = params.get('id');
+    const draftId = params.get("id");
 
-    if (source === 'ai_gen') {
-      const pendingData = sessionStorage.getItem('pending_ai_post');
-      if (pendingData) {
-        const { content, mediaUrl, title, youtubeTags } = JSON.parse(pendingData);
-        setValue('content', content);
-        if (title) setValue('title', title);
-        if (youtubeTags) setValue('youtubeTags', youtubeTags);
-
-        fetch(mediaUrl)
-          .then(res => res.blob())
-          .then(blob => {
-            const file = new File([blob], 'ai-generated-ad.jpg', { type: 'image/jpeg' });
-            setMediaFiles([file]);
-          })
-          .catch(err => console.error('Failed to pre-load AI media', err));
-
-        sessionStorage.removeItem('pending_ai_post');
-      }
-    } else if (draftId) {
+    if (draftId) {
       api.posts.get(draftId).then(post => {
-        setValue('content', post.rawContent);
-        if (post.title) setValue('title', post.title);
-        if (post.platforms) setValue('platforms', post.platforms);
+        setValue("content", post.rawContent);
+        if (post.title) setValue("title", post.title);
+        if (post.platforms) setValue("platforms", post.platforms);
 
         // Load platform options if any
         const draftPlatformOptions = (post as any).platformOptions;
         if (draftPlatformOptions) {
           const opts: any = draftPlatformOptions;
-          if (opts.FACEBOOK?.postType) setValue('facebookPostType', opts.FACEBOOK.postType);
-          if (opts.INSTAGRAM?.postType) setValue('instagramPostType', opts.INSTAGRAM.postType);
-          if (opts.YOUTUBE?.tags) setValue('youtubeTags', opts.YOUTUBE.tags);
-          if (opts.YOUTUBE?.privacy) setValue('youtubePrivacy', opts.YOUTUBE.privacy);
+          if (opts.FACEBOOK?.postType) setValue("facebookPostType", opts.FACEBOOK.postType);
+          if (opts.INSTAGRAM?.postType) setValue("instagramPostType", opts.INSTAGRAM.postType);
+          if (opts.YOUTUBE?.tags) setValue("youtubeTags", opts.YOUTUBE.tags);
+          if (opts.YOUTUBE?.privacy) setValue("youtubePrivacy", opts.YOUTUBE.privacy);
         }
 
         // Fetch media
@@ -378,9 +360,9 @@ export default function NewPostPage() {
               const files = blobs.map((blob, i) => new File([blob], `draft-media-${i}.jpg`, { type: blob.type }));
               setMediaFiles(files);
             })
-            .catch(err => console.error('Failed to fetch draft media', err));
+            .catch(err => console.error("Failed to fetch draft media", err));
         }
-      }).catch(err => console.error('Failed to load draft', err));
+      }).catch(err => console.error("Failed to load draft", err));
     }
   }, [setValue]);
 
@@ -465,8 +447,8 @@ export default function NewPostPage() {
     };
     localStorage.setItem('anysocial_last_settings', JSON.stringify(persistable));
   }, [
-    currentPlatforms, fbPType, fbAFix, igPType, igAFix, 
-    twMode, twReply, twAFix, thAFix, sToFeed, 
+    currentPlatforms, fbPType, fbAFix, igPType, igAFix,
+    twMode, twReply, twAFix, thAFix, sToFeed,
     ytPriv, ytCat, ytAFix, ytPType, scPType
   ]);
 
@@ -547,8 +529,8 @@ export default function NewPostPage() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="min-h-[calc(100vh-64px)] bg-[#F2F6F2] text-[#2F281F]">
       <div className="flex min-h-[calc(100vh-64px)]">
-        <aside className="hidden w-16 shrink-0 border-r border-[#D9E3D9] bg-white px-2 pb-24 pt-6 lg:block">
-          <p className="mb-4 text-center text-[10px] font-bold uppercase text-[#AAA39D]">Channels</p>
+        <aside className="hidden w-14 shrink-0 border-r border-[#D9E3D9] bg-white px-2 pb-24 pt-6 lg:block">
+          <p className="mb-4 text-center text-[9px] font-bold uppercase text-[#AAA39D]">Channels</p>
           <div className="flex flex-col items-center gap-2.5">
             {accountsData?.accounts?.map((account) => {
               const platformId = account.platform.toUpperCase();
@@ -568,7 +550,7 @@ export default function NewPostPage() {
                     setActivePlatform(platformId);
                   }}
                   className={cn(
-                    'relative flex h-12 w-12 items-center justify-center rounded-2xl transition',
+                    'relative flex h-10 w-10 items-center justify-center rounded-2xl transition',
                     selected ? 'shadow-[0_8px_18px_rgba(0,0,0,0.10)]' : 'bg-[#EEF3EE]',
                     activePlatform === platformId && "ring-2 ring-[#D27D50] ring-offset-2"
                   )}
@@ -591,7 +573,7 @@ export default function NewPostPage() {
             <button
               type="button"
               onClick={() => router.push('/dashboard/social-accounts')}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-dashed border-[#D9E3D9] text-[#AAA39D]"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border-2 border-dashed border-[#D9E3D9] text-[#AAA39D]"
               aria-label="Add channel"
             >
               <Plus className="h-5 w-5" />
@@ -622,8 +604,34 @@ export default function NewPostPage() {
               <Hash className="h-4 w-4" strokeWidth={1.8} />
               <Paperclip className="h-4 w-4" strokeWidth={1.8} />
               <span className="h-6 w-px bg-[#E8EEE8]" />
-              <button type="button" className="flex h-9 items-center gap-2 rounded-xl bg-[#FBF3EE] px-3 text-[14px] font-bold text-[#D9774B]">
-                <Sparkles className="h-4 w-4" />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (mediaFiles.length === 0) {
+                    alert("Please upload a media file first.");
+                    return;
+                  }
+                  setIsAiAssisting(true);
+                  try {
+                    const mediaFile = mediaFiles[0];
+                    const result = await api.ai.analyzeMedia(mediaFile);
+                    setValue("content", result.caption);
+                    setValue("youtubeTags", result.tags);
+                  } catch (error) {
+                    console.error(error);
+                    alert("Failed to get AI assistance.");
+                  } finally {
+                    setIsAiAssisting(false);
+                  }
+                }}
+                className="flex h-9 items-center gap-2 rounded-xl bg-[#FBF3EE] px-3 text-[14px] font-bold text-[#D9774B]"
+                disabled={isAiAssisting}
+              >
+                {isAiAssisting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
                 AI Assist
               </button>
               <span className="h-6 w-px bg-[#E8EEE8]" />

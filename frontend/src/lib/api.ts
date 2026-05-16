@@ -15,7 +15,7 @@ class ApiError extends Error {
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { params, ...fetchOptions } = options;
-  
+
   let url = `${API_BASE}${endpoint}`;
   if (params) {
     const searchParams = new URLSearchParams(params);
@@ -23,7 +23,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -135,7 +135,7 @@ export const api = {
         publishNow: data.publishNow
       };
       formData.append('data', JSON.stringify(postData));
-      
+
       if (data.platformOptions) {
         // Extract File objects (can't JSON.stringify them) before serializing
         const opts = { ...data.platformOptions };
@@ -226,11 +226,11 @@ export const api = {
           credentials: 'include',
         }
       );
-      
+
       if (!response.ok) {
         throw new Error('Export failed');
       }
-      
+
       return response.blob();
     },
   },
@@ -280,23 +280,26 @@ export const api = {
       request<any>(`/api/config/platform-rules/${platform}`),
   },
   ai: {
-    proposeDirections: (data: any) =>
-      request<{ directions: any[] }>('/api/ai/propose-directions', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    generateBrief: (data: { directionId: string; productDetails: any }) =>
-      request<{ brief: any }>('/api/ai/generate-brief', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    generateAssets: (data: { brief: any; productDetails: any }) =>
-      request<{ taskId: string }>('/api/ai/generate-assets', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    getStatus: (taskId: string) =>
-      request<{ status: string; asset?: any; logs?: { message: string; timestamp: string }[] }>(`/api/ai/status/${taskId}`),
+    analyzeMedia: async (mediaFile: File): Promise<{ caption: string; keywords: string; tags: string }> => {
+      const formData = new FormData();
+      formData.append("media", mediaFile);
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const response = await fetch(`${API_BASE}/api/ai/analyze-media`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: "An error occurred" }));
+        throw new ApiError(response.status, error.error || "An error occurred", error.details);
+      }
+
+      return response.json();
+    },
   },
 };
 
