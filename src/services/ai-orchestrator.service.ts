@@ -67,7 +67,8 @@ Make sure the output is a valid JSON object.`;
       }
       return JSON.parse(content);
     } catch (error) {
-      // if parsing fails, just return the raw content
+      console.error('AI Analysis parsing error:', error);
+      // if parsing fails, just return the raw content as the caption
       return { caption: content, keywords: "", tags: "" };
     }
   }
