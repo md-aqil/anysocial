@@ -5,14 +5,21 @@ export class AiOrchestratorService {
   private vertexAI: VertexAI;
 
   constructor() {
-    this.vertexAI = new VertexAI({
-      project: process.env.VERTEX_AI_PROJECT_ID || '',
-      location: process.env.VERTEX_AI_LOCATION || '',
-    });
+    const project = process.env.VERTEX_AI_PROJECT_ID;
+    if (project) {
+      this.vertexAI = new VertexAI({
+        project: project,
+        location: process.env.VERTEX_AI_LOCATION || 'us-central1',
+      });
+    }
   }
 
   async analyzeMedia(mediaFile: any): Promise<any> {
-    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash' });
+    if (!this.vertexAI) {
+      console.warn('Vertex AI not configured, skipping media analysis');
+      return { caption: "", keywords: "", tags: "" };
+    }
+    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-1.5-flash' });
 
     const mediaPart = {
       inlineData: {
