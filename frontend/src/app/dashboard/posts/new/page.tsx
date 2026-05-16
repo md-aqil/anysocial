@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, type ComponentType, type SVGProps } from 'react';
+import { useComposerStore } from '@/store/composer-store';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
@@ -42,7 +43,11 @@ import {
   Wand2,
   X,
   Youtube,
-  Zap
+  Zap,
+  Edit3,
+  MessageSquareText,
+  MousePointer2,
+  Type
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { DayPicker } from 'react-day-picker';
@@ -76,6 +81,14 @@ const postSchema = z.object({
   pinterestBoardId: z.string().optional(),
   pinterestLink: z.string().optional(),
   snapchatPostType: z.enum(['STORY', 'SPOTLIGHT']).default('STORY').optional(),
+  facebookContent: z.string().optional(),
+  instagramContent: z.string().optional(),
+  twitterContent: z.string().optional(),
+  linkedinContent: z.string().optional(),
+  youtubeContent: z.string().optional(),
+  threadsContent: z.string().optional(),
+  pinterestContent: z.string().optional(),
+  snapchatContent: z.string().optional(),
 });
 
 type PostForm = z.infer<typeof postSchema>;
@@ -120,7 +133,20 @@ export default function NewPostPage() {
   const [isAiAssisting, setIsAiAssisting] = useState(false);
   const [pinterestBoards, setPinterestBoards] = useState<any[]>([]);
   const [isLoadingBoards, setIsLoadingBoards] = useState(false);
-  const [activePlatform, setActivePlatform] = useState<string | null>(null);
+  const {
+    selectedPlatforms,
+    activePlatform,
+    togglePlatform,
+    setActivePlatform,
+    reset: resetComposer
+  } = useComposerStore();
+
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const { data: accountsData } = useQuery({
     queryKey: ['accounts'],
@@ -138,6 +164,8 @@ export default function NewPostPage() {
     ratio: number;
     platformValidations: Record<string, { valid: boolean; errors: string[] }>;
   }>>({});
+
+  const [editingPlatform, setEditingPlatform] = useState<string | null>(null);
 
 
   const [publishLog, setPublishLog] = useState<LogEntry[]>([]);
@@ -179,13 +207,15 @@ export default function NewPostPage() {
             postType: data.facebookPostType,
             autoFix: data.facebookAutoFix,
             reelTitle: data.reelTitle,
-            location: data.location
+            location: data.location,
+            content: data.facebookContent
           },
           INSTAGRAM: {
             postType: data.instagramPostType,
             autoFix: data.instagramAutoFix,
             shareToFeed: data.shareToFeed,
-            location: data.location
+            location: data.location,
+            content: data.instagramContent
           },
           YOUTUBE: {
             privacy: data.youtubePrivacy,
@@ -195,22 +225,30 @@ export default function NewPostPage() {
             tags: data.youtubeTags,
             autoFix: data.youtubeAutoFix,
             postType: data.youtubePostType,
-            customThumbnail: data.youtubeThumbnail || null
+            customThumbnail: data.youtubeThumbnail || null,
+            content: data.youtubeContent
           },
           TWITTER: {
             threadMode: data.twitterThreadMode,
             replySettings: data.twitterReplySettings,
-            autoFix: data.twitterAutoFix
+            autoFix: data.twitterAutoFix,
+            content: data.twitterContent
           },
           THREADS: {
-            autoFix: data.threadsAutoFix
+            autoFix: data.threadsAutoFix,
+            content: data.threadsContent
           },
           PINTEREST: {
             boardId: data.pinterestBoardId,
-            link: data.pinterestLink
+            link: data.pinterestLink,
+            content: data.pinterestContent
           },
           SNAPCHAT: {
-            postType: data.snapchatPostType
+            postType: data.snapchatPostType,
+            content: data.snapchatContent
+          },
+          LINKEDIN: {
+            content: data.linkedinContent
           }
         },
         media: mediaFiles
@@ -239,7 +277,13 @@ export default function NewPostPage() {
         throw err;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      if (!variables.publishNow && !variables.scheduledAt) {
+        addLog('success', '[ok] Draft saved successfully');
+        showToast('Draft saved successfully!');
+        return;
+      }
+      resetComposer();
       // Short delay so user can read the success log before navigating
       setTimeout(() => router.push('/dashboard/posts'), 1800);
     },
@@ -284,25 +328,19 @@ export default function NewPostPage() {
     return `Publishes in ${formatDistanceToNow(scheduledAt)}`;
   };
 
-  const selectedPlatforms = watch('platforms');
+
   const scheduledAt = watch('scheduledAt');
   const fbAutoFix = watch('facebookAutoFix');
   const igAutoFix = watch('instagramAutoFix');
   const fbType = watch('facebookPostType');
   const igType = watch('instagramPostType');
 
+  useEffect(() => {
+    setValue('platforms', selectedPlatforms);
+  }, [selectedPlatforms, setValue]);
+
   const handlePlatformToggle = (platformId: string) => {
-    const current = selectedPlatforms || [];
-    if (current.includes(platformId)) {
-      const next = current.filter((p) => p !== platformId);
-      setValue('platforms', next);
-      if (activePlatform === platformId) {
-        setActivePlatform(next[0] || null);
-      }
-    } else {
-      setValue('platforms', [...current, platformId]);
-      setActivePlatform(platformId);
-    }
+    togglePlatform(platformId);
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -327,11 +365,7 @@ export default function NewPostPage() {
 
   const connectedPlatforms = accountsData?.accounts?.map((a) => a.platform) || [];
 
-  useEffect(() => {
-    if (!activePlatform && selectedPlatforms?.length > 0) {
-      setActivePlatform(selectedPlatforms[0]);
-    }
-  }, [selectedPlatforms, activePlatform]);
+
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -390,67 +424,7 @@ export default function NewPostPage() {
     }
   }, [selectedPlatforms, accountsData, pinterestBoards.length, setValue]);
 
-  // Load last saved settings
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const hasSpecialSource = params.get('source') === 'ai_gen' || params.get('id');
 
-    if (!hasSpecialSource) {
-      const saved = localStorage.getItem('anysocial_last_settings');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          Object.keys(data).forEach(key => {
-            setValue(key as any, data[key]);
-          });
-        } catch (e) {
-          console.error('Failed to load saved settings', e);
-        }
-      }
-    }
-  }, [setValue]);
-
-  // Persist settings on change
-  const currentPlatforms = watch('platforms');
-  const fbPType = watch('facebookPostType');
-  const fbAFix = watch('facebookAutoFix');
-  const igPType = watch('instagramPostType');
-  const igAFix = watch('instagramAutoFix');
-  const twMode = watch('twitterThreadMode');
-  const twReply = watch('twitterReplySettings');
-  const twAFix = watch('twitterAutoFix');
-  const thAFix = watch('threadsAutoFix');
-  const sToFeed = watch('shareToFeed');
-  const ytPriv = watch('youtubePrivacy');
-  const ytCat = watch('youtubeCategory');
-  const ytAFix = watch('youtubeAutoFix');
-  const ytPType = watch('youtubePostType');
-  const scPType = watch('snapchatPostType');
-
-  useEffect(() => {
-    const persistable = {
-      platforms: currentPlatforms,
-      facebookPostType: fbPType,
-      facebookAutoFix: fbAFix,
-      instagramPostType: igPType,
-      instagramAutoFix: igAFix,
-      twitterThreadMode: twMode,
-      twitterReplySettings: twReply,
-      twitterAutoFix: twAFix,
-      threadsAutoFix: thAFix,
-      shareToFeed: sToFeed,
-      youtubePrivacy: ytPriv,
-      youtubeCategory: ytCat,
-      youtubeAutoFix: ytAFix,
-      youtubePostType: ytPType,
-      snapchatPostType: scPType,
-    };
-    localStorage.setItem('anysocial_last_settings', JSON.stringify(persistable));
-  }, [
-    currentPlatforms, fbPType, fbAFix, igPType, igAFix,
-    twMode, twReply, twAFix, thAFix, sToFeed,
-    ytPriv, ytCat, ytAFix, ytPType, scPType
-  ]);
 
   useEffect(() => {
     const analyze = async () => {
@@ -528,8 +502,19 @@ export default function NewPostPage() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="min-h-[calc(100vh-64px)] bg-[#F2F6F2] text-[#2F281F]">
+      {toast && (
+        <div className="fixed left-1/2 top-24 z-[200] -translate-x-1/2 animate-in fade-in zoom-in slide-in-from-top-4 duration-300">
+          <div className={cn(
+            "flex items-center gap-3 rounded-2xl px-6 py-3 shadow-2xl backdrop-blur-md",
+            toast.type === 'success' ? "bg-green-600/90 text-white" : "bg-red-600/90 text-white"
+          )}>
+            {toast.type === 'success' ? <Check className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+            <span className="text-[14px] font-bold tracking-tight">{toast.msg}</span>
+          </div>
+        </div>
+      )}
       <div className="flex min-h-[calc(100vh-64px)]">
-        <aside className="hidden w-14 shrink-0 border-r border-[#D9E3D9] bg-white px-2 pb-24 pt-6 lg:block">
+        <aside className="hidden w-20 shrink-0 border-r border-[#D9E3D9] bg-white px-5 pb-24 pt-6 lg:block">
           <p className="mb-4 text-center text-[9px] font-bold uppercase text-[#AAA39D]">Channels</p>
           <div className="flex flex-col items-center gap-2.5">
             {accountsData?.accounts?.map((account) => {
@@ -545,10 +530,7 @@ export default function NewPostPage() {
                 <button
                   key={account.id}
                   type="button"
-                  onClick={() => {
-                    handlePlatformToggle(platformId);
-                    setActivePlatform(platformId);
-                  }}
+                  onClick={() => handlePlatformToggle(platformId)}
                   className={cn(
                     'relative flex h-10 w-10 items-center justify-center rounded-2xl transition',
                     selected ? 'shadow-[0_8px_18px_rgba(0,0,0,0.10)]' : 'bg-[#EEF3EE]',
@@ -583,6 +565,36 @@ export default function NewPostPage() {
 
         <main className="relative flex min-w-0 flex-1 flex-col bg-[#F2F6F2] px-5 pb-24 pt-8 lg:px-8">
           <div className="mx-auto w-full max-w-[880px]">
+            {scheduledAt && (
+              <div className="mb-8 flex animate-in fade-in slide-in-from-top-4 duration-300 items-center justify-between rounded-2xl border border-[#D9774B]/20 bg-[#FBF3EE] px-5 py-4 shadow-[0_4px_12px_rgba(217,119,75,0.08)]">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#D9774B] shadow-sm">
+                    <Calendar className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-bold text-[#3C342C]">Scheduled for Publication</p>
+                    <p className="text-[13px] text-[#A8562F]">This post will go live on <span className="font-bold">{format(scheduledAt, 'MMMM do, yyyy @ p')}</span></p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowScheduler(true)}
+                    className="rounded-xl bg-white px-4 py-2 text-[13px] font-bold text-[#D9774B] shadow-sm transition hover:bg-[#FBF3EE]"
+                  >
+                    Change Time
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setValue('scheduledAt', undefined)}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-[#AAA39D] transition hover:bg-red-50 hover:text-red-500"
+                    title="Remove schedule"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4">
               <Label htmlFor="content" className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">
@@ -841,6 +853,15 @@ export default function NewPostPage() {
                   {fbType === 'REEL' && <Input placeholder="Reel title" {...register('reelTitle')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />}
                   <Input placeholder="Location" {...register('location')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
                   <SwitchRow label="Auto-fix media" description="Trim & reformat to platform specs" checked={fbAutoFix} onChange={(value) => setValue('facebookAutoFix', value)} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPlatform('FACEBOOK')}
+                    className="h-9 w-full rounded-xl border-[#D9E3D9] text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                  >
+                    <Edit3 className="mr-2 h-3.5 w-3.5" />
+                    {watch('facebookContent') ? 'Update Content' : 'Customize Content'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -852,6 +873,15 @@ export default function NewPostPage() {
                   <SegmentedOptions label="Post Type" options={['Post', 'Story']} value="Story" onChange={() => undefined} color={platformStyles.LINKEDIN.color} />
                   <SegmentedOptions label="Visibility" options={['Anyone', 'Connections']} value="Connections" onChange={() => undefined} color="#171717" />
                   <SwitchRow label="Auto-fix media" checked={true} onChange={() => undefined} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPlatform('LINKEDIN')}
+                    className="h-9 w-full rounded-xl border-[#D9E3D9] text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                  >
+                    <Edit3 className="mr-2 h-3.5 w-3.5" />
+                    {watch('linkedinContent') ? 'Update Content' : 'Customize Content'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -862,6 +892,15 @@ export default function NewPostPage() {
                 <div className="space-y-3 px-5 py-4">
                   <SegmentedOptions label="Who can reply" options={['everyone', 'following', 'mentionedUsers']} value={watch('twitterReplySettings') || 'everyone'} onChange={(value) => setValue('twitterReplySettings', value as any)} color={platformStyles.TWITTER.color} />
                   <Controller name="twitterAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" checked={field.value} onChange={field.onChange} />} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPlatform('TWITTER')}
+                    className="h-9 w-full rounded-xl border-[#D9E3D9] text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                  >
+                    <Edit3 className="mr-2 h-3.5 w-3.5" />
+                    {watch('twitterContent') ? 'Update Content' : 'Customize Content'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -873,6 +912,15 @@ export default function NewPostPage() {
                   <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={igType || 'FEED'} onChange={(value) => setValue('instagramPostType', value as any)} color={platformStyles.INSTAGRAM.color} />
                   {igType === 'REEL' && <SwitchRow label="Share Reel to Feed" checked={watch('shareToFeed')} onChange={(value) => setValue('shareToFeed', value)} />}
                   <SwitchRow label="Auto-fix media" description="Conforms to IG specs" checked={igAutoFix} onChange={(value) => setValue('instagramAutoFix', value)} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPlatform('INSTAGRAM')}
+                    className="h-9 w-full rounded-xl border-[#D9E3D9] text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                  >
+                    <Edit3 className="mr-2 h-3.5 w-3.5" />
+                    {watch('instagramContent') ? 'Update Content' : 'Customize Content'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -906,6 +954,15 @@ export default function NewPostPage() {
                       if (e.target.files?.[0]) setValue('youtubeThumbnail', e.target.files[0] as any);
                     }} />
                   </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPlatform('YOUTUBE')}
+                    className="h-9 w-full rounded-xl border-[#D9E3D9] text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                  >
+                    <Edit3 className="mr-2 h-3.5 w-3.5" />
+                    {watch('youtubeContent') ? 'Update Content' : 'Customize Content'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -913,8 +970,17 @@ export default function NewPostPage() {
             {selectedPlatforms?.includes('THREADS') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="THREADS" value="Post" />
-                <div className="px-4 py-4">
+                <div className="px-4 py-4 space-y-3">
                   <Controller name="threadsAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" description="Force 4:5 portrait for Threads" checked={field.value} onChange={field.onChange} />} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPlatform('THREADS')}
+                    className="h-9 w-full rounded-xl border-[#D9E3D9] text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                  >
+                    <Edit3 className="mr-2 h-3.5 w-3.5" />
+                    {watch('threadsContent') ? 'Update Content' : 'Customize Content'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -933,6 +999,15 @@ export default function NewPostPage() {
                     <p className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-700">No boards found. Create one on Pinterest first.</p>
                   )}
                   <Input placeholder="Destination link" {...register('pinterestLink')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPlatform('PINTEREST')}
+                    className="h-9 w-full rounded-xl border-[#D9E3D9] text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                  >
+                    <Edit3 className="mr-2 h-3.5 w-3.5" />
+                    {watch('pinterestContent') ? 'Update Content' : 'Customize Content'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -940,8 +1015,17 @@ export default function NewPostPage() {
             {selectedPlatforms?.includes('SNAPCHAT') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="SNAPCHAT" value={watch('snapchatPostType') || 'STORY'} />
-                <div className="px-4 py-4">
+                <div className="px-4 py-4 space-y-3">
                   <SegmentedOptions label="Post Type" options={['STORY', 'SPOTLIGHT']} value={watch('snapchatPostType') || 'STORY'} onChange={(value) => setValue('snapchatPostType', value as any)} color={platformStyles.SNAPCHAT.color} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPlatform('SNAPCHAT')}
+                    className="h-9 w-full rounded-xl border-[#D9E3D9] text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                  >
+                    <Edit3 className="mr-2 h-3.5 w-3.5" />
+                    {watch('snapchatContent') ? 'Update Content' : 'Customize Content'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -954,7 +1038,22 @@ export default function NewPostPage() {
         </aside>
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#D9E3D9] bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur-sm lg:left-[280px]">
+      <ContentEditorModal
+        platform={editingPlatform}
+        onClose={() => setEditingPlatform(null)}
+        globalContent={watch('content')}
+        customContent={editingPlatform ? watch(`${editingPlatform.toLowerCase()}Content` as any) : ''}
+        onSave={(content) => {
+          if (editingPlatform) {
+            setValue(`${editingPlatform.toLowerCase()}Content` as any, content);
+          }
+          setEditingPlatform(null);
+        }}
+        mediaFiles={mediaFiles}
+      />
+
+
+      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#D9E3D9] bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur-sm lg:left-[300px]">
         <div className="flex min-h-16 flex-col gap-3 px-5 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <button
             type="button"
@@ -977,13 +1076,23 @@ export default function NewPostPage() {
               Save Draft
             </button>
             <button
-              type="submit"
-              onClick={() => { setShowScheduler(false); setValue('publishNow', false); }}
+              type={scheduledAt ? "submit" : "button"}
+              onClick={() => { 
+                if (!scheduledAt) {
+                  setShowScheduler(true);
+                }
+                setValue('publishNow', false); 
+              }}
               disabled={createPostMutation.isPending}
-              className="flex items-center gap-1.5 rounded-xl border border-[#D27D50]/30 bg-white px-4 py-2 text-sm font-semibold text-[#D27D50] transition hover:bg-[#FBF3EE]"
+              className={cn(
+                "flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-semibold transition",
+                scheduledAt 
+                  ? "border-[#D27D50] bg-[#FBF3EE] text-[#D27D50] shadow-[0_2px_8px_rgba(210,125,80,0.1)]" 
+                  : "border-[#D27D50]/30 bg-white text-[#D27D50] hover:bg-[#FBF3EE]"
+              )}
             >
               <Calendar className="h-3.5 w-3.5" />
-              Schedule
+              {scheduledAt ? `Schedule for ${format(scheduledAt, 'MMM d')}` : 'Schedule'}
             </button>
             <button
               type="submit"
@@ -1022,6 +1131,226 @@ function OverrideHeader({ platform, value }: { platform: string; value?: string 
     </div>
   );
 }
+
+import { AnimatePresence, motion } from 'framer-motion';
+
+function ContentEditorModal({
+  platform,
+  onClose,
+  globalContent,
+  customContent,
+  onSave,
+  mediaFiles
+}: {
+  platform: string | null;
+  onClose: () => void;
+  globalContent: string;
+  customContent: string;
+  onSave: (content: string) => void;
+  mediaFiles: File[];
+}) {
+  const [content, setContent] = useState(customContent || globalContent || '');
+
+  useEffect(() => {
+    if (platform) {
+      setContent(customContent || globalContent || '');
+    }
+  }, [platform, globalContent, customContent]);
+
+  if (!platform) return null;
+
+  const config = platformStyles[platform];
+  const Icon = config.icon;
+
+  const handleResetToGlobal = () => {
+    setContent(globalContent || '');
+  };
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-[#1A1816]/60 backdrop-blur-md"
+          onClick={onClose}
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="relative w-full max-w-[1000px] overflow-hidden rounded-[32px] border border-[#D9E3D9] bg-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] max-h-[90vh] flex flex-col"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-[#F0F4F0] px-8 py-5">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm" style={{ backgroundColor: config.bg }}>
+                <Icon className="h-6 w-6" style={{ color: config.color }} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-[#171717]">Customize for {config.name}</h2>
+                <p className="text-[13px] text-[#AAA39D]">Override global content for this platform only</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-6">
+              <button onClick={onClose} className="rounded-full bg-[#F2F6F2] p-2 text-[#AAA39D] hover:text-[#2F281F] transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-[1fr_400px] overflow-hidden flex-1">
+            {/* Editor Area */}
+            <div className="flex flex-col p-8 overflow-y-auto custom-scrollbar">
+              <div className="flex-1">
+                <Label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-[#AAA39D]">Channel Content</Label>
+                <div className="relative">
+                  <Textarea
+                    value={content}
+                    onChange={(e) => {
+                      setContent(e.target.value);
+                    }}
+                    placeholder="Write something specific for this platform..."
+                    className="h-[300px] w-full resize-none rounded-3xl border-2 border-[#F0F4F0] bg-[#F8FAF8] p-6 text-[16px] leading-relaxed transition focus:border-[#D27D50]/30 focus:ring-0"
+                  />
+                  <div className="absolute bottom-6 right-6 flex items-center gap-2">
+                     <span className="text-[12px] font-medium text-[#AAA39D]">{(content?.length || 0)} / 2200</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex items-center gap-3">
+                  <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2F6F2] text-stone-500 hover:bg-[#EEF3EE]"><Smile className="h-5 w-5" /></button>
+                  <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2F6F2] text-stone-500 hover:bg-[#EEF3EE]"><Hash className="h-5 w-5" /></button>
+                  <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2F6F2] text-stone-500 hover:bg-[#EEF3EE]"><AtSign className="h-5 w-5" /></button>
+                  <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2F6F2] text-stone-500 hover:bg-[#EEF3EE]"><Paperclip className="h-5 w-5" /></button>
+                  <div className="group relative">
+                    <button className="ml-2 flex items-center gap-2 rounded-xl bg-[#FBF3EE] px-4 py-2 text-[13px] font-bold text-[#D9774B] transition-all hover:bg-[#F2E5DC]">
+                      <Sparkles className="h-4 w-4" />
+                      AI Adapt
+                    </button>
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 hidden w-72 -translate-x-1/2 rounded-2xl bg-[#171717] p-4 text-[12px] leading-relaxed text-white shadow-2xl group-hover:block">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="h-4 w-4 text-[#D9774B]" />
+                        <span className="font-bold text-[13px]">AI Platform Adaptation</span>
+                      </div>
+                      Automatically re-writes your global content to match <span className="font-bold text-[#D9774B]">{config.name}'s</span> specific tone, character limits, and trending hashtag styles for maximum engagement.
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#171717]" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                   <Label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-[#AAA39D]">Suggested Hashtags</Label>
+                   <div className="flex flex-wrap gap-2">
+                     {['#NewDrop', '#LimitedEdition', '#ShopNow', '#socialmedia', '#contentcreator'].map(tag => (
+                       <button key={tag} onClick={() => setContent(prev => prev + ' ' + tag)} className="rounded-lg border border-[#D9E3D9] bg-white px-3 py-1.5 text-[12px] font-bold text-stone-600 hover:border-[#D27D50]/30 hover:bg-[#FBF3EE] hover:text-[#D27D50]">
+                         {tag}
+                       </button>
+                     ))}
+                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview Area */}
+            <div className="border-l border-[#F0F4F0] bg-[#F8FAF8] p-8 overflow-y-auto custom-scrollbar">
+              <div className="flex items-center gap-2 mb-6">
+                 <MousePointer2 className="h-4 w-4 text-[#D27D50]" />
+                 <h3 className="text-[14px] font-bold text-[#171717]">Live Preview</h3>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="w-full overflow-hidden rounded-3xl bg-white shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-[#F0F4F0]">
+                  {/* Content Header */}
+                  <div className="flex items-center gap-3 p-4 border-b border-[#F0F4F0]">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-0.5">
+                      <div className="h-full w-full rounded-full border-2 border-white bg-stone-200" />
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold leading-tight">Your Channel</p>
+                      <p className="text-[11px] text-stone-400">Previewing as {config.name}</p>
+                    </div>
+                  </div>
+
+                  {/* Media Preview */}
+                  <div className="aspect-square w-full bg-[#F8FAF8] flex items-center justify-center">
+                    {mediaFiles[0] ? (
+                      <img src={URL.createObjectURL(mediaFiles[0])} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-[#D9E3D9]">
+                        <Type className="h-16 w-16" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">No Media Selected</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Interaction Bar */}
+                  <div className="p-4">
+                    <div className="mb-3 flex items-center gap-4 text-stone-600">
+                      <Smile className="h-6 w-6 cursor-pointer hover:text-[#D27D50]" />
+                      <MessageSquareText className="h-6 w-6 cursor-pointer hover:text-[#D27D50]" />
+                      <Send className="h-6 w-6 cursor-pointer hover:text-[#D27D50]" />
+                      <Pin className="ml-auto h-6 w-6 cursor-pointer hover:text-[#D27D50]" />
+                    </div>
+                    
+                    {/* Caption area */}
+                    <div className="space-y-1 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+                      <p className="text-[14px] leading-relaxed text-[#171717]">
+                        <span className="font-bold mr-2 text-[#171717]">yourchannel</span>
+                        {content}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div className="mt-8 w-full space-y-3">
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm">
+                    <span className="text-[11px] text-stone-400">Caption</span>
+                    <span className="text-[12px] font-bold text-stone-700">{(content?.length || 0)} chars</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 shadow-sm">
+                    <span className="text-[11px] text-stone-400">Hashtags</span>
+                    <span className="text-[12px] font-bold text-stone-700">{(content?.match(/#/g) || []).length}</span>
+                  </div>
+                  
+                  <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-2.5 flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[11px] font-bold text-green-700 uppercase tracking-wider">Optimized for {config.name}</span>
+                  </div>
+                </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sticky Modal Footer */}
+            <div className="flex-none border-t border-[#F0F4F0] px-8 py-5 bg-white flex items-center justify-between">
+               <button
+                  type="button"
+                  onClick={handleResetToGlobal}
+                  className="flex items-center gap-2 text-[13px] font-bold text-stone-400 hover:text-[#D27D50] transition-colors"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Reset to Global Content
+                </button>
+                <div className="flex items-center gap-3">
+                   <Button variant="ghost" onClick={onClose} className="rounded-xl font-bold">Cancel</Button>
+                   <Button 
+                    onClick={() => onSave(content)} 
+                    className="h-11 rounded-xl bg-[#D27D50] px-10 font-bold text-white shadow-lg shadow-[#D27D50]/20 hover:bg-[#C06A3D] transition-all active:scale-95"
+                   >
+                     Update Content
+                   </Button>
+                </div>
+            </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+}
+
+import { RotateCcw } from 'lucide-react';
 
 function SegmentedOptions({
   label,

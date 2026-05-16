@@ -100,10 +100,13 @@ export class PostWorker {
 
       // 3. Prepare platform-specific payload
       const adapter = this.getAdapter(platform);
-      const payload = adapter.prepareContent(content, platform);
-      payload.mediaUrls = adapter.formatMediaUrls(mediaUrls, platform);
       
       const customOptions = post.platformOptions ? (post.platformOptions as any)[platform] : {};
+      const platformContent = customOptions.content || content;
+      
+      const payload = adapter.prepareContent(platformContent, platform);
+      payload.mediaUrls = adapter.formatMediaUrls(mediaUrls, platform);
+
 
       payload.platformSpecificFields = {
         accessToken,

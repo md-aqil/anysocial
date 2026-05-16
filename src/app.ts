@@ -10,6 +10,7 @@ import RedisStore from 'connect-redis';
 import { pinoHttp } from 'pino-http';
 
 import { logger } from './logger/pino.js';
+import { requestId } from './middleware/request-id.js';
 import { routes } from './routes/index.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { rateLimiter } from './middleware/rate-limiter.js';
@@ -89,6 +90,9 @@ app.use(
     }
   })
 );
+
+// Attach a request id early for correlation in logs and responses
+app.use(requestId);
 
 // HTTP request logging with Pino
 app.use(
