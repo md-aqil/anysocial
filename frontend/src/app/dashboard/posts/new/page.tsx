@@ -518,7 +518,7 @@ export default function NewPostPage() {
         </div>
       )}
       <div className="flex min-h-[calc(100vh-64px)]">
-        <aside className="hidden w-20 shrink-0 border-r border-[#D9E3D9] bg-white px-5 pb-24 pt-6 lg:block">
+        <aside className="sticky top-0 hidden h-[calc(100vh-64px)] w-20 shrink-0 border-r border-[#D9E3D9] bg-white px-5 pb-24 pt-6 lg:block">
           <p className="mb-4 text-center text-[9px] font-bold uppercase text-[#AAA39D]">Channels</p>
           <div className="flex flex-col items-center gap-2.5">
             {accountsData?.accounts?.map((account) => {
@@ -835,7 +835,7 @@ export default function NewPostPage() {
           </div>
         </main>
 
-        <aside className="h-[calc(100vh-64px)] w-full shrink-0 overflow-y-auto border-l border-[#D9E3D9] bg-white pb-24 xl:w-[320px]">
+        <aside className="sticky top-0 h-[calc(100vh-64px)] w-full shrink-0 overflow-y-auto border-l border-[#D9E3D9] bg-white pb-24 xl:w-[320px]">
           <div className="sticky top-0 z-10 border-b border-[#D9E3D9] bg-white/80 px-6 py-4 backdrop-blur-sm">
             <h2 className="text-[16px] font-bold tracking-tight text-[#24211E]">Settings</h2>
             <p className="mt-0.5 text-[12px] text-[#AAA39D]">Configure platform-specific options.</p>
