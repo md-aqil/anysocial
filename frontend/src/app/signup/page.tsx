@@ -51,9 +51,13 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Create Account</CardTitle>
-          <CardDescription>Enter your details to get started</CardDescription>
+        <CardHeader className="flex flex-col items-center">
+          <div className="mb-6 flex h-16 w-48 items-center justify-center overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="SocialSched" className="h-full w-auto object-contain" />
+          </div>
+          <CardTitle className="text-2xl font-black text-slate-900">Start Creating</CardTitle>
+          <CardDescription className="text-stone-500 font-medium text-center">Join thousands of creators managing their world.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

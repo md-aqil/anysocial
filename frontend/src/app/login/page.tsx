@@ -46,9 +46,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+        <CardHeader className="flex flex-col items-center">
+          <div className="mb-6 flex h-16 w-48 items-center justify-center overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="SocialSched" className="h-full w-auto object-contain" />
+          </div>
+          <CardTitle className="text-2xl font-black text-slate-900">Welcome Back</CardTitle>
+          <CardDescription className="text-stone-500 font-medium text-center">Broadcast your message to the world.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

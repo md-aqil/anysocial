@@ -13,42 +13,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import {
-  AlertCircle,
-  AtSign,
-  Calendar,
-  Check,
-  CircleHelp,
-  Clock,
-  Facebook,
-  FileText,
-  Hash,
-  ImageDown,
-  Instagram,
-  Linkedin,
-  Loader2,
-  Moon,
-  Music2,
-  Paperclip,
-  Pin,
-  Play,
-  Plus,
-  Send,
-  Smile,
-  Sparkles,
-  Sun,
-  Twitter,
-  Upload,
-  Video,
-  Wand2,
-  X,
-  Youtube,
-  Zap,
-  Edit3,
-  MessageSquareText,
-  MousePointer2,
-  Type
+import { 
+  AlertCircle, Calendar, Check, CircleHelp, Clock, FileText, 
+  Loader2, Moon, Plus, Sun, Upload, X, Zap, Edit3, ImageDown,
+  Paperclip, Play, Send, Smile, Wand2, Hash, Video, Music2,
+  AtSign, Pin, Sparkles, MessageSquareText, MousePointer2, Type, RotateCcw
 } from 'lucide-react';
+import { 
+  InstagramLogo, FacebookLogo, LinkedinLogo, TwitterLogo, 
+  TiktokLogo, YoutubeLogo, ThreadsLogo, PinterestLogo, SnapchatLogo 
+} from '@/components/icons/social-icons';
 import { Switch } from '@/components/ui/switch';
 import { DayPicker } from 'react-day-picker';
 import { formatDistanceToNow, format, isAfter } from 'date-fns';
@@ -100,15 +74,15 @@ const platformStyles: Record<string, {
   color: string;
   bg: string;
 }> = {
-  FACEBOOK: { name: 'Facebook', icon: Facebook, color: '#1877F2', bg: '#EBF4FF' },
-  INSTAGRAM: { name: 'Instagram', icon: Instagram, color: '#E4405F', bg: '#FFF0F3' },
-  LINKEDIN: { name: 'LinkedIn', icon: Linkedin, color: '#0A66C2', bg: '#EBF4FF' },
-  TWITTER: { name: 'X / Twitter', icon: Twitter, color: '#111111', bg: '#F3F4F6' },
-  TIKTOK: { name: 'TikTok', icon: Music2, color: '#111111', bg: '#F3F4F6' },
-  YOUTUBE: { name: 'YouTube', icon: Youtube, color: '#FF0000', bg: '#FFF1F1' },
-  THREADS: { name: 'Threads', icon: AtSign, color: '#111111', bg: '#F3F4F6' },
-  PINTEREST: { name: 'Pinterest', icon: Pin, color: '#E60023', bg: '#FFF1F1' },
-  SNAPCHAT: { name: 'Snapchat', icon: Sparkles, color: '#B89400', bg: '#FFF8D9' },
+  FACEBOOK: { name: 'Facebook', icon: FacebookLogo, color: '#1877F2', bg: '#EBF4FF' },
+  INSTAGRAM: { name: 'Instagram', icon: InstagramLogo, color: '#E4405F', bg: '#FFF0F3' },
+  LINKEDIN: { name: 'LinkedIn', icon: LinkedinLogo, color: '#0A66C2', bg: '#EBF4FF' },
+  TWITTER: { name: 'X / Twitter', icon: TwitterLogo, color: '#111111', bg: '#F3F4F6' },
+  TIKTOK: { name: 'TikTok', icon: TiktokLogo, color: '#111111', bg: '#F3F4F6' },
+  YOUTUBE: { name: 'YouTube', icon: YoutubeLogo, color: '#FF0000', bg: '#FFF1F1' },
+  THREADS: { name: 'Threads', icon: ThreadsLogo, color: '#111111', bg: '#F3F4F6' },
+  PINTEREST: { name: 'Pinterest', icon: PinterestLogo, color: '#E60023', bg: '#FFF1F1' },
+  SNAPCHAT: { name: 'Snapchat', icon: SnapchatLogo, color: '#B89400', bg: '#FFF8D9' },
 };
 
 const platforms = [
@@ -143,6 +117,7 @@ export default function NewPostPage() {
   } = useComposerStore();
 
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -153,6 +128,19 @@ export default function NewPostPage() {
     queryKey: ['accounts'],
     queryFn: () => api.oauth.getAccounts(),
   });
+
+  // Trigger onboarding popup for new users or no selection
+  useEffect(() => {
+    if (!accountsData) return;
+    
+    const timer = setTimeout(() => {
+      if (accountsData.accounts.length === 0 || selectedPlatforms.length === 0) {
+        setShowOnboarding(true);
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [accountsData, selectedPlatforms.length]);
 
   const { data: rules } = useQuery({
     queryKey: ['platform-rules'],
@@ -518,16 +506,19 @@ export default function NewPostPage() {
         </div>
       )}
       <div className="flex min-h-[calc(100vh-64px)]">
-        <aside className="sticky top-0 hidden h-[calc(100vh-64px)] w-20 shrink-0 border-r border-[#D9E3D9] bg-white px-5 pb-24 pt-6 lg:block">
-          <p className="mb-4 text-center text-[9px] font-bold uppercase text-[#AAA39D]">Channels</p>
-          <div className="flex flex-col items-center gap-2.5">
+        <aside className="sticky top-0 hidden h-[calc(100vh-64px)] w-24 shrink-0 border-r border-[#D9E3D9] bg-white/80 backdrop-blur-md px-4 pb-24 pt-8 lg:block z-40">
+          <div className="flex flex-col items-center gap-4">
+            <div className="mb-2 text-center">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Hub</p>
+            </div>
+            
             {accountsData?.accounts?.map((account) => {
               const platformId = account.platform.toUpperCase();
               const config = platformStyles[platformId];
               if (!config) return null;
 
               const selected = selectedPlatforms?.includes(platformId);
-              const Icon = config.icon;
+              const Logo = config.icon;
               const accountName = account.metadata?.accountName || account.externalAccountId;
 
               return (
@@ -536,33 +527,49 @@ export default function NewPostPage() {
                   type="button"
                   onClick={() => handlePlatformToggle(platformId)}
                   className={cn(
-                    'relative flex h-10 w-10 items-center justify-center rounded-2xl transition',
-                    selected ? 'shadow-[0_8px_18px_rgba(0,0,0,0.10)]' : 'bg-[#EEF3EE]',
-                    activePlatform === platformId && "ring-2 ring-[#D27D50] ring-offset-2"
+                    'group relative flex h-14 w-14 items-center justify-center rounded-[22px] transition-all duration-300',
+                    selected 
+                      ? 'shadow-[0_10px_20px_rgba(0,0,0,0.08)] scale-105' 
+                      : 'bg-white border border-[#D9E3D9] hover:border-[#D27D50]/30 hover:bg-[#F9FAF9]',
+                    activePlatform === platformId && "ring-2 ring-[#D27D50] ring-offset-4"
                   )}
                   style={{ backgroundColor: selected ? config.bg : undefined }}
                   title={`${accountName} (${config.name})`}
                 >
-                  <Icon className="h-5 w-5" style={{ color: selected ? config.color : '#AAA39D' }} strokeWidth={2.2} />
+                  <Logo 
+                    className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" 
+                    style={{ color: selected ? config.color : '#A1A1AA' }} 
+                    strokeWidth={selected ? 2.5 : 2} 
+                  />
+                  
                   {selected && (
-                    <span
-                      className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-white shadow-sm"
+                    <motion.span
+                      layoutId={`active-dot-${account.id}`}
+                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white shadow-sm"
                       style={{ backgroundColor: config.color }}
                     >
-                      <Check className="h-2.5 w-2.5 text-white" strokeWidth={4} />
-                    </span>
+                      <Check className="h-3 w-3 text-white" strokeWidth={4} />
+                    </motion.span>
                   )}
+                  
+                  <div className="absolute left-full ml-4 hidden group-hover:block z-50">
+                    <div className="whitespace-nowrap rounded-lg bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white shadow-xl">
+                      {accountName}
+                    </div>
+                  </div>
                 </button>
               );
             })}
-            <div className="my-1.5 h-px w-10 bg-[#D9E3D9]" />
+            
+            <div className="my-4 h-px w-12 bg-[#D9E3D9]" />
+            
             <button
               type="button"
               onClick={() => router.push('/dashboard/social-accounts')}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border-2 border-dashed border-[#D9E3D9] text-[#AAA39D]"
+              className="flex h-14 w-14 items-center justify-center rounded-[22px] border-2 border-dashed border-[#D9E3D9] text-stone-300 transition-all hover:border-[#D27D50] hover:text-[#D27D50] hover:bg-[#FBF3EE]"
               aria-label="Add channel"
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-6 w-6" strokeWidth={3} />
             </button>
           </div>
         </aside>
@@ -1056,6 +1063,113 @@ export default function NewPostPage() {
         mediaFiles={mediaFiles}
       />
 
+      {/* Onboarding / Channel Selection Modal */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" 
+              onClick={() => setShowOnboarding(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl"
+            >
+              <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden">
+                <div className="p-10 pb-6">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-14 w-14 rounded-2xl bg-[#FBF3EE] flex items-center justify-center text-[#D27D50]">
+                      <Zap className="h-8 w-8" />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-black text-slate-900 tracking-tight">Choose Your Channels</h2>
+                      <p className="text-stone-500 font-medium mt-1">Select where you want to broadcast your next masterpiece.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4">
+                    {accountsData?.accounts.length === 0 ? (
+                      <div className="col-span-full py-12 flex flex-col items-center justify-center text-center bg-[#F8FAF8] rounded-3xl border-2 border-dashed border-[#D9E3D9]">
+                        <div className="h-16 w-16 rounded-full bg-white flex items-center justify-center shadow-sm mb-4">
+                          <Plus className="h-8 w-8 text-[#D27D50]" />
+                        </div>
+                        <h3 className="text-lg font-black text-slate-900">No accounts linked yet</h3>
+                        <p className="text-stone-400 text-sm mt-1 max-w-[240px]">Connect your social profiles to start scheduling posts.</p>
+                        <Button 
+                          onClick={() => router.push('/dashboard/social-accounts')}
+                          className="mt-6 bg-[#D27D50] hover:bg-[#B86A42] text-white px-8 rounded-xl font-bold"
+                        >
+                          Connect Now
+                        </Button>
+                      </div>
+                    ) : (
+                      accountsData?.accounts.map((account) => {
+                        const platformId = account.platform.toUpperCase();
+                        const config = platformStyles[platformId];
+                        if (!config) return null;
+                        const isSelected = selectedPlatforms.includes(platformId);
+                        const Logo = config.icon;
+                        
+                        return (
+                          <button
+                            key={account.id}
+                            type="button"
+                            onClick={() => handlePlatformToggle(platformId)}
+                            className={cn(
+                              "relative group flex flex-col items-center gap-4 p-6 rounded-[32px] border-2 transition-all duration-300",
+                              isSelected 
+                                ? "bg-white border-[#D27D50] shadow-[0_12px_24px_rgba(210,125,80,0.1)]" 
+                                : "bg-[#F8FAF8] border-transparent hover:bg-white hover:border-[#D9E3D9]"
+                            )}
+                          >
+                            <div 
+                              className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110"
+                              style={{ backgroundColor: isSelected ? config.bg : 'white' }}
+                            >
+                              <Logo className="h-6 w-6" style={{ color: isSelected ? config.color : '#A1A1AA' }} />
+                            </div>
+                            <span className={cn(
+                              "text-xs font-black uppercase tracking-widest",
+                              isSelected ? "text-slate-900" : "text-stone-400"
+                            )}>
+                              {config.name}
+                            </span>
+                            
+                            {isSelected && (
+                              <div className="absolute top-3 right-3 h-5 w-5 rounded-full bg-[#D27D50] flex items-center justify-center">
+                                <Check className="h-3 w-3 text-white" strokeWidth={4} />
+                              </div>
+                            )}
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-8 bg-[#F8FAF8] border-t border-[#D9E3D9] flex items-center justify-between">
+                  <p className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">
+                    {selectedPlatforms.length} Channel{selectedPlatforms.length !== 1 ? 's' : ''} Selected
+                  </p>
+                  <Button 
+                    onClick={() => setShowOnboarding(false)}
+                    disabled={selectedPlatforms.length === 0}
+                    className="bg-slate-900 hover:bg-slate-800 text-white px-10 h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg disabled:opacity-50"
+                  >
+                    Start Composing
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
 
       <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#D9E3D9] bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur-sm lg:left-[300px]">
         <div className="flex min-h-16 flex-col gap-3 px-5 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-8">
@@ -1154,6 +1268,7 @@ function ContentEditorModal({
   mediaFiles: File[];
 }) {
   const [content, setContent] = useState(customContent || globalContent || '');
+  const [isAdapting, setIsAdapting] = useState(false);
 
   useEffect(() => {
     if (platform) {
@@ -1168,6 +1283,19 @@ function ContentEditorModal({
 
   const handleResetToGlobal = () => {
     setContent(globalContent || '');
+  };
+
+  const handleAiAdapt = async () => {
+    if (!content) return;
+    setIsAdapting(true);
+    try {
+      const result = await api.ai.adaptContent(content, platform);
+      setContent(result.adaptedContent);
+    } catch (err) {
+      console.error('Failed to adapt content', err);
+    } finally {
+      setIsAdapting(false);
+    }
   };
 
   return (
@@ -1197,7 +1325,26 @@ function ContentEditorModal({
                 <p className="text-[13px] text-[#AAA39D]">Override global content for this platform only</p>
               </div>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleResetToGlobal}
+                className="flex items-center gap-1.5 text-[12px] font-bold text-stone-400 hover:text-[#D27D50] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#FBF3EE]"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset
+              </button>
+              <div className="h-6 w-px bg-[#F0F4F0]" />
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" onClick={onClose} className="h-10 px-4 rounded-xl font-bold text-[13px]">Cancel</Button>
+                <Button 
+                  onClick={() => onSave(content)} 
+                  className="h-10 rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all active:scale-95 text-[13px]"
+                >
+                  Save Changes
+                </Button>
+              </div>
+              <div className="h-6 w-px bg-[#F0F4F0]" />
               <button onClick={onClose} className="rounded-full bg-[#F2F6F2] p-2 text-[#AAA39D] hover:text-[#2F281F] transition-colors">
                 <X className="h-5 w-5" />
               </button>
@@ -1229,9 +1376,16 @@ function ContentEditorModal({
                   <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2F6F2] text-stone-500 hover:bg-[#EEF3EE]"><AtSign className="h-5 w-5" /></button>
                   <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2F6F2] text-stone-500 hover:bg-[#EEF3EE]"><Paperclip className="h-5 w-5" /></button>
                   <div className="group relative">
-                    <button className="ml-2 flex items-center gap-2 rounded-xl bg-[#FBF3EE] px-4 py-2 text-[13px] font-bold text-[#D9774B] transition-all hover:bg-[#F2E5DC]">
-                      <Sparkles className="h-4 w-4" />
-                      AI Adapt
+                    <button 
+                      onClick={handleAiAdapt}
+                      disabled={isAdapting || !content}
+                      className={cn(
+                        "ml-2 flex items-center gap-2 rounded-xl bg-[#FBF3EE] px-4 py-2 text-[13px] font-bold text-[#D9774B] transition-all hover:bg-[#F2E5DC]",
+                        isAdapting && "opacity-70 cursor-not-allowed"
+                      )}
+                    >
+                      {isAdapting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {isAdapting ? 'Adapting...' : 'AI Adapt'}
                     </button>
                     <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 hidden w-72 -translate-x-1/2 rounded-2xl bg-[#171717] p-4 text-[12px] leading-relaxed text-white shadow-2xl group-hover:block">
                       <div className="flex items-center gap-2 mb-2">
@@ -1328,33 +1482,12 @@ function ContentEditorModal({
               </div>
             </div>
 
-            {/* Sticky Modal Footer */}
-            <div className="flex-none border-t border-[#F0F4F0] px-8 py-5 bg-white flex items-center justify-between">
-               <button
-                  type="button"
-                  onClick={handleResetToGlobal}
-                  className="flex items-center gap-2 text-[13px] font-bold text-stone-400 hover:text-[#D27D50] transition-colors"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Reset to Global Content
-                </button>
-                <div className="flex items-center gap-3">
-                   <Button variant="ghost" onClick={onClose} className="rounded-xl font-bold">Cancel</Button>
-                   <Button 
-                    onClick={() => onSave(content)} 
-                    className="h-11 rounded-xl bg-[#D27D50] px-10 font-bold text-white shadow-lg shadow-[#D27D50]/20 hover:bg-[#C06A3D] transition-all active:scale-95"
-                   >
-                     Update Content
-                   </Button>
-                </div>
-            </div>
         </motion.div>
       </div>
     </AnimatePresence>
   );
 }
 
-import { RotateCcw } from 'lucide-react';
 
 function SegmentedOptions({
   label,

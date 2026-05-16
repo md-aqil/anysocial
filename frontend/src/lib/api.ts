@@ -300,6 +300,11 @@ export const api = {
 
       return response.json();
     },
+    adaptContent: (content: string, platform: string) =>
+      request<{ adaptedContent: string }>('/api/ai/adapt-content', {
+        method: 'POST',
+        body: JSON.stringify({ content, platform }),
+      }),
   },
 };
 

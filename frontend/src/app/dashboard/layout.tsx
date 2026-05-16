@@ -161,7 +161,7 @@ export default function DashboardLayout({
             <span className="text-[#D9E3D9]">›</span>
             <span className="font-bold text-[#3C342C]">Create New</span>
           </div>
-          <div className="mx-auto hidden h-10 w-[380px] items-center gap-3 rounded-xl bg-[#F0F4F0] px-4 text-[#AAA39D] lg:flex">
+          <div className="ml-auto hidden h-10 w-[380px] items-center gap-3 rounded-xl bg-[#F0F4F0] px-4 text-[#AAA39D] lg:flex">
             <Search className="h-4 w-4" strokeWidth={1.8} />
             <span className="text-[15px]">Search posts, analytics...</span>
           </div>
@@ -184,10 +184,10 @@ export default function DashboardLayout({
 function Brand() {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D9774B] text-white">
-        <Star className="h-4 w-4 fill-current" />
-      </span>
-      <span className="text-[17px] font-bold tracking-tight text-[#3C342C]">SocialSched</span>
+      <div className="flex h-12 w-32 items-center justify-start overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="SocialSched" className="h-full w-auto object-contain" />
+      </div>
     </div>
   );
 }
