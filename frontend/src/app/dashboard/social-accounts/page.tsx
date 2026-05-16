@@ -308,11 +308,11 @@ export default function SocialAccountsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-6 w-6 text-purple-500" />
-                Select Accounts to Connect
+                Select Channels to Connect
               </CardTitle>
               <CardDescription>
-                We found multiple {selectionPlatform || 'social'} accounts. 
-                Please select the ones you want to manage in Anyshare.
+                We found multiple {selectionPlatform || 'social'} channels. 
+                Please select the ones you want to manage in SocialSched.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -413,9 +413,9 @@ export default function SocialAccountsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="text-center flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Connect Social Accounts</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Connect Social Channels</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto mt-2">
-            Link your social media accounts to schedule and publish content across multiple platforms.
+            Link your social media channels to schedule and publish content across multiple platforms.
             Click on any platform below to connect it instantly.
           </p>
         </div>
@@ -605,9 +605,9 @@ export default function SocialAccountsPage() {
       {accounts.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Connected Accounts Summary</CardTitle>
+            <CardTitle>Connected Channels Summary</CardTitle>
             <CardDescription>
-              Overview of all your connected social media accounts
+              Overview of all your connected social media channels
             </CardDescription>
           </CardHeader>
           <CardContent>

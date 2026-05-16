@@ -52,7 +52,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Connected Accounts</CardTitle>
+            <CardTitle className="text-sm font-medium">Connected Channels</CardTitle>
             <Link2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -87,11 +87,11 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* Connected Accounts */}
+        {/* Connected Channels */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Connected Accounts</CardTitle>
+              <CardTitle>Connected Channels</CardTitle>
               <CardDescription>Your linked social media platforms</CardDescription>
             </div>
             <Link href="/dashboard/social-accounts">

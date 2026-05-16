@@ -14,19 +14,19 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3002/api/:path*',
+        destination: 'http://localhost:3001/api/:path*',
       },
       {
         source: '/oauth/:path*',
-        destination: 'http://localhost:3002/oauth/:path*',
+        destination: 'http://localhost:3001/oauth/:path*',
       },
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:3002/uploads/:path*',
+        destination: 'http://localhost:3001/uploads/:path*',
       },
       {
         source: '/health',
-        destination: 'http://localhost:3002/health',
+        destination: 'http://localhost:3001/health',
       },
     ];
   },

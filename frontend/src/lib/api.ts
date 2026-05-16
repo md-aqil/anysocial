@@ -296,7 +296,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
     getStatus: (taskId: string) =>
-      request<{ status: string; asset?: any }>(`/api/ai/status/${taskId}`),
+      request<{ status: string; asset?: any; logs?: { message: string; timestamp: string }[] }>(`/api/ai/status/${taskId}`),
   },
 };
 
@@ -341,6 +341,7 @@ export interface PlatformOptions {
   reelTitle?: string;
   location?: string;
   shareToFeed?: boolean;
+  customThumbnail?: File | null;
 }
 
 export interface CreatePostInput {

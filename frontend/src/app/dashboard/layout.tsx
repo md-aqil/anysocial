@@ -6,31 +6,27 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth-store';
 import {
-  LayoutDashboard,
-  Link2,
+  Bell,
+  BarChart3,
+  Grid2X2,
   FileText,
-  Plus,
   LogOut,
   Menu,
-  X,
-  Sun,
-  Moon,
-  BarChart3,
-  Webhook,
+  Plus,
+  Search,
+  Settings,
   Share2,
-  Sparkles,
-  Calendar,
+  Star,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useTheme } from 'next-themes';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Accounts', href: '/dashboard/social-accounts', icon: Share2 },
-  { name: 'Magic Gen', href: '/dashboard/generate', icon: Sparkles },
-  { name: 'Drafts', href: '/dashboard/drafts', icon: FileText },
-  { name: 'Posts', href: '/dashboard/posts', icon: Calendar },
+  { name: 'Dashboard', href: '/dashboard', icon: Grid2X2 },
+  { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
+  { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+  { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
 ];
 
 export default function DashboardLayout({
@@ -40,7 +36,6 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
-  const { theme, setTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -49,19 +44,19 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F2F6F2] text-[#2F281F]">
       {/* Mobile sidebar */}
       <div className="lg:hidden">
         {sidebarOpen && (
           <div className="fixed inset-0 z-50">
             <div
-              className="fixed inset-0 bg-background/80"
+              className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm"
               onClick={() => setSidebarOpen(false)}
             />
-            <div className="fixed inset-y-0 left-0 z-50 w-64 bg-card border-r p-4">
+            <div className="fixed inset-y-0 left-0 z-50 w-[280px] max-w-[86vw] border-r border-[#D9E3D9] bg-white p-4 shadow-xl">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">socialsched</h2>
-                <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
+                <Brand />
+                <Button variant="ghost" size="icon" className="text-stone-500 hover:bg-[#F0F4F0]" onClick={() => setSidebarOpen(false)}>
                   <X className="h-5 w-5" />
                 </Button>
               </div>
@@ -74,10 +69,10 @@ export default function DashboardLayout({
                       href={item.href}
                       onClick={() => setSidebarOpen(false)}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium',
+                        'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition',
                         isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-[#F9EEE8] text-[#D9774B]'
+                          : 'text-[#7B746D] hover:bg-[#F7FAF7] hover:text-[#2F281F]'
                       )}
                     >
                       <item.icon className="h-5 w-5" />
@@ -87,9 +82,9 @@ export default function DashboardLayout({
                 })}
               </nav>
               <div className="absolute bottom-4 left-4 right-4">
-                <Button variant="outline" className="w-full" onClick={handleLogout}>
+                <Button variant="outline" className="w-full border-[#D9E3D9] bg-white text-[#C26032] hover:bg-[#F0F4F0]" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" />
-                  Logout
+                  Log Out
                 </Button>
               </div>
             </div>
@@ -98,77 +93,101 @@ export default function DashboardLayout({
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-1 bg-card border-r">
-          <div className="p-4 border-b">
-            <h2 className="text-xl font-bold">socialsched</h2>
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-[280px] lg:flex-col">
+        <div className="flex flex-1 flex-col border-r border-[#D9E3D9] bg-white">
+          <div className="flex h-16 items-center border-b border-[#D9E3D9] px-6">
+            <Brand />
           </div>
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 space-y-2 px-3 py-6">
             {navigation.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || (item.href === '/dashboard/posts' && pathname === '/dashboard/drafts');
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium',
+                    'relative flex min-h-[44px] items-center gap-4 rounded-xl px-4 text-[16px] font-semibold transition',
                     isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      ? 'bg-[#F9EEE8] text-[#D9774B]'
+                      : 'text-[#817A73] hover:bg-[#F7FAF7] hover:text-[#2F281F]'
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
+                  <item.icon className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+                  <span>{item.name}</span>
+                  {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-[#D9774B]" />}
                 </Link>
               );
             })}
           </nav>
-          <div className="p-4 border-t">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
-                {user?.name?.[0] || user?.email[0].toUpperCase()}
+          <div className="border-t border-[#D9E3D9] px-3 py-5">
+            <Link href="/dashboard" className="mb-4 flex min-h-[38px] items-center gap-4 px-4 text-[16px] font-semibold text-[#817A73] hover:text-[#2F281F]">
+              <Settings className="h-5 w-5" strokeWidth={1.8} />
+              Settings
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="mb-6 flex min-h-[38px] w-full items-center gap-4 px-4 text-left text-[16px] font-semibold text-[#C26032] hover:text-[#A64D22]"
+            >
+              <LogOut className="h-5 w-5" strokeWidth={1.8} />
+              Log Out
+            </button>
+            <div className="flex items-center gap-3 rounded-xl bg-[#F1F5F1] p-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#D27D50] text-sm font-bold text-white">
+                {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'A'}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.name || user?.email}</p>
+              <div className="min-w-0">
+                <p className="truncate text-[16px] font-bold leading-tight text-[#3C342C]">{user?.name || 'Alex Rivera'}</p>
+                <p className="text-[13px] leading-tight text-[#AAA39D]">Premium Plan</p>
               </div>
             </div>
-            <Button variant="outline" className="w-full" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
           </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
-        <div className="sticky top-0 z-40 flex items-center gap-4 bg-background border-b px-4 py-3">
+      <div className="lg:pl-[280px]">
+        <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-[#D9E3D9] bg-white px-4 lg:px-8">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="text-stone-600 hover:bg-[#F0F4F0] lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex-1" />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            <Sun className="h-5 w-5 dark:hidden" />
-            <Moon className="h-5 w-5 hidden dark:block" />
-          </Button>
-          <Link href="/dashboard/posts/new">
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              New Post
-            </Button>
-          </Link>
+          <div className="hidden items-center gap-3 text-[16px] font-medium lg:flex">
+            <Link href="/dashboard/posts" className="text-[#AAA39D]">Posts</Link>
+            <span className="text-[#D9E3D9]">›</span>
+            <span className="font-bold text-[#3C342C]">Create New</span>
+          </div>
+          <div className="mx-auto hidden h-10 w-[380px] items-center gap-3 rounded-xl bg-[#F0F4F0] px-4 text-[#AAA39D] lg:flex">
+            <Search className="h-4 w-4" strokeWidth={1.8} />
+            <span className="text-[15px]">Search posts, analytics...</span>
+          </div>
+          <div className="ml-auto flex items-center gap-5">
+            <div className="relative text-[#AAA39D]">
+              <Bell className="h-5 w-5" strokeWidth={1.8} />
+              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#D9774B]" />
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#D9E3D9] bg-[#F1F5F1] text-sm font-bold text-[#3C342C]">
+              {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'A'}
+            </div>
+          </div>
         </div>
-        <main className="p-4 lg:p-8">{children}</main>
+        <main>{children}</main>
       </div>
+    </div>
+  );
+}
+
+function Brand() {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D9774B] text-white">
+        <Star className="h-4 w-4 fill-current" />
+      </span>
+      <span className="text-[17px] font-bold tracking-tight text-[#3C342C]">SocialSched</span>
     </div>
   );
 }

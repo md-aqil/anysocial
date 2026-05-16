@@ -1,22 +1,47 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type ComponentType, type SVGProps } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { Upload, X, Video, AlertCircle, Wand2, Calendar, 
-  MapPin, Share2, Sparkles, Loader2, Search, ArrowRight,
-  ArrowLeft, ChevronRight, ChevronLeft, Heart, MessageCircle,
-  Clock, Zap, Moon, Sun, FileText
+import {
+  AlertCircle,
+  AtSign,
+  Calendar,
+  CircleHelp,
+  Clock,
+  Facebook,
+  FileText,
+  Hash,
+  ImageDown,
+  Instagram,
+  Linkedin,
+  Loader2,
+  Moon,
+  Music2,
+  Paperclip,
+  Pin,
+  Play,
+  Plus,
+  Send,
+  Smile,
+  Sparkles,
+  Sun,
+  Twitter,
+  Upload,
+  Video,
+  Wand2,
+  X,
+  Youtube,
+  Zap
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { DayPicker } from 'react-day-picker';
@@ -54,16 +79,34 @@ const postSchema = z.object({
 
 type PostForm = z.infer<typeof postSchema>;
 
+const platformStyles: Record<string, {
+  name: string;
+  label?: string;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  color: string;
+  bg: string;
+}> = {
+  FACEBOOK: { name: 'Facebook', icon: Facebook, color: '#1877F2', bg: '#EBF4FF' },
+  INSTAGRAM: { name: 'Instagram', icon: Instagram, color: '#E4405F', bg: '#FFF0F3' },
+  LINKEDIN: { name: 'LinkedIn', icon: Linkedin, color: '#0A66C2', bg: '#EBF4FF' },
+  TWITTER: { name: 'X / Twitter', icon: Twitter, color: '#111111', bg: '#F3F4F6' },
+  TIKTOK: { name: 'TikTok', icon: Music2, color: '#111111', bg: '#F3F4F6' },
+  YOUTUBE: { name: 'YouTube', icon: Youtube, color: '#FF0000', bg: '#FFF1F1' },
+  THREADS: { name: 'Threads', icon: AtSign, color: '#111111', bg: '#F3F4F6' },
+  PINTEREST: { name: 'Pinterest', icon: Pin, color: '#E60023', bg: '#FFF1F1' },
+  SNAPCHAT: { name: 'Snapchat', icon: Sparkles, color: '#B89400', bg: '#FFF8D9' },
+};
+
 const platforms = [
-  { id: 'FACEBOOK', name: 'Facebook', icon: '👥' },
-  { id: 'INSTAGRAM', name: 'Instagram', icon: '📷' },
-  { id: 'LINKEDIN', name: 'LinkedIn', icon: '💼' },
-  { id: 'TWITTER', name: 'Twitter/X', icon: '🐦' },
-  { id: 'TIKTOK', name: 'TikTok', icon: '🎵' },
-  { id: 'YOUTUBE', name: 'YouTube', icon: '🎬' },
-  { id: 'THREADS', name: 'Threads', icon: '🧵' },
-  { id: 'PINTEREST', name: 'Pinterest', icon: '📌' },
-  { id: 'SNAPCHAT', name: 'Snapchat', icon: '👻' }
+  { id: 'FACEBOOK', ...platformStyles.FACEBOOK },
+  { id: 'INSTAGRAM', ...platformStyles.INSTAGRAM },
+  { id: 'LINKEDIN', ...platformStyles.LINKEDIN },
+  { id: 'TWITTER', ...platformStyles.TWITTER },
+  { id: 'TIKTOK', ...platformStyles.TIKTOK },
+  { id: 'YOUTUBE', ...platformStyles.YOUTUBE },
+  { id: 'THREADS', ...platformStyles.THREADS },
+  { id: 'PINTEREST', ...platformStyles.PINTEREST },
+  { id: 'SNAPCHAT', ...platformStyles.SNAPCHAT },
 ];
 
 type LogEntry = { ts: string; level: 'info' | 'success' | 'error' | 'warn'; msg: string };
@@ -75,6 +118,7 @@ export default function NewPostPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [pinterestBoards, setPinterestBoards] = useState<any[]>([]);
   const [isLoadingBoards, setIsLoadingBoards] = useState(false);
+  const [activePlatform, setActivePlatform] = useState<string | null>(null);
 
   const { data: accountsData } = useQuery({
     queryKey: ['accounts'],
@@ -220,7 +264,9 @@ export default function NewPostPage() {
       twitterThreadMode: 'AUTO',
       twitterReplySettings: 'everyone',
       twitterAutoFix: true,
-      threadsAutoFix: true
+      threadsAutoFix: true,
+      shareToFeed: true,
+      platforms: []
     },
   });
 
@@ -246,9 +292,14 @@ export default function NewPostPage() {
   const handlePlatformToggle = (platformId: string) => {
     const current = selectedPlatforms || [];
     if (current.includes(platformId)) {
-      setValue('platforms', current.filter((p) => p !== platformId));
+      const next = current.filter((p) => p !== platformId);
+      setValue('platforms', next);
+      if (activePlatform === platformId) {
+        setActivePlatform(next[0] || null);
+      }
     } else {
       setValue('platforms', [...current, platformId]);
+      setActivePlatform(platformId);
     }
   };
 
@@ -273,6 +324,12 @@ export default function NewPostPage() {
   };
 
   const connectedPlatforms = accountsData?.accounts?.map((a) => a.platform) || [];
+
+  useEffect(() => {
+    if (!activePlatform && selectedPlatforms?.length > 0) {
+      setActivePlatform(selectedPlatforms[0]);
+    }
+  }, [selectedPlatforms, activePlatform]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -304,8 +361,9 @@ export default function NewPostPage() {
         if (post.platforms) setValue('platforms', post.platforms);
         
         // Load platform options if any
-        if (post.platformOptions) {
-          const opts: any = post.platformOptions;
+        const draftPlatformOptions = (post as any).platformOptions;
+        if (draftPlatformOptions) {
+          const opts: any = draftPlatformOptions;
           if (opts.FACEBOOK?.postType) setValue('facebookPostType', opts.FACEBOOK.postType);
           if (opts.INSTAGRAM?.postType) setValue('instagramPostType', opts.INSTAGRAM.postType);
           if (opts.YOUTUBE?.tags) setValue('youtubeTags', opts.YOUTUBE.tags);
@@ -424,784 +482,565 @@ export default function NewPostPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20">
-      <div>
-        <h1 className="text-3xl font-bold">Create Post</h1>
-        <p className="text-muted-foreground">Compose and schedule your social media posts</p>
-      </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="min-h-[calc(100vh-64px)] bg-[#F2F6F2] text-[#2F281F]">
+      <div className="flex min-h-[calc(100vh-64px)]">
+        <aside className="hidden w-16 shrink-0 border-r border-[#D9E3D9] bg-white px-2 pb-24 pt-6 lg:block">
+          <p className="mb-4 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Channels</p>
+          <div className="flex flex-col items-center gap-2.5">
+            {accountsData?.accounts?.map((account) => {
+              const platformId = account.platform.toUpperCase();
+              const config = platformStyles[platformId];
+              if (!config) return null;
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Post Content */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Post Details</CardTitle>
-            <CardDescription>Enter the content for your post</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Post Title (Optional)</Label>
-              <Input id="title" placeholder="Title for Facebook/YouTube" {...register('title')} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="content">Post Content *</Label>
-              <Textarea id="content" placeholder="What's on your mind?" rows={6} {...register('content')} />
-              {errors.content && <p className="text-sm text-destructive">{errors.content.message}</p>}
-            </div>
-          </CardContent>
-        </Card>
+              const selected = selectedPlatforms?.includes(platformId);
+              const Icon = config.icon;
+              const accountName = account.metadata?.accountName || account.externalAccountId;
 
-        {/* Platforms */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Select Platforms</CardTitle>
-                <CardDescription className="mt-0.5">Tap to toggle. Connected accounts shown.</CardDescription>
-              </div>
-              {selectedPlatforms?.length > 0 && (
-                <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-                  {selectedPlatforms.length} selected
-                </span>
-              )}
+              return (
+                <button
+                  key={account.id}
+                  type="button"
+                  onClick={() => {
+                    handlePlatformToggle(platformId);
+                    setActivePlatform(platformId);
+                  }}
+                  className={cn(
+                    'relative flex h-12 w-12 items-center justify-center rounded-2xl transition',
+                    selected ? 'shadow-[0_8px_18px_rgba(0,0,0,0.10)]' : 'bg-[#EEF3EE]',
+                    activePlatform === platformId && "ring-2 ring-[#D27D50] ring-offset-2"
+                  )}
+                  style={{ backgroundColor: selected ? config.bg : undefined }}
+                  title={`${accountName} (${config.name})`}
+                >
+                  <Icon className="h-5 w-5" style={{ color: selected ? config.color : '#AAA39D' }} strokeWidth={2.2} />
+                  <span
+                    className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white"
+                    style={{ backgroundColor: selected ? config.color : '#EEF3EE' }}
+                  />
+                </button>
+              );
+            })}
+            <div className="my-1.5 h-px w-10 bg-[#D9E3D9]" />
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/social-accounts')}
+              className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-dashed border-[#D9E3D9] text-[#AAA39D]"
+              aria-label="Add channel"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          </div>
+        </aside>
+
+        <main className="relative flex min-w-0 flex-1 flex-col bg-[#F2F6F2] px-5 pb-24 pt-8 lg:px-8">
+          <div className="mx-auto w-full max-w-[880px]">
+
+            <div className="space-y-4">
+              <Label htmlFor="content" className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">
+                Caption
+              </Label>
+              <Textarea
+                id="content"
+                placeholder="What do you want to share today?"
+                rows={8}
+                {...register('content')}
+                className="min-h-[250px] resize-none border-0 bg-transparent p-0 text-[20px] leading-relaxed text-[#2F281F] shadow-none outline-none placeholder:text-[#D7D2CE] focus-visible:ring-0"
+              />
+              {errors.content && <p className="text-sm font-semibold text-red-600">{errors.content.message}</p>}
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-              {platforms.map(platform => {
-                const isConnected = connectedPlatforms.includes(platform.id);
-                const isSelected = selectedPlatforms?.includes(platform.id);
-                return (
-                  <button
-                    key={platform.id}
-                    type="button"
-                    disabled={!isConnected}
-                    onClick={() => isConnected && handlePlatformToggle(platform.id)}
-                    className={cn(
-                      'relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 transition-all duration-150 text-center',
-                      isSelected
-                        ? 'border-primary bg-primary/5 shadow-sm shadow-primary/10'
-                        : isConnected
-                          ? 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 bg-white'
-                          : 'border-slate-100 bg-slate-50 opacity-40 cursor-not-allowed'
-                    )}
-                  >
-                    {isSelected && (
-                      <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-primary rounded-full flex items-center justify-center">
-                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 12 12">
-                          <path d="M10 3L5 8.5 2 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                        </svg>
-                      </span>
-                    )}
-                    <span className="text-xl leading-none">{platform.icon}</span>
-                    <span className={cn('text-[11px] font-semibold leading-tight', isSelected ? 'text-primary' : 'text-slate-600')}>
-                      {platform.name}
-                    </span>
-                    {!isConnected && (
-                      <span className="text-[9px] text-slate-400 leading-none">not connected</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {errors.platforms && <p className="text-sm text-destructive mt-3">{errors.platforms.message}</p>}
-            {connectedPlatforms.length < platforms.length && (
-              <button type="button" onClick={() => router.push('/dashboard/social-accounts')}
-                className="mt-3 text-xs text-primary hover:underline flex items-center gap-1">
-                + Connect more accounts
+
+            <div className="mt-6 flex h-12 items-center gap-4 rounded-2xl border border-[#D9E3D9] bg-white px-5 text-[#AAA39D] shadow-[0_14px_30px_rgba(58,72,58,0.09)]">
+              <Smile className="h-4 w-4" strokeWidth={1.8} />
+              <ImageDown className="h-4 w-4" strokeWidth={1.8} />
+              <Hash className="h-4 w-4" strokeWidth={1.8} />
+              <Paperclip className="h-4 w-4" strokeWidth={1.8} />
+              <span className="h-6 w-px bg-[#E8EEE8]" />
+              <button type="button" className="flex h-9 items-center gap-2 rounded-xl bg-[#FBF3EE] px-3 text-[14px] font-bold text-[#D9774B]">
+                <Sparkles className="h-4 w-4" />
+                AI Assist
               </button>
-            )}
-          </CardContent>
-        </Card>
+              <span className="h-6 w-px bg-[#E8EEE8]" />
+            </div>
 
-        {/* Unified Platform Configuration */}
-        {selectedPlatforms?.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>Platform Settings</CardTitle>
-              <CardDescription>Configuration for each selected platform</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <div className="mt-8 space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Media</p>
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById('media-upload')?.click()}
+                className={cn(
+                  'flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-[22px] border-2 border-dashed text-center transition',
+                  isDragging ? 'border-[#D9774B] bg-[#FBF3EE]' : 'border-[#D9E3D9] bg-transparent'
+                )}
+              >
+                <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#AAA39D]">
+                  <Upload className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <p className="text-[16px] font-bold text-[#5F5A54]">Drop media here or <span className="text-[#D9774B]">browse</span></p>
+                <p className="mt-1 text-[13px] text-[#AAA39D]">JPG, PNG, MP4, MOV · Max 50MB</p>
+                <input id="media-upload" type="file" multiple hidden accept="image/*,video/*" onChange={handleFileSelect} />
+              </div>
 
-              {/* Facebook */}
-              {selectedPlatforms.includes('FACEBOOK') && (
-                <div className="rounded-xl border border-blue-100 overflow-hidden">
-                  <div className="bg-blue-600 h-1 w-full" />
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm font-bold text-blue-700">Facebook</p>
-                    <div className="flex gap-2">
-                      {['FEED', 'REEL', 'STORY'].map(t => (
-                        <button key={t} type="button"
-                          onClick={() => setValue('facebookPostType', t as any)}
-                          className={cn('flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all',
-                            fbType === t ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-200 text-slate-600 hover:border-blue-300'
-                          )}>
-                          {t}
+              {mediaFiles.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {mediaFiles.map((file, index) => (
+                    <div key={`${file.name}-${index}`} className="group overflow-hidden rounded-xl border border-[#D9E3D9] bg-white">
+                      <div className="relative aspect-square bg-stone-200">
+                        {file.type.startsWith('video/') ? (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Play className="h-7 w-7 text-stone-500" />
+                          </div>
+                        ) : (
+                          <img src={URL.createObjectURL(file)} className="h-full w-full object-cover" alt="" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeMedia(index); }}
+                          className="absolute right-2 top-2 rounded-full bg-stone-900/80 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                          aria-label="Remove media"
+                        >
+                          <X className="h-3 w-3" />
                         </button>
-                      ))}
-                    </div>
-                    {fbType === 'REEL' && <Input placeholder="Reel title..." {...register('reelTitle')} className="text-sm h-8" />}
-                    <Input placeholder="Location (optional)" {...register('location')} className="text-sm h-8" />
-                    <div className="flex items-center justify-between py-1">
-                      <div className="flex items-center gap-2">
-                        <Wand2 className="h-3.5 w-3.5 text-blue-500" />
-                        <span className="text-xs font-medium">Auto-Fix media</span>
-                        <span className="text-[10px] text-slate-400">Trim & reformat automatically</span>
                       </div>
-                      <Switch checked={fbAutoFix} onCheckedChange={(val) => setValue('facebookAutoFix', val)} />
                     </div>
-                  </div>
+                  ))}
                 </div>
               )}
+            </div>
 
-              {/* Instagram */}
-              {selectedPlatforms.includes('INSTAGRAM') && (
-                <div className="rounded-xl border border-pink-100 overflow-hidden">
-                  <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 h-1 w-full" />
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm font-bold text-pink-700">Instagram</p>
-                    <div className="flex gap-2">
-                      {['FEED', 'REEL', 'STORY'].map(t => (
-                        <button key={t} type="button"
-                          onClick={() => setValue('instagramPostType', t as any)}
-                          className={cn('flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all',
-                            igType === t ? 'bg-pink-500 text-white border-pink-500' : 'border-slate-200 text-slate-600 hover:border-pink-300'
-                          )}>
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                    {igType === 'REEL' && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-600">Share Reel to Feed</span>
-                        <Switch checked={watch('shareToFeed')} onCheckedChange={(val) => setValue('shareToFeed', val)} />
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between py-1">
-                      <div className="flex items-center gap-2">
-                        <Wand2 className="h-3.5 w-3.5 text-pink-500" />
-                        <span className="text-xs font-medium">Auto-Fix media</span>
-                        <span className="text-[10px] text-slate-400">Conform to IG requirements</span>
-                      </div>
-                      <Switch checked={igAutoFix} onCheckedChange={(val) => setValue('instagramAutoFix', val)} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* YouTube */}
-              {selectedPlatforms.includes('YOUTUBE') && (
-                <div className="rounded-xl border border-red-100 overflow-hidden">
-                  <div className="bg-red-600 h-1 w-full" />
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm font-bold text-red-700">YouTube</p>
-                    <div className="flex gap-2">
-                      {['VIDEO', 'SHORTS'].map(t => (
-                        <button key={t} type="button"
-                          onClick={() => setValue('youtubePostType', t as any)}
-                          className={cn('flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all',
-                            watch('youtubePostType') === t ? 'bg-red-600 text-white border-red-600' : 'border-slate-200 text-slate-600 hover:border-red-300'
-                          )}>
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Privacy</Label>
-                        <select className="w-full h-8 px-2 text-xs rounded-lg border bg-background" {...register('youtubePrivacy')}>
-                          <option value="public">Public</option>
-                          <option value="unlisted">Unlisted</option>
-                          <option value="private">Private</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Category</Label>
-                        <select className="w-full h-8 px-2 text-xs rounded-lg border bg-background" {...register('youtubeCategory')}>
-                          <option value="22">People & Blogs</option>
-                          <option value="23">Comedy</option>
-                          <option value="24">Entertainment</option>
-                          <option value="1">Film & Animation</option>
-                          <option value="10">Music</option>
-                          <option value="25">News & Politics</option>
-                          <option value="26">How-to & Style</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">SEO Tags</Label>
-                      <Input placeholder="fashion, review, tips (comma separated)" {...register('youtubeTags')} className="text-xs h-8" />
-                    </div>
-                    <div className="flex items-center justify-between py-1">
-                      <div className="flex items-center gap-2">
-                        <Wand2 className="h-3.5 w-3.5 text-red-500" />
-                        <span className="text-xs font-medium">Auto-Fix media</span>
-                      </div>
-                      <Controller name="youtubeAutoFix" control={control}
-                        render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />} />
-                    </div>
-                    <div className="flex items-center justify-between py-1 border-t border-red-100 pt-2">
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className="h-3.5 w-3.5 text-orange-500" />
-                        <span className="text-xs font-medium text-orange-700">Made for Kids?</span>
-                      </div>
-                      <Controller name="youtubeMadeForKids" control={control}
-                        render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />} />
-                    </div>
-                    
-                    <div className="space-y-2 pt-2 border-t border-red-100">
-                      <Label className="text-xs font-semibold">Custom Thumbnail (Optional)</Label>
-                      {watch('youtubeThumbnail') ? (
-                        <div className="relative w-full rounded-lg overflow-hidden border border-red-200 aspect-video bg-black">
-                          <img src={URL.createObjectURL(watch('youtubeThumbnail') as File)} className="w-full h-full object-cover" alt="Thumb" />
-                          <button type="button" onClick={() => setValue('youtubeThumbnail', undefined)} className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-600">
-                            <X className="h-3 w-3" />
-                          </button>
+                {showScheduler && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div 
+                      className="fixed inset-0 bg-[#1A1816]/40 backdrop-blur-md animate-in fade-in duration-300" 
+                      onClick={() => setShowScheduler(false)} 
+                    />
+                    <div className="relative w-full max-w-[680px] animate-in zoom-in-95 fade-in duration-200 rounded-[32px] border border-[#D9E3D9] bg-white p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)]">
+                      <div className="mb-8 flex items-center justify-between">
+                        <div>
+                          <h2 className="text-2xl font-bold tracking-tight text-[#171717]">Schedule Post</h2>
+                          <p className="mt-1 text-[14px] text-[#AAA39D]">
+                            {getTimePreview() || 'Choose the perfect time for your audience.'}
+                          </p>
                         </div>
-                      ) : (
-                        <label className="flex flex-col items-center justify-center w-full py-4 rounded-lg border-2 border-dashed border-red-200 bg-red-50 cursor-pointer hover:bg-red-100">
-                          <Upload className="h-4 w-4 text-red-400 mb-1" />
-                          <p className="text-[10px] text-red-600 font-medium">Upload thumbnail</p>
+                        <button
+                          type="button"
+                          onClick={() => setShowScheduler(false)}
+                          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F2F6F2] text-[#AAA39D] transition hover:bg-[#EEF3EE] hover:text-[#2F281F]"
+                        >
+                          <X className="h-5 w-5" strokeWidth={2} />
+                        </button>
+                      </div>
+
+                      <div className="grid gap-8 lg:grid-cols-[1fr_240px]">
+                        <div className="rounded-[24px] border border-[#D9E3D9] bg-[#F8FAF8] p-4 shadow-inner">
+                          <DayPicker
+                            mode="single"
+                            selected={scheduledAt}
+                            onSelect={(date) => {
+                              if (!date) return;
+                              const current = scheduledAt || new Date();
+                              date.setHours(current.getHours(), current.getMinutes());
+                              setValue('scheduledAt', date);
+                            }}
+                            classNames={{
+                              day_selected: 'bg-[#D27D50] text-white !rounded-xl font-bold shadow-lg shadow-[#D27D50]/30',
+                              day_today: 'text-[#D27D50] font-bold',
+                              day: 'h-10 w-10 text-center text-sm p-0 font-semibold text-stone-600 hover:bg-white hover:text-[#D27D50] rounded-xl transition-all active:scale-90',
+                              caption: 'flex justify-between items-center py-3 px-1 font-bold text-stone-800 text-sm mb-2',
+                              head_cell: 'text-[#AAA39D] font-bold text-[10px] uppercase w-10 pb-4',
+                              table: 'w-full border-collapse',
+                              nav: 'flex items-center gap-1',
+                              nav_button: 'p-2 hover:bg-white rounded-xl transition text-stone-400 hover:text-[#D27D50] border border-transparent hover:border-[#D9E3D9]',
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-6">
+                          <div className="space-y-3">
+                            <Label className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Exact Time</Label>
+                            <div className="relative">
+                              <Input
+                                type="time"
+                                value={scheduledAt ? format(scheduledAt, 'HH:mm') : ''}
+                                onChange={(e) => {
+                                  const [hours, minutes] = e.target.value.split(':');
+                                  const date = new Date(scheduledAt || new Date());
+                                  date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+                                  setValue('scheduledAt', date);
+                                }}
+                                className="h-14 rounded-[18px] border-[#D9E3D9] bg-[#F8FAF8] text-center text-2xl font-bold text-[#171717] transition focus-visible:ring-2 focus-visible:ring-[#D27D50]/20"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Quick Select</Label>
+                            <div className="grid gap-2">
+                              {quickScheduleTimes.map((slot) => (
+                                <button
+                                  key={slot.label}
+                                  type="button"
+                                  onClick={() => setValue('scheduledAt', slot.value())}
+                                  className="flex items-center gap-3 rounded-xl border border-[#D9E3D9] bg-white px-4 py-3 text-[13px] font-bold text-[#5F5A54] transition hover:border-[#D27D50]/40 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                                >
+                                  <slot.icon className="h-4 w-4" />
+                                  {slot.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-auto">
+                            <Button
+                              type="button"
+                              onClick={() => setShowScheduler(false)}
+                              className="h-14 w-full rounded-2xl bg-[#D27D50] text-sm font-bold text-white shadow-lg shadow-[#D27D50]/20 transition hover:bg-[#C06A3D] active:scale-[0.98]"
+                            >
+                              Set Schedule
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {scheduledAt && (
+                        <div className="mt-8 flex items-center justify-center gap-2 rounded-2xl bg-[#FBF3EE] py-3 text-[13px] font-bold text-[#A8562F]">
+                          <Calendar className="h-4 w-4" />
+                          <span>Scheduled for {format(scheduledAt, 'MMMM do, yyyy @ p')}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {publishLog.length > 0 && (
+                  <div className="rounded-2xl border border-stone-800 bg-stone-950 p-4 font-mono text-xs">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="font-bold uppercase tracking-widest text-stone-400">
+                        {createPostMutation.isPending ? 'Publishing...' : publishError ? 'Failed' : 'Done'}
+                      </span>
+                      <button type="button" onClick={() => { setPublishLog([]); setPublishError(null); }} className="text-stone-500 hover:text-white">
+                        clear
+                      </button>
+                    </div>
+                    <div className="max-h-60 space-y-1 overflow-y-auto">
+                      {publishLog.map((entry, index) => (
+                        <div
+                          key={`${entry.ts}-${index}`}
+                          className={cn(
+                            'flex gap-2',
+                            entry.level === 'error' ? 'text-red-400' :
+                            entry.level === 'success' ? 'text-green-400' :
+                            entry.level === 'warn' ? 'text-yellow-400' : 'text-stone-400'
+                          )}
+                        >
+                          <span className="shrink-0 text-stone-600">{entry.ts}</span>
+                          <span className="break-all">{entry.msg}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </div>
+        </main>
+
+              <aside className="h-[calc(100vh-64px)] w-full shrink-0 overflow-y-auto border-l border-[#D9E3D9] bg-white pb-24 xl:w-[320px]">
+                <div className="sticky top-0 z-10 border-b border-[#D9E3D9] bg-white px-6 py-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-[18px] font-bold tracking-tight text-[#24211E]">Settings</h2>
+                      <p className="mt-1 text-[14px] text-[#AAA39D]">
+                        {activePlatform ? `${platformStyles[activePlatform]?.name} Overrides` : 'Select a channel'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {selectedPlatforms?.map((platformId) => {
+                        const config = platformStyles[platformId];
+                        if (!config) return null;
+                        const Icon = config.icon;
+                        const isActive = activePlatform === platformId;
+
+                        return (
+                          <button
+                            key={platformId}
+                            type="button"
+                            onClick={() => setActivePlatform(platformId)}
+                            className={cn(
+                              "flex h-7 w-7 items-center justify-center rounded-full transition-all",
+                              isActive ? "ring-2 ring-[#D27D50] ring-offset-1" : "opacity-40 hover:opacity-100"
+                            )}
+                            style={{ backgroundColor: config.bg }}
+                            title={config.name}
+                          >
+                            <Icon className="h-3 w-3" style={{ color: config.color }} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 px-5 py-5">
+                  {!activePlatform && (
+                    <div className="rounded-2xl border border-dashed border-[#D9E3D9] bg-white p-5 text-center">
+                      <p className="text-sm font-bold text-stone-800">No channel selected</p>
+                      <p className="mt-1 text-[11px] leading-snug text-stone-400">Select a connected channel to configure platform-specific options.</p>
+                    </div>
+                  )}
+
+                  {activePlatform === 'FACEBOOK' && (
+                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                      <OverrideHeader platform="FACEBOOK" value={fbType || 'FEED'} />
+                      <div className="space-y-3 px-5 py-4">
+                        <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={fbType || 'FEED'} onChange={(value) => setValue('facebookPostType', value as any)} color={platformStyles.FACEBOOK.color} />
+                        {fbType === 'REEL' && <Input placeholder="Reel title" {...register('reelTitle')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />}
+                        <Input placeholder="Location" {...register('location')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
+                        <SwitchRow label="Auto-fix media" description="Trim & reformat to platform specs" checked={fbAutoFix} onChange={(value) => setValue('facebookAutoFix', value)} />
+                      </div>
+                    </div>
+                  )}
+
+                  {activePlatform === 'LINKEDIN' && (
+                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                      <OverrideHeader platform="LINKEDIN" value="Story" />
+                      <div className="space-y-3 px-5 py-4">
+                        <SegmentedOptions label="Post Type" options={['Post', 'Story']} value="Story" onChange={() => undefined} color={platformStyles.LINKEDIN.color} />
+                        <SegmentedOptions label="Visibility" options={['Anyone', 'Connections']} value="Connections" onChange={() => undefined} color="#171717" />
+                        <SwitchRow label="Auto-fix media" checked={true} onChange={() => undefined} />
+                      </div>
+                    </div>
+                  )}
+
+                  {activePlatform === 'TWITTER' && (
+                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                      <OverrideHeader platform="TWITTER" value="Post" />
+                      <div className="space-y-3 px-5 py-4">
+                        <SegmentedOptions label="Who can reply" options={['everyone', 'following', 'mentionedUsers']} value={watch('twitterReplySettings') || 'everyone'} onChange={(value) => setValue('twitterReplySettings', value as any)} color={platformStyles.TWITTER.color} />
+                        <Controller name="twitterAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" checked={field.value} onChange={field.onChange} />} />
+                      </div>
+                    </div>
+                  )}
+
+                  {activePlatform === 'INSTAGRAM' && (
+                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                      <OverrideHeader platform="INSTAGRAM" value={igType || 'FEED'} />
+                      <div className="space-y-3 px-5 py-4">
+                        <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={igType || 'FEED'} onChange={(value) => setValue('instagramPostType', value as any)} color={platformStyles.INSTAGRAM.color} />
+                        {igType === 'REEL' && <SwitchRow label="Share Reel to Feed" checked={watch('shareToFeed')} onChange={(value) => setValue('shareToFeed', value)} />}
+                        <SwitchRow label="Auto-fix media" description="Conforms to IG specs" checked={igAutoFix} onChange={(value) => setValue('instagramAutoFix', value)} />
+                      </div>
+                    </div>
+                  )}
+
+                  {activePlatform === 'YOUTUBE' && (
+                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                      <OverrideHeader platform="YOUTUBE" value={watch('youtubePostType')} />
+                      <div className="space-y-3 px-5 py-4">
+                        <SegmentedOptions label="Format" options={['VIDEO', 'SHORTS']} value={watch('youtubePostType')} onChange={(value) => setValue('youtubePostType', value as any)} color={platformStyles.YOUTUBE.color} />
+                        <div className="grid grid-cols-2 gap-2">
+                          <select className="h-9 rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('youtubePrivacy')}>
+                            <option value="public">Public</option>
+                            <option value="unlisted">Unlisted</option>
+                            <option value="private">Private</option>
+                          </select>
+                          <select className="h-9 rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('youtubeCategory')}>
+                            <option value="22">People & Blogs</option>
+                            <option value="23">Comedy</option>
+                            <option value="24">Entertainment</option>
+                            <option value="1">Film & Animation</option>
+                            <option value="10">Music</option>
+                          </select>
+                        </div>
+                        <Input placeholder="SEO tags" {...register('youtubeTags')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
+                        <Controller name="youtubeAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" checked={field.value} onChange={field.onChange} />} />
+                        <Controller name="youtubeMadeForKids" control={control} render={({ field }) => <SwitchRow label="Made for Kids" checked={field.value} onChange={field.onChange} icon={AlertCircle} />} />
+                        <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#D9E3D9] bg-[#F8FAF8] px-3 py-4 text-center hover:border-red-300">
+                          <Upload className="mb-1 h-4 w-4 text-red-500" />
+                          <span className="text-[10px] font-semibold text-stone-500">{watch('youtubeThumbnail') ? 'Thumbnail selected' : 'Upload thumbnail'}</span>
                           <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={(e) => {
                             if (e.target.files?.[0]) setValue('youtubeThumbnail', e.target.files[0] as any);
                           }} />
                         </label>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Twitter/X */}
-              {selectedPlatforms.includes('TWITTER') && (
-                <div className="rounded-xl border border-slate-200 overflow-hidden">
-                  <div className="bg-black h-1 w-full" />
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm font-bold text-slate-800">Twitter / X</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Who can reply?</Label>
-                        <select className="w-full h-8 px-2 text-xs rounded-lg border bg-background"
-                          {...register('twitterReplySettings')}>
-                          <option value="everyone">Everyone</option>
-                          <option value="following">Accounts you follow</option>
-                          <option value="mentionedUsers">Mentioned only</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Long content</Label>
-                        <select className="w-full h-8 px-2 text-xs rounded-lg border bg-background"
-                          {...register('twitterThreadMode')}>
-                          <option value="AUTO">Auto-Thread</option>
-                          <option value="TRUNCATE">Truncate</option>
-                        </select>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between py-1">
-                      <div className="flex items-center gap-2">
-                        <Wand2 className="h-3.5 w-3.5 text-slate-600" />
-                        <span className="text-xs font-medium">Auto-Fix media</span>
-                      </div>
-                      <Controller name="twitterAutoFix" control={control}
-                        render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Threads */}
-              {selectedPlatforms.includes('THREADS') && (
-                <div className="rounded-xl border border-slate-200 overflow-hidden">
-                  <div className="bg-slate-900 h-1 w-full" />
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm font-bold text-slate-800">Threads</p>
-                    <div className="flex items-center justify-between py-1">
-                      <div className="flex items-center gap-2">
-                        <Wand2 className="h-3.5 w-3.5 text-slate-600" />
-                        <span className="text-xs font-medium">Auto-Fix media</span>
-                        <span className="text-[10px] text-slate-400">Force 4:5 portrait for Threads</span>
-                      </div>
-                      <Controller name="threadsAutoFix" control={control}
-                        render={({ field }) => <Switch checked={field.value} onCheckedChange={field.onChange} />} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Pinterest */}
-              {selectedPlatforms.includes('PINTEREST') && (
-                <div className="rounded-xl border border-red-100 overflow-hidden">
-                  <div className="bg-red-600 h-1 w-full" />
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm font-bold text-red-700">Pinterest</p>
-                    {isLoadingBoards ? (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Loader2 className="h-3 w-3 animate-spin" /> Fetching boards...
-                      </div>
-                    ) : pinterestBoards.length > 0 ? (
-                      <div className="space-y-1">
-                        <Label className="text-xs">Board</Label>
-                        <select className="w-full h-8 px-2 text-xs rounded-lg border bg-background" {...register('pinterestBoardId')}>
-                          {pinterestBoards.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                        </select>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">
-                        No boards found. Create one on Pinterest first.
-                      </p>
-                    )}
-                    <div className="space-y-1">
-                      <Label className="text-xs">Destination Link</Label>
-                      <Input placeholder="https://your-website.com" {...register('pinterestLink')} className="text-xs h-8" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Snapchat */}
-              {selectedPlatforms.includes('SNAPCHAT') && (
-                <div className="rounded-xl border border-yellow-200 overflow-hidden">
-                  <div className="bg-yellow-400 h-1 w-full" />
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm font-bold text-yellow-700">Snapchat</p>
-                    <div className="flex gap-2">
-                      {['STORY', 'SPOTLIGHT'].map(t => (
-                        <button key={t} type="button"
-                          onClick={() => setValue('snapchatPostType', t as any)}
-                          className={cn('flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all',
-                            watch('snapchatPostType') === t ? 'bg-yellow-400 text-black border-yellow-400' : 'border-slate-200 text-slate-600 hover:border-yellow-300'
-                          )}>
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-slate-500">
-                      {watch('snapchatPostType') === 'SPOTLIGHT'
-                        ? 'Shared with the public community.'
-                        : 'Visible to followers for 24 hours.'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-            </CardContent>
-          </Card>
-        )}
-
-                  {/* YouTube SEO Preview (High Fidelity & Format-Aware) */}
-        {selectedPlatforms?.includes('YOUTUBE') && (
-          <Card className="bg-slate-50 border-dashed border-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs uppercase text-muted-foreground flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Search className="h-3 w-3" />
-                  YouTube Format Preview
-                </div>
-                {mediaFiles[0] && mediaAnalysis[0]?.metadata && (
-                  <div className={cn(
-                    "px-2 py-0.5 rounded-full text-[9px] font-bold text-white",
-                    (mediaAnalysis[0]?.metadata?.aspectRatio || 1) < 1 ? "bg-red-500" : "bg-blue-500"
-                  )}>
-                    {(mediaAnalysis[0]?.metadata?.aspectRatio || 1) < 1 ? 'CLASSIFIED AS SHORTS' : 'CLASSIFIED AS VIDEO'}
-                  </div>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {mediaAnalysis[0]?.metadata && mediaAnalysis[0]?.metadata?.aspectRatio < 1 ? (
-                /* Shorts Mobile View */
-                <div className="flex justify-center py-2">
-                  <div className="w-[180px] aspect-[9/16] bg-black rounded-2xl border-[4px] border-slate-800 relative overflow-hidden shadow-xl">
-                    {mediaFiles[0] ? (
-                      <img src={URL.createObjectURL(mediaFiles[0])} className="w-full h-full object-cover opacity-80" alt="Shorts" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-700">
-                        <Video className="h-10 w-10" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    <div className="absolute bottom-3 left-3 right-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-slate-400 border border-white/50" />
-                        <span className="text-[10px] font-bold text-white truncate">@your_channel</span>
-                        <button className="bg-white text-black text-[8px] px-2 py-0.5 rounded-full font-bold">Subscribe</button>
-                      </div>
-                      <p className="text-[10px] text-white line-clamp-2 leading-tight">
-                        {watch('content') || 'Your Shorts description/tags...'}
-                      </p>
-                    </div>
-                    <div className="absolute bottom-20 right-2 flex flex-col gap-4 items-center">
-                       <div className="flex flex-col items-center gap-1">
-                          <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center"><Heart className="h-4 w-4 text-white" /></div>
-                          <span className="text-[8px] text-white">Like</span>
-                       </div>
-                       <div className="flex flex-col items-center gap-1">
-                          <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center"><MessageCircle className="h-4 w-4 text-white" /></div>
-                          <span className="text-[8px] text-white">Comm</span>
-                       </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* Standard Search View */
-                <div className="bg-white p-4 rounded-xl shadow-sm border space-y-3">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="w-full md:w-48 aspect-video bg-slate-200 rounded-lg flex items-center justify-center relative overflow-hidden shrink-0">
-                      {mediaFiles[0] ? (
-                        <img src={URL.createObjectURL(mediaFiles[0])} className="w-full h-full object-cover" alt="Preview" />
-                      ) : (
-                        <Video className="text-slate-400 h-8 w-8" />
-                      )}
-                      <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] px-1 rounded">5:00</div>
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <h3 className="font-bold text-sm leading-tight line-clamp-2">
-                        {watch('title') || 'Your Video Title Here'}
-                      </h3>
-                      <div className="text-[10px] text-slate-500 flex gap-1">
-                        <span>0 views</span>
-                        <span>•</span>
-                        <span>Just now</span>
-                      </div>
-                      <div className="flex items-center gap-1 py-1">
-                        <div className="w-4 h-4 rounded-full bg-slate-300" />
-                        <span className="text-[10px] font-medium text-slate-600">Your Channel</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">
-                        {watch('content') || 'Provide a compelling description...'}
-                      </p>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {watch('youtubeTags')?.split(',').slice(0, 3).map((t, i) => (
-                          <span key={i} className="text-[9px] text-blue-600 bg-blue-50 px-1 rounded">#{t.trim()}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <p className="text-[10px] text-center text-muted-foreground mt-3 italic">
-                {(mediaAnalysis[0]?.metadata?.aspectRatio || 1) < 1 
-                  ? "Shorts are automatically discovered by users in the mobile feed. No special SEO required beyond tags!" 
-                  : "Standard videos rely heavily on the first 100 characters of the title for search ranking."}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Media Upload */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Media</CardTitle>
-            <CardDescription>Images and Videos</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              className={cn(
-                'border-2 border-dashed rounded-lg p-10 text-center cursor-pointer',
-                isDragging ? 'border-primary bg-primary/5' : 'border-border'
-              )}
-              onClick={() => document.getElementById('media-upload')?.click()}
-            >
-              <Upload className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-              <p>Click or drag to upload</p>
-              <input id="media-upload" type="file" multiple hidden onChange={handleFileSelect} />
-            </div>
-
-            {mediaFiles.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {mediaFiles.map((file, idx) => {
-                  const analysis = mediaAnalysis[idx];
-                  return (
-                    <div key={idx} className="relative group border rounded-lg overflow-hidden">
-                       <div className="aspect-square bg-muted flex items-center justify-center">
-                          {file.type.startsWith('video/') ? <Video /> : <img src={URL.createObjectURL(file)} className="object-cover w-full h-full" alt="" />}
-                       </div>
-                       <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); removeMedia(idx); }}
-                        className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                       >
-                        <X className="h-3 w-3" />
-                       </button>
-                       
-                       <div className="p-2 space-y-1">
-                         <div className="flex flex-wrap gap-1">
-                            {selectedPlatforms?.map(p => {
-                              const val = analysis?.platformValidations[p];
-                              const fixed = (p === 'FACEBOOK' && fbAutoFix) || (p === 'INSTAGRAM' && igAutoFix) || (p === 'THREADS' && watch('threadsAutoFix'));
-                              if (!val) return null;
-                              return (
-                                <div key={p} className={cn(
-                                  "px-1 py-0.5 rounded text-[8px] font-bold uppercase flex items-center gap-1",
-                                  val.valid || fixed ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-                                )}>
-                                  {p.slice(0, 2)}
-                                  {fixed && <Wand2 className="h-2 w-2" />}
-                                </div>
-                              );
-                            })}
-                         </div>
-                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-         {/* Final Re-Design of Scheduler */}
-        <Card className="border-2 border-primary/5 shadow-2xl rounded-3xl overflow-hidden bg-white dark:bg-slate-950">
-          <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/20 p-2 rounded-xl">
-                 <Clock className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">Publishing Strategy</CardTitle>
-                <p className="text-[10px] text-slate-400 uppercase tracking-tighter">Queue Management Engine</p>
-              </div>
-            </div>
-            <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
-              {[
-                { id: 'draft', label: 'Draft', icon: FileText, active: !showScheduler && !watch('publishNow') },
-                { id: 'schedule', label: 'Schedule', icon: Calendar, active: showScheduler },
-                { id: 'now', label: 'Post Now', icon: Zap, active: watch('publishNow') }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    if (tab.id === 'draft') { setShowScheduler(false); setValue('publishNow', false); }
-                    if (tab.id === 'schedule') { setShowScheduler(true); setValue('publishNow', false); }
-                    if (tab.id === 'now') { setShowScheduler(false); setValue('publishNow', true); }
-                  }}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
-                    tab.active ? "bg-primary text-white shadow-lg" : "text-slate-400 hover:text-slate-200"
                   )}
+
+                  {activePlatform === 'THREADS' && (
+                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                      <OverrideHeader platform="THREADS" value="Post" />
+                      <div className="px-4 py-4">
+                        <Controller name="threadsAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" description="Force 4:5 portrait for Threads" checked={field.value} onChange={field.onChange} />} />
+                      </div>
+                    </div>
+                  )}
+
+                  {activePlatform === 'PINTEREST' && (
+                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                      <OverrideHeader platform="PINTEREST" value="Pin" />
+                      <div className="space-y-3 px-4 py-4">
+                        {isLoadingBoards ? (
+                          <p className="flex items-center gap-2 text-xs text-stone-500"><Loader2 className="h-3 w-3 animate-spin" /> Fetching boards...</p>
+                        ) : pinterestBoards.length > 0 ? (
+                          <select className="h-9 w-full rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('pinterestBoardId')}>
+                            {pinterestBoards.map((board) => <option key={board.id} value={board.id}>{board.name}</option>)}
+                          </select>
+                        ) : (
+                          <p className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-700">No boards found. Create one on Pinterest first.</p>
+                        )}
+                        <Input placeholder="Destination link" {...register('pinterestLink')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
+                      </div>
+                    </div>
+                  )}
+
+                  {activePlatform === 'SNAPCHAT' && (
+                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                      <OverrideHeader platform="SNAPCHAT" value={watch('snapchatPostType') || 'STORY'} />
+                      <div className="px-4 py-4">
+                        <SegmentedOptions label="Post Type" options={['STORY', 'SPOTLIGHT']} value={watch('snapchatPostType') || 'STORY'} onChange={(value) => setValue('snapchatPostType', value as any)} color={platformStyles.SNAPCHAT.color} />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-2 rounded-xl border border-[#C5DCFA] bg-[#EBF4FF]/60 px-3 py-3">
+                    <CircleHelp className="mt-0.5 h-3 w-3 shrink-0 text-[#0A66C2]" />
+                    <p className="text-[11px] leading-snug text-[#0A66C2]">Override settings apply per-platform. Global caption is shared across all selected channels.</p>
+                  </div>
+                </div>
+              </aside>
+            </div>
+
+          <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#D9E3D9] bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur-sm lg:left-[280px]">
+            <div className="flex min-h-16 flex-col gap-3 px-5 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+              <button
+                type="button"
+                onClick={() => { setShowScheduler(true); setValue('publishNow', false); }}
+                className="flex w-fit items-center gap-2 rounded-xl border border-[#D9E3D9] bg-white px-3 py-1.5 text-sm font-medium text-stone-500 transition hover:border-[#D27D50]/30 hover:text-stone-700"
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{scheduledAt ? format(scheduledAt, 'MMM d, p') : 'Pick date & time'}</span>
+                <Clock className="h-3 w-3 text-stone-400" />
+              </button>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="submit"
+                  onClick={() => { setShowScheduler(false); setValue('publishNow', false); }}
+                  disabled={createPostMutation.isPending}
+                  className="flex items-center gap-1.5 rounded-xl border border-transparent px-4 py-2 text-sm font-medium text-stone-500 transition hover:border-[#D9E3D9] hover:bg-[#F0F4F0]"
                 >
-                  <tab.icon className="h-3 w-3" />
-                  {tab.label}
+                  <FileText className="h-3.5 w-3.5" />
+                  Save Draft
                 </button>
-              ))}
+                <button
+                  type="submit"
+                  onClick={() => { setShowScheduler(false); setValue('publishNow', false); }}
+                  disabled={createPostMutation.isPending}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#D27D50]/30 bg-white px-4 py-2 text-sm font-semibold text-[#D27D50] transition hover:bg-[#FBF3EE]"
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  Schedule
+                </button>
+                <button
+                  type="submit"
+                  onClick={() => { setShowScheduler(false); setValue('publishNow', true); }}
+                  disabled={createPostMutation.isPending}
+                  className="group relative flex items-center gap-2 overflow-hidden rounded-xl px-5 py-2.5 text-sm font-bold tracking-wide text-white shadow-[0_2px_12px_rgba(210,125,80,0.45)] transition active:scale-95 disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg, #D27D50 0%, #C06A3D 60%, #A8562F 100%)' }}
+                >
+                  {createPostMutation.isPending ? <Loader2 className="relative z-10 h-3.5 w-3.5 animate-spin" /> : <Zap className="relative z-10 h-3.5 w-3.5 fill-current" />}
+                  <span className="relative z-10">Post Now</span>
+                  <Send className="relative z-10 h-3.5 w-3.5 opacity-70 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
+                </button>
+              </div>
             </div>
-          </div>
+          </footer>
+    </form>
+  );
+}
 
-          <CardContent className="p-8">
-            {!showScheduler && !watch('publishNow') && (
-              <div className="flex flex-col items-center justify-center py-10 space-y-4">
-                <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center border-4 border-white shadow-inner">
-                  <FileText className="h-10 w-10 text-slate-300" />
-                </div>
-                <div className="text-center">
-                  <h4 className="font-bold text-slate-800">Saved to Workspace</h4>
-                  <p className="text-sm text-slate-500">Pick up right where you left off from your Drafts page.</p>
-                </div>
-              </div>
-            )}
+function OverrideHeader({ platform, value }: { platform: string; value?: string }) {
+  const config = platformStyles[platform];
+  if (!config) return null;
+  const Icon = config.icon;
 
-            {watch('publishNow') && (
-              publishLog.length > 0 ? (
-                /* Live log panel replaces the "Direct-to-Feed" animation */
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "h-2 w-2 rounded-full",
-                        createPostMutation.isPending ? "bg-yellow-400 animate-pulse" :
-                        publishError ? "bg-red-500" : "bg-green-500"
-                      )} />
-                      <span className={cn(
-                        "text-xs font-bold uppercase tracking-widest",
-                        createPostMutation.isPending ? "text-yellow-400" :
-                        publishError ? "text-red-400" : "text-green-400"
-                      )}>
-                        {createPostMutation.isPending ? "Publishing..." : publishError ? "Failed" : "Done"}
-                      </span>
-                    </div>
-                    <button type="button" onClick={() => { setPublishLog([]); setPublishError(null); }} className="text-slate-500 hover:text-slate-300 text-xs">
-                      x clear
-                    </button>
-                  </div>
-                  <div className="bg-slate-950 rounded-xl p-4 font-mono text-xs space-y-1 max-h-60 overflow-y-auto border border-slate-800">
-                    {publishLog.map((entry, i) => (
-                      <div key={i} className={cn(
-                        "flex gap-2",
-                        entry.level === 'error' ? "text-red-400" :
-                        entry.level === 'success' ? "text-green-400" :
-                        entry.level === 'warn' ? "text-yellow-400" : "text-slate-400"
-                      )}>
-                        <span className="text-slate-600 shrink-0">{entry.ts}</span>
-                        <span className="break-all">{entry.msg}</span>
-                      </div>
-                    ))}
-                    {createPostMutation.isPending && (
-                      <div className="flex items-center gap-2 text-slate-500 animate-pulse">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span>Processing...</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 space-y-4">
-                  <div className="w-20 h-20 rounded-full bg-yellow-50 flex items-center justify-center border-4 border-white shadow-inner animate-bounce">
-                    <Zap className="h-10 w-10 text-yellow-500" />
-                  </div>
-                  <div className="text-center">
-                    <h4 className="font-bold text-slate-800">Direct-to-Feed</h4>
-                    <p className="text-sm text-slate-500">Synchronized publishing to all selected platforms instantly.</p>
-                  </div>
-                </div>
-              )
-            )}
+  return (
+    <div className="flex items-center gap-3 border-b border-[#EEF3EE] px-5 py-4">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: config.bg }}>
+        <Icon className="h-4 w-4" style={{ color: config.color }} />
+      </span>
+      <span className="text-[17px] font-bold text-[#2F281F]">{config.name}</span>
+      {value && (
+        <span className="ml-auto rounded-full px-3 py-1 text-[12px] font-bold" style={{ backgroundColor: config.bg, color: config.color }}>
+          {value}
+        </span>
+      )}
+    </div>
+  );
+}
 
-            {showScheduler && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <div className="lg:col-span-4 space-y-6">
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Quick Slots</Label>
-                    <div className="grid grid-cols-1 gap-2">
-                       {quickScheduleTimes.map(t => (
-                         <button
-                           key={t.label}
-                           type="button"
-                           onClick={() => setValue('scheduledAt', t.value())}
-                           className="flex items-center justify-between p-3 rounded-2xl border-2 border-slate-50 bg-slate-50/30 hover:bg-white hover:border-primary/20 hover:shadow-md transition-all group"
-                         >
-                           <div className="flex items-center gap-3">
-                             <div className="bg-white p-2 rounded-lg shadow-sm group-hover:bg-primary/5">
-                               <t.icon className="h-4 w-4 text-slate-400 group-hover:text-primary" />
-                             </div>
-                             <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900">{t.label}</span>
-                           </div>
-                           <ChevronRight className="h-4 w-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
-                         </button>
-                       ))}
-                    </div>
-                  </div>
+function SegmentedOptions({
+  label,
+  options,
+  value,
+  onChange,
+  color,
+}: {
+  label: string;
+  options: string[];
+  value?: string;
+  onChange: (value: string) => void;
+  color: string;
+}) {
+  return (
+    <div>
+      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => {
+          const selected = value === option;
 
-                  <div className="space-y-4 p-5 rounded-3xl bg-primary/5 border border-primary/10 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                      <Clock className="h-20 w-20 text-primary" />
-                    </div>
-                    <div>
-                      <Label className="text-[10px] font-black uppercase text-primary tracking-widest">Live Preview</Label>
-                      <h4 className="text-2xl font-black text-slate-900 mt-1">
-                        {scheduledAt ? format(scheduledAt, 'p') : '--:--'}
-                      </h4>
-                      <p className="text-xs text-slate-500 font-medium">
-                        {scheduledAt ? format(scheduledAt, 'EEEE, MMM do') : 'Select Date'}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 pt-2">
-                       <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                       <span className="text-[11px] font-bold text-green-600 uppercase">
-                         {getTimePreview()}
-                       </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-8 flex flex-col md:flex-row gap-8">
-                  <div className="bg-slate-50/50 p-4 lg:p-6 rounded-[2.5rem] border border-slate-100 shadow-inner overflow-visible flex-1 flex justify-center backdrop-blur-sm">
-                    <DayPicker
-                      mode="single"
-                      selected={scheduledAt}
-                      onSelect={d => {
-                        if (!d) return;
-                        const current = scheduledAt || new Date();
-                        d.setHours(current.getHours(), current.getMinutes());
-                        setValue('scheduledAt', d);
-                      }}
-                      classNames={{
-                        day_selected: "bg-primary text-white !rounded-xl font-bold shadow-xl shadow-primary/30 scale-105",
-                        day_today: "text-primary font-black scale-105",
-                        day: "h-9 w-9 lg:h-10 lg:w-10 text-center text-xs lg:text-sm p-0 font-bold text-slate-600 hover:bg-white hover:shadow-lg hover:text-primary rounded-xl transition-all duration-300",
-                        caption: "flex justify-between items-center py-4 px-1 font-black text-slate-400 uppercase tracking-widest text-[9px]",
-                        head_cell: "text-slate-200 font-bold text-[9px] uppercase w-9 lg:w-10 pb-4",
-                        table: "w-full border-collapse",
-                        tbody: "space-y-1",
-                        nav: "flex items-center gap-1.5",
-                        nav_button: "p-1.5 hover:bg-white hover:shadow-md rounded-lg transition-all text-slate-300 hover:text-primary",
-                      }}
-                    />
-                  </div>
-
-                  <div className="w-full lg:w-80 space-y-8 flex-shrink-0">
-                    <div className="space-y-4">
-                      <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center block">Precision Time</Label>
-                      <div className="relative group">
-                        <Input
-                          type="time"
-                          className="h-24 text-4xl lg:text-5xl font-black text-center rounded-[2rem] border-2 border-slate-50 focus-visible:ring-primary focus-visible:border-primary transition-all shadow-sm group-hover:shadow-2xl group-hover:scale-105 bg-white whitespace-nowrap"
-                          value={scheduledAt ? format(scheduledAt, 'HH:mm') : ''}
-                          onChange={e => {
-                            const [h, m] = e.target.value.split(':');
-                            const d = new Date(scheduledAt || new Date());
-                            d.setHours(parseInt(h), parseInt(m));
-                            setValue('scheduledAt', d);
-                          }}
-                        />
-                        <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none opacity-5 group-hover:opacity-20 transition-opacity">
-                           <Clock className="h-8 w-8 text-primary" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-center space-y-2">
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Local Timezone</p>
-                      <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-slate-500 bg-slate-100/50 py-2 rounded-2xl px-4 border border-slate-100">
-                        <MapPin className="h-3 w-3" />
-                        {Intl.DateTimeFormat().resolvedOptions().timeZone}
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 bg-yellow-50 rounded-2xl border border-yellow-100">
-                      <p className="text-[10px] text-yellow-800 font-medium leading-tight">
-                        💡 <strong>Pro Tip:</strong> Meta posts perform best at 6:00 PM on weekdays in your local timezone.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-
-          <div className="px-8 py-6 bg-slate-50 border-t flex items-center justify-between">
-            <div className="hidden md:block">
-              {scheduledAt && showScheduler && (
-                <p className="text-xs text-slate-500">
-                  Target: <strong className="text-slate-800">{format(scheduledAt, 'MMMM do, yyyy @ p')}</strong>
-                </p>
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onChange(option)}
+              className={cn(
+                'min-h-9 rounded-xl border px-4 text-[14px] font-bold transition',
+                selected ? 'border-transparent text-white' : 'border-[#D9E3D9] bg-white text-[#7B746D] hover:border-stone-400 hover:text-stone-700'
               )}
-            </div>
-            <div className="flex gap-3 w-full md:w-auto">
-               <Button type="button" variant="outline" className="flex-1 md:flex-none" onClick={() => router.back()}>Cancel</Button>
-               <Button 
-                size="lg" 
-                className="flex-1 md:flex-none px-10 bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 font-bold"
-                disabled={createPostMutation.isPending}
-               >
-                 {createPostMutation.isPending ? (
-                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                 ) : watch('publishNow') ? (
-                   <Zap className="h-4 w-4 mr-2" />
-                 ) : showScheduler ? (
-                   <Calendar className="h-4 w-4 mr-2" />
-                 ) : (
-                   <FileText className="h-4 w-4 mr-2" />
-                 )}
-                 {watch('publishNow') ? 'Publish' : showScheduler ? 'Schedule' : 'Save Draft'}
-               </Button>
-            </div>
-          </div>
-        </Card>
-      </form>
+              style={selected ? { backgroundColor: color, borderColor: color } : undefined}
+            >
+              {option}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SwitchRow({
+  label,
+  description,
+  checked,
+  onChange,
+  icon: Icon = Wand2,
+}: {
+  label: string;
+  description?: string;
+  checked?: boolean;
+  onChange: (checked: boolean) => void;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[14px] font-medium leading-tight text-[#5F5A54]">{label}</span>
+          <Icon className="h-3 w-3 text-stone-300" />
+        </div>
+        {description && <p className="mt-0.5 text-[11px] leading-snug text-stone-400">{description}</p>}
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} className={checked ? 'bg-[#D9774B]' : 'bg-stone-200'} />
     </div>
   );
 }
