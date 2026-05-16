@@ -2,7 +2,7 @@ import { VertexAI } from '@google-cloud/vertexai';
 import { storageService } from './media-upload.service.js';
 
 export class AiOrchestratorService {
-  private vertexAI: VertexAI;
+  private vertexAI?: VertexAI;
 
   constructor() {
     const project = process.env.VERTEX_AI_PROJECT_ID;
