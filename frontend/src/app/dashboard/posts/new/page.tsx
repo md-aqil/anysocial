@@ -16,6 +16,7 @@ import {
   AlertCircle,
   AtSign,
   Calendar,
+  Check,
   CircleHelp,
   Clock,
   Facebook,
@@ -130,9 +131,9 @@ export default function NewPostPage() {
     queryFn: () => api.config.getRules(),
   });
 
-  const [mediaAnalysis, setMediaAnalysis] = useState<Record<number, { 
-    width: number; 
-    height: number; 
+  const [mediaAnalysis, setMediaAnalysis] = useState<Record<number, {
+    width: number;
+    height: number;
     ratio: number;
     platformValidations: Record<string, { valid: boolean; errors: string[] }>;
   }>>({});
@@ -343,7 +344,7 @@ export default function NewPostPage() {
         setValue('content', content);
         if (title) setValue('title', title);
         if (youtubeTags) setValue('youtubeTags', youtubeTags);
-        
+
         fetch(mediaUrl)
           .then(res => res.blob())
           .then(blob => {
@@ -351,7 +352,7 @@ export default function NewPostPage() {
             setMediaFiles([file]);
           })
           .catch(err => console.error('Failed to pre-load AI media', err));
-          
+
         sessionStorage.removeItem('pending_ai_post');
       }
     } else if (draftId) {
@@ -359,7 +360,7 @@ export default function NewPostPage() {
         setValue('content', post.rawContent);
         if (post.title) setValue('title', post.title);
         if (post.platforms) setValue('platforms', post.platforms);
-        
+
         // Load platform options if any
         const draftPlatformOptions = (post as any).platformOptions;
         if (draftPlatformOptions) {
@@ -406,6 +407,68 @@ export default function NewPostPage() {
       fetchBoards();
     }
   }, [selectedPlatforms, accountsData, pinterestBoards.length, setValue]);
+
+  // Load last saved settings
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hasSpecialSource = params.get('source') === 'ai_gen' || params.get('id');
+
+    if (!hasSpecialSource) {
+      const saved = localStorage.getItem('anysocial_last_settings');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          Object.keys(data).forEach(key => {
+            setValue(key as any, data[key]);
+          });
+        } catch (e) {
+          console.error('Failed to load saved settings', e);
+        }
+      }
+    }
+  }, [setValue]);
+
+  // Persist settings on change
+  const currentPlatforms = watch('platforms');
+  const fbPType = watch('facebookPostType');
+  const fbAFix = watch('facebookAutoFix');
+  const igPType = watch('instagramPostType');
+  const igAFix = watch('instagramAutoFix');
+  const twMode = watch('twitterThreadMode');
+  const twReply = watch('twitterReplySettings');
+  const twAFix = watch('twitterAutoFix');
+  const thAFix = watch('threadsAutoFix');
+  const sToFeed = watch('shareToFeed');
+  const ytPriv = watch('youtubePrivacy');
+  const ytCat = watch('youtubeCategory');
+  const ytAFix = watch('youtubeAutoFix');
+  const ytPType = watch('youtubePostType');
+  const scPType = watch('snapchatPostType');
+
+  useEffect(() => {
+    const persistable = {
+      platforms: currentPlatforms,
+      facebookPostType: fbPType,
+      facebookAutoFix: fbAFix,
+      instagramPostType: igPType,
+      instagramAutoFix: igAFix,
+      twitterThreadMode: twMode,
+      twitterReplySettings: twReply,
+      twitterAutoFix: twAFix,
+      threadsAutoFix: thAFix,
+      shareToFeed: sToFeed,
+      youtubePrivacy: ytPriv,
+      youtubeCategory: ytCat,
+      youtubeAutoFix: ytAFix,
+      youtubePostType: ytPType,
+      snapchatPostType: scPType,
+    };
+    localStorage.setItem('anysocial_last_settings', JSON.stringify(persistable));
+  }, [
+    currentPlatforms, fbPType, fbAFix, igPType, igAFix, 
+    twMode, twReply, twAFix, thAFix, sToFeed, 
+    ytPriv, ytCat, ytAFix, ytPType, scPType
+  ]);
 
   useEffect(() => {
     const analyze = async () => {
@@ -485,7 +548,7 @@ export default function NewPostPage() {
     <form onSubmit={handleSubmit(onSubmit)} className="min-h-[calc(100vh-64px)] bg-[#F2F6F2] text-[#2F281F]">
       <div className="flex min-h-[calc(100vh-64px)]">
         <aside className="hidden w-16 shrink-0 border-r border-[#D9E3D9] bg-white px-2 pb-24 pt-6 lg:block">
-          <p className="mb-4 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Channels</p>
+          <p className="mb-4 text-center text-[10px] font-bold uppercase text-[#AAA39D]">Channels</p>
           <div className="flex flex-col items-center gap-2.5">
             {accountsData?.accounts?.map((account) => {
               const platformId = account.platform.toUpperCase();
@@ -513,10 +576,14 @@ export default function NewPostPage() {
                   title={`${accountName} (${config.name})`}
                 >
                   <Icon className="h-5 w-5" style={{ color: selected ? config.color : '#AAA39D' }} strokeWidth={2.2} />
-                  <span
-                    className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white"
-                    style={{ backgroundColor: selected ? config.color : '#EEF3EE' }}
-                  />
+                  {selected && (
+                    <span
+                      className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-white shadow-sm"
+                      style={{ backgroundColor: config.color }}
+                    >
+                      <Check className="h-2.5 w-2.5 text-white" strokeWidth={4} />
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -609,351 +676,321 @@ export default function NewPostPage() {
               )}
             </div>
 
-                {showScheduler && (
-                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div 
-                      className="fixed inset-0 bg-[#1A1816]/40 backdrop-blur-md animate-in fade-in duration-300" 
-                      onClick={() => setShowScheduler(false)} 
-                    />
-                    <div className="relative w-full max-w-[680px] animate-in zoom-in-95 fade-in duration-200 rounded-[32px] border border-[#D9E3D9] bg-white p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)]">
-                      <div className="mb-8 flex items-center justify-between">
-                        <div>
-                          <h2 className="text-2xl font-bold tracking-tight text-[#171717]">Schedule Post</h2>
-                          <p className="mt-1 text-[14px] text-[#AAA39D]">
-                            {getTimePreview() || 'Choose the perfect time for your audience.'}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowScheduler(false)}
-                          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F2F6F2] text-[#AAA39D] transition hover:bg-[#EEF3EE] hover:text-[#2F281F]"
-                        >
-                          <X className="h-5 w-5" strokeWidth={2} />
-                        </button>
-                      </div>
-
-                      <div className="grid gap-8 lg:grid-cols-[1fr_240px]">
-                        <div className="rounded-[24px] border border-[#D9E3D9] bg-[#F8FAF8] p-4 shadow-inner">
-                          <DayPicker
-                            mode="single"
-                            selected={scheduledAt}
-                            onSelect={(date) => {
-                              if (!date) return;
-                              const current = scheduledAt || new Date();
-                              date.setHours(current.getHours(), current.getMinutes());
-                              setValue('scheduledAt', date);
-                            }}
-                            classNames={{
-                              day_selected: 'bg-[#D27D50] text-white !rounded-xl font-bold shadow-lg shadow-[#D27D50]/30',
-                              day_today: 'text-[#D27D50] font-bold',
-                              day: 'h-10 w-10 text-center text-sm p-0 font-semibold text-stone-600 hover:bg-white hover:text-[#D27D50] rounded-xl transition-all active:scale-90',
-                              caption: 'flex justify-between items-center py-3 px-1 font-bold text-stone-800 text-sm mb-2',
-                              head_cell: 'text-[#AAA39D] font-bold text-[10px] uppercase w-10 pb-4',
-                              table: 'w-full border-collapse',
-                              nav: 'flex items-center gap-1',
-                              nav_button: 'p-2 hover:bg-white rounded-xl transition text-stone-400 hover:text-[#D27D50] border border-transparent hover:border-[#D9E3D9]',
-                            }}
-                          />
-                        </div>
-
-                        <div className="flex flex-col gap-6">
-                          <div className="space-y-3">
-                            <Label className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Exact Time</Label>
-                            <div className="relative">
-                              <Input
-                                type="time"
-                                value={scheduledAt ? format(scheduledAt, 'HH:mm') : ''}
-                                onChange={(e) => {
-                                  const [hours, minutes] = e.target.value.split(':');
-                                  const date = new Date(scheduledAt || new Date());
-                                  date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-                                  setValue('scheduledAt', date);
-                                }}
-                                className="h-14 rounded-[18px] border-[#D9E3D9] bg-[#F8FAF8] text-center text-2xl font-bold text-[#171717] transition focus-visible:ring-2 focus-visible:ring-[#D27D50]/20"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-3">
-                            <Label className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Quick Select</Label>
-                            <div className="grid gap-2">
-                              {quickScheduleTimes.map((slot) => (
-                                <button
-                                  key={slot.label}
-                                  type="button"
-                                  onClick={() => setValue('scheduledAt', slot.value())}
-                                  className="flex items-center gap-3 rounded-xl border border-[#D9E3D9] bg-white px-4 py-3 text-[13px] font-bold text-[#5F5A54] transition hover:border-[#D27D50]/40 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
-                                >
-                                  <slot.icon className="h-4 w-4" />
-                                  {slot.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="mt-auto">
-                            <Button
-                              type="button"
-                              onClick={() => setShowScheduler(false)}
-                              className="h-14 w-full rounded-2xl bg-[#D27D50] text-sm font-bold text-white shadow-lg shadow-[#D27D50]/20 transition hover:bg-[#C06A3D] active:scale-[0.98]"
-                            >
-                              Set Schedule
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {scheduledAt && (
-                        <div className="mt-8 flex items-center justify-center gap-2 rounded-2xl bg-[#FBF3EE] py-3 text-[13px] font-bold text-[#A8562F]">
-                          <Calendar className="h-4 w-4" />
-                          <span>Scheduled for {format(scheduledAt, 'MMMM do, yyyy @ p')}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {publishLog.length > 0 && (
-                  <div className="rounded-2xl border border-stone-800 bg-stone-950 p-4 font-mono text-xs">
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="font-bold uppercase tracking-widest text-stone-400">
-                        {createPostMutation.isPending ? 'Publishing...' : publishError ? 'Failed' : 'Done'}
-                      </span>
-                      <button type="button" onClick={() => { setPublishLog([]); setPublishError(null); }} className="text-stone-500 hover:text-white">
-                        clear
-                      </button>
-                    </div>
-                    <div className="max-h-60 space-y-1 overflow-y-auto">
-                      {publishLog.map((entry, index) => (
-                        <div
-                          key={`${entry.ts}-${index}`}
-                          className={cn(
-                            'flex gap-2',
-                            entry.level === 'error' ? 'text-red-400' :
-                            entry.level === 'success' ? 'text-green-400' :
-                            entry.level === 'warn' ? 'text-yellow-400' : 'text-stone-400'
-                          )}
-                        >
-                          <span className="shrink-0 text-stone-600">{entry.ts}</span>
-                          <span className="break-all">{entry.msg}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-            </div>
-        </main>
-
-              <aside className="h-[calc(100vh-64px)] w-full shrink-0 overflow-y-auto border-l border-[#D9E3D9] bg-white pb-24 xl:w-[320px]">
-                <div className="sticky top-0 z-10 border-b border-[#D9E3D9] bg-white px-6 py-5">
-                  <div className="flex items-center justify-between">
+            {showScheduler && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div
+                  className="fixed inset-0 bg-[#1A1816]/40 backdrop-blur-md animate-in fade-in duration-300"
+                  onClick={() => setShowScheduler(false)}
+                />
+                <div className="relative w-full max-w-[680px] animate-in zoom-in-95 fade-in duration-200 rounded-[32px] border border-[#D9E3D9] bg-white p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)]">
+                  <div className="mb-8 flex items-center justify-between">
                     <div>
-                      <h2 className="text-[18px] font-bold tracking-tight text-[#24211E]">Settings</h2>
+                      <h2 className="text-2xl font-bold tracking-tight text-[#171717]">Schedule Post</h2>
                       <p className="mt-1 text-[14px] text-[#AAA39D]">
-                        {activePlatform ? `${platformStyles[activePlatform]?.name} Overrides` : 'Select a channel'}
+                        {getTimePreview() || 'Choose the perfect time for your audience.'}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      {selectedPlatforms?.map((platformId) => {
-                        const config = platformStyles[platformId];
-                        if (!config) return null;
-                        const Icon = config.icon;
-                        const isActive = activePlatform === platformId;
-
-                        return (
-                          <button
-                            key={platformId}
-                            type="button"
-                            onClick={() => setActivePlatform(platformId)}
-                            className={cn(
-                              "flex h-7 w-7 items-center justify-center rounded-full transition-all",
-                              isActive ? "ring-2 ring-[#D27D50] ring-offset-1" : "opacity-40 hover:opacity-100"
-                            )}
-                            style={{ backgroundColor: config.bg }}
-                            title={config.name}
-                          >
-                            <Icon className="h-3 w-3" style={{ color: config.color }} />
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowScheduler(false)}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F2F6F2] text-[#AAA39D] transition hover:bg-[#EEF3EE] hover:text-[#2F281F]"
+                    >
+                      <X className="h-5 w-5" strokeWidth={2} />
+                    </button>
                   </div>
-                </div>
 
-                <div className="space-y-4 px-5 py-5">
-                  {!activePlatform && (
-                    <div className="rounded-2xl border border-dashed border-[#D9E3D9] bg-white p-5 text-center">
-                      <p className="text-sm font-bold text-stone-800">No channel selected</p>
-                      <p className="mt-1 text-[11px] leading-snug text-stone-400">Select a connected channel to configure platform-specific options.</p>
+                  <div className="grid gap-8 lg:grid-cols-[1fr_240px]">
+                    <div className="rounded-[24px] border border-[#D9E3D9] bg-[#F8FAF8] p-4 shadow-inner">
+                      <DayPicker
+                        mode="single"
+                        selected={scheduledAt}
+                        onSelect={(date) => {
+                          if (!date) return;
+                          const current = scheduledAt || new Date();
+                          date.setHours(current.getHours(), current.getMinutes());
+                          setValue('scheduledAt', date);
+                        }}
+                        classNames={{
+                          day_selected: 'bg-[#D27D50] text-white !rounded-xl font-bold shadow-lg shadow-[#D27D50]/30',
+                          day_today: 'text-[#D27D50] font-bold',
+                          day: 'h-10 w-10 text-center text-sm p-0 font-semibold text-stone-600 hover:bg-white hover:text-[#D27D50] rounded-xl transition-all active:scale-90',
+                          caption: 'flex justify-between items-center py-3 px-1 font-bold text-stone-800 text-sm mb-2',
+                          head_cell: 'text-[#AAA39D] font-bold text-[10px] uppercase w-10 pb-4',
+                          table: 'w-full border-collapse',
+                          nav: 'flex items-center gap-1',
+                          nav_button: 'p-2 hover:bg-white rounded-xl transition text-stone-400 hover:text-[#D27D50] border border-transparent hover:border-[#D9E3D9]',
+                        }}
+                      />
                     </div>
-                  )}
 
-                  {activePlatform === 'FACEBOOK' && (
-                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                      <OverrideHeader platform="FACEBOOK" value={fbType || 'FEED'} />
-                      <div className="space-y-3 px-5 py-4">
-                        <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={fbType || 'FEED'} onChange={(value) => setValue('facebookPostType', value as any)} color={platformStyles.FACEBOOK.color} />
-                        {fbType === 'REEL' && <Input placeholder="Reel title" {...register('reelTitle')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />}
-                        <Input placeholder="Location" {...register('location')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
-                        <SwitchRow label="Auto-fix media" description="Trim & reformat to platform specs" checked={fbAutoFix} onChange={(value) => setValue('facebookAutoFix', value)} />
-                      </div>
-                    </div>
-                  )}
-
-                  {activePlatform === 'LINKEDIN' && (
-                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                      <OverrideHeader platform="LINKEDIN" value="Story" />
-                      <div className="space-y-3 px-5 py-4">
-                        <SegmentedOptions label="Post Type" options={['Post', 'Story']} value="Story" onChange={() => undefined} color={platformStyles.LINKEDIN.color} />
-                        <SegmentedOptions label="Visibility" options={['Anyone', 'Connections']} value="Connections" onChange={() => undefined} color="#171717" />
-                        <SwitchRow label="Auto-fix media" checked={true} onChange={() => undefined} />
-                      </div>
-                    </div>
-                  )}
-
-                  {activePlatform === 'TWITTER' && (
-                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                      <OverrideHeader platform="TWITTER" value="Post" />
-                      <div className="space-y-3 px-5 py-4">
-                        <SegmentedOptions label="Who can reply" options={['everyone', 'following', 'mentionedUsers']} value={watch('twitterReplySettings') || 'everyone'} onChange={(value) => setValue('twitterReplySettings', value as any)} color={platformStyles.TWITTER.color} />
-                        <Controller name="twitterAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" checked={field.value} onChange={field.onChange} />} />
-                      </div>
-                    </div>
-                  )}
-
-                  {activePlatform === 'INSTAGRAM' && (
-                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                      <OverrideHeader platform="INSTAGRAM" value={igType || 'FEED'} />
-                      <div className="space-y-3 px-5 py-4">
-                        <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={igType || 'FEED'} onChange={(value) => setValue('instagramPostType', value as any)} color={platformStyles.INSTAGRAM.color} />
-                        {igType === 'REEL' && <SwitchRow label="Share Reel to Feed" checked={watch('shareToFeed')} onChange={(value) => setValue('shareToFeed', value)} />}
-                        <SwitchRow label="Auto-fix media" description="Conforms to IG specs" checked={igAutoFix} onChange={(value) => setValue('instagramAutoFix', value)} />
-                      </div>
-                    </div>
-                  )}
-
-                  {activePlatform === 'YOUTUBE' && (
-                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                      <OverrideHeader platform="YOUTUBE" value={watch('youtubePostType')} />
-                      <div className="space-y-3 px-5 py-4">
-                        <SegmentedOptions label="Format" options={['VIDEO', 'SHORTS']} value={watch('youtubePostType')} onChange={(value) => setValue('youtubePostType', value as any)} color={platformStyles.YOUTUBE.color} />
-                        <div className="grid grid-cols-2 gap-2">
-                          <select className="h-9 rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('youtubePrivacy')}>
-                            <option value="public">Public</option>
-                            <option value="unlisted">Unlisted</option>
-                            <option value="private">Private</option>
-                          </select>
-                          <select className="h-9 rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('youtubeCategory')}>
-                            <option value="22">People & Blogs</option>
-                            <option value="23">Comedy</option>
-                            <option value="24">Entertainment</option>
-                            <option value="1">Film & Animation</option>
-                            <option value="10">Music</option>
-                          </select>
+                    <div className="flex flex-col gap-6">
+                      <div className="space-y-3">
+                        <Label className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Exact Time</Label>
+                        <div className="relative">
+                          <Input
+                            type="time"
+                            value={scheduledAt ? format(scheduledAt, 'HH:mm') : ''}
+                            onChange={(e) => {
+                              const [hours, minutes] = e.target.value.split(':');
+                              const date = new Date(scheduledAt || new Date());
+                              date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+                              setValue('scheduledAt', date);
+                            }}
+                            className="h-14 rounded-[18px] border-[#D9E3D9] bg-[#F8FAF8] text-center text-2xl font-bold text-[#171717] transition focus-visible:ring-2 focus-visible:ring-[#D27D50]/20"
+                          />
                         </div>
-                        <Input placeholder="SEO tags" {...register('youtubeTags')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
-                        <Controller name="youtubeAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" checked={field.value} onChange={field.onChange} />} />
-                        <Controller name="youtubeMadeForKids" control={control} render={({ field }) => <SwitchRow label="Made for Kids" checked={field.value} onChange={field.onChange} icon={AlertCircle} />} />
-                        <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#D9E3D9] bg-[#F8FAF8] px-3 py-4 text-center hover:border-red-300">
-                          <Upload className="mb-1 h-4 w-4 text-red-500" />
-                          <span className="text-[10px] font-semibold text-stone-500">{watch('youtubeThumbnail') ? 'Thumbnail selected' : 'Upload thumbnail'}</span>
-                          <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={(e) => {
-                            if (e.target.files?.[0]) setValue('youtubeThumbnail', e.target.files[0] as any);
-                          }} />
-                        </label>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Quick Select</Label>
+                        <div className="grid gap-2">
+                          {quickScheduleTimes.map((slot) => (
+                            <button
+                              key={slot.label}
+                              type="button"
+                              onClick={() => setValue('scheduledAt', slot.value())}
+                              className="flex items-center gap-3 rounded-xl border border-[#D9E3D9] bg-white px-4 py-3 text-[13px] font-bold text-[#5F5A54] transition hover:border-[#D27D50]/40 hover:bg-[#FBF3EE] hover:text-[#D27D50]"
+                            >
+                              <slot.icon className="h-4 w-4" />
+                              {slot.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-auto">
+                        <Button
+                          type="button"
+                          onClick={() => setShowScheduler(false)}
+                          className="h-14 w-full rounded-2xl bg-[#D27D50] text-sm font-bold text-white shadow-lg shadow-[#D27D50]/20 transition hover:bg-[#C06A3D] active:scale-[0.98]"
+                        >
+                          Set Schedule
+                        </Button>
                       </div>
                     </div>
-                  )}
-
-                  {activePlatform === 'THREADS' && (
-                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                      <OverrideHeader platform="THREADS" value="Post" />
-                      <div className="px-4 py-4">
-                        <Controller name="threadsAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" description="Force 4:5 portrait for Threads" checked={field.value} onChange={field.onChange} />} />
-                      </div>
-                    </div>
-                  )}
-
-                  {activePlatform === 'PINTEREST' && (
-                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                      <OverrideHeader platform="PINTEREST" value="Pin" />
-                      <div className="space-y-3 px-4 py-4">
-                        {isLoadingBoards ? (
-                          <p className="flex items-center gap-2 text-xs text-stone-500"><Loader2 className="h-3 w-3 animate-spin" /> Fetching boards...</p>
-                        ) : pinterestBoards.length > 0 ? (
-                          <select className="h-9 w-full rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('pinterestBoardId')}>
-                            {pinterestBoards.map((board) => <option key={board.id} value={board.id}>{board.name}</option>)}
-                          </select>
-                        ) : (
-                          <p className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-700">No boards found. Create one on Pinterest first.</p>
-                        )}
-                        <Input placeholder="Destination link" {...register('pinterestLink')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
-                      </div>
-                    </div>
-                  )}
-
-                  {activePlatform === 'SNAPCHAT' && (
-                    <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                      <OverrideHeader platform="SNAPCHAT" value={watch('snapchatPostType') || 'STORY'} />
-                      <div className="px-4 py-4">
-                        <SegmentedOptions label="Post Type" options={['STORY', 'SPOTLIGHT']} value={watch('snapchatPostType') || 'STORY'} onChange={(value) => setValue('snapchatPostType', value as any)} color={platformStyles.SNAPCHAT.color} />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-start gap-2 rounded-xl border border-[#C5DCFA] bg-[#EBF4FF]/60 px-3 py-3">
-                    <CircleHelp className="mt-0.5 h-3 w-3 shrink-0 text-[#0A66C2]" />
-                    <p className="text-[11px] leading-snug text-[#0A66C2]">Override settings apply per-platform. Global caption is shared across all selected channels.</p>
                   </div>
+
+                  {scheduledAt && (
+                    <div className="mt-8 flex items-center justify-center gap-2 rounded-2xl bg-[#FBF3EE] py-3 text-[13px] font-bold text-[#A8562F]">
+                      <Calendar className="h-4 w-4" />
+                      <span>Scheduled for {format(scheduledAt, 'MMMM do, yyyy @ p')}</span>
+                    </div>
+                  )}
                 </div>
-              </aside>
-            </div>
-
-          <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#D9E3D9] bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur-sm lg:left-[280px]">
-            <div className="flex min-h-16 flex-col gap-3 px-5 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-              <button
-                type="button"
-                onClick={() => { setShowScheduler(true); setValue('publishNow', false); }}
-                className="flex w-fit items-center gap-2 rounded-xl border border-[#D9E3D9] bg-white px-3 py-1.5 text-sm font-medium text-stone-500 transition hover:border-[#D27D50]/30 hover:text-stone-700"
-              >
-                <Calendar className="h-3.5 w-3.5" />
-                <span>{scheduledAt ? format(scheduledAt, 'MMM d, p') : 'Pick date & time'}</span>
-                <Clock className="h-3 w-3 text-stone-400" />
-              </button>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="submit"
-                  onClick={() => { setShowScheduler(false); setValue('publishNow', false); }}
-                  disabled={createPostMutation.isPending}
-                  className="flex items-center gap-1.5 rounded-xl border border-transparent px-4 py-2 text-sm font-medium text-stone-500 transition hover:border-[#D9E3D9] hover:bg-[#F0F4F0]"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Save Draft
-                </button>
-                <button
-                  type="submit"
-                  onClick={() => { setShowScheduler(false); setValue('publishNow', false); }}
-                  disabled={createPostMutation.isPending}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#D27D50]/30 bg-white px-4 py-2 text-sm font-semibold text-[#D27D50] transition hover:bg-[#FBF3EE]"
-                >
-                  <Calendar className="h-3.5 w-3.5" />
-                  Schedule
-                </button>
-                <button
-                  type="submit"
-                  onClick={() => { setShowScheduler(false); setValue('publishNow', true); }}
-                  disabled={createPostMutation.isPending}
-                  className="group relative flex items-center gap-2 overflow-hidden rounded-xl px-5 py-2.5 text-sm font-bold tracking-wide text-white shadow-[0_2px_12px_rgba(210,125,80,0.45)] transition active:scale-95 disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg, #D27D50 0%, #C06A3D 60%, #A8562F 100%)' }}
-                >
-                  {createPostMutation.isPending ? <Loader2 className="relative z-10 h-3.5 w-3.5 animate-spin" /> : <Zap className="relative z-10 h-3.5 w-3.5 fill-current" />}
-                  <span className="relative z-10">Post Now</span>
-                  <Send className="relative z-10 h-3.5 w-3.5 opacity-70 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
-                </button>
               </div>
+            )}
+
+            {publishLog.length > 0 && (
+              <div className="rounded-2xl border border-stone-800 bg-stone-950 p-4 font-mono text-xs">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="font-bold uppercase tracking-widest text-stone-400">
+                    {createPostMutation.isPending ? 'Publishing...' : publishError ? 'Failed' : 'Done'}
+                  </span>
+                  <button type="button" onClick={() => { setPublishLog([]); setPublishError(null); }} className="text-stone-500 hover:text-white">
+                    clear
+                  </button>
+                </div>
+                <div className="max-h-60 space-y-1 overflow-y-auto">
+                  {publishLog.map((entry, index) => (
+                    <div
+                      key={`${entry.ts}-${index}`}
+                      className={cn(
+                        'flex gap-2',
+                        entry.level === 'error' ? 'text-red-400' :
+                          entry.level === 'success' ? 'text-green-400' :
+                            entry.level === 'warn' ? 'text-yellow-400' : 'text-stone-400'
+                      )}
+                    >
+                      <span className="shrink-0 text-stone-600">{entry.ts}</span>
+                      <span className="break-all">{entry.msg}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+
+        <aside className="h-[calc(100vh-64px)] w-full shrink-0 overflow-y-auto border-l border-[#D9E3D9] bg-white pb-24 xl:w-[320px]">
+          <div className="sticky top-0 z-10 border-b border-[#D9E3D9] bg-white/80 px-6 py-4 backdrop-blur-sm">
+            <h2 className="text-[16px] font-bold tracking-tight text-[#24211E]">Settings</h2>
+            <p className="mt-0.5 text-[12px] text-[#AAA39D]">Configure platform-specific options.</p>
+          </div>
+
+          <div className="space-y-4 px-4 py-4">
+            {(selectedPlatforms?.length === 0) && (
+              <div className="rounded-2xl border border-dashed border-[#D9E3D9] bg-white p-5 text-center">
+                <p className="text-sm font-bold text-stone-800">No channels selected</p>
+                <p className="mt-1 text-[11px] leading-snug text-stone-400">Select a connected channel on the left to configure platform-specific options.</p>
+              </div>
+            )}
+
+            {selectedPlatforms?.includes('FACEBOOK') && (
+              <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                <OverrideHeader platform="FACEBOOK" value={fbType || 'FEED'} />
+                <div className="space-y-3 px-4 py-3">
+                  <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={fbType || 'FEED'} onChange={(value) => setValue('facebookPostType', value as any)} color={platformStyles.FACEBOOK.color} />
+                  {fbType === 'REEL' && <Input placeholder="Reel title" {...register('reelTitle')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />}
+                  <Input placeholder="Location" {...register('location')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
+                  <SwitchRow label="Auto-fix media" description="Trim & reformat to platform specs" checked={fbAutoFix} onChange={(value) => setValue('facebookAutoFix', value)} />
+                </div>
+              </div>
+            )}
+
+            {selectedPlatforms?.includes('LINKEDIN') && (
+              <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                <OverrideHeader platform="LINKEDIN" value="Story" />
+                <div className="space-y-3 px-5 py-4">
+                  <SegmentedOptions label="Post Type" options={['Post', 'Story']} value="Story" onChange={() => undefined} color={platformStyles.LINKEDIN.color} />
+                  <SegmentedOptions label="Visibility" options={['Anyone', 'Connections']} value="Connections" onChange={() => undefined} color="#171717" />
+                  <SwitchRow label="Auto-fix media" checked={true} onChange={() => undefined} />
+                </div>
+              </div>
+            )}
+
+            {selectedPlatforms?.includes('TWITTER') && (
+              <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                <OverrideHeader platform="TWITTER" value="Post" />
+                <div className="space-y-3 px-5 py-4">
+                  <SegmentedOptions label="Who can reply" options={['everyone', 'following', 'mentionedUsers']} value={watch('twitterReplySettings') || 'everyone'} onChange={(value) => setValue('twitterReplySettings', value as any)} color={platformStyles.TWITTER.color} />
+                  <Controller name="twitterAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" checked={field.value} onChange={field.onChange} />} />
+                </div>
+              </div>
+            )}
+
+            {selectedPlatforms?.includes('INSTAGRAM') && (
+              <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                <OverrideHeader platform="INSTAGRAM" value={igType || 'FEED'} />
+                <div className="space-y-3 px-5 py-4">
+                  <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={igType || 'FEED'} onChange={(value) => setValue('instagramPostType', value as any)} color={platformStyles.INSTAGRAM.color} />
+                  {igType === 'REEL' && <SwitchRow label="Share Reel to Feed" checked={watch('shareToFeed')} onChange={(value) => setValue('shareToFeed', value)} />}
+                  <SwitchRow label="Auto-fix media" description="Conforms to IG specs" checked={igAutoFix} onChange={(value) => setValue('instagramAutoFix', value)} />
+                </div>
+              </div>
+            )}
+
+            {selectedPlatforms?.includes('YOUTUBE') && (
+              <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                <OverrideHeader platform="YOUTUBE" value={watch('youtubePostType')} />
+                <div className="space-y-3 px-5 py-4">
+                  <SegmentedOptions label="Format" options={['VIDEO', 'SHORTS']} value={watch('youtubePostType')} onChange={(value) => setValue('youtubePostType', value as any)} color={platformStyles.YOUTUBE.color} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <select className="h-9 rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('youtubePrivacy')}>
+                      <option value="public">Public</option>
+                      <option value="unlisted">Unlisted</option>
+                      <option value="private">Private</option>
+                    </select>
+                    <select className="h-9 rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('youtubeCategory')}>
+                      <option value="22">People & Blogs</option>
+                      <option value="23">Comedy</option>
+                      <option value="24">Entertainment</option>
+                      <option value="1">Film & Animation</option>
+                      <option value="10">Music</option>
+                    </select>
+                  </div>
+                  <Input placeholder="SEO tags" {...register('youtubeTags')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
+                  <Controller name="youtubeAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" checked={field.value} onChange={field.onChange} />} />
+                  <Controller name="youtubeMadeForKids" control={control} render={({ field }) => <SwitchRow label="Made for Kids" checked={field.value} onChange={field.onChange} icon={AlertCircle} />} />
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#D9E3D9] bg-[#F8FAF8] px-3 py-4 text-center hover:border-red-300">
+                    <Upload className="mb-1 h-4 w-4 text-red-500" />
+                    <span className="text-[10px] font-semibold text-stone-500">{watch('youtubeThumbnail') ? 'Thumbnail selected' : 'Upload thumbnail'}</span>
+                    <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={(e) => {
+                      if (e.target.files?.[0]) setValue('youtubeThumbnail', e.target.files[0] as any);
+                    }} />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {selectedPlatforms?.includes('THREADS') && (
+              <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                <OverrideHeader platform="THREADS" value="Post" />
+                <div className="px-4 py-4">
+                  <Controller name="threadsAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" description="Force 4:5 portrait for Threads" checked={field.value} onChange={field.onChange} />} />
+                </div>
+              </div>
+            )}
+
+            {selectedPlatforms?.includes('PINTEREST') && (
+              <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                <OverrideHeader platform="PINTEREST" value="Pin" />
+                <div className="space-y-3 px-4 py-4">
+                  {isLoadingBoards ? (
+                    <p className="flex items-center gap-2 text-xs text-stone-500"><Loader2 className="h-3 w-3 animate-spin" /> Fetching boards...</p>
+                  ) : pinterestBoards.length > 0 ? (
+                    <select className="h-9 w-full rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('pinterestBoardId')}>
+                      {pinterestBoards.map((board) => <option key={board.id} value={board.id}>{board.name}</option>)}
+                    </select>
+                  ) : (
+                    <p className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-700">No boards found. Create one on Pinterest first.</p>
+                  )}
+                  <Input placeholder="Destination link" {...register('pinterestLink')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
+                </div>
+              </div>
+            )}
+
+            {selectedPlatforms?.includes('SNAPCHAT') && (
+              <div className="rounded-2xl border border-[#D9E3D9] bg-white">
+                <OverrideHeader platform="SNAPCHAT" value={watch('snapchatPostType') || 'STORY'} />
+                <div className="px-4 py-4">
+                  <SegmentedOptions label="Post Type" options={['STORY', 'SPOTLIGHT']} value={watch('snapchatPostType') || 'STORY'} onChange={(value) => setValue('snapchatPostType', value as any)} color={platformStyles.SNAPCHAT.color} />
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-start gap-2 rounded-xl border border-[#C5DCFA] bg-[#EBF4FF]/60 px-3 py-3">
+              <CircleHelp className="mt-0.5 h-3 w-3 shrink-0 text-[#0A66C2]" />
+              <p className="text-[11px] leading-snug text-[#0A66C2]">Override settings apply per-platform. Global caption is shared across all selected channels.</p>
             </div>
-          </footer>
+          </div>
+        </aside>
+      </div>
+
+      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#D9E3D9] bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur-sm lg:left-[280px]">
+        <div className="flex min-h-16 flex-col gap-3 px-5 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+          <button
+            type="button"
+            onClick={() => { setShowScheduler(true); setValue('publishNow', false); }}
+            className="flex w-fit items-center gap-2 rounded-xl border border-[#D9E3D9] bg-white px-3 py-1.5 text-sm font-medium text-stone-500 transition hover:border-[#D27D50]/30 hover:text-stone-700"
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            <span>{scheduledAt ? format(scheduledAt, 'MMM d, p') : 'Pick date & time'}</span>
+            <Clock className="h-3 w-3 text-stone-400" />
+          </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="submit"
+              onClick={() => { setShowScheduler(false); setValue('publishNow', false); }}
+              disabled={createPostMutation.isPending}
+              className="flex items-center gap-1.5 rounded-xl border border-transparent px-4 py-2 text-sm font-medium text-stone-500 transition hover:border-[#D9E3D9] hover:bg-[#F0F4F0]"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Save Draft
+            </button>
+            <button
+              type="submit"
+              onClick={() => { setShowScheduler(false); setValue('publishNow', false); }}
+              disabled={createPostMutation.isPending}
+              className="flex items-center gap-1.5 rounded-xl border border-[#D27D50]/30 bg-white px-4 py-2 text-sm font-semibold text-[#D27D50] transition hover:bg-[#FBF3EE]"
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              Schedule
+            </button>
+            <button
+              type="submit"
+              onClick={() => { setShowScheduler(false); setValue('publishNow', true); }}
+              disabled={createPostMutation.isPending}
+              className="group relative flex items-center gap-2 overflow-hidden rounded-xl px-5 py-2.5 text-sm font-bold tracking-wide text-white shadow-[0_2px_12px_rgba(210,125,80,0.45)] transition active:scale-95 disabled:opacity-60"
+              style={{ background: 'linear-gradient(135deg, #D27D50 0%, #C06A3D 60%, #A8562F 100%)' }}
+            >
+              {createPostMutation.isPending ? <Loader2 className="relative z-10 h-3.5 w-3.5 animate-spin" /> : <Zap className="relative z-10 h-3.5 w-3.5 fill-current" />}
+              <span className="relative z-10">Post Now</span>
+              <Send className="relative z-10 h-3.5 w-3.5 opacity-70 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
+            </button>
+          </div>
+        </div>
+      </footer>
     </form>
   );
 }
@@ -964,13 +1001,13 @@ function OverrideHeader({ platform, value }: { platform: string; value?: string 
   const Icon = config.icon;
 
   return (
-    <div className="flex items-center gap-3 border-b border-[#EEF3EE] px-5 py-4">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: config.bg }}>
-        <Icon className="h-4 w-4" style={{ color: config.color }} />
+    <div className="flex items-center gap-2 border-b border-[#F0F4F0] px-4 py-3">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: config.bg }}>
+        <Icon className="h-3 w-3" style={{ color: config.color }} />
       </span>
-      <span className="text-[17px] font-bold text-[#2F281F]">{config.name}</span>
+      <span className="text-[13px] font-bold text-[#2F281F]">{config.name}</span>
       {value && (
-        <span className="ml-auto rounded-full px-3 py-1 text-[12px] font-bold" style={{ backgroundColor: config.bg, color: config.color }}>
+        <span className="ml-auto rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ backgroundColor: config.bg, color: config.color }}>
           {value}
         </span>
       )}
@@ -993,8 +1030,8 @@ function SegmentedOptions({
 }) {
   return (
     <div>
-      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">{label}</p>
-      <div className="flex flex-wrap gap-2">
+      <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-stone-400">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
         {options.map((option) => {
           const selected = value === option;
 
@@ -1004,12 +1041,12 @@ function SegmentedOptions({
               type="button"
               onClick={() => onChange(option)}
               className={cn(
-                'min-h-9 rounded-xl border px-4 text-[14px] font-bold transition',
-                selected ? 'border-transparent text-white' : 'border-[#D9E3D9] bg-white text-[#7B746D] hover:border-stone-400 hover:text-stone-700'
+                'h-8 rounded-lg border px-3 text-[11px] font-semibold transition-all duration-150',
+                selected ? 'border-transparent text-white' : 'border-[#D9E3D9] bg-white text-stone-500 hover:border-stone-400 hover:text-stone-700'
               )}
               style={selected ? { backgroundColor: color, borderColor: color } : undefined}
             >
-              {option}
+              {option.charAt(0).toUpperCase() + option.slice(1).toLowerCase()}
             </button>
           );
         })}
@@ -1023,7 +1060,7 @@ function SwitchRow({
   description,
   checked,
   onChange,
-  icon: Icon = Wand2,
+  icon: Icon = CircleHelp,
 }: {
   label: string;
   description?: string;
@@ -1032,15 +1069,26 @@ function SwitchRow({
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[14px] font-medium leading-tight text-[#5F5A54]">{label}</span>
-          <Icon className="h-3 w-3 text-stone-300" />
-        </div>
-        {description && <p className="mt-0.5 text-[11px] leading-snug text-stone-400">{description}</p>}
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-medium leading-tight text-stone-600">{label}</span>
+        {description && (
+          <div className="group relative">
+            <Icon className="h-2.5 w-2.5 cursor-help text-stone-300" />
+            <div className="pointer-events-none absolute bottom-5 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-stone-800 px-2 py-1 text-[10px] text-white shadow-lg group-hover:block">
+              {description}
+            </div>
+          </div>
+        )}
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} className={checked ? 'bg-[#D9774B]' : 'bg-stone-200'} />
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        className={cn(
+          "h-4 w-8 transition-colors",
+          checked ? 'bg-[#D27D50]' : 'bg-stone-200'
+        )}
+      />
     </div>
   );
 }
