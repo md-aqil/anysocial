@@ -161,19 +161,6 @@ export default function DashboardLayout({
             <span className="text-[#D9E3D9]">›</span>
             <span className="font-bold text-[#3C342C]">Create New</span>
           </div>
-          <div className="ml-auto hidden h-10 w-[380px] items-center gap-3 rounded-xl bg-[#F0F4F0] px-4 text-[#AAA39D] lg:flex">
-            <Search className="h-4 w-4" strokeWidth={1.8} />
-            <span className="text-[15px]">Search posts, analytics...</span>
-          </div>
-          <div className="ml-auto flex items-center gap-5">
-            <div className="relative text-[#AAA39D]">
-              <Bell className="h-5 w-5" strokeWidth={1.8} />
-              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#D9774B]" />
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#D9E3D9] bg-[#F1F5F1] text-sm font-bold text-[#3C342C]">
-              {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'A'}
-            </div>
-          </div>
         </div>
         <main>{children}</main>
       </div>
