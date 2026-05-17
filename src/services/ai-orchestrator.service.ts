@@ -72,6 +72,49 @@ Make sure the output is a valid JSON object.`;
       return { caption: content, keywords: "", tags: "" };
     }
   }
+
+  async adaptContent(content: string, platform: string): Promise<{ adaptedContent: string }> {
+    if (!this.vertexAI) {
+      return { adaptedContent: content };
+    }
+    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-1.5-flash' });
+
+    const prompt = `Adapt the following social media post for ${platform}. 
+Modify the tone, style, and length to fit the best practices for ${platform}.
+Include relevant hashtags if appropriate for the platform.
+
+Original Content: "${content}"
+
+Your response should be a JSON object with one property:
+1. **adaptedContent**: The modified content for ${platform}.
+
+Make sure the output is a valid JSON object.`;
+
+    const request = {
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    };
+
+    const result = await model.generateContent(request);
+    const response = result.response;
+
+    if (!response || !response.candidates || response.candidates.length === 0) {
+      return { adaptedContent: content };
+    }
+
+    const aiResponse = response.candidates[0].content.parts[0].text;
+
+    if (!aiResponse) return { adaptedContent: content };
+
+    try {
+      const match = aiResponse.match(/```json\n(.*)\n```/s);
+      const jsonStr = match ? match[1] : aiResponse;
+      const parsed = JSON.parse(jsonStr);
+      return { adaptedContent: parsed.adaptedContent || aiResponse };
+    } catch (error) {
+      console.error('AI Adapt parsing error:', error);
+      return { adaptedContent: aiResponse };
+    }
+  }
 }
 
 export const aiOrchestrator = new AiOrchestratorService();

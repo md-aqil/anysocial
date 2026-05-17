@@ -22,4 +22,18 @@ router.post('/analyze-media', jwtAuth, upload.single('media'), async (req: Reque
   }
 });
 
+/**
+ * POST /api/ai/adapt-content
+ * Adapts content for a specific platform.
+ */
+router.post('/adapt-content', jwtAuth, async (req: Request, res: Response) => {
+  try {
+    const { content, platform } = req.body;
+    const result = await aiOrchestrator.adaptContent(content, platform);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export const aiGenerationRoutes = router;
