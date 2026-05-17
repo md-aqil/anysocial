@@ -161,6 +161,14 @@ export default function DashboardLayout({
             <span className="text-[#D9E3D9]">›</span>
             <span className="font-bold text-[#3C342C]">Create New</span>
           </div>
+          <div className="ml-auto flex items-center">
+            <Link 
+              href="/privacy-policy" 
+              className="text-sm font-bold text-[#AAA39D] transition-colors hover:text-[#D27D50]"
+            >
+              Privacy Policy
+            </Link>
+          </div>
         </div>
         <main>{children}</main>
       </div>
