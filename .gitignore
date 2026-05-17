@@ -27,3 +27,7 @@ scratch/
 !package.json
 !tsconfig.json
 !next.config.json
+
+# Next.js build output
+frontend/.next/
+.next/

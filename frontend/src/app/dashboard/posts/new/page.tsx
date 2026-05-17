@@ -13,15 +13,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { 
-  AlertCircle, Calendar, Check, CircleHelp, Clock, FileText, 
+import {
+  AlertCircle, Calendar, Check, CircleHelp, Clock, FileText,
   Loader2, Moon, Plus, Sun, Upload, X, Zap, Edit3, ImageDown,
   Paperclip, Play, Send, Smile, Wand2, Hash, Video, Music2,
   AtSign, Pin, Sparkles, MessageSquareText, MousePointer2, Type, RotateCcw
 } from 'lucide-react';
-import { 
-  InstagramLogo, FacebookLogo, LinkedinLogo, TwitterLogo, 
-  TiktokLogo, YoutubeLogo, ThreadsLogo, PinterestLogo, SnapchatLogo 
+import {
+  InstagramLogo, FacebookLogo, LinkedinLogo, TwitterLogo,
+  TiktokLogo, YoutubeLogo, ThreadsLogo, PinterestLogo, SnapchatLogo
 } from '@/components/icons/social-icons';
 import { Switch } from '@/components/ui/switch';
 import { DayPicker } from 'react-day-picker';
@@ -132,7 +132,7 @@ export default function NewPostPage() {
   // Trigger onboarding popup for new users or no selection
   useEffect(() => {
     if (!accountsData) return;
-    
+
     const timer = setTimeout(() => {
       if (accountsData.accounts.length === 0 || selectedPlatforms.length === 0) {
         setShowOnboarding(true);
@@ -511,7 +511,7 @@ export default function NewPostPage() {
             <div className="mb-2 text-center">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Hub</p>
             </div>
-            
+
             {accountsData?.accounts?.map((account) => {
               const platformId = account.platform.toUpperCase();
               const config = platformStyles[platformId];
@@ -528,30 +528,23 @@ export default function NewPostPage() {
                   onClick={() => handlePlatformToggle(platformId)}
                   className={cn(
                     'group relative flex h-14 w-14 items-center justify-center rounded-[22px] transition-all duration-300',
-                    selected 
-                      ? 'shadow-[0_10px_20px_rgba(0,0,0,0.08)] scale-105' 
-                      : 'bg-white border border-[#D9E3D9] hover:border-[#D27D50]/30 hover:bg-[#F9FAF9]',
-                    activePlatform === platformId && "ring-2 ring-[#D27D50] ring-offset-4"
+                    selected
+                      ? 'border scale-105'
+                      : 'bg-white border border-[#D9E3D9] hover:border-[#D27D50]/30 hover:bg-[#F9FAF9]'
                   )}
-                  style={{ backgroundColor: selected ? config.bg : undefined }}
+                  style={{
+                    backgroundColor: selected ? config.bg : undefined,
+                    borderColor: selected ? config.color : undefined
+                  }}
                   title={`${accountName} (${config.name})`}
                 >
-                  <Logo 
-                    className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" 
-                    style={{ color: selected ? config.color : '#A1A1AA' }} 
-                    strokeWidth={selected ? 2.5 : 2} 
+                  <Logo
+                    className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
+                    style={{ color: selected ? config.color : '#A1A1AA' }}
+                    strokeWidth={selected ? 2.5 : 2}
                   />
-                  
-                  {selected && (
-                    <motion.span
-                      layoutId={`active-dot-${account.id}`}
-                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white shadow-sm"
-                      style={{ backgroundColor: config.color }}
-                    >
-                      <Check className="h-3 w-3 text-white" strokeWidth={4} />
-                    </motion.span>
-                  )}
-                  
+
+
                   <div className="absolute left-full ml-4 hidden group-hover:block z-50">
                     <div className="whitespace-nowrap rounded-lg bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white shadow-xl">
                       {accountName}
@@ -560,9 +553,9 @@ export default function NewPostPage() {
                 </button>
               );
             })}
-            
+
             <div className="my-4 h-px w-12 bg-[#D9E3D9]" />
-            
+
             <button
               type="button"
               onClick={() => router.push('/dashboard/social-accounts')}
@@ -1067,14 +1060,14 @@ export default function NewPostPage() {
       <AnimatePresence>
         {showOnboarding && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-stone-900/60 backdrop-blur-md" 
+              className="absolute inset-0 bg-stone-900/60 backdrop-blur-md"
               onClick={() => setShowOnboarding(false)}
             />
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -1100,7 +1093,7 @@ export default function NewPostPage() {
                         </div>
                         <h3 className="text-lg font-black text-slate-900">No accounts linked yet</h3>
                         <p className="text-stone-400 text-sm mt-1 max-w-[240px]">Connect your social profiles to start scheduling posts.</p>
-                        <Button 
+                        <Button
                           onClick={() => router.push('/dashboard/social-accounts')}
                           className="mt-6 bg-[#D27D50] hover:bg-[#B86A42] text-white px-8 rounded-xl font-bold"
                         >
@@ -1114,7 +1107,7 @@ export default function NewPostPage() {
                         if (!config) return null;
                         const isSelected = selectedPlatforms.includes(platformId);
                         const Logo = config.icon;
-                        
+
                         return (
                           <button
                             key={account.id}
@@ -1122,29 +1115,25 @@ export default function NewPostPage() {
                             onClick={() => handlePlatformToggle(platformId)}
                             className={cn(
                               "relative group flex flex-col items-center gap-4 p-6 rounded-[32px] border-2 transition-all duration-300",
-                              isSelected 
-                                ? "bg-white border-[#D27D50] shadow-[0_12px_24px_rgba(210,125,80,0.1)]" 
+                              isSelected
+                                ? "border-transparent"
                                 : "bg-[#F8FAF8] border-transparent hover:bg-white hover:border-[#D9E3D9]"
                             )}
+                            style={isSelected ? { backgroundColor: config.bg } : {}}
                           >
-                            <div 
+                            <div
                               className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110"
-                              style={{ backgroundColor: isSelected ? config.bg : 'white' }}
+                              style={{ backgroundColor: 'white' }}
                             >
                               <Logo className="h-6 w-6" style={{ color: isSelected ? config.color : '#A1A1AA' }} />
                             </div>
                             <span className={cn(
                               "text-xs font-black uppercase tracking-widest",
-                              isSelected ? "text-slate-900" : "text-stone-400"
-                            )}>
+                              isSelected ? "" : "text-stone-400"
+                            )} style={isSelected ? { color: config.color } : {}}>
                               {config.name}
                             </span>
-                            
-                            {isSelected && (
-                              <div className="absolute top-3 right-3 h-5 w-5 rounded-full bg-[#D27D50] flex items-center justify-center">
-                                <Check className="h-3 w-3 text-white" strokeWidth={4} />
-                              </div>
-                            )}
+
                           </button>
                         )
                       })
@@ -1156,7 +1145,7 @@ export default function NewPostPage() {
                   <p className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">
                     {selectedPlatforms.length} Channel{selectedPlatforms.length !== 1 ? 's' : ''} Selected
                   </p>
-                  <Button 
+                  <Button
                     onClick={() => setShowOnboarding(false)}
                     disabled={selectedPlatforms.length === 0}
                     className="bg-slate-900 hover:bg-slate-800 text-white px-10 h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg disabled:opacity-50"
@@ -1195,17 +1184,17 @@ export default function NewPostPage() {
             </button>
             <button
               type={scheduledAt ? "submit" : "button"}
-              onClick={() => { 
+              onClick={() => {
                 if (!scheduledAt) {
                   setShowScheduler(true);
                 }
-                setValue('publishNow', false); 
+                setValue('publishNow', false);
               }}
               disabled={createPostMutation.isPending}
               className={cn(
                 "flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-semibold transition",
-                scheduledAt 
-                  ? "border-[#D27D50] bg-[#FBF3EE] text-[#D27D50] shadow-[0_2px_8px_rgba(210,125,80,0.1)]" 
+                scheduledAt
+                  ? "border-[#D27D50] bg-[#FBF3EE] text-[#D27D50] shadow-[0_2px_8px_rgba(210,125,80,0.1)]"
                   : "border-[#D27D50]/30 bg-white text-[#D27D50] hover:bg-[#FBF3EE]"
               )}
             >
@@ -1337,8 +1326,8 @@ function ContentEditorModal({
               <div className="h-6 w-px bg-[#F0F4F0]" />
               <div className="flex items-center gap-2">
                 <Button variant="ghost" onClick={onClose} className="h-10 px-4 rounded-xl font-bold text-[13px]">Cancel</Button>
-                <Button 
-                  onClick={() => onSave(content)} 
+                <Button
+                  onClick={() => onSave(content)}
                   className="h-10 rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all active:scale-95 text-[13px]"
                 >
                   Save Changes
@@ -1366,7 +1355,7 @@ function ContentEditorModal({
                     className="h-[300px] w-full resize-none rounded-3xl border-2 border-[#F0F4F0] bg-[#F8FAF8] p-6 text-[16px] leading-relaxed transition focus:border-[#D27D50]/30 focus:ring-0"
                   />
                   <div className="absolute bottom-6 right-6 flex items-center gap-2">
-                     <span className="text-[12px] font-medium text-[#AAA39D]">{(content?.length || 0)} / 2200</span>
+                    <span className="text-[12px] font-medium text-[#AAA39D]">{(content?.length || 0)} / 2200</span>
                   </div>
                 </div>
 
@@ -1376,7 +1365,7 @@ function ContentEditorModal({
                   <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2F6F2] text-stone-500 hover:bg-[#EEF3EE]"><AtSign className="h-5 w-5" /></button>
                   <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2F6F2] text-stone-500 hover:bg-[#EEF3EE]"><Paperclip className="h-5 w-5" /></button>
                   <div className="group relative">
-                    <button 
+                    <button
                       onClick={handleAiAdapt}
                       disabled={isAdapting || !content}
                       className={cn(
@@ -1399,14 +1388,14 @@ function ContentEditorModal({
                 </div>
 
                 <div className="mt-8">
-                   <Label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-[#AAA39D]">Suggested Hashtags</Label>
-                   <div className="flex flex-wrap gap-2">
-                     {['#NewDrop', '#LimitedEdition', '#ShopNow', '#socialmedia', '#contentcreator'].map(tag => (
-                       <button key={tag} onClick={() => setContent(prev => prev + ' ' + tag)} className="rounded-lg border border-[#D9E3D9] bg-white px-3 py-1.5 text-[12px] font-bold text-stone-600 hover:border-[#D27D50]/30 hover:bg-[#FBF3EE] hover:text-[#D27D50]">
-                         {tag}
-                       </button>
-                     ))}
-                   </div>
+                  <Label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-[#AAA39D]">Suggested Hashtags</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {['#NewDrop', '#LimitedEdition', '#ShopNow', '#socialmedia', '#contentcreator'].map(tag => (
+                      <button key={tag} onClick={() => setContent(prev => prev + ' ' + tag)} className="rounded-lg border border-[#D9E3D9] bg-white px-3 py-1.5 text-[12px] font-bold text-stone-600 hover:border-[#D27D50]/30 hover:bg-[#FBF3EE] hover:text-[#D27D50]">
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1414,8 +1403,8 @@ function ContentEditorModal({
             {/* Preview Area */}
             <div className="border-l border-[#F0F4F0] bg-[#F8FAF8] p-8 overflow-y-auto custom-scrollbar">
               <div className="flex items-center gap-2 mb-6">
-                 <MousePointer2 className="h-4 w-4 text-[#D27D50]" />
-                 <h3 className="text-[14px] font-bold text-[#171717]">Live Preview</h3>
+                <MousePointer2 className="h-4 w-4 text-[#D27D50]" />
+                <h3 className="text-[14px] font-bold text-[#171717]">Live Preview</h3>
               </div>
 
               <div className="flex flex-col items-center">
@@ -1451,7 +1440,7 @@ function ContentEditorModal({
                       <Send className="h-6 w-6 cursor-pointer hover:text-[#D27D50]" />
                       <Pin className="ml-auto h-6 w-6 cursor-pointer hover:text-[#D27D50]" />
                     </div>
-                    
+
                     {/* Caption area */}
                     <div className="space-y-1 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
                       <p className="text-[14px] leading-relaxed text-[#171717]">
@@ -1472,15 +1461,15 @@ function ContentEditorModal({
                     <span className="text-[11px] text-stone-400">Hashtags</span>
                     <span className="text-[12px] font-bold text-stone-700">{(content?.match(/#/g) || []).length}</span>
                   </div>
-                  
+
                   <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-2.5 flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                     <span className="text-[11px] font-bold text-green-700 uppercase tracking-wider">Optimized for {config.name}</span>
                   </div>
                 </div>
-                </div>
               </div>
             </div>
+          </div>
 
         </motion.div>
       </div>
