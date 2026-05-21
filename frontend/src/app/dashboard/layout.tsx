@@ -26,6 +26,7 @@ const navigation = [
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+  { name: 'Reel Creator', href: '/dashboard/reels-creator', icon: Star },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
 ];
 

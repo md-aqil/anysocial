@@ -15,6 +15,8 @@ enum Platform {
   TIKTOK
   YOUTUBE
   THREADS
+  PINTEREST
+  SNAPCHAT
 }
 
 enum AccountStatus {
@@ -63,24 +65,25 @@ enum WebhookEvent {
 }
 
 model User {
-  id                String          @id @default(uuid())
-  email             String          @unique
-  passwordHash      String          @map("password_hash")
-  name              String?
-  avatarUrl         String?         @map("avatar_url")
-  role              String          @default("user") @map("role")
-  socialAccounts    SocialAccount[]
-  oauthStates       OAuthState[]
-  posts             Post[]
-  webhooks          WebhookSubscription[]
-  notifications     Notification[]
+  id               String                @id @default(uuid())
+  email            String                @unique
+  passwordHash     String                @map("password_hash")
+  name             String?
+  avatarUrl        String?               @map("avatar_url")
+  role             String                @default("user") @map("role")
+  socialAccounts   SocialAccount[]
+  oauthStates      OAuthState[]
+  posts            Post[]
+  webhooks         WebhookSubscription[]
+  notifications    Notification[]
   notificationLogs NotificationLog[]
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  reelSeries       ReelSeries[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
-  @@map("users")
   @@index([email])
   @@index([role])
+  @@map("users")
 }
 
 model SocialAccount {
@@ -99,102 +102,102 @@ model SocialAccount {
   lastRefreshed     DateTime?     @map("last_refreshed")
   metadata          Json?
 
-  @@map("social_accounts")
   @@unique([userId, platform, externalAccountId])
   @@index([userId, status])
   @@index([tokenExpiry])
+  @@map("social_accounts")
 }
 
 model OAuthState {
-  id         String   @id @default(uuid())
-  platform   Platform
-  stateToken String   @unique @map("state_token")
-  userId     String?  @map("user_id")
-  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  platform    Platform
+  stateToken  String   @unique @map("state_token")
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   expiresAt   DateTime @map("expires_at")
   pendingData Json?    @map("pending_data")
   isCompleted Boolean  @default(false) @map("is_completed")
 
-  @@map("oauth_states")
   @@index([stateToken, expiresAt])
+  @@map("oauth_states")
 }
 
 model Post {
-  id               String         @id @default(uuid())
-  userId           String
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title            String?
-  rawContent       String         @map("raw_content")
-  mediaUrls        String[]       @map("media_urls")
-  platforms        String[]
-  timezone         String
-  scheduledAt     DateTime?      @map("scheduled_at")
-  publishedAt      DateTime?      @map("published_at")
-  status           PostStatus     @default(DRAFT)
-  platformResults  Json[]         @map("platform_results")
-  platformOptions  Json?          @map("platform_options")
-  retryCount       Int            @default(0) @map("retry_count")
-  maxRetries       Int            @default(3) @map("max_retries")
-  media            PostMedia[]
-  analytics        PostAnalytics[]
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id              String          @id @default(uuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String?
+  rawContent      String          @map("raw_content")
+  mediaUrls       String[]        @map("media_urls")
+  platforms       String[]
+  timezone        String
+  scheduledAt     DateTime?       @map("scheduled_at")
+  publishedAt     DateTime?       @map("published_at")
+  status          PostStatus      @default(DRAFT)
+  platformResults Json[]          @map("platform_results")
+  platformOptions Json?           @map("platform_options")
+  retryCount      Int             @default(0) @map("retry_count")
+  maxRetries      Int             @default(3) @map("max_retries")
+  media           PostMedia[]
+  analytics       PostAnalytics[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  @@map("posts")
   @@index([userId, status])
   @@index([scheduledAt])
   @@index([userId, scheduledAt])
   @@index([publishedAt])
+  @@map("posts")
 }
 
 model PostMedia {
-  id                String   @id @default(uuid())
-  postId            String
-  post              Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  originalUrl       String   @map("original_url")
-  platformVariants  Json     @map("platform_variants")
-  mimeType          String   @map("mime_type")
-  sizeBytes         Int      @map("size_bytes")
-  dimensions        Json
-  validatedAt       DateTime @default(now())
+  id               String   @id @default(uuid())
+  postId           String
+  post             Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  originalUrl      String   @map("original_url")
+  platformVariants Json     @map("platform_variants")
+  mimeType         String   @map("mime_type")
+  sizeBytes        Int      @map("size_bytes")
+  dimensions       Json
+  validatedAt      DateTime @default(now())
 
-  @@map("post_media")
   @@index([postId])
+  @@map("post_media")
 }
 
 model PostAnalytics {
-  id             String       @id @default(uuid())
-  postId         String
-  post           Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
-  platform       Platform
-  publishedAt    DateTime     @map("published_at")
-  metrics        Json         @map("metrics")
-  lastFetchedAt  DateTime     @map("last_fetched_at")
-  fetchStatus    FetchStatus  @default(PENDING)
-  fetchError     String?      @map("fetch_error")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id            String      @id @default(uuid())
+  postId        String
+  post          Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  platform      Platform
+  publishedAt   DateTime    @map("published_at")
+  metrics       Json        @map("metrics")
+  lastFetchedAt DateTime    @map("last_fetched_at")
+  fetchStatus   FetchStatus @default(PENDING)
+  fetchError    String?     @map("fetch_error")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  @@map("post_analytics")
   @@unique([postId, platform])
   @@index([postId])
   @@index([fetchStatus])
+  @@map("post_analytics")
 }
 
 model WebhookSubscription {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  endpointUrl   String   @map("endpoint_url")
-  events        String[] @default([])
-  secret        String   @map("secret")
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpointUrl String   @map("endpoint_url")
+  events      String[] @default([])
+  secret      String   @map("secret")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@map("webhook_subscriptions")
   @@index([userId, isActive])
+  @@map("webhook_subscriptions")
 }
 
 model Notification {
@@ -208,66 +211,101 @@ model Notification {
   isRead    Boolean          @default(false) @map("is_read")
   createdAt DateTime         @default(now())
 
-  @@map("notifications")
   @@index([userId, isRead])
   @@index([createdAt])
+  @@map("notifications")
 }
 
 model NotificationLog {
-  id             String             @id @default(uuid())
-  userId         String
-  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type           NotificationType   @map("notification_type")
-  event          String             @map("event_type")
-  payload        Json?              @map("payload")
-  status         NotificationStatus @default(PENDING)
-  attempts       Int                @default(0) @map("attempts")
-  lastAttemptAt  DateTime?          @map("last_attempt_at")
-  errorMessage   String?            @map("error_message")
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  id            String             @id @default(uuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          NotificationType   @map("notification_type")
+  event         String             @map("event_type")
+  payload       Json?              @map("payload")
+  status        NotificationStatus @default(PENDING)
+  attempts      Int                @default(0) @map("attempts")
+  lastAttemptAt DateTime?          @map("last_attempt_at")
+  errorMessage  String?            @map("error_message")
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
-  @@map("notification_logs")
   @@index([userId, status])
   @@index([status])
+  @@map("notification_logs")
 }
 
 model AdminAuditLog {
-  id            String   @id @default(uuid())
-  actorUserId   String?  @map("actor_user_id")
-  actorEmail    String?  @map("actor_email")
-  action        String   @map("action")
-  resourceType  String   @map("resource_type")
-  resourceId    String?  @map("resource_id")
-  metadata      Json?
-  ipAddress     String?  @map("ip_address")
-  userAgent     String?  @map("user_agent")
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  actorUserId  String?  @map("actor_user_id")
+  actorEmail   String?  @map("actor_email")
+  action       String   @map("action")
+  resourceType String   @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  metadata     Json?
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now())
 
-  @@map("admin_audit_logs")
   @@index([createdAt])
   @@index([actorUserId])
   @@index([resourceType, resourceId])
+  @@map("admin_audit_logs")
 }
 
 model AnalyticsRollup {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  date        DateTime @map("date")
-  period      String   @map("period")
-  platform    String?  @map("platform")
-  totalPosts  Int      @default(0) @map("total_posts")
-  published   Int      @default(0) @map("published")
-  failed      Int      @default(0) @map("failed")
-  totalLikes  Int      @default(0) @map("total_likes")
-  totalComments Int    @default(0) @map("total_comments")
-  totalShares Int      @default(0) @map("total_shares")
-  totalReach  Int      @default(0) @map("total_reach")
-  engagementRate Float @default(0) @map("engagement_rate")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  date           DateTime @map("date")
+  period         String   @map("period")
+  platform       String?  @map("platform")
+  totalPosts     Int      @default(0) @map("total_posts")
+  published      Int      @default(0) @map("published")
+  failed         Int      @default(0) @map("failed")
+  totalLikes     Int      @default(0) @map("total_likes")
+  totalComments  Int      @default(0) @map("total_comments")
+  totalShares    Int      @default(0) @map("total_shares")
+  totalReach     Int      @default(0) @map("total_reach")
+  engagementRate Float    @default(0) @map("engagement_rate")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  @@map("analytics_rollups")
   @@unique([userId, date, period, platform])
   @@index([userId, date, period])
+  @@map("analytics_rollups")
+}
+
+model ReelSeries {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  niche        String?
+  customPrompt String?
+  language     String
+  voiceId      String
+  musicId      String?
+  artStyle     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  reels        Reel[]
+
+  @@index([userId])
+  @@map("reel_series")
+}
+
+model Reel {
+  id             String     @id @default(uuid())
+  seriesId       String
+  series         ReelSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  script         String?
+  videoUrl       String?
+  status         String     @default("PENDING") // PENDING, GENERATING, READY, PUBLISHED, FAILED
+  scheduledFor   DateTime?
+  socialChannels String // JSON array of selected channel IDs (Platform enums or SocialAccount IDs)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([seriesId])
+  @@map("reels")
 }

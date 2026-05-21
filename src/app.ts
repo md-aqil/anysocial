@@ -16,6 +16,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import { rateLimiter } from './middleware/rate-limiter.js';
 import { refreshScheduler } from './modules/tokens/refresh.scheduler.js';
 import { postWorker } from './workers/post-worker.js';
+import { reelWorker } from './workers/reel-worker.js';
 import { env } from './config/env.js';
 
 // Initialize Redis client for session store
@@ -125,6 +126,7 @@ app.listen(PORT, () => {
   // Start refresh scheduler and workers
   refreshScheduler.start();
   postWorker.start().catch(console.error);
+  reelWorker.start().catch(console.error);
 });
 
 // Graceful shutdown
@@ -132,6 +134,7 @@ process.on('SIGTERM', async () => {
   logger.info({ event: 'sigterm_received' });
   refreshScheduler.stop();
   await postWorker.shutdown();
+  await reelWorker.shutdown();
   process.exit(0);
 });
 
@@ -139,6 +142,7 @@ process.on('SIGINT', async () => {
   logger.info({ event: 'sigint_received' });
   refreshScheduler.stop();
   await postWorker.shutdown();
+  await reelWorker.shutdown();
   process.exit(0);
 });
 
