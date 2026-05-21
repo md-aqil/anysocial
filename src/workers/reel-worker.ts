@@ -6,6 +6,25 @@ import { VideoComposerService } from '../services/video-composer.service.js';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import stream from 'stream';
+import { promisify } from 'util';
+
+const pipeline = promisify(stream.pipeline);
+
+async function downloadToTemp(url: string, fileName: string): Promise<string> {
+  const tempPath = path.join(os.tmpdir(), fileName);
+  const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' }});
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to download ${url}: ${response.status} ${text.substring(0, 100)}`);
+  }
+  
+  const fileStream = fs.createWriteStream(tempPath);
+  // @ts-ignore
+  await pipeline(response.body, fileStream);
+  return tempPath;
+}
 
 export class ReelWorker {
   private worker: Worker;
@@ -82,6 +101,33 @@ export class ReelWorker {
       const { clipPaths } = await VideoComposerService.createVideoClips(imageUrls, 4, 'vertical', abortController.signal);
       const { outputPath: concatVideoPath } = await VideoComposerService.concatVideos(clipPaths, abortController.signal);
 
+      // --- ADD AUDIO (TTS & BGM) ---
+      let finalVideoPath = concatVideoPath;
+      try {
+        logger.info({ event: 'reel_adding_audio', reelId });
+        
+        // 1. Generate Voiceover TTS
+        // Google Translate limits to ~200 chars per request reliably
+        const ttsText = script.substring(0, 199);
+        const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(ttsText)}&tl=${series.language || 'en'}&client=tw-ob`;
+        const ttsPath = await downloadToTemp(ttsUrl, `tts_${Date.now()}.mp3`);
+        
+        // 2. Download Background Music
+        const bgmUrl = 'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3';
+        const bgmPath = await downloadToTemp(bgmUrl, `bgm_${Date.now()}.mp3`);
+        
+        // 3. Mix TTS and BGM (Assuming ~16 seconds total video length)
+        const { outputPath: mixedAudioPath } = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, 16, abortController.signal);
+        
+        // 4. Merge Mixed Audio with Video
+        const { outputPath: videoWithAudio } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, abortController.signal);
+        
+        finalVideoPath = videoWithAudio;
+      } catch (audioError: any) {
+        logger.error({ event: 'reel_audio_failed', reelId, error: audioError.message });
+        // Fallback to video without audio if audio processing fails
+      }
+
       // 5. Save to public uploads
       const publicFilename = `reel_${reelId}_${Date.now()}.mp4`;
       const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels');
@@ -89,7 +135,7 @@ export class ReelWorker {
         fs.mkdirSync(publicDir, { recursive: true });
       }
       const publicFilePath = path.join(publicDir, publicFilename);
-      fs.copyFileSync(concatVideoPath, publicFilePath);
+      fs.copyFileSync(finalVideoPath, publicFilePath);
 
       const videoUrl = `/uploads/reels/${publicFilename}`;
 
