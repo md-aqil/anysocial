@@ -22,6 +22,11 @@ git clean -fd --force
 
 # Backend setup
 echo "📦 Setting up Backend..."
+if ! command -v ffmpeg &> /dev/null
+then
+    echo "🎥 FFmpeg not found, installing..."
+    sudo apt-get update && sudo apt-get install -y ffmpeg
+fi
 npm install
 
 # Run database migrations
