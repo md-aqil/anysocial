@@ -36,7 +36,7 @@ sleep 3
 
 echo "🎨 Starting Frontend (Port 3000)..."
 echo "Done! Opening the dashboard..."
-cd frontend && npm run dev
+cd frontend && npm run dev > ../.frontend.log 2>&1 &
 
 # Keep script running
 wait
