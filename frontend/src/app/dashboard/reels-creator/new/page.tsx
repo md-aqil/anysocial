@@ -53,25 +53,25 @@ const PRESETS = [
 
 const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
   'English': [
-    { id: 'Aoede', name: 'Aoede', type: 'Female', description: 'Expressive and engaging narrator.' },
-    { id: 'Puck', name: 'Puck', type: 'Male', description: 'Energetic and upbeat.' },
-    { id: 'Charon', name: 'Charon', type: 'Male', description: 'Deep, resonant and authoritative.' },
-    { id: 'Kore', name: 'Kore', type: 'Female', description: 'Calm, soothing storyteller.' },
-    { id: 'Fenrir', name: 'Fenrir', type: 'Male', description: 'Gruff and dramatic.' },
+    { id: 'Aoede', name: 'af_bella (Kokoro)', type: 'Female', description: 'Expressive and engaging narrator.' },
+    { id: 'Puck', name: 'am_michael (Kokoro)', type: 'Male', description: 'Energetic and upbeat.' },
+    { id: 'Charon', name: 'am_echo (Kokoro)', type: 'Male', description: 'Deep, resonant and authoritative.' },
+    { id: 'Kore', name: 'af_bella (Kokoro)', type: 'Female', description: 'Calm, soothing storyteller.' },
+    { id: 'Fenrir', name: 'am_michael (Kokoro)', type: 'Male', description: 'Gruff and dramatic.' },
   ],
   'Hindi': [
-    { id: 'Aoede', name: 'Aoede (Hindi)', type: 'Female', description: 'Expressive and engaging narrator.' },
-    { id: 'Puck', name: 'Puck (Hindi)', type: 'Male', description: 'Energetic and upbeat.' },
-    { id: 'Charon', name: 'Charon (Hindi)', type: 'Male', description: 'Deep, resonant and authoritative.' },
-    { id: 'Kore', name: 'Kore (Hindi)', type: 'Female', description: 'Calm, soothing storyteller.' },
-    { id: 'Fenrir', name: 'Fenrir (Hindi)', type: 'Male', description: 'Gruff and dramatic.' },
+    { id: 'Aoede', name: 'hf_alpha (Kokoro)', type: 'Female', description: 'Expressive and engaging narrator.' },
+    { id: 'Puck', name: 'hm_omega (Kokoro)', type: 'Male', description: 'Energetic and upbeat.' },
+    { id: 'Charon', name: 'hm_omega (Kokoro)', type: 'Male', description: 'Deep, resonant and authoritative.' },
+    { id: 'Kore', name: 'hf_alpha (Kokoro)', type: 'Female', description: 'Calm, soothing storyteller.' },
+    { id: 'Fenrir', name: 'hm_omega (Kokoro)', type: 'Male', description: 'Gruff and dramatic.' },
   ],
   'Spanish': [
-    { id: 'Aoede', name: 'Aoede (Spanish)', type: 'Female', description: 'Expressive and engaging narrator.' },
-    { id: 'Puck', name: 'Puck (Spanish)', type: 'Male', description: 'Energetic and upbeat.' },
-    { id: 'Charon', name: 'Charon (Spanish)', type: 'Male', description: 'Deep, resonant and authoritative.' },
-    { id: 'Kore', name: 'Kore (Spanish)', type: 'Female', description: 'Calm, soothing storyteller.' },
-    { id: 'Fenrir', name: 'Fenrir (Spanish)', type: 'Male', description: 'Gruff and dramatic.' },
+    { id: 'Aoede', name: 'Aoede (Spanish) - Fallback', type: 'Female', description: 'Expressive and engaging narrator.' },
+    { id: 'Puck', name: 'Puck (Spanish) - Fallback', type: 'Male', description: 'Energetic and upbeat.' },
+    { id: 'Charon', name: 'Charon (Spanish) - Fallback', type: 'Male', description: 'Deep, resonant and authoritative.' },
+    { id: 'Kore', name: 'Kore (Spanish) - Fallback', type: 'Female', description: 'Calm, soothing storyteller.' },
+    { id: 'Fenrir', name: 'Fenrir (Spanish) - Fallback', type: 'Male', description: 'Gruff and dramatic.' },
   ]
 };
 
