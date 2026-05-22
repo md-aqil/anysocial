@@ -28,9 +28,13 @@ npm install
 echo "🗄️ Running Prisma migrations..."
 if [ -f "/etc/socialsched/.env" ]; then
     export $(grep -v '^#' /etc/socialsched/.env | xargs)
+    # Recover from failed migration
+    npx prisma migrate resolve --rolled-back 20260522105500_add_schedule_fields || true
     npx prisma migrate deploy
 else
     echo "Warning: /etc/socialsched/.env not found, using existing environment for migration"
+    # Recover from failed migration
+    npx prisma migrate resolve --rolled-back 20260522105500_add_schedule_fields || true
     npx prisma migrate deploy
 fi
 
