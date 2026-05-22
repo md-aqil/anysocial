@@ -82,34 +82,33 @@ export class ReelWorker {
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
-        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script in the Devanagari script (हिंदी लिपि). DO NOT write in Hinglish (Latin alphabet). Use natural conversational Hindi, but the text itself must be strictly in Devanagari characters so the text-to-speech engine can pronounce it perfectly.`;
+        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. However, the TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (transliterated into Devanagari, e.g., 'टाइम', 'फीलिंग', 'सस्पेंस'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable.`;
       }
       
-      const scriptPrompt = `You are an elite, top-1% TikTok/Reels viral content strategist and master storyteller specializing in dark, cinematic nature documentaries and psychological thrillers.
-Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".
+      const scriptPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".
 
-Apply the following ADVANCED STORYTELLING RULES:
-1. USE SHORT PUNCH LINES: Avoid long continuous sentences. Write in short, rhythmic bursts to increase retention. (Example: "Pehle body. Phir dimaag. Phir poori zindagi.")
-2. CREATE VISUAL HORROR: Always describe disturbing visual moments. No abstract fear. The viewer must SEE the horror mentally. (Example: Instead of "It's dangerous", use "Fungus uske sir ko phaad kar bahar nikalta hai.")
-3. BUILD SUSPENSE GRADUALLY: Follow this progression: Curiosity -> Mystery -> Reveal -> Disturbing Detail -> Final Terrifying Thought. Never reveal everything immediately.
-4. USE CINEMATIC PAUSES: Add dramatic rhythm using pauses like "Aur phir...", "Lekin asli horror ab shuru hota hai.", "Sabse darawni baat?", or "Phir ek din...".
-5. MAKE VIEWER INVOLVED: Increase emotional connection with "Socho...", "Agar tumhare saath ho toh?", or "Imagine karo...".
-6. AVOID POETIC AI LANGUAGE: DO NOT use generic phrases like "rooh chheen le", "andhera jo sabko nigal jaaye", or "khauf ka samandar". Fear must come from realistic visuals and facts.
+CRITICAL VOCABULARY RULE: 
+The script MUST be extremely simple to understand. Use basic, everyday words that a 10-year-old child can easily understand. DO NOT use complex vocabulary, elite words, or confusing metaphors. Keep it simple, fun, and easy to digest.
 
-PERFECT SCRIPT STRUCTURE:
-1. HOOK (0-3s): Immediate fear or curiosity (e.g. "Socho... tumhara dimaag tumhara hi na rahe.")
-2. SETUP (3-10s): Introduce the subject, creature, or mystery.
-3. ESCALATION (10-25s): Reveal terrifying abilities or facts slowly.
-4. HORROR PEAK (25-40s): The most disturbing visual or fact in the entire script.
-5. FINAL TWIST (40-50s): Bring it back to the viewer (e.g. "What if humans...")
-6. ENDING IMPACT & CTA: Leave viewers uncomfortable with a disturbing thought before the CTA. (Example: "Sabse darawni baat? Ye sab nature mein roz ho raha hai... Comment karo")
+KOKORO TTS OPTIMIZATION RULES (CRITICAL):
+1. NO SYMBOLS OR EMOJIS: Do not use any emojis, hashtags, or special characters (!, @, #, $, %, etc.).
+2. SPELL OUT NUMBERS: Always write numbers as words (e.g., write "one hundred" instead of "100").
+3. USE PUNCTUATION FOR PAUSES: Use periods (.) and commas (,) to naturally slow down the voice. Use ellipses (...) when you want a dramatic, suspenseful pause.
+4. SHORT SENTENCES: Break long ideas into very short sentences. Kokoro sounds most natural and emotional when reading short, punchy statements.
+
+STORYTELLING STRUCTURE:
+1. HOOK (0-3s): Start with a very simple, surprising question or statement.
+2. STORY/FACTS: Explain the core topic using the simplest words possible. Make it sound like you are telling a campfire story to a friend.
+3. THE TWIST/PEAK: The most mind-blowing or interesting part of the story.
+4. ENDING: End with a lingering thought or simple call to action.
 
 PACING & RULES:
-- The script MUST be exactly ${wordCount} to fit the video timing.
+- The script MUST be exactly ${wordCount} words to fit the video timing.
 - ${languagePrompt}
-- The narration must feel intense, visual, emotional, suspenseful, rhythmic, and cinematic.
+- The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
 
-For the 'keywords' array, generate exactly ${numKeywords} highly detailed, cinematic image generation prompts (e.g., "Cinematic low angle shot of a massive ancient pyramid in a sandstorm, hyper-realistic, 8k resolution, dramatic lighting").
+For the 'keywords' array, generate exactly ${numKeywords} highly detailed image prompts. 
+CRITICAL IMAGE RULE: Each image prompt MUST strictly describe the exact visual scene happening in the script at that specific moment. Do not generate random beautiful images; generate exactly what the viewer should see while the narrator is speaking that sentence.
 
 Output ONLY valid JSON: 
 {
@@ -140,40 +139,58 @@ Output ONLY valid JSON:
         data: { script },
       });
 
-      // 3. Generate Images using Imagen 3
-      await updateProgress(`Generating ${numKeywords} cinematic visuals using Imagen 3...`);
+      // 3. Generate Voiceover First (to determine exact video length)
+      await updateProgress('Synthesizing voiceover to determine video pacing...');
+      logger.info({ event: 'reel_adding_audio', reelId });
+      
+      let ttsPath: string;
+      let actualDuration = 60;
+      
+      try {
+        ttsPath = await aiOrchestrator.generateVoiceover(script, series.voiceId || 'en-US-Journey-F', series.language || 'English');
+        actualDuration = await VideoComposerService.getMediaDuration(ttsPath);
+        // Add 1 second of buffer to the end
+        actualDuration = Math.ceil(actualDuration) + 1; 
+      } catch (audioError: any) {
+        logger.error({ event: 'reel_audio_failed', reelId, error: audioError.message });
+        throw new Error(`Voice Generation Failed: ${audioError.message}`);
+      }
+
+      // 4. Generate Images
+      await updateProgress(`Generating ${numKeywords} cinematic visuals (Duration: ${actualDuration}s)...`);
       logger.info({ event: 'reel_generating_images', reelId });
       const imageUrls: string[] = [];
       for (const keyword of keywords.slice(0, numKeywords)) {
         try {
-          // Append art style to prompt to ensure consistency
           const url = await aiOrchestrator.generateImage(`${keyword}, ${series.artStyle} style`);
           imageUrls.push(url);
-          // Small delay to be extra safe with rate limits
           await new Promise(r => setTimeout(r, 1000));
-        } catch (e) {
-          imageUrls.push('https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop');
+        } catch (e: any) {
+          logger.warn({ event: 'reel_image_gen_failed', keyword, error: e.message });
+          try {
+            // Fallback to Stock API
+            const stockUrl = await aiOrchestrator.fetchStockImage(keyword);
+            imageUrls.push(stockUrl);
+          } catch (stockErr) {
+            // Absolute last resort
+            imageUrls.push('https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop');
+          }
         }
       }
 
-      // 4. Compose Video using VideoComposerService (FFmpeg)
+      // 5. Compose Video using VideoComposerService (FFmpeg)
       logger.info({ event: 'reel_composing_video', reelId });
       const abortController = new AbortController();
 
-      const imageDuration = Math.ceil(60 / numKeywords);
+      const imageDuration = Math.ceil(actualDuration / numKeywords);
       const { clipPaths } = await VideoComposerService.createVideoClips(imageUrls, imageDuration, 'vertical', abortController.signal);
       const { outputPath: concatVideoPath } = await VideoComposerService.concatVideos(clipPaths, abortController.signal);
 
-      // --- ADD AUDIO (TTS & BGM) ---
+      // 6. Generate BGM & Mix Final Audio
       let finalVideoPath = concatVideoPath;
       try {
-        await updateProgress('Synthesizing voiceover and mixing audio tracks...');
-        logger.info({ event: 'reel_adding_audio', reelId });
+        await updateProgress('Generating background music and composing final video...');
         
-        // 1. Generate Voiceover TTS via Google Cloud TTS (Journey Voices or localized)
-        const ttsPath = await aiOrchestrator.generateVoiceover(script, series.voiceId || 'en-US-Journey-F', series.language || 'English');
-        
-        // 2. Generate Background Music via Lyria 3 Pro
         const musicPromptMap: Record<string, string> = {
           'cinematic-ambient': 'Deep, atmospheric cinematic ambient synth pads with a slow, emotional buildup.',
           'dark-suspense': 'Tense, pulsing electronic dark suspense beats suitable for a horror or mystery story.',
@@ -181,25 +198,19 @@ Output ONLY valid JSON:
           'lofi-beats': 'Relaxed, warm vintage vinyl lofi hip-hop chill beats with a steady groove.'
         };
         
-        // Prioritize the AI-generated story-specific music prompt, then fallback to user selection, then default
         const aiMusicPrompt = (series as any).aiMusicPrompt;
         const fallbackPrompt = (series.musicId && musicPromptMap[series.musicId]) || musicPromptMap['cinematic-ambient'];
         const finalMusicPrompt = aiMusicPrompt || fallbackPrompt;
         
         const bgmPath = await aiOrchestrator.generateMusic(finalMusicPrompt);
+        const { outputPath: mixedAudioPath } = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, actualDuration, abortController.signal);
         
-        // 3. Mix TTS and BGM (Dynamically scale length)
-        const estimatedDuration = 60;
-        const { outputPath: mixedAudioPath } = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, estimatedDuration, abortController.signal);
-        
-        // 4. Merge Mixed Audio with Video
-        await updateProgress('Composing final video frame by frame...');
         const { outputPath: videoWithAudio } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, abortController.signal);
         
         finalVideoPath = videoWithAudio;
       } catch (audioError: any) {
-        logger.error({ event: 'reel_audio_failed', reelId, error: audioError.message });
-        throw new Error(`Audio/Voice Generation Failed: ${audioError.message}`);
+        logger.error({ event: 'reel_bgm_failed', reelId, error: audioError.message });
+        throw new Error(`Audio Mixing Failed: ${audioError.message}`);
       }
 
       // 5. Save to public uploads

@@ -23,6 +23,18 @@ async function downloadToTemp(url: string, fileName: string): Promise<string> {
 
 export class VideoComposerService {
   /**
+   * Helper to accurately get the duration of an audio or video file using ffprobe.
+   */
+  static getMediaDuration(filePath: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(filePath, (err, metadata) => {
+        if (err) return reject(err);
+        resolve(metadata.format.duration || 60);
+      });
+    });
+  }
+
+  /**
    * Generates video clips from images or short videos, standardizing their resolution and length.
    * Applies pan/zoom effect to images.
    */

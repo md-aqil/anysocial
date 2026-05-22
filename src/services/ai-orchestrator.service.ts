@@ -205,7 +205,10 @@ Make sure the output is a valid JSON object.`;
         
         // NVIDIA Flux API returns base64 inside artifacts array or directly as image/b64_json
         const b64 = response_body.image || response_body.artifacts?.[0]?.base64 || response_body.data?.[0]?.b64_json || response_body.b64_json;
-        if (!b64) throw new Error("Could not parse NVIDIA image response");
+        if (!b64) {
+          console.error("[Flux Raw Response]:", JSON.stringify(response_body));
+          throw new Error("Could not parse NVIDIA image response");
+        }
         
         const tempPath = path.join(os.tmpdir(), `flux_${Date.now()}_${uniqueId}.jpg`);
         // Remove data URI prefix if present
@@ -214,10 +217,33 @@ Make sure the output is a valid JSON object.`;
         return tempPath;
       } catch (fluxErr: any) {
         console.error("[Flux Fallback Error]:", fluxErr.message || fluxErr);
-        // Absolute worst case scenario
-        return 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop';
+        throw new Error("All AI Image Generators failed.");
       }
     }
+  }
+
+  /**
+   * Fallback to free Stock API (Pixabay) or Pollinations AI when primary generation fails.
+   */
+  async fetchStockImage(keyword: string): Promise<string> {
+    const cleanKeyword = keyword.split(',')[0].trim(); // Get main subject
+    
+    // 1. Try Pixabay if API Key exists
+    if (process.env.PIXABAY_API_KEY) {
+      try {
+        const response = await fetch(`https://pixabay.com/api/?key=${process.env.PIXABAY_API_KEY}&q=${encodeURIComponent(cleanKeyword)}&image_type=photo&orientation=vertical&per_page=3&safesearch=true`);
+        const data = await response.json() as any;
+        if (data.hits && data.hits.length > 0) {
+          return data.hits[0].largeImageURL; // Direct stock image URL
+        }
+      } catch (err) {
+        console.error("[Pixabay Stock API Error]:", err);
+      }
+    }
+
+    // 2. Fallback to free, keyless AI Stock Image API
+    console.log(`[Stock API Fallback]: Using Pollinations AI for '${cleanKeyword}'`);
+    return `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}?width=768&height=1344&nologo=true`;
   }
 
   // 2. Google Cloud TTS (Journey Voices for High Fidelity)
