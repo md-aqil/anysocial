@@ -85,19 +85,31 @@ export class ReelWorker {
         languagePrompt = `Language: Hindi (Hinglish conversational style). DO NOT use pure, formal, or bookish Hindi. Use a natural, everyday conversational mix of Hindi, Urdu, and common English words—exactly how a modern Indian content creator speaks in real life. Keep it highly relatable and natural.`;
       }
       
-      const scriptPrompt = `You are an elite, top-1% TikTok/Reels viral content strategist and master storyteller. 
+      const scriptPrompt = `You are an elite, top-1% TikTok/Reels viral content strategist and master storyteller specializing in dark, cinematic nature documentaries and psychological thrillers.
 Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".
 
-Apply the following storytelling constraints:
-1. HOOK: Use a "${hookText}" hook. The first 3 seconds must be a visceral pattern-interrupt. NEVER use cliché openings like "Did you know", "Welcome back", or "Hey guys". Start directly in the action or with a controversial statement.
-2. TONE: The voiceover must be highly emotional, using sensory vocabulary that sounds "${toneText}".
-3. STRUCTURE: Follow the "${structureText}" framework. Build intense curiosity in the middle, and resolve the tension right before the end.
-4. PACING: The script MUST be exactly ${wordCount}. This is critical for audio timing. Write for spoken word—use short, punchy sentences and conversational rhythm.
+Apply the following ADVANCED STORYTELLING RULES:
+1. USE SHORT PUNCH LINES: Avoid long continuous sentences. Write in short, rhythmic bursts to increase retention. (Example: "Pehle body. Phir dimaag. Phir poori zindagi.")
+2. CREATE VISUAL HORROR: Always describe disturbing visual moments. No abstract fear. The viewer must SEE the horror mentally. (Example: Instead of "It's dangerous", use "Fungus uske sir ko phaad kar bahar nikalta hai.")
+3. BUILD SUSPENSE GRADUALLY: Follow this progression: Curiosity -> Mystery -> Reveal -> Disturbing Detail -> Final Terrifying Thought. Never reveal everything immediately.
+4. USE CINEMATIC PAUSES: Add dramatic rhythm using pauses like "Aur phir...", "Lekin asli horror ab shuru hota hai.", "Sabse darawni baat?", or "Phir ek din...".
+5. MAKE VIEWER INVOLVED: Increase emotional connection with "Socho...", "Agar tumhare saath ho toh?", or "Imagine karo...".
+6. AVOID POETIC AI LANGUAGE: DO NOT use generic phrases like "rooh chheen le", "andhera jo sabko nigal jaaye", or "khauf ka samandar". Fear must come from realistic visuals and facts.
 
-Rules:
+PERFECT SCRIPT STRUCTURE:
+1. HOOK (0-3s): Immediate fear or curiosity (e.g. "Socho... tumhara dimaag tumhara hi na rahe.")
+2. SETUP (3-10s): Introduce the subject, creature, or mystery.
+3. ESCALATION (10-25s): Reveal terrifying abilities or facts slowly.
+4. HORROR PEAK (25-40s): The most disturbing visual or fact in the entire script.
+5. FINAL TWIST (40-50s): Bring it back to the viewer (e.g. "What if humans...")
+6. ENDING IMPACT & CTA: Leave viewers uncomfortable with a disturbing thought before the CTA. (Example: "Sabse darawni baat? Ye sab nature mein roz ho raha hai... Comment karo")
+
+PACING & RULES:
+- The script MUST be exactly ${wordCount} to fit the video timing.
 - ${languagePrompt}
-- End with a strong, highly debated question or an open loop to drive algorithmic comments.
-- For the 'keywords' array, do NOT just provide simple words. Generate exactly ${numKeywords} highly detailed, cinematic image generation prompts (e.g., "Cinematic low angle shot of a massive ancient pyramid in a sandstorm, hyper-realistic, 8k resolution, dramatic lighting").
+- The narration must feel intense, visual, emotional, suspenseful, rhythmic, and cinematic.
+
+For the 'keywords' array, generate exactly ${numKeywords} highly detailed, cinematic image generation prompts (e.g., "Cinematic low angle shot of a massive ancient pyramid in a sandstorm, hyper-realistic, 8k resolution, dramatic lighting").
 
 Output ONLY valid JSON: 
 {
