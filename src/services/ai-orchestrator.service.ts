@@ -201,7 +201,7 @@ Make sure the output is a valid JSON object.`;
           throw new Error("NVIDIA invocation failed: " + fluxResponse.status + " " + errBody);
         }
         
-        const response_body = await fluxResponse.json();
+        const response_body = await fluxResponse.json() as any;
         
         // NVIDIA Flux API returns base64 inside artifacts array or directly as image/b64_json
         const b64 = response_body.image || response_body.artifacts?.[0]?.base64 || response_body.data?.[0]?.b64_json || response_body.b64_json;
@@ -260,7 +260,7 @@ Make sure the output is a valid JSON object.`;
       const uniqueId = Math.random().toString(36).substring(7);
       const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
       
-      fs.writeFileSync(tempPath, response.audioContent, 'binary');
+      fs.writeFileSync(tempPath, response.audioContent as Uint8Array, 'binary');
       return tempPath;
     } catch (e: any) {
       console.error("[Google Cloud TTS Error]:", e.message || e);
