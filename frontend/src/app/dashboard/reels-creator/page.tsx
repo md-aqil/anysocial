@@ -243,6 +243,13 @@ export default function ReelsDashboard() {
                                 : `Created: ${format(new Date(reel.createdAt), 'MMM d, yyyy @ p')}`
                               }
                             </div>
+                            
+                            {/* Detailed Error Reason Display */}
+                            {reel.status === 'FAILED' && reel.statusMessage && (
+                              <div className="w-full mt-2 text-[10px] sm:text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100 font-mono break-all" title={reel.statusMessage}>
+                                <strong>Error:</strong> {reel.statusMessage}
+                              </div>
+                            )}
                           </div>
                         </div>
                         
