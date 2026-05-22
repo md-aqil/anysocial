@@ -225,37 +225,43 @@ Make sure the output is a valid JSON object.`;
     const uniqueId = Math.random().toString(36).substring(7);
     const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
 
-    // 1. ATTEMPT VOICEBOX (KOKORO) FIRST
+    // 1. ATTEMPT KOKORO-FASTAPI (LOCAL DOCKER) FIRST
     try {
-      // Map voices to Kokoro profiles. Using standard Kokoro default IDs as placeholders.
-      let profileId = "default";
+      // Map voices to Kokoro profiles.
+      let profileId = "am_michael"; // Standard male
       if (voiceName === 'Charon') profileId = "am_echo"; // Deep male
       else if (voiceName === 'Aoede' || voiceName === 'Kore') profileId = "af_bella"; // Female
-      else profileId = "am_michael"; // Standard male
       
-      const langCode = language.includes('Hindi') ? 'hi' : 'en';
+      // Override for Hindi explicitly
+      if (language.includes('Hindi')) {
+        profileId = (voiceName === 'Aoede' || voiceName === 'Kore') ? "hf_alpha" : "hm_omega";
+      }
 
-      console.log(`[TTS] Attempting to use Voicebox (Kokoro) with profile ${profileId}...`);
-      const response = await fetch('http://127.0.0.1:17493/generate', {
+      console.log(`[TTS] Attempting to use Kokoro TTS (port 8880) with profile ${profileId}...`);
+      
+      const KOKORO_HOST = process.env.KOKORO_HOST || 'http://localhost:8880';
+      const response = await fetch(`${KOKORO_HOST}/v1/audio/speech`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: text,
-          profile_id: profileId,
-          language: langCode
+          model: "kokoro",
+          input: text,
+          voice: profileId,
+          response_format: "wav",
+          speed: 1.0
         })
       });
 
       if (response.ok) {
         const buffer = await response.arrayBuffer();
         fs.writeFileSync(tempPath, Buffer.from(buffer));
-        console.log(`[TTS] Voicebox generation successful!`);
+        console.log(`[TTS] Kokoro generation successful!`);
         return tempPath;
       } else {
-        console.warn(`[TTS] Voicebox returned ${response.status}. Falling back to Google Cloud...`);
+        console.warn(`[TTS] Kokoro returned ${response.status}. Falling back to Google Cloud...`);
       }
     } catch (e: any) {
-      console.warn(`[TTS] Voicebox not running or failed (${e.message}). Falling back to Google Cloud...`);
+      console.warn(`[TTS] Kokoro Docker not running or failed (${e.message}). Falling back to Google Cloud...`);
     }
 
     // 2. FALLBACK TO GOOGLE CLOUD TTS
