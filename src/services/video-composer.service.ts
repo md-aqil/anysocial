@@ -167,6 +167,7 @@ export class VideoComposerService {
         .outputOptions([
           '-c:v copy',
           '-c:a aac',
+          '-b:a 192k',
           '-map 0:v:0',
           '-map 1:a:0',
           '-shortest'
@@ -208,9 +209,9 @@ export class VideoComposerService {
         .inputOptions(['-stream_loop -1']) // Loop the background music indefinitely
         .input(mainAudioPath)
         .outputOptions([
-          '-filter_complex', `[0:a]volume=0.12,afade=t=out:st=${Math.max(0, mainDuration - 3)}:d=3[bg];[1:a][bg]amix=inputs=2:duration=first:dropout_transition=3`,
+          '-filter_complex', `[0:a]volume=0.09,afade=t=out:st=${Math.max(0, mainDuration - 3)}:d=3[bg];[1:a][bg]amix=inputs=2:duration=first:dropout_transition=3`,
           '-c:a', 'libmp3lame',
-          '-q:a', '2'
+          '-b:a', '320k'
         ])
         .on('error', (err) => {
           if (signal?.aborted) return resolve(false);

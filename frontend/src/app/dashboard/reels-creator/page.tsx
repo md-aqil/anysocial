@@ -1,13 +1,59 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator 
+} from '@/components/ui/dropdown-menu';
+import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckCircle2, AlertCircle, Wand2, MoreVertical, Trash2, Edit2, PauseCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 
 export default function ReelsDashboard() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const generateMutation = useMutation({
+    mutationFn: async (seriesId: string) => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels/series/${seriesId}/generate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to generate reel');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reel-series'] });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (seriesId: string) => {
+      if (!confirm('Are you sure you want to delete this series and all its reels?')) throw new Error('Cancelled');
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels/series/${seriesId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to delete series');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reel-series'] })
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async (seriesId: string) => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels/series/${seriesId}/toggle-active`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to toggle active status');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reel-series'] })
+  });
 
   const { data: seriesList, isLoading } = useQuery({
     queryKey: ['reel-series'],
@@ -66,14 +112,88 @@ export default function ReelsDashboard() {
           {seriesList?.map((series: any) => (
             <div key={series.id} className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
               <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-                    {series.name}
-                    {series.isActive && <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Active</span>}
-                  </h3>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
+                      {series.name}
+                      {series.isActive && <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Active</span>}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="gap-2 text-violet-700 border-violet-200 hover:bg-violet-50 hover:border-violet-300"
+                        onClick={() => generateMutation.mutate(series.id)}
+                        disabled={generateMutation.isPending}
+                      >
+                        {generateMutation.isPending && generateMutation.variables === series.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Wand2 className="h-4 w-4" />
+                        )}
+                        Generate Now
+                      </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500 hover:text-stone-900">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer"
+                            onClick={() => {
+                              const readyReels = series.reels?.filter((r: any) => r.status === 'READY');
+                              if (readyReels && readyReels.length > 0) {
+                                window.open(readyReels[0].videoUrl, '_blank');
+                              } else {
+                                alert('No finished reels to play yet. Generate one first!');
+                              }
+                            }}
+                          >
+                            <Play className="h-4 w-4" /> Play Latest Reel
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer"
+                            onClick={() => router.push(`/dashboard/reels-creator/edit/${series.id}`)}
+                          >
+                            <Edit2 className="h-4 w-4" /> Edit Series
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer text-amber-600 focus:text-amber-700 focus:bg-amber-50"
+                            onClick={() => toggleActiveMutation.mutate(series.id)}
+                            disabled={toggleActiveMutation.isPending}
+                          >
+                            <PauseCircle className="h-4 w-4" /> {series.isActive ? 'Stop Auto Posting' : 'Resume Auto Posting'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
+                            onClick={() => deleteMutation.mutate(series.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" /> Delete Series
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-4 mt-2 text-sm text-stone-500">
                     <span className="flex items-center gap-1"><FileText className="h-4 w-4" /> {series.niche || 'Custom Script'}</span>
                     <span className="flex items-center gap-1"><Video className="h-4 w-4" /> {series.artStyle}</span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" /> 
+                      {(() => {
+                        try {
+                          const days = JSON.parse(series.scheduleDays);
+                          if (!days || days.length === 0) return 'No schedule';
+                          return `${days.join(', ')} at ${series.scheduleTime || '12:00'}`;
+                        } catch {
+                          return 'No schedule';
+                        }
+                      })()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -99,23 +219,30 @@ export default function ReelsDashboard() {
                               {reel.status === 'READY' && <CheckCircle2 className="h-3 w-3" />}
                               {reel.status === 'GENERATING' && <Loader2 className="h-3 w-3 animate-spin" />}
                               {reel.status === 'FAILED' && <AlertCircle className="h-3 w-3" />}
-                              {reel.status}
+                              {reel.status === 'GENERATING' && reel.statusMessage ? reel.statusMessage : reel.status}
                             </span>
                           </div>
                           
                           {reel.script && (
-                            <p className="text-xs text-stone-600 line-clamp-3 mb-4 italic">
-                              "{reel.script}"
-                            </p>
+                            <details className="group mb-4">
+                              <summary className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-violet-600 hover:text-violet-700 select-none list-none">
+                                <FileText className="h-3.5 w-3.5" />
+                                View Generated Script
+                              </summary>
+                              <div className="mt-2 text-xs text-stone-600 italic max-h-32 overflow-y-auto pr-2 custom-scrollbar p-2.5 bg-stone-50 rounded-lg border border-stone-100">
+                                "{reel.script}"
+                              </div>
+                            </details>
                           )}
 
                           <div className="mt-auto space-y-2 text-xs font-medium text-stone-500">
-                            {reel.scheduledFor && (
-                              <div className="flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5" />
-                                {format(new Date(reel.scheduledFor), 'MMM d, yyyy @ p')}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                              {reel.scheduledFor ? <Calendar className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                              {reel.scheduledFor 
+                                ? format(new Date(reel.scheduledFor), 'MMM d, yyyy @ p')
+                                : `Created: ${format(new Date(reel.createdAt), 'MMM d, yyyy @ p')}`
+                              }
+                            </div>
                           </div>
                         </div>
                         

@@ -284,9 +284,17 @@ model ReelSeries {
   customPrompt String?
   language     String
   voiceId      String
-  musicId      String?
-  artStyle     String
-  createdAt    DateTime @default(now())
+  musicId        String?
+  artStyle       String
+  duration       String   @default("30s")
+  hookType       String?  @map("hook_type")
+  tone           String?
+  storyStructure String?  @map("story_structure")
+  isActive       Boolean  @default(true) @map("is_active")
+  scheduleDays   String   @default("[]") @map("schedule_days") // JSON array like ["MON", "WED", "FRI"]
+  scheduleTime   String?  @map("schedule_time") // HH:mm format
+  socialChannels String   @default("[]") @map("social_channels") // JSON array of account IDs
+  createdAt      DateTime @default(now())
   updatedAt    DateTime @updatedAt
   reels        Reel[]
 
@@ -301,6 +309,7 @@ model Reel {
   script         String?
   videoUrl       String?
   status         String     @default("PENDING") // PENDING, GENERATING, READY, PUBLISHED, FAILED
+  statusMessage  String?
   scheduledFor   DateTime?
   socialChannels String // JSON array of selected channel IDs (Platform enums or SocialAccount IDs)
   createdAt      DateTime   @default(now())

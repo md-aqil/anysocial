@@ -17,6 +17,7 @@ const createReelSeriesSchema = z.object({
   seriesName: z.string().min(1, 'Series name is required'),
   duration: z.string(),
   publishTime: z.string().optional(),
+  scheduleDays: z.array(z.string()).optional().default([]),
   createNow: z.boolean().optional().default(false),
   socialChannels: z.array(z.string()).optional().default([]),
 });
@@ -43,6 +44,10 @@ router.post('/', requireAuth, async (req: any, res: any) => {
         voiceId: validatedData.voiceId,
         musicId: validatedData.musicId || null,
         artStyle: validatedData.artStyle,
+        duration: validatedData.duration,
+        scheduleDays: JSON.stringify(validatedData.scheduleDays),
+        scheduleTime: validatedData.publishTime || null,
+        socialChannels: JSON.stringify(validatedData.socialChannels),
       },
     });
 
@@ -110,6 +115,163 @@ router.get('/series', requireAuth, async (req: any, res: any) => {
     res.status(200).json({ success: true, data: series });
   } catch (error) {
     console.error('Error fetching ReelSeries:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/reels/series/:seriesId
+ * Get a specific reel series.
+ */
+router.get('/series/:seriesId', requireAuth, async (req: any, res: any) => {
+  try {
+    const { seriesId } = req.params;
+    const userId = req.userId;
+    const series = await prisma.reelSeries.findUnique({
+      where: { id: seriesId, userId },
+      include: { reels: true }
+    });
+
+    if (!series) {
+      return res.status(404).json({ success: false, error: 'Series not found' });
+    }
+    res.status(200).json({ success: true, data: series });
+  } catch (error) {
+    console.error('Error fetching ReelSeries:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * PUT /api/reels/series/:seriesId
+ * Update a specific reel series.
+ */
+router.put('/series/:seriesId', requireAuth, async (req: any, res: any) => {
+  try {
+    const { seriesId } = req.params;
+    const userId = req.userId;
+    const { name, isActive } = req.body;
+    
+    const series = await prisma.reelSeries.findUnique({
+      where: { id: seriesId, userId },
+    });
+
+    if (!series) {
+      return res.status(404).json({ success: false, error: 'Series not found' });
+    }
+
+    const updatedSeries = await prisma.reelSeries.update({
+      where: { id: seriesId },
+      data: { 
+        name: name !== undefined ? name : series.name,
+        isActive: isActive !== undefined ? isActive : series.isActive
+      }
+    });
+
+    res.status(200).json({ success: true, data: updatedSeries });
+  } catch (error) {
+    console.error('Error updating ReelSeries:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/reels/series/:seriesId/generate
+ * Manually trigger the generation of a new reel for an existing series.
+ */
+router.post('/series/:seriesId/generate', requireAuth, async (req: any, res: any) => {
+  try {
+    const { seriesId } = req.params;
+    const userId = req.userId;
+
+    const series = await prisma.reelSeries.findUnique({
+      where: { id: seriesId, userId },
+    });
+
+    if (!series) {
+      return res.status(404).json({ success: false, error: 'Series not found' });
+    }
+
+    // Create the new Reel entry
+    const reel = await prisma.reel.create({
+      data: {
+        seriesId: series.id,
+        status: 'PENDING',
+        socialChannels: '[]', // Optional: could inherit from series if we added it there
+      },
+    });
+
+    // Enqueue BullMQ job
+    await queueReelGeneration(reel.id, series.id);
+
+    res.status(201).json({
+      success: true,
+      data: reel,
+    });
+  } catch (error) {
+    console.error('Error manually generating reel:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * PATCH /api/reels/series/:seriesId/toggle-active
+ * Toggles the isActive status of the series (Stop/Start auto-posting)
+ */
+router.patch('/series/:seriesId/toggle-active', requireAuth, async (req: any, res: any) => {
+  try {
+    const { seriesId } = req.params;
+    const userId = req.userId;
+
+    const series = await prisma.reelSeries.findUnique({
+      where: { id: seriesId, userId },
+    });
+
+    if (!series) {
+      return res.status(404).json({ success: false, error: 'Series not found' });
+    }
+
+    const updatedSeries = await prisma.reelSeries.update({
+      where: { id: seriesId },
+      data: { isActive: !series.isActive },
+    });
+
+    res.status(200).json({ success: true, data: updatedSeries });
+  } catch (error) {
+    console.error('Error toggling series active state:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * DELETE /api/reels/series/:seriesId
+ * Deletes a series and all its associated reels
+ */
+router.delete('/series/:seriesId', requireAuth, async (req: any, res: any) => {
+  try {
+    const { seriesId } = req.params;
+    const userId = req.userId;
+
+    const series = await prisma.reelSeries.findUnique({
+      where: { id: seriesId, userId },
+    });
+
+    if (!series) {
+      return res.status(404).json({ success: false, error: 'Series not found' });
+    }
+
+    // Delete associated reels first
+    await prisma.reel.deleteMany({
+      where: { seriesId },
+    });
+
+    await prisma.reelSeries.delete({
+      where: { id: seriesId },
+    });
+
+    res.status(200).json({ success: true, message: 'Series deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting series:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
