@@ -16,7 +16,7 @@ export default function ReelsDashboard() {
   const generateMutation = useMutation({
     mutationFn: async (seriesId: string) => {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels/series/${seriesId}/generate`, {
+      const res = await fetch(`/api/reels/series/${seriesId}/generate`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -32,7 +32,7 @@ export default function ReelsDashboard() {
     mutationFn: async (seriesId: string) => {
       if (!confirm('Are you sure you want to delete this series and all its reels?')) throw new Error('Cancelled');
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels/series/${seriesId}`, {
+      const res = await fetch(`/api/reels/series/${seriesId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -45,7 +45,7 @@ export default function ReelsDashboard() {
   const toggleActiveMutation = useMutation({
     mutationFn: async (seriesId: string) => {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels/series/${seriesId}/toggle-active`, {
+      const res = await fetch(`/api/reels/series/${seriesId}/toggle-active`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -59,7 +59,7 @@ export default function ReelsDashboard() {
     queryKey: ['reel-series'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels/series`, {
+      const res = await fetch(`/api/reels/series`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

@@ -19,7 +19,7 @@ export default function EditReelSeries() {
     queryKey: ['reel-series', seriesId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels/series/${seriesId}`, {
+      const res = await fetch(`/api/reels/series/${seriesId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch series');
@@ -36,7 +36,7 @@ export default function EditReelSeries() {
   const updateMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels/series/${seriesId}`, {
+      const res = await fetch(`/api/reels/series/${seriesId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

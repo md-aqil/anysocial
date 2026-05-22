@@ -174,7 +174,7 @@ export default function ReelCreatorPage() {
         socialChannels: selectedChannels,
       };
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/reels`, {
+      const res = await fetch(`/api/reels`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
