@@ -184,13 +184,14 @@ export default function ReelCreatorPage() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to create reel series');
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.details || errorData?.error || 'Failed to create reel series');
       }
       
       router.push('/dashboard/reels-creator');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Failed to save. Please try again.');
+      alert(`Failed to save: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
