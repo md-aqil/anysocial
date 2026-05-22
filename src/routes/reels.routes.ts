@@ -85,12 +85,17 @@ router.post('/', requireAuth, async (req: any, res: any) => {
         reel,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, errors: error.errors });
     }
     console.error('Error creating ReelSeries:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error', 
+      details: error?.message || String(error),
+      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined 
+    });
   }
 });
 
