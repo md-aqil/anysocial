@@ -11,22 +11,23 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   async rewrites() {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
       },
       {
         source: '/oauth/:path*',
-        destination: 'http://localhost:3001/oauth/:path*',
+        destination: `${backendUrl}/oauth/:path*`,
       },
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:3001/uploads/:path*',
+        destination: `${backendUrl}/uploads/:path*`,
       },
       {
         source: '/health',
-        destination: 'http://localhost:3001/health',
+        destination: `${backendUrl}/health`,
       },
     ];
   },
