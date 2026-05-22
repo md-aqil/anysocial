@@ -222,6 +222,43 @@ Make sure the output is a valid JSON object.`;
 
   // 2. Google Cloud TTS (Journey Voices for High Fidelity)
   async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US'): Promise<string> {
+    const uniqueId = Math.random().toString(36).substring(7);
+    const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
+
+    // 1. ATTEMPT VOICEBOX (KOKORO) FIRST
+    try {
+      // Map voices to Kokoro profiles. Using standard Kokoro default IDs as placeholders.
+      let profileId = "default";
+      if (voiceName === 'Charon') profileId = "am_echo"; // Deep male
+      else if (voiceName === 'Aoede' || voiceName === 'Kore') profileId = "af_bella"; // Female
+      else profileId = "am_michael"; // Standard male
+      
+      const langCode = language.includes('Hindi') ? 'hi' : 'en';
+
+      console.log(`[TTS] Attempting to use Voicebox (Kokoro) with profile ${profileId}...`);
+      const response = await fetch('http://127.0.0.1:17493/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: text,
+          profile_id: profileId,
+          language: langCode
+        })
+      });
+
+      if (response.ok) {
+        const buffer = await response.arrayBuffer();
+        fs.writeFileSync(tempPath, Buffer.from(buffer));
+        console.log(`[TTS] Voicebox generation successful!`);
+        return tempPath;
+      } else {
+        console.warn(`[TTS] Voicebox returned ${response.status}. Falling back to Google Cloud...`);
+      }
+    } catch (e: any) {
+      console.warn(`[TTS] Voicebox not running or failed (${e.message}). Falling back to Google Cloud...`);
+    }
+
+    // 2. FALLBACK TO GOOGLE CLOUD TTS
     const textToSpeech = await import('@google-cloud/text-to-speech');
     const client = new textToSpeech.TextToSpeechClient();
     
@@ -231,19 +268,17 @@ Make sure the output is a valid JSON object.`;
 
     if (language.includes('Hindi')) {
       bcp47Language = 'hi-IN';
-      // Map personas to Hindi Neural2 voices (Journey is en-US/es-ES only usually)
       if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'hi-IN-Neural2-A'; // Female
-      else actualVoiceName = 'hi-IN-Neural2-C'; // Male (Puck, Charon, Fenrir)
+      else actualVoiceName = 'hi-IN-Neural2-C'; // Male
     } else if (language.includes('Spanish')) {
       bcp47Language = 'es-ES';
       if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'es-ES-Journey-O'; // Female
       else actualVoiceName = 'es-ES-Journey-D'; // Male
     } else {
-      // Default to English
       bcp47Language = 'en-US';
       if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'en-US-Journey-O'; // Female
       else if (voiceName === 'Charon') actualVoiceName = 'en-US-Journey-F'; // Deep Male
-      else actualVoiceName = 'en-US-Journey-D'; // Standard Male (Puck, Fenrir)
+      else actualVoiceName = 'en-US-Journey-D'; // Standard Male
     }
 
     const request = {
@@ -257,9 +292,6 @@ Make sure the output is a valid JSON object.`;
 
     try {
       const [response] = await client.synthesizeSpeech(request);
-      const uniqueId = Math.random().toString(36).substring(7);
-      const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
-      
       fs.writeFileSync(tempPath, response.audioContent as Uint8Array, 'binary');
       return tempPath;
     } catch (e: any) {
