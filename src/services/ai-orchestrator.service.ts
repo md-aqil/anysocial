@@ -24,7 +24,7 @@ export class AiOrchestratorService {
       console.warn('Vertex AI not configured, skipping media analysis');
       return { caption: "", keywords: "", tags: "" };
     }
-    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-1.5-pro-002' });
+    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash' });
 
     const mediaPart = {
       inlineData: {
@@ -82,7 +82,7 @@ Make sure the output is a valid JSON object.`;
     if (!this.vertexAI) {
       return { adaptedContent: content };
     }
-    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-1.5-pro-002' });
+    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash' });
 
     const prompt = `Adapt the following social media post for ${platform}. 
 Modify the tone, style, and length to fit the best practices for ${platform}.
@@ -125,7 +125,7 @@ Make sure the output is a valid JSON object.`;
     if (!this.vertexAI) {
       return `Generated text based on: ${prompt}`;
     }
-    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-1.5-pro-002' });
+    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     return result.response.candidates?.[0]?.content.parts[0]?.text || '';
   }
