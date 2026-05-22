@@ -131,15 +131,18 @@ Output ONLY valid JSON:
       // 3. Generate Images using Imagen 3
       await updateProgress(`Generating ${numKeywords} cinematic visuals using Imagen 3...`);
       logger.info({ event: 'reel_generating_images', reelId });
-      const imagePromises = keywords.slice(0, numKeywords).map(async (keyword) => {
+      const imageUrls: string[] = [];
+      for (const keyword of keywords.slice(0, numKeywords)) {
         try {
           // Append art style to prompt to ensure consistency
-          return await aiOrchestrator.generateImage(`${keyword}, ${series.artStyle} style`);
+          const url = await aiOrchestrator.generateImage(`${keyword}, ${series.artStyle} style`);
+          imageUrls.push(url);
+          // Small delay to be extra safe with rate limits
+          await new Promise(r => setTimeout(r, 1000));
         } catch (e) {
-          return 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop';
+          imageUrls.push('https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop');
         }
-      });
-      const imageUrls = await Promise.all(imagePromises);
+      }
 
       // 4. Compose Video using VideoComposerService (FFmpeg)
       logger.info({ event: 'reel_composing_video', reelId });
