@@ -179,11 +179,15 @@ export default function ReelsDashboard() {
                       </DropdownMenu>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-stone-500">
-                    <span className="flex items-center gap-1"><FileText className="h-4 w-4" /> {series.niche || 'Custom Script'}</span>
-                    <span className="flex items-center gap-1"><Video className="h-4 w-4" /> {series.artStyle}</span>
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-stone-500">
+                    <span className="flex items-center gap-1" title="Niche / Topic"><FileText className="h-4 w-4 text-violet-500" /> {series.niche || 'Custom Script'}</span>
+                    <span className="flex items-center gap-1" title="Art Style"><Video className="h-4 w-4 text-pink-500" /> {series.artStyle}</span>
+                    <span className="flex items-center gap-1" title="Voice & Language">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-amber-500"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                      {series.voiceName} ({series.language || 'English'})
+                    </span>
                     <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" /> 
+                      <Calendar className="h-4 w-4 text-blue-500" />  
                       {(() => {
                         try {
                           const days = JSON.parse(series.scheduleDays);

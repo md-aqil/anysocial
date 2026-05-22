@@ -82,7 +82,7 @@ export class ReelWorker {
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
-        languagePrompt = `Language: Hindi (Hinglish conversational style). DO NOT use pure, formal, or bookish Hindi. Use a natural, everyday conversational mix of Hindi, Urdu, and common English words—exactly how a modern Indian content creator speaks in real life. Keep it highly relatable and natural.`;
+        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script in the Devanagari script (हिंदी लिपि). DO NOT write in Hinglish (Latin alphabet). Use natural conversational Hindi, but the text itself must be strictly in Devanagari characters so the text-to-speech engine can pronounce it perfectly.`;
       }
       
       const scriptPrompt = `You are an elite, top-1% TikTok/Reels viral content strategist and master storyteller specializing in dark, cinematic nature documentaries and psychological thrillers.
