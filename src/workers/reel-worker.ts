@@ -271,7 +271,7 @@ Output ONLY valid JSON:
       if (channels.length > 0) {
         try {
           const { postingEngine } = await import('../services/posting-engine.service.js');
-          const videoBuffer = fs.readFileSync(concatVideoPath);
+          const videoBuffer = fs.readFileSync(publicFilePath);
           
           await postingEngine.schedulePost(series.userId, {
             content: script.substring(0, 2000),

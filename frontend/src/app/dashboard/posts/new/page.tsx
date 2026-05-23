@@ -359,6 +359,9 @@ export default function NewPostPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const draftId = params.get("id");
+    const videoUrlParam = params.get("videoUrl");
+    const contentParam = params.get("content");
+    const platformsParam = params.get("platforms");
 
     if (draftId) {
       api.posts.get(draftId).then(post => {
@@ -389,8 +392,44 @@ export default function NewPostPage() {
             .catch(err => console.error("Failed to fetch draft media", err));
         }
       }).catch(err => console.error("Failed to load draft", err));
+    } else {
+      if (contentParam) {
+        setValue("content", decodeURIComponent(contentParam));
+      }
+      if (platformsParam) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(platformsParam));
+          if (Array.isArray(parsed)) {
+            if (accountsData?.accounts) {
+              const matchedPlatforms = accountsData.accounts
+                .filter(acc => parsed.includes(acc.id))
+                .map(acc => acc.platform.toUpperCase());
+              
+              if (matchedPlatforms.length > 0) {
+                setValue("platforms", matchedPlatforms);
+                setPlatforms(matchedPlatforms);
+              }
+            }
+          }
+        } catch {
+          const parsed = decodeURIComponent(platformsParam).split(',').map(p => p.trim().toUpperCase());
+          setValue("platforms", parsed);
+          setPlatforms(parsed);
+        }
+      }
+      if (videoUrlParam) {
+        const decodedUrl = decodeURIComponent(videoUrlParam);
+        fetch(decodedUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            const filename = decodedUrl.split('/').pop() || 'reel-video.mp4';
+            const file = new File([blob], filename, { type: 'video/mp4' });
+            setMediaFiles([file]);
+          })
+          .catch(err => console.error("Failed to fetch video from URL", err));
+      }
     }
-  }, [setValue]);
+  }, [setValue, accountsData, setPlatforms]);
 
   // Fetch Pinterest boards when Pinterest is selected
   useEffect(() => {

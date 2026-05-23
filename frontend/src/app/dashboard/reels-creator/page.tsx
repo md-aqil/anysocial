@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
-import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckCircle2, AlertCircle, Wand2, MoreVertical, Trash2, Edit2, PauseCircle } from 'lucide-react';
+import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckCircle2, AlertCircle, Wand2, MoreVertical, Trash2, Edit2, PauseCircle, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { format } from 'date-fns';
 
 import { api } from '@/lib/api';
@@ -516,16 +517,23 @@ export default function ReelsDashboard() {
                         </div>
                         
                         {reel.videoUrl && (
-                          <div className="bg-stone-100 p-3 border-t border-stone-100">
+                          <div className="bg-stone-50 p-3 border-t border-stone-100 flex gap-2">
                             <a 
                               href={reel.videoUrl} 
                               target="_blank" 
                               rel="noreferrer"
-                              className="flex items-center justify-center gap-2 w-full py-2 bg-white border border-stone-200 rounded-lg text-sm font-semibold text-stone-700 hover:bg-stone-50 transition-colors"
+                              className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white border border-stone-200 rounded-lg text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors shadow-sm"
                             >
-                              <Play className="h-4 w-4 text-violet-600" />
-                              Watch Final Reel
+                              <Play className="h-3.5 w-3.5 text-violet-600 animate-pulse" />
+                              Watch Reel
                             </a>
+                            <Link
+                              href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(series.socialChannels || '[]')}`}
+                              className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-violet-600 border border-transparent rounded-lg text-xs font-bold text-white hover:bg-violet-700 transition-all hover:scale-[1.02] shadow-sm"
+                            >
+                              <Send className="h-3.5 w-3.5" />
+                              To Composer
+                            </Link>
                           </div>
                         )}
                       </div>
