@@ -214,7 +214,7 @@ Make sure the output is a valid JSON object.`;
         throw new Error(`Imagen 3 API Error: ${res.status} ${errText}`);
       }
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       const base64Image = data.predictions?.[0]?.bytesBase64Encoded;
       if (!base64Image) throw new Error("Imagen generation failed: No image returned");
 
