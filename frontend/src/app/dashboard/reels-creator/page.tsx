@@ -48,6 +48,44 @@ const STYLES = [
   { id: 'origami', title: 'Paper Origami', image: '/uploads/styles/origami.jpg' },
   { id: 'gothic', title: 'Gothic Noir', image: '/uploads/styles/gothic.jpg' },
 ];
+const getReelStatus = (reel: any) => {
+  if (reel.status === 'FAILED') {
+    return {
+      label: 'FAILED',
+      classes: 'bg-red-100/90 text-red-700 border-red-200',
+      icon: <AlertCircle className="h-3.5 w-3.5" />
+    };
+  }
+  if (reel.status === 'GENERATING') {
+    return {
+      label: 'GENERATING',
+      classes: 'bg-blue-100/90 text-blue-700 border-blue-200 animate-pulse',
+      icon: <Loader2 className="h-3.5 w-3.5 animate-spin" />
+    };
+  }
+  if (reel.status === 'PENDING') {
+    return {
+      label: 'NEXT IN LINE',
+      classes: 'bg-violet-100/90 text-violet-700 border-violet-200',
+      icon: <Clock className="h-3.5 w-3.5" />
+    };
+  }
+  
+  const isFuture = reel.scheduledFor ? new Date(reel.scheduledFor) > new Date() : false;
+  if (isFuture) {
+    return {
+      label: 'SCHEDULED',
+      classes: 'bg-amber-100/90 text-amber-700 border-amber-200',
+      icon: <Calendar className="h-3.5 w-3.5" />
+    };
+  }
+  
+  return {
+    label: 'POSTED',
+    classes: 'bg-emerald-100/90 text-emerald-700 border-emerald-200',
+    icon: <CheckCircle2 className="h-3.5 w-3.5" />
+  };
+};
 
 export default function ReelsDashboard() {
   const router = useRouter();
@@ -314,17 +352,15 @@ export default function ReelsDashboard() {
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                           <div className="absolute top-2 right-2">
-                            <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full flex items-center gap-1.5 shadow-sm backdrop-blur-md ${
-                              reel.status === 'READY' ? 'bg-green-100/90 text-green-700' :
-                              reel.status === 'GENERATING' ? 'bg-blue-100/90 text-blue-700 animate-pulse' :
-                              reel.status === 'FAILED' ? 'bg-red-100/90 text-red-700' :
-                              'bg-stone-200/90 text-stone-700'
-                            }`}>
-                              {reel.status === 'READY' && <CheckCircle2 className="h-3 w-3" />}
-                              {reel.status === 'GENERATING' && <Loader2 className="h-3 w-3 animate-spin" />}
-                              {reel.status === 'FAILED' && <AlertCircle className="h-3 w-3" />}
-                              {reel.status}
-                            </span>
+                            {(() => {
+                              const badge = getReelStatus(reel);
+                              return (
+                                <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full flex items-center gap-1.5 shadow-sm border backdrop-blur-md ${badge.classes}`}>
+                                  {badge.icon}
+                                  {badge.label}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
                         <div className="p-4 flex-1 flex flex-col">
@@ -357,13 +393,34 @@ export default function ReelsDashboard() {
                           )}
 
                           <div className="mt-auto space-y-2 text-xs font-medium text-stone-500">
-                            <div className="flex items-center gap-1.5">
-                              {reel.scheduledFor ? <Calendar className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-                              {reel.scheduledFor 
-                                ? format(new Date(reel.scheduledFor), 'MMM d, yyyy @ p')
-                                : `Created: ${format(new Date(reel.createdAt), 'MMM d, yyyy @ p')}`
-                              }
-                            </div>
+                            {(() => {
+                              const isFuture = reel.scheduledFor ? new Date(reel.scheduledFor) > new Date() : false;
+                              return (
+                                <div className="flex items-center gap-1.5">
+                                  {reel.scheduledFor ? (
+                                    <>
+                                      <Calendar className={`h-3.5 w-3.5 ${isFuture ? 'text-amber-500' : 'text-emerald-500'}`} />
+                                      <span>
+                                        {isFuture ? 'Scheduled to Post:' : 'Posted on:'}{' '}
+                                        <span className="font-semibold text-stone-700">
+                                          {format(new Date(reel.scheduledFor), 'MMM d, yyyy @ p')}
+                                        </span>
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock className="h-3.5 w-3.5 text-stone-400" />
+                                      <span>
+                                        Created:{' '}
+                                        <span className="font-semibold text-stone-700">
+                                          {format(new Date(reel.createdAt), 'MMM d, yyyy @ p')}
+                                        </span>
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })()}
                             
                             {/* Detailed Error Reason Display */}
                             {reel.status === 'FAILED' && reel.statusMessage && (
