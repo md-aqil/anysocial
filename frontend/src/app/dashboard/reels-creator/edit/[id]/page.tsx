@@ -106,7 +106,8 @@ export default function EditReelSeries() {
           isActive,
           socialChannels: selectedChannels,
           scheduleDays,
-          scheduleTime: publishTime
+          scheduleTime: publishTime,
+          timezoneOffset: new Date().getTimezoneOffset()
         })
       });
       if (!res.ok) throw new Error('Failed to update series');

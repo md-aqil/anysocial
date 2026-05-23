@@ -68,9 +68,27 @@ async function downloadToTemp(url: string, fileName: string): Promise<string> {
     
     // Auto-detect if audio or image is being requested
     const isAudio = url.includes('.mp3') || url.includes('.wav') || url.includes('.ogg') || fileName.includes('audio') || fileName.includes('bgm');
+    
+    if (!isAudio) {
+      try {
+        console.log(`[Download Resiliency Fallback] Dynamically generating backdrop for ${fileName} via Google -> NVIDIA -> Pixabay...`);
+        const { AiOrchestratorService } = await import('./ai-orchestrator.service.js');
+        const aiOrchestrator = new AiOrchestratorService();
+        
+        // Use a generic cinematic landscape/portrait descriptor
+        const generatedPath = await aiOrchestrator.fetchStockImage("beautiful cinematic vertical background wallpaper");
+        if (fs.existsSync(generatedPath)) {
+          fs.copyFileSync(generatedPath, tempPath);
+          return tempPath;
+        }
+      } catch (genErr: any) {
+        console.error(`[Download Resiliency Fallback] Dynamic image generation chain failed: ${genErr.message}`);
+      }
+    }
+
     const fallbackUrl = isAudio
       ? 'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3'
-      : 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop';
+      : 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop'; // fallback URL as safety check only
 
     try {
       const response = await fetch(fallbackUrl, { signal: AbortSignal.timeout(10000) });

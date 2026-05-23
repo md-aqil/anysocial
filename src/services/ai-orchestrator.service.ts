@@ -224,10 +224,17 @@ Make sure the output is a valid JSON object.`;
     } catch (e: any) {
       console.error("[Imagen 3 API Error]:", e.message || e);
       try {
+        // Fallback 1: NVIDIA Flux
         return await this.generateNvidiaFluxImage(prompt, seed);
       } catch (fluxErr: any) {
         console.error("[Flux Fallback Error]:", fluxErr.message || fluxErr);
-        throw new Error("All AI Image Generators failed.");
+        try {
+          // Fallback 2: Pixabay search and download
+          return await this.fetchPixabayImage(prompt);
+        } catch (pixabayErr: any) {
+          console.error("[Pixabay Fallback Error]:", pixabayErr.message || pixabayErr);
+          throw new Error("All AI and Stock Image Generators failed.");
+        }
       }
     }
   }
@@ -281,28 +288,65 @@ Make sure the output is a valid JSON object.`;
   }
 
   /**
-   * Fallback to free Stock API (Pixabay) or NVIDIA Flux when primary generation fails.
+   * Helper to search Pixabay vertical images and download it to a local temp file
+   */
+  async fetchPixabayImage(keyword: string): Promise<string> {
+    const cleanKeyword = keyword.split(',')[0].trim(); // Get main subject
+    if (!process.env.PIXABAY_API_KEY) {
+      throw new Error("No Pixabay API key configured in env");
+    }
+    
+    console.log(`[Pixabay] Searching for '${cleanKeyword}'...`);
+    const response = await fetch(`https://pixabay.com/api/?key=${process.env.PIXABAY_API_KEY}&q=${encodeURIComponent(cleanKeyword)}&image_type=photo&orientation=vertical&per_page=3&safesearch=true`);
+    if (!response.ok) {
+      throw new Error(`Pixabay API error: ${response.status}`);
+    }
+    const data = await response.json() as any;
+    if (!data.hits || data.hits.length === 0) {
+      throw new Error(`No Pixabay images found for keyword: ${cleanKeyword}`);
+    }
+    
+    const imageUrl = data.hits[0].largeImageURL;
+    console.log(`[Pixabay] Found image URL: ${imageUrl}, downloading...`);
+    
+    const uniqueId = Math.random().toString(36).substring(7);
+    const tempPath = path.join(os.tmpdir(), `pixabay_${Date.now()}_${uniqueId}.jpg`);
+    
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download Pixabay image from ${imageUrl}`);
+    }
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    fs.writeFileSync(tempPath, Buffer.from(arrayBuffer));
+    return tempPath;
+  }
+
+  /**
+   * Fallback chain to acquire a background image: Google -> NVIDIA -> Pixabay
    */
   async fetchStockImage(keyword: string): Promise<string> {
-    const cleanKeyword = keyword.split(',')[0].trim(); // Get main subject
-    
-    // 1. Try Pixabay if API Key exists
-    if (process.env.PIXABAY_API_KEY) {
+    console.log(`[Stock Image API] Initiating fallback chain for keyword: "${keyword}"`);
+    try {
+      // 1. Google Vertex AI Imagen 3 first
+      const seed = Math.floor(Math.random() * 1000000);
+      return await this.generateImage(keyword, seed);
+    } catch (googleErr: any) {
+      console.warn(`[Stock Image Fallback] Google Imagen 3 failed: ${googleErr.message}. Trying NVIDIA Flux...`);
       try {
-        const response = await fetch(`https://pixabay.com/api/?key=${process.env.PIXABAY_API_KEY}&q=${encodeURIComponent(cleanKeyword)}&image_type=photo&orientation=vertical&per_page=3&safesearch=true`);
-        const data = await response.json() as any;
-        if (data.hits && data.hits.length > 0) {
-          return data.hits[0].largeImageURL; // Direct stock image URL
+        // 2. NVIDIA Flux
+        const seed = Math.floor(Math.random() * 1000000);
+        return await this.generateNvidiaFluxImage(keyword, seed);
+      } catch (fluxErr: any) {
+        console.warn(`[Stock Image Fallback] NVIDIA Flux failed: ${fluxErr.message}. Trying Pixabay...`);
+        try {
+          // 3. Pixabay
+          return await this.fetchPixabayImage(keyword);
+        } catch (pixabayErr: any) {
+          console.error(`[Stock Image Fallback] All sources failed: ${pixabayErr.message}`);
+          throw new Error("Could not acquire any backdrop image from Google, NVIDIA Flux, or Pixabay.");
         }
-      } catch (err) {
-        console.error("[Pixabay Stock API Error]:", err);
       }
     }
-
-    // 2. Fallback directly to NVIDIA Flux instead of Pollinations AI
-    console.log(`[Stock API Fallback]: Using NVIDIA Flux instead of Pollinations AI for '${cleanKeyword}'`);
-    const seed = Math.floor(Math.random() * 1000000);
-    return await this.generateNvidiaFluxImage(keyword, seed);
   }
 
   // 2. Voice Synthesis Engine (Gemini Multimodal / Kokoro / Google Cloud)

@@ -85,8 +85,9 @@ export async function scheduleNextReel(seriesId: string, timezoneOffset?: number
       return series.reels[0];
     }
 
-    // Calculate next run time
-    const nextDate = getNextScheduledDate(series.scheduleDays, series.scheduleTime || '12:00', timezoneOffset);
+    // Calculate next run time using passed offset or persistently saved series timezoneOffset
+    const resolvedOffset = timezoneOffset !== undefined ? timezoneOffset : (series.timezoneOffset !== null ? series.timezoneOffset : undefined);
+    const nextDate = getNextScheduledDate(series.scheduleDays, series.scheduleTime || '12:00', resolvedOffset);
 
     // Create PENDING reel
     const reel = await prisma.reel.create({

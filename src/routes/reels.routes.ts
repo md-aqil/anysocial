@@ -49,6 +49,7 @@ router.post('/', requireAuth, async (req: any, res: any) => {
         duration: validatedData.duration,
         scheduleDays: JSON.stringify(validatedData.scheduleDays),
         scheduleTime: validatedData.publishTime || null,
+        timezoneOffset: validatedData.timezoneOffset !== undefined ? validatedData.timezoneOffset : null,
         socialChannels: JSON.stringify(validatedData.socialChannels),
       },
     });
@@ -163,7 +164,7 @@ router.put('/series/:seriesId', requireAuth, async (req: any, res: any) => {
   try {
     const { seriesId } = req.params;
     const userId = req.userId;
-    const { name, isActive, voiceId, artStyle, socialChannels, scheduleDays, scheduleTime } = req.body;
+    const { name, isActive, voiceId, artStyle, socialChannels, scheduleDays, scheduleTime, timezoneOffset } = req.body;
     
     const series = await prisma.reelSeries.findUnique({
       where: { id: seriesId, userId },
@@ -182,7 +183,8 @@ router.put('/series/:seriesId', requireAuth, async (req: any, res: any) => {
         artStyle: artStyle !== undefined ? artStyle : series.artStyle,
         socialChannels: socialChannels !== undefined ? (typeof socialChannels === 'string' ? socialChannels : JSON.stringify(socialChannels)) : series.socialChannels,
         scheduleDays: scheduleDays !== undefined ? (typeof scheduleDays === 'string' ? scheduleDays : JSON.stringify(scheduleDays)) : series.scheduleDays,
-        scheduleTime: scheduleTime !== undefined ? scheduleTime : series.scheduleTime
+        scheduleTime: scheduleTime !== undefined ? scheduleTime : series.scheduleTime,
+        timezoneOffset: timezoneOffset !== undefined ? timezoneOffset : series.timezoneOffset
       }
     });
 

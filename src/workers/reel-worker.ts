@@ -35,9 +35,24 @@ async function downloadToTemp(url: string, fileName: string): Promise<string> {
     console.error(`[Worker Download Fallback] Failed to download ${url}: ${err.message}. Using backup asset.`);
     
     const isAudio = url.includes('.mp3') || url.includes('.wav') || url.includes('.ogg') || fileName.includes('audio') || fileName.includes('bgm');
+    
+    if (!isAudio) {
+      try {
+        console.log(`[Worker Download Resiliency Fallback] Dynamically generating backdrop for ${fileName} via Google -> NVIDIA -> Pixabay...`);
+        const { aiOrchestrator } = await import('../services/ai-orchestrator.service.js');
+        const generatedPath = await aiOrchestrator.fetchStockImage("beautiful cinematic vertical background wallpaper");
+        if (fs.existsSync(generatedPath)) {
+          fs.copyFileSync(generatedPath, tempPath);
+          return tempPath;
+        }
+      } catch (genErr: any) {
+        console.error(`[Worker Download Resiliency Fallback] Dynamic image generation chain failed: ${genErr.message}`);
+      }
+    }
+
     const fallbackUrl = isAudio
       ? 'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3'
-      : 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop';
+      : 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop'; // fallback URL as safety check only
 
     try {
       const response = await fetch(fallbackUrl, { signal: AbortSignal.timeout(10000) });
@@ -217,12 +232,23 @@ Output ONLY valid JSON:
         } catch (e: any) {
           logger.warn({ event: 'reel_image_gen_failed', keyword, error: e.message });
           try {
-            // Fallback to Stock API
+            // Fallback to Stock API chain (Google -> NVIDIA -> Pixabay)
             const stockUrl = await aiOrchestrator.fetchStockImage(keyword);
             imageUrls.push(stockUrl);
           } catch (stockErr) {
-            // Absolute last resort
-            imageUrls.push('https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop');
+            try {
+              console.log(`[Worker] Stock chain failed. Trying direct NVIDIA Flux with generic prompt...`);
+              const fallbackUrl = await aiOrchestrator.generateNvidiaFluxImage("beautiful vertical scene consistent style", reelSeed);
+              imageUrls.push(fallbackUrl);
+            } catch (fluxErr: any) {
+              try {
+                console.log(`[Worker] Direct Flux failed. Trying generic Pixabay...`);
+                const pixabayUrl = await aiOrchestrator.fetchPixabayImage("abstract vertical background");
+                imageUrls.push(pixabayUrl);
+              } catch (pixErr: any) {
+                throw new Error("Could not generate or search any fallback image asset");
+              }
+            }
           }
         }
       }
@@ -306,19 +332,55 @@ Output ONLY valid JSON:
           const minDelayMs = 60 * 1000 + 5000; // 1 minute + 5s buffer
           const isSafeFuture = scheduledTime && (scheduledTime.getTime() - Date.now() >= minDelayMs);
 
-          await postingEngine.schedulePost(series.userId, {
-            content: script.substring(0, 2000),
-            media: [{
-              file: videoBuffer,
-              type: 'video',
-              originalName: publicFilename
-            }],
-            platforms: channels.map(c => c.toUpperCase()),
-            timezone: 'UTC',
-            scheduledAt: isSafeFuture && scheduledTime ? scheduledTime.toISOString() : undefined,
-            platformOptions: {}
-          });
-          logger.info({ event: 'reel_post_queued', reelId, isScheduled: !!isSafeFuture });
+          // Resolve internal UUIDs to normalized platform names
+          const resolvedPlatforms = new Set<string>();
+          const accountIds: string[] = [];
+          
+          for (const channel of channels) {
+            const trimmed = channel.trim();
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+            if (isUuid) {
+              accountIds.push(trimmed);
+            } else {
+              resolvedPlatforms.add(trimmed.toUpperCase());
+            }
+          }
+          
+          if (accountIds.length > 0) {
+            const dbAccounts = await prisma.socialAccount.findMany({
+              where: {
+                id: { in: accountIds },
+                userId: series.userId
+              },
+              select: {
+                platform: true
+              }
+            });
+            for (const acc of dbAccounts) {
+              resolvedPlatforms.add(acc.platform.toString().toUpperCase());
+            }
+          }
+          
+          const mappedPlatforms = Array.from(resolvedPlatforms);
+          
+          if (mappedPlatforms.length > 0) {
+            console.log(`[Worker] Auto-posting/scheduling reel for platforms: ${JSON.stringify(mappedPlatforms)}`);
+            await postingEngine.schedulePost(series.userId, {
+              content: script.substring(0, 2000),
+              media: [{
+                file: videoBuffer,
+                type: 'video',
+                originalName: publicFilename
+              }],
+              platforms: mappedPlatforms,
+              timezone: 'UTC',
+              scheduledAt: isSafeFuture && scheduledTime ? scheduledTime.toISOString() : undefined,
+              platformOptions: {}
+            });
+            logger.info({ event: 'reel_post_queued', reelId, platforms: mappedPlatforms, isScheduled: !!isSafeFuture });
+          } else {
+            logger.warn({ event: 'reel_post_skip_no_platforms', reelId, reason: 'No connected accounts matched the selected channels' });
+          }
         } catch (postError: any) {
           logger.error({ event: 'reel_post_queue_failed', reelId, error: postError.message });
         }

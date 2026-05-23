@@ -293,6 +293,7 @@ model ReelSeries {
   isActive       Boolean  @default(true) @map("is_active")
   scheduleDays   String   @default("[]") @map("schedule_days") // JSON array like ["MON", "WED", "FRI"]
   scheduleTime   String?  @map("schedule_time") // HH:mm format
+  timezoneOffset Int?     @map("timezone_offset")
   socialChannels String   @default("[]") @map("social_channels") // JSON array of account IDs
   createdAt      DateTime @default(now())
   updatedAt    DateTime @updatedAt
