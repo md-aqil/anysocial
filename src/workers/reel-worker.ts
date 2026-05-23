@@ -113,6 +113,34 @@ export class ReelWorker {
         include: { user: true }
       });
 
+      // Fetch up to 15 past scripts in this series to avoid repeating topics/stories
+      const pastReels = await prisma.reel.findMany({
+        where: {
+          seriesId,
+          script: { not: null },
+        },
+        select: {
+          script: true
+        },
+        take: 15,
+        orderBy: { createdAt: 'desc' }
+      });
+
+      const pastScriptsList = pastReels
+        .map(r => r.script)
+        .filter(Boolean)
+        .map((s, idx) => `Reel ${idx + 1}: "${s!.substring(0, 200)}..."`)
+        .join('\n');
+
+      let pastReelsPrompt = '';
+      if (pastReels.length > 0) {
+        pastReelsPrompt = `\n\nCRITICAL: UNIQUE CONTENT REQUIREMENT (DO NOT REPEAT PREVIOUS STORIES)
+We have already created the following reels for this series:
+${pastScriptsList}
+
+You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for this next reel. Do not repeat any of the main concepts, historical events, locations, figure names, or hooks from the list above. Choose something fresh and completely unrelated so that viewers get a new experience in every single video in the series. For example, if you wrote about 'Cicada 3301', write about a completely different mystery (e.g., Lake Karachay, the Max Headroom intrusion, Sad Satan game, mysterious radio signals, dark web mysteries, deep ocean sounds, etc.).`;
+      }
+
       // 2. Generate Script using Vertex AI (Gemini)
       await updateProgress('✍️ Writing cinematic script with Gemini 3.1 Pro...');
       const durationStr = '1-minute compacted';
@@ -129,7 +157,7 @@ export class ReelWorker {
         languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. However, the TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (transliterated into Devanagari, e.g., 'टाइम', 'फीलिंग', 'सस्पेंस'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable.`;
       }
       
-      const scriptPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".
+      const scriptPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}
  
 CRITICAL AUDIENCE & VOCABULARY RULE: 
 The script and tone MUST be engaging, edgy, and highly relatable for teenagers (Gen Z audience). Do not talk to them like a child. Use punchy, dynamic, modern vocabulary that holds a teen's attention. Keep it fast-paced, suspenseful, and captivating.
