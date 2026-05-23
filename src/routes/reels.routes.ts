@@ -20,6 +20,7 @@ const createReelSeriesSchema = z.object({
   scheduleDays: z.array(z.string()).optional().default([]),
   createNow: z.boolean().optional().default(false),
   socialChannels: z.array(z.string()).optional().default([]),
+  timezoneOffset: z.number().optional(),
 });
 
 /**
@@ -57,7 +58,16 @@ router.post('/', requireAuth, async (req: any, res: any) => {
     
     if (!validatedData.createNow && validatedData.publishTime) {
       const [hours, minutes] = validatedData.publishTime.split(':').map(Number);
-      scheduledDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours || 0, minutes || 0, 0);
+      
+      if (validatedData.timezoneOffset !== undefined) {
+        // If client timezone offset is provided, calculate the date in the client's local context
+        // First, construct a UTC date using the client's local year/month/date/hours/minutes values
+        const localUtcTime = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), hours || 0, minutes || 0, 0);
+        scheduledDate = new Date(localUtcTime + (validatedData.timezoneOffset * 60 * 1000));
+      } else {
+        // Fallback to server local time
+        scheduledDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours || 0, minutes || 0, 0);
+      }
       
       // If the scheduled time has already passed today, schedule for tomorrow
       if (scheduledDate < now) {

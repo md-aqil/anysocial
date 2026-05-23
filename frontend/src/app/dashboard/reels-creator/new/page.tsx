@@ -177,6 +177,7 @@ export default function ReelCreatorPage() {
         scheduleDays,
         createNow,
         socialChannels: selectedChannels,
+        timezoneOffset: new Date().getTimezoneOffset(),
       };
       
       const res = await fetch(`/api/reels`, {
