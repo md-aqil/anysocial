@@ -163,9 +163,39 @@ export class VideoComposerService {
   }
 
   /**
-   * Merges a final video with a primary audio track (e.g., voiceover).
+   * Generates a basic animated subtitle (.srt) file based on word count and duration
    */
-  static async mergeAudioVideo(videoPath: string, audioUrl: string, signal?: AbortSignal): Promise<{ outputPath: string, tempFiles: string[] }> {
+  static async generateSubtitlesFile(script: string, durationInSeconds: number): Promise<string> {
+    const srtPath = path.join(os.tmpdir(), `subs_${Date.now()}.srt`);
+    const cleanScript = script.replace(/[^\w\s\u0900-\u097F]/g, ''); // Keep alphanumeric and Hindi/Devanagari
+    const words = cleanScript.split(/\s+/).filter(w => w.length > 0);
+    
+    // Group words into chunks of 3 for fast, animated Tiktok-style pacing
+    const wordsPerSubtitle = 3;
+    const totalChunks = Math.ceil(words.length / wordsPerSubtitle);
+    const durationPerChunk = durationInSeconds / totalChunks;
+
+    let srtContent = '';
+    const formatTime = (timeInSeconds: number) => {
+      const date = new Date(timeInSeconds * 1000);
+      return date.toISOString().substring(11, 23).replace('.', ',');
+    };
+
+    for (let i = 0; i < totalChunks; i++) {
+      const chunkWords = words.slice(i * wordsPerSubtitle, (i + 1) * wordsPerSubtitle).join(' ');
+      const startTime = i * durationPerChunk;
+      const endTime = (i + 1) * durationPerChunk;
+      srtContent += `${i + 1}\n${formatTime(startTime)} --> ${formatTime(endTime)}\n${chunkWords}\n\n`;
+    }
+
+    fs.writeFileSync(srtPath, srtContent);
+    return srtPath;
+  }
+
+  /**
+   * Merges a final video with a primary audio track (e.g., voiceover) and burns subtitles.
+   */
+  static async mergeAudioVideo(videoPath: string, audioUrl: string, subtitlePath?: string, signal?: AbortSignal): Promise<{ outputPath: string, tempFiles: string[] }> {
     const tempFiles: string[] = [];
     const audioPath = audioUrl.startsWith('/') ? audioUrl : await downloadToTemp(audioUrl, `audio_${Date.now()}.mp3`);
     if (!audioUrl.startsWith('/')) tempFiles.push(audioPath);
@@ -173,18 +203,26 @@ export class VideoComposerService {
     const finalOutputPath = path.join(os.tmpdir(), `final_${Date.now()}.mp4`);
 
     await new Promise((resolve, reject) => {
-      const proc = ffmpeg()
-        .input(videoPath)
-        .input(audioPath)
-        .outputOptions([
-          '-c:v copy',
+        const outputOpts = [
           '-c:a aac',
           '-b:a 192k',
           '-map 0:v:0',
           '-map 1:a:0',
           '-shortest'
-        ])
-        .on('error', (err) => {
+        ];
+
+        if (subtitlePath) {
+          // Burn subtitles into video (requires video transcoding)
+          outputOpts.unshift('-c:v libx264', '-preset superfast', `-vf subtitles=${subtitlePath}:force_style='Fontname=Arial,Fontsize=32,PrimaryColour=&H00FFFF,Bold=1,Outline=2,BorderStyle=1,Alignment=2,MarginV=120'`);
+        } else {
+          outputOpts.unshift('-c:v copy');
+        }
+
+        const proc = ffmpeg()
+          .input(videoPath)
+          .input(audioPath)
+          .outputOptions(outputOpts)
+          .on('error', (err) => {
           if (signal?.aborted) return resolve(false);
           reject(err);
         })

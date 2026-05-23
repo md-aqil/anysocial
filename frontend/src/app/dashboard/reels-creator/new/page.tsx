@@ -53,25 +53,24 @@ const PRESETS = [
 
 const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
   'English': [
-    { id: 'Aoede', name: 'af_bella (Kokoro)', type: 'Female', description: 'Expressive and engaging narrator.' },
-    { id: 'Puck', name: 'am_michael (Kokoro)', type: 'Male', description: 'Energetic and upbeat.' },
-    { id: 'Charon', name: 'am_echo (Kokoro)', type: 'Male', description: 'Deep, resonant and authoritative.' },
-    { id: 'Kore', name: 'af_bella (Kokoro)', type: 'Female', description: 'Calm, soothing storyteller.' },
-    { id: 'Fenrir', name: 'am_michael (Kokoro)', type: 'Male', description: 'Gruff and dramatic.' },
+    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS',   type: 'Male',   description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS', type: 'Male',   description: 'Deep, resonant and authoritative. Cinematic narrator.' },
+    { id: 'Fenrir', name: 'Fenrir — Gemini 3.1 TTS', type: 'Male',   description: 'Gruff and dramatic. Great for intense storytelling.' },
+    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS',  type: 'Female', description: 'Expressive and engaging. Warm storyteller voice.' },
+    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS',   type: 'Female', description: 'Calm and soothing. Perfect for mystery & suspense.' },
+    { id: 'Leda',   name: 'Leda — Gemini 3.1 TTS',   type: 'Female', description: 'Clear and confident. Great for educational reels.' },
   ],
   'Hindi': [
-    { id: 'Aoede', name: 'hf_alpha (Kokoro)', type: 'Female', description: 'Expressive and engaging narrator.' },
-    { id: 'Puck', name: 'hm_omega (Kokoro)', type: 'Male', description: 'Energetic and upbeat.' },
-    { id: 'Charon', name: 'hm_omega (Kokoro)', type: 'Male', description: 'Deep, resonant and authoritative.' },
-    { id: 'Kore', name: 'hf_alpha (Kokoro)', type: 'Female', description: 'Calm, soothing storyteller.' },
-    { id: 'Fenrir', name: 'hm_omega (Kokoro)', type: 'Male', description: 'Gruff and dramatic.' },
+    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS (Hindi)',   type: 'Male',   description: 'Energetic and upbeat Hindi voice.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Hindi)', type: 'Male',   description: 'Deep and authoritative Hindi voice.' },
+    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS (Hindi)',  type: 'Female', description: 'Expressive and engaging Hindi narrator.' },
+    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS (Hindi)',   type: 'Female', description: 'Calm soothing Hindi storyteller.' },
   ],
   'Spanish': [
-    { id: 'Aoede', name: 'Aoede (Spanish) - Fallback', type: 'Female', description: 'Expressive and engaging narrator.' },
-    { id: 'Puck', name: 'Puck (Spanish) - Fallback', type: 'Male', description: 'Energetic and upbeat.' },
-    { id: 'Charon', name: 'Charon (Spanish) - Fallback', type: 'Male', description: 'Deep, resonant and authoritative.' },
-    { id: 'Kore', name: 'Kore (Spanish) - Fallback', type: 'Female', description: 'Calm, soothing storyteller.' },
-    { id: 'Fenrir', name: 'Fenrir (Spanish) - Fallback', type: 'Male', description: 'Gruff and dramatic.' },
+    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS (Spanish)',   type: 'Male',   description: 'Energetic Spanish voice.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Spanish)', type: 'Male',   description: 'Deep Spanish narrator.' },
+    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS (Spanish)',  type: 'Female', description: 'Expressive Spanish female voice.' },
+    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS (Spanish)',   type: 'Female', description: 'Calm Spanish storyteller.' },
   ]
 };
 
@@ -80,14 +79,20 @@ const DEFAULT_VOICE_FALLBACK = [
 ];
 
 const STYLES = [
-  { id: 'cinematic', title: 'Cinematic 3D', image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&q=80' },
-  { id: 'watercolor', title: 'Watercolor', image: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=400&q=80' },
-  { id: 'digital-art', title: 'Digital Illustration', image: 'https://images.unsplash.com/photo-1618331835717-801e976710b2?w=400&q=80' },
-  { id: 'hyper-realistic', title: 'Hyper-realistic', image: 'https://images.unsplash.com/photo-1626278664285-f796b9ee7806?w=400&q=80' },
-  { id: 'anime', title: 'Anime Style', image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&q=80' },
-  { id: 'fantasy', title: 'Dark Fantasy', image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80' },
-  { id: 'cyberpunk', title: 'Cyberpunk', image: 'https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=400&q=80' },
-  { id: 'pixel-art', title: 'Pixel Art', image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&q=80' },
+  { id: 'cinematic', title: 'Cinematic 3D', image: '/uploads/styles/cinematic.jpg' },
+  { id: 'watercolor', title: 'Watercolor', image: '/uploads/styles/watercolor.jpg' },
+  { id: 'digital-art', title: 'Digital Illustration', image: '/uploads/styles/digital-art.jpg' },
+  { id: 'hyper-realistic', title: 'Hyper-realistic', image: '/uploads/styles/hyper-realistic.jpg' },
+  { id: 'anime', title: 'Anime Style', image: '/uploads/styles/anime.jpg' },
+  { id: 'fantasy', title: 'Dark Fantasy', image: '/uploads/styles/fantasy.jpg' },
+  { id: 'cyberpunk', title: 'Cyberpunk', image: '/uploads/styles/cyberpunk.jpg' },
+  { id: 'pixel-art', title: 'Pixel Art', image: '/uploads/styles/pixel-art.jpg' },
+  { id: 'vintage-vhs', title: 'Vintage VHS', image: '/uploads/styles/vintage-vhs.jpg' },
+  { id: 'claymation', title: 'Claymation', image: '/uploads/styles/claymation.jpg' },
+  { id: 'oil-painting', title: 'Classic Oil Painting', image: '/uploads/styles/oil-painting.jpg' },
+  { id: 'pop-art', title: 'Pop Art Comic', image: '/uploads/styles/pop-art.jpg' },
+  { id: 'origami', title: 'Paper Origami', image: '/uploads/styles/origami.jpg' },
+  { id: 'gothic', title: 'Gothic Noir', image: '/uploads/styles/gothic.jpg' },
 ];
 
 export default function ReelCreatorPage() {

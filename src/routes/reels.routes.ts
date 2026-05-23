@@ -155,7 +155,7 @@ router.put('/series/:seriesId', requireAuth, async (req: any, res: any) => {
   try {
     const { seriesId } = req.params;
     const userId = req.userId;
-    const { name, isActive } = req.body;
+    const { name, isActive, voiceId, voiceName, artStyle } = req.body;
     
     const series = await prisma.reelSeries.findUnique({
       where: { id: seriesId, userId },
@@ -169,7 +169,10 @@ router.put('/series/:seriesId', requireAuth, async (req: any, res: any) => {
       where: { id: seriesId },
       data: { 
         name: name !== undefined ? name : series.name,
-        isActive: isActive !== undefined ? isActive : series.isActive
+        isActive: isActive !== undefined ? isActive : series.isActive,
+        voiceId: voiceId !== undefined ? voiceId : series.voiceId,
+        voiceName: voiceName !== undefined ? voiceName : series.voiceName,
+        artStyle: artStyle !== undefined ? artStyle : series.artStyle
       }
     });
 

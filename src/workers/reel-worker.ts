@@ -62,7 +62,7 @@ export class ReelWorker {
         });
       };
       
-      await updateProgress('Initializing AI generation...');
+      await updateProgress('🚀 Initializing Premium AI Engine...');
 
       const series = await prisma.reelSeries.findUniqueOrThrow({
         where: { id: seriesId },
@@ -70,7 +70,7 @@ export class ReelWorker {
       });
 
       // 2. Generate Script using Vertex AI (Gemini)
-      await updateProgress('Writing script with Gemini 1.5 Pro...');
+      await updateProgress('✍️ Writing cinematic script with Gemini 3.1 Pro...');
       const durationStr = '1-minute compacted';
       const numKeywords = 8;
       
@@ -87,13 +87,17 @@ export class ReelWorker {
       
       const scriptPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".
 
-CRITICAL VOCABULARY RULE: 
-The script MUST be extremely simple to understand. Use basic, everyday words that a 10-year-old child can easily understand. DO NOT use complex vocabulary, elite words, or confusing metaphors. Keep it simple, fun, and easy to digest.
+CRITICAL AUDIENCE & VOCABULARY RULE: 
+The script and tone MUST be engaging, edgy, and highly relatable for teenagers (Gen Z audience). Do not talk to them like a child. Use punchy, dynamic, modern vocabulary that holds a teen's attention. Keep it fast-paced, suspenseful, and captivating.
 
 KOKORO TTS OPTIMIZATION RULES (CRITICAL):
-1. NO SYMBOLS OR EMOJIS: Do not use any emojis, hashtags, or special characters (!, @, #, $, %, etc.).
+1. NO HASHTAGS OR EMOJIS: Do not use any emojis, hashtags, or special characters like @, $, %.
 2. SPELL OUT NUMBERS: Always write numbers as words (e.g., write "one hundred" instead of "100").
-3. USE PUNCTUATION FOR PAUSES: Use periods (.) and commas (,) to naturally slow down the voice. Use ellipses (...) when you want a dramatic, suspenseful pause.
+3. ADVANCED INTONATION & STRESS: To make the storytelling incredibly dynamic, you must rely exclusively on PUNCTUATION.
+   - To adjust intonation, actively use punctuation: ;:,.!?—…"()“”
+   - Use ellipses (...) when you want a dramatic, suspenseful pause.
+   - DO NOT use markdown brackets or parentheses like [word](+1). The TTS engine will read them out loud by mistake.
+   - Example: "He opened the door, and suddenly... there was nothing inside."
 4. SHORT SENTENCES: Break long ideas into very short sentences. Kokoro sounds most natural and emotional when reading short, punchy statements.
 
 STORYTELLING STRUCTURE:
@@ -108,7 +112,7 @@ PACING & RULES:
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
 
 For the 'keywords' array, generate exactly ${numKeywords} highly detailed image prompts. 
-CRITICAL IMAGE RULE: Each image prompt MUST strictly describe the exact visual scene happening in the script at that specific moment. Do not generate random beautiful images; generate exactly what the viewer should see while the narrator is speaking that sentence.
+CRITICAL IMAGE RULE: Each image prompt MUST strictly describe the exact visual scene happening in the script at that specific moment. Ensure the visuals match an edgy, cinematic, and modern aesthetic appealing to teenagers, explicitly avoiding any overly childish or babyish imagery. Do not generate random beautiful images; generate exactly what the viewer should see while the narrator is speaking that sentence.
 
 Output ONLY valid JSON: 
 {
@@ -140,7 +144,7 @@ Output ONLY valid JSON:
       });
 
       // 3. Generate Voiceover First (to determine exact video length)
-      await updateProgress('Synthesizing voiceover to determine video pacing...');
+      await updateProgress('🗣️ Synthesizing voice with Gemini 3.1 Flash TTS...');
       logger.info({ event: 'reel_adding_audio', reelId });
       
       let ttsPath: string;
@@ -148,21 +152,34 @@ Output ONLY valid JSON:
       
       try {
         ttsPath = await aiOrchestrator.generateVoiceover(script, series.voiceId || 'en-US-Journey-F', series.language || 'English');
-        actualDuration = await VideoComposerService.getMediaDuration(ttsPath);
-        // Add 1 second of buffer to the end
-        actualDuration = Math.ceil(actualDuration) + 1; 
+        
+        try {
+          actualDuration = await VideoComposerService.getMediaDuration(ttsPath);
+          actualDuration = Math.ceil(actualDuration) + 1;
+          logger.info({ event: 'reel_audio_duration', reelId, actualDuration });
+        } catch (durationErr: any) {
+          // ffprobe can't read the file — estimate from word count (avg 2.5 words/sec)
+          logger.warn({ event: 'reel_ffprobe_fallback', reelId, error: durationErr.message });
+          const wordCount = script.split(/\s+/).length;
+          actualDuration = Math.ceil(wordCount / 2.5) + 2;
+          console.warn(`[Worker] ffprobe failed, estimated duration from word count: ${actualDuration}s`);
+        }
       } catch (audioError: any) {
         logger.error({ event: 'reel_audio_failed', reelId, error: audioError.message });
         throw new Error(`Voice Generation Failed: ${audioError.message}`);
       }
 
       // 4. Generate Images
-      await updateProgress(`Generating ${numKeywords} cinematic visuals (Duration: ${actualDuration}s)...`);
+      await updateProgress(`🎨 Rendering ${numKeywords} visuals with Imagen 3 (${actualDuration}s video)...`);
       logger.info({ event: 'reel_generating_images', reelId });
+      
+      // Use a consistent seed for all images in this reel to enforce visual consistency
+      const reelSeed = Math.floor(Math.random() * 1000000);
+      
       const imageUrls: string[] = [];
       for (const keyword of keywords.slice(0, numKeywords)) {
         try {
-          const url = await aiOrchestrator.generateImage(`${keyword}, ${series.artStyle} style`);
+          const url = await aiOrchestrator.generateImage(`${keyword}, ${series.artStyle} style, identical consistency, highly detailed`, reelSeed);
           imageUrls.push(url);
           await new Promise(r => setTimeout(r, 1000));
         } catch (e: any) {
@@ -189,7 +206,7 @@ Output ONLY valid JSON:
       // 6. Generate BGM & Mix Final Audio
       let finalVideoPath = concatVideoPath;
       try {
-        await updateProgress('Generating background music and composing final video...');
+        await updateProgress('🎵 Composing background music and assembling video...');
         
         const musicPromptMap: Record<string, string> = {
           'cinematic-ambient': 'Deep, atmospheric cinematic ambient synth pads with a slow, emotional buildup.',
@@ -205,7 +222,10 @@ Output ONLY valid JSON:
         const bgmPath = await aiOrchestrator.generateMusic(finalMusicPrompt);
         const { outputPath: mixedAudioPath } = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, actualDuration, abortController.signal);
         
-        const { outputPath: videoWithAudio } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, abortController.signal);
+        await updateProgress('💬 Burning animated subtitles into final video...');
+        const subtitlePath = await VideoComposerService.generateSubtitlesFile(script, actualDuration);
+
+        const { outputPath: videoWithAudio } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, subtitlePath, abortController.signal);
         
         finalVideoPath = videoWithAudio;
       } catch (audioError: any) {

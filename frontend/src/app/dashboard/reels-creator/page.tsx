@@ -9,6 +9,46 @@ import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckC
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 
+const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
+  'English': [
+    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS',   type: 'Male',   description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS', type: 'Male',   description: 'Deep, resonant and authoritative. Cinematic narrator.' },
+    { id: 'Fenrir', name: 'Fenrir — Gemini 3.1 TTS', type: 'Male',   description: 'Gruff and dramatic. Great for intense storytelling.' },
+    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS',  type: 'Female', description: 'Expressive and engaging. Warm storyteller voice.' },
+    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS',   type: 'Female', description: 'Calm and soothing. Perfect for mystery & suspense.' },
+    { id: 'Leda',   name: 'Leda — Gemini 3.1 TTS',   type: 'Female', description: 'Clear and confident. Great for educational reels.' },
+  ],
+  'Hindi': [
+    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS (Hindi)',   type: 'Male',   description: 'Energetic and upbeat Hindi voice.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Hindi)', type: 'Male',   description: 'Deep and authoritative Hindi voice.' },
+    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS (Hindi)',  type: 'Female', description: 'Expressive and engaging Hindi narrator.' },
+    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS (Hindi)',   type: 'Female', description: 'Calm soothing Hindi storyteller.' },
+  ],
+  'Spanish': [
+    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS (Spanish)',   type: 'Male',   description: 'Energetic Spanish voice.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Spanish)', type: 'Male',   description: 'Deep Spanish narrator.' },
+    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS (Spanish)',  type: 'Female', description: 'Expressive Spanish female voice.' },
+    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS (Spanish)',   type: 'Female', description: 'Calm Spanish storyteller.' },
+  ]
+};
+
+const STYLES = [
+  { id: 'cinematic', title: 'Cinematic 3D', image: '/uploads/styles/cinematic.jpg' },
+  { id: 'watercolor', title: 'Watercolor', image: '/uploads/styles/watercolor.jpg' },
+  { id: 'digital-art', title: 'Digital Illustration', image: '/uploads/styles/digital-art.jpg' },
+  { id: 'hyper-realistic', title: 'Hyper-realistic', image: '/uploads/styles/hyper-realistic.jpg' },
+  { id: 'anime', title: 'Anime Style', image: '/uploads/styles/anime.jpg' },
+  { id: 'fantasy', title: 'Dark Fantasy', image: '/uploads/styles/fantasy.jpg' },
+  { id: 'cyberpunk', title: 'Cyberpunk', image: '/uploads/styles/cyberpunk.jpg' },
+  { id: 'pixel-art', title: 'Pixel Art', image: '/uploads/styles/pixel-art.jpg' },
+  { id: 'vintage-vhs', title: 'Vintage VHS', image: '/uploads/styles/vintage-vhs.jpg' },
+  { id: 'claymation', title: 'Claymation', image: '/uploads/styles/claymation.jpg' },
+  { id: 'oil-painting', title: 'Classic Oil Painting', image: '/uploads/styles/oil-painting.jpg' },
+  { id: 'pop-art', title: 'Pop Art Comic', image: '/uploads/styles/pop-art.jpg' },
+  { id: 'origami', title: 'Paper Origami', image: '/uploads/styles/origami.jpg' },
+  { id: 'gothic', title: 'Gothic Noir', image: '/uploads/styles/gothic.jpg' },
+];
+
 export default function ReelsDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -50,6 +90,20 @@ export default function ReelsDashboard() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to toggle active status');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reel-series'] })
+  });
+
+  const updateSeriesMutation = useMutation({
+    mutationFn: async ({ seriesId, data }: { seriesId: string, data: any }) => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/reels/series/${seriesId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error('Failed to update series');
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reel-series'] })
@@ -181,11 +235,51 @@ export default function ReelsDashboard() {
                   </div>
                   <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-stone-500">
                     <span className="flex items-center gap-1" title="Niche / Topic"><FileText className="h-4 w-4 text-violet-500" /> {series.niche || 'Custom Script'}</span>
-                    <span className="flex items-center gap-1" title="Art Style"><Video className="h-4 w-4 text-pink-500" /> {series.artStyle}</span>
-                    <span className="flex items-center gap-1" title="Voice & Language">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-amber-500"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-                      {series.voiceName} ({series.language || 'English'})
-                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <span className="flex items-center gap-1 cursor-pointer hover:text-pink-600 transition-colors" title="Art Style (Click to change)">
+                          <Video className="h-4 w-4 text-pink-500" />
+                          {STYLES.find(s => s.id === series.artStyle)?.title || series.artStyle}
+                        </span>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-stone-500">Change Art Style</div>
+                        <DropdownMenuSeparator />
+                        {STYLES.map(style => (
+                          <DropdownMenuItem 
+                            key={style.id} 
+                            onClick={() => updateSeriesMutation.mutate({ seriesId: series.id, data: { artStyle: style.id } })}
+                            className={series.artStyle === style.id ? 'bg-pink-50 text-pink-900 font-medium' : ''}
+                          >
+                            <div className="flex items-center gap-2">
+                              <img src={style.image} alt={style.title} className="w-10 h-10 rounded-md object-cover" />
+                              {style.title}
+                            </div>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <span className="flex items-center gap-1 cursor-pointer hover:text-amber-600 transition-colors" title="Voice & Language (Click to change)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                          {series.voiceName} ({series.language || 'English'})
+                        </span>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-stone-500">Change Voice ({series.language || 'English'})</div>
+                        <DropdownMenuSeparator />
+                        {(VOICES_BY_LANGUAGE[series.language || 'English'] || VOICES_BY_LANGUAGE['English']).map(v => (
+                          <DropdownMenuItem 
+                            key={v.id} 
+                            onClick={() => updateSeriesMutation.mutate({ seriesId: series.id, data: { voiceId: v.id, voiceName: v.name } })}
+                            className={series.voiceId === v.id ? 'bg-amber-50 text-amber-900 font-medium' : ''}
+                          >
+                            {v.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     <span className="flex items-center gap-1">
                       <Calendar className="h-4 w-4 text-blue-500" />  
                       {(() => {
@@ -211,21 +305,29 @@ export default function ReelsDashboard() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {series.reels?.map((reel: any) => (
-                      <div key={reel.id} className="border border-stone-100 rounded-xl bg-[#FBF3EE]/30 overflow-hidden flex flex-col">
-                        <div className="p-4 flex-1">
-                          <div className="flex items-center justify-between mb-3">
-                            <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full flex items-center gap-1.5 ${
-                              reel.status === 'READY' ? 'bg-green-100 text-green-700' :
-                              reel.status === 'GENERATING' ? 'bg-blue-100 text-blue-700 animate-pulse' :
-                              reel.status === 'FAILED' ? 'bg-red-100 text-red-700' :
-                              'bg-stone-200 text-stone-700'
+                      <div key={reel.id} className="border border-stone-100 rounded-xl bg-white overflow-hidden flex flex-col shadow-sm">
+                        <div className="w-full h-24 relative bg-stone-100 border-b border-stone-100 group">
+                          <img 
+                            src={STYLES.find(s => s.id === series.artStyle)?.image || '/uploads/styles/cinematic.jpg'} 
+                            alt={series.artStyle}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                          <div className="absolute top-2 right-2">
+                            <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full flex items-center gap-1.5 shadow-sm backdrop-blur-md ${
+                              reel.status === 'READY' ? 'bg-green-100/90 text-green-700' :
+                              reel.status === 'GENERATING' ? 'bg-blue-100/90 text-blue-700 animate-pulse' :
+                              reel.status === 'FAILED' ? 'bg-red-100/90 text-red-700' :
+                              'bg-stone-200/90 text-stone-700'
                             }`}>
                               {reel.status === 'READY' && <CheckCircle2 className="h-3 w-3" />}
                               {reel.status === 'GENERATING' && <Loader2 className="h-3 w-3 animate-spin" />}
                               {reel.status === 'FAILED' && <AlertCircle className="h-3 w-3" />}
-                              {reel.status === 'GENERATING' && reel.statusMessage ? reel.statusMessage : reel.status}
+                              {reel.status}
                             </span>
                           </div>
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col">
                           
                           {reel.script && (
                             <details className="group mb-4">
@@ -237,6 +339,21 @@ export default function ReelsDashboard() {
                                 "{reel.script}"
                               </div>
                             </details>
+                          )}
+
+                          {/* Detailed Live Log for Generation */}
+                          {reel.status === 'GENERATING' && reel.statusMessage && (
+                            <div className="mb-4 bg-stone-900 border border-stone-800 rounded-lg p-3 shadow-inner">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
+                                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Live Engine Log</span>
+                              </div>
+                              <div className="text-xs font-mono text-emerald-400 break-words leading-relaxed">
+                                <span className="text-stone-500 mr-2">$</span>
+                                {reel.statusMessage}
+                                <span className="animate-pulse inline-block w-1.5 h-3.5 bg-emerald-400 ml-1 align-middle"></span>
+                              </div>
+                            </div>
                           )}
 
                           <div className="mt-auto space-y-2 text-xs font-medium text-stone-500">
