@@ -94,6 +94,21 @@ const getReelStatus = (reel: any) => {
     };
   }
   
+  let channels: string[] = [];
+  try {
+    channels = JSON.parse(reel.socialChannels || '[]');
+  } catch (e) {
+    channels = [];
+  }
+
+  if (channels.length === 0) {
+    return {
+      label: 'READY',
+      classes: 'bg-teal-100/90 text-teal-700 border-teal-200',
+      icon: <Play className="h-3.5 w-3.5 text-teal-600" />
+    };
+  }
+  
   const isFuture = reel.scheduledFor ? new Date(reel.scheduledFor) > new Date() : false;
   if (isFuture) {
     return {
@@ -456,13 +471,21 @@ export default function ReelsDashboard() {
                           <div className="mt-auto space-y-2 text-xs font-medium text-stone-500">
                             {(() => {
                               const isFuture = reel.scheduledFor ? new Date(reel.scheduledFor) > new Date() : false;
+                              let channels: string[] = [];
+                              try {
+                                channels = JSON.parse(reel.socialChannels || '[]');
+                              } catch {}
+                              const hasChannels = channels.length > 0;
+
                               return (
                                 <div className="flex items-center gap-1.5">
                                   {reel.scheduledFor ? (
                                     <>
                                       <Calendar className={`h-3.5 w-3.5 ${isFuture ? 'text-amber-500' : 'text-emerald-500'}`} />
                                       <span>
-                                        {isFuture ? 'Scheduled to Post:' : 'Posted on:'}{' '}
+                                        {hasChannels 
+                                          ? (isFuture ? 'Scheduled to Post:' : 'Posted on:')
+                                          : (isFuture ? 'Scheduled to Generate:' : 'Generated on:')}{' '}
                                         <span className="font-semibold text-stone-700">
                                           {format(new Date(reel.scheduledFor), 'MMM d, yyyy @ p')}
                                         </span>
