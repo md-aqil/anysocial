@@ -222,49 +222,9 @@ Make sure the output is a valid JSON object.`;
       fs.writeFileSync(tempPath, Buffer.from(base64Image, 'base64'));
       return tempPath;
     } catch (e: any) {
-      console.error("[Imagen 4 API Error]:", e.message || e);
-      console.log("Falling back to NVIDIA Flux.2 Klein 4B...");
-
-      const invokeUrl = "https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b";
-      const headers = {
-          "Authorization": "Bearer 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",
-          "Accept": "application/json",
-      };
-
-      const payload = {
-        "prompt": prompt,
-        "width": 768,
-        "height": 1344,
-        "seed": seed,
-        "steps": 4
-      };
-
+      console.error("[Imagen 3 API Error]:", e.message || e);
       try {
-        const fluxResponse = await fetch(invokeUrl, {
-            method: "post",
-            body: JSON.stringify(payload),
-            headers: { "Content-Type": "application/json", ...headers }
-        });
-
-        if (fluxResponse.status != 200) {
-          const errBody = await fluxResponse.text();
-          throw new Error("NVIDIA invocation failed: " + fluxResponse.status + " " + errBody);
-        }
-        
-        const response_body = await fluxResponse.json() as any;
-        
-        // NVIDIA Flux API returns base64 inside artifacts array or directly as image/b64_json
-        const b64 = response_body.image || response_body.artifacts?.[0]?.base64 || response_body.data?.[0]?.b64_json || response_body.b64_json;
-        if (!b64) {
-          console.error("[Flux Raw Response]:", JSON.stringify(response_body));
-          throw new Error("Could not parse NVIDIA image response");
-        }
-        
-        const tempPath = path.join(os.tmpdir(), `flux_${Date.now()}_${uniqueId}.jpg`);
-        // Remove data URI prefix if present
-        const cleanB64 = typeof b64 === 'string' ? b64.replace(/^data:image\/\w+;base64,/, "") : "";
-        fs.writeFileSync(tempPath, Buffer.from(cleanB64, 'base64'));
-        return tempPath;
+        return await this.generateNvidiaFluxImage(prompt, seed);
       } catch (fluxErr: any) {
         console.error("[Flux Fallback Error]:", fluxErr.message || fluxErr);
         throw new Error("All AI Image Generators failed.");
@@ -273,7 +233,55 @@ Make sure the output is a valid JSON object.`;
   }
 
   /**
-   * Fallback to free Stock API (Pixabay) or Pollinations AI when primary generation fails.
+   * Helper to invoke Black Forest Labs' NVIDIA Flux.2 Klein 4B image generation model
+   */
+  async generateNvidiaFluxImage(prompt: string, seed: number = 0): Promise<string> {
+    const uniqueId = Math.random().toString(36).substring(7);
+    console.log(`[NVIDIA Flux] Generating image with prompt: "${prompt}"...`);
+
+    const invokeUrl = "https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b";
+    const headers = {
+        "Authorization": "Bearer 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",
+        "Accept": "application/json",
+    };
+
+    const payload = {
+      "prompt": prompt,
+      "width": 768,
+      "height": 1344,
+      "seed": seed,
+      "steps": 4
+    };
+
+    const fluxResponse = await fetch(invokeUrl, {
+        method: "post",
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json", ...headers }
+    });
+
+    if (fluxResponse.status != 200) {
+      const errBody = await fluxResponse.text();
+      throw new Error("NVIDIA invocation failed: " + fluxResponse.status + " " + errBody);
+    }
+    
+    const response_body = await fluxResponse.json() as any;
+    
+    // NVIDIA Flux API returns base64 inside artifacts array or directly as image/b64_json
+    const b64 = response_body.image || response_body.artifacts?.[0]?.base64 || response_body.data?.[0]?.b64_json || response_body.b64_json;
+    if (!b64) {
+      console.error("[Flux Raw Response]:", JSON.stringify(response_body));
+      throw new Error("Could not parse NVIDIA image response");
+    }
+    
+    const tempPath = path.join(os.tmpdir(), `flux_${Date.now()}_${uniqueId}.jpg`);
+    // Remove data URI prefix if present
+    const cleanB64 = typeof b64 === 'string' ? b64.replace(/^data:image\/\w+;base64,/, "") : "";
+    fs.writeFileSync(tempPath, Buffer.from(cleanB64, 'base64'));
+    return tempPath;
+  }
+
+  /**
+   * Fallback to free Stock API (Pixabay) or NVIDIA Flux when primary generation fails.
    */
   async fetchStockImage(keyword: string): Promise<string> {
     const cleanKeyword = keyword.split(',')[0].trim(); // Get main subject
@@ -291,9 +299,10 @@ Make sure the output is a valid JSON object.`;
       }
     }
 
-    // 2. Fallback to free, keyless AI Stock Image API
-    console.log(`[Stock API Fallback]: Using Pollinations AI for '${cleanKeyword}'`);
-    return `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}?width=768&height=1344&nologo=true`;
+    // 2. Fallback directly to NVIDIA Flux instead of Pollinations AI
+    console.log(`[Stock API Fallback]: Using NVIDIA Flux instead of Pollinations AI for '${cleanKeyword}'`);
+    const seed = Math.floor(Math.random() * 1000000);
+    return await this.generateNvidiaFluxImage(keyword, seed);
   }
 
   // 2. Voice Synthesis Engine (Gemini Multimodal / Kokoro / Google Cloud)
