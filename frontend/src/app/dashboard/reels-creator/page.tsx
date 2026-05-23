@@ -9,6 +9,29 @@ import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckC
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 
+import { api } from '@/lib/api';
+import {
+  InstagramLogo, FacebookLogo, LinkedinLogo, TwitterLogo,
+  TiktokLogo, YoutubeLogo, ThreadsLogo, PinterestLogo, SnapchatLogo
+} from '@/components/icons/social-icons';
+
+const platformStyles: Record<string, {
+  name: string;
+  icon: any;
+  color: string;
+  bg: string;
+}> = {
+  FACEBOOK: { name: 'Facebook', icon: FacebookLogo, color: '#1877F2', bg: '#EBF4FF' },
+  INSTAGRAM: { name: 'Instagram', icon: InstagramLogo, color: '#E4405F', bg: '#FFF0F3' },
+  LINKEDIN: { name: 'LinkedIn', icon: LinkedinLogo, color: '#0A66C2', bg: '#EBF4FF' },
+  TWITTER: { name: 'X / Twitter', icon: TwitterLogo, color: '#111111', bg: '#F3F4F6' },
+  TIKTOK: { name: 'TikTok', icon: TiktokLogo, color: '#111111', bg: '#F3F4F6' },
+  YOUTUBE: { name: 'YouTube', icon: YoutubeLogo, color: '#FF0000', bg: '#FFF1F1' },
+  THREADS: { name: 'Threads', icon: ThreadsLogo, color: '#111111', bg: '#F3F4F6' },
+  PINTEREST: { name: 'Pinterest', icon: PinterestLogo, color: '#E60023', bg: '#FFF1F1' },
+  SNAPCHAT: { name: 'Snapchat', icon: SnapchatLogo, color: '#B89400', bg: '#FFF8D9' },
+};
+
 const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
   'English': [
     { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS',   type: 'Male',   description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
@@ -145,6 +168,11 @@ export default function ReelsDashboard() {
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reel-series'] })
+  });
+
+  const { data: accountsData } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => api.oauth.getAccounts(),
   });
 
   const { data: seriesList, isLoading } = useQuery({
@@ -330,6 +358,39 @@ export default function ReelsDashboard() {
                         }
                       })()}
                     </span>
+
+                    {(() => {
+                      try {
+                        const channels = JSON.parse(series.socialChannels);
+                        if (!channels || channels.length === 0) return null;
+                        return (
+                          <div className="flex items-center gap-1.5 sm:ml-auto">
+                            <span className="text-xs text-stone-400 font-semibold uppercase tracking-wider">Channels:</span>
+                            <div className="flex items-center -space-x-1">
+                              {channels.map((chId: string) => {
+                                const acc = accountsData?.accounts?.find((a: any) => a.id === chId);
+                                if (!acc) return null;
+                                const config = platformStyles[acc.platform.toUpperCase()];
+                                if (!config) return null;
+                                const Logo = config.icon;
+                                return (
+                                  <div 
+                                    key={chId} 
+                                    className="w-6 h-6 rounded-full border border-white bg-stone-50 flex items-center justify-center shadow-sm hover:scale-110 transition-transform duration-200"
+                                    title={`${acc.metadata?.accountName || config.name}`}
+                                    style={{ backgroundColor: config.bg }}
+                                  >
+                                    <Logo className="w-3 h-3" style={{ color: config.color }} />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      } catch {
+                        return null;
+                      }
+                    })()}
                   </div>
                 </div>
               </div>

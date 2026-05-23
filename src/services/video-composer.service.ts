@@ -5,6 +5,41 @@ import os from 'os';
 import { promisify } from 'util';
 import stream from 'stream';
 
+// Configure fontconfig to use our local fonts.conf so that Poppins is resolved globally
+process.env.FONTCONFIG_FILE = path.join(process.cwd(), 'fonts.conf');
+
+/**
+ * Ensures Poppins font is copied to standard system fonts directory (~/.fonts) 
+ * so that libass / fontconfig can find it dynamically on any hosting provider.
+ */
+function ensureFontsInstalled() {
+  try {
+    const homedir = os.homedir();
+    const isMac = process.platform === 'darwin';
+    const systemFontsDir = isMac 
+      ? path.join(homedir, 'Library', 'Fonts') 
+      : path.join(homedir, '.fonts');
+      
+    const localFontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'Poppins-Bold.ttf');
+    
+    if (fs.existsSync(localFontPath)) {
+      if (!fs.existsSync(systemFontsDir)) {
+        fs.mkdirSync(systemFontsDir, { recursive: true });
+      }
+      const targetFontPath = path.join(systemFontsDir, 'Poppins-Bold.ttf');
+      if (!fs.existsSync(targetFontPath)) {
+        fs.copyFileSync(localFontPath, targetFontPath);
+        console.log(`Successfully installed premium font Poppins-Bold.ttf to ${targetFontPath}`);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to copy Poppins font to system folder:', err);
+  }
+}
+
+// Run font setup immediately upon importing the service
+ensureFontsInstalled();
+
 const pipeline = promisify(stream.pipeline);
 
 /**
@@ -207,7 +242,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Poppins,24,&H00FFFFFF,&H0000FFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2.5,1,2,10,10,500,1
+Style: Default,Poppins,30,&H00FFFFFF,&H0000FFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2.5,1,2,10,10,500,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
