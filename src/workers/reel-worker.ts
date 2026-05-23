@@ -9,6 +9,7 @@ import path from 'path';
 import os from 'os';
 import stream from 'stream';
 import { promisify } from 'util';
+import { scheduleNextReel } from '../services/reel-scheduler.service.js';
 
 const pipeline = promisify(stream.pipeline);
 
@@ -273,6 +274,11 @@ Output ONLY valid JSON:
           const { postingEngine } = await import('../services/posting-engine.service.js');
           const videoBuffer = fs.readFileSync(publicFilePath);
           
+          // Safe-guard the schedule time. It must be at least 1 min in the future to pass scheduler constraints.
+          const scheduledTime = reel.scheduledFor ? new Date(reel.scheduledFor) : null;
+          const minDelayMs = 60 * 1000 + 5000; // 1 minute + 5s buffer
+          const isSafeFuture = scheduledTime && (scheduledTime.getTime() - Date.now() >= minDelayMs);
+
           await postingEngine.schedulePost(series.userId, {
             content: script.substring(0, 2000),
             media: [{
@@ -282,12 +288,21 @@ Output ONLY valid JSON:
             }],
             platforms: channels.map(c => c.toUpperCase()),
             timezone: 'UTC',
-            scheduledAt: reel.scheduledFor && new Date(reel.scheduledFor) > new Date() ? new Date(reel.scheduledFor).toISOString() : undefined,
+            scheduledAt: isSafeFuture && scheduledTime ? scheduledTime.toISOString() : undefined,
             platformOptions: {}
           });
-          logger.info({ event: 'reel_post_queued', reelId });
+          logger.info({ event: 'reel_post_queued', reelId, isScheduled: !!isSafeFuture });
         } catch (postError: any) {
           logger.error({ event: 'reel_post_queue_failed', reelId, error: postError.message });
+        }
+      }
+
+      // 8. Chain and schedule the next recurring Reel in the series if active
+      if (series.isActive) {
+        try {
+          await scheduleNextReel(series.id);
+        } catch (scheduleErr: any) {
+          logger.error({ event: 'reel_chain_scheduling_failed', seriesId: series.id, error: scheduleErr.message });
         }
       }
 

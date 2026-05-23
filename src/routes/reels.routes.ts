@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { jwtAuth as requireAuth } from '../middleware/jwt-auth.js';
 import { prisma } from '../db/prisma.js';
-import { queueReelGeneration } from '../queues/reel-queue.js';
+import { queueReelGeneration, reelGenerationQueue } from '../queues/reel-queue.js';
+import { scheduleNextReel, getNextScheduledDate } from '../services/reel-scheduler.service.js';
 
 const router = Router();
 
@@ -52,27 +53,16 @@ router.post('/', requireAuth, async (req: any, res: any) => {
       },
     });
 
-    // Determine next publish date/time based on publishTime (e.g., "12:00")
+    // Determine next publish date/time based on publishTime (e.g., "12:00") and scheduleDays
     const now = new Date();
     let scheduledDate = now;
     
     if (!validatedData.createNow && validatedData.publishTime) {
-      const [hours, minutes] = validatedData.publishTime.split(':').map(Number);
-      
-      if (validatedData.timezoneOffset !== undefined) {
-        // If client timezone offset is provided, calculate the date in the client's local context
-        // First, construct a UTC date using the client's local year/month/date/hours/minutes values
-        const localUtcTime = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), hours || 0, minutes || 0, 0);
-        scheduledDate = new Date(localUtcTime + (validatedData.timezoneOffset * 60 * 1000));
-      } else {
-        // Fallback to server local time
-        scheduledDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours || 0, minutes || 0, 0);
-      }
-      
-      // If the scheduled time has already passed today, schedule for tomorrow
-      if (scheduledDate < now) {
-        scheduledDate.setDate(scheduledDate.getDate() + 1);
-      }
+      scheduledDate = getNextScheduledDate(
+        JSON.stringify(validatedData.scheduleDays),
+        validatedData.publishTime,
+        validatedData.timezoneOffset
+      );
     }
 
     // Create the initial Reel entry (Pending Generation)
@@ -85,8 +75,16 @@ router.post('/', requireAuth, async (req: any, res: any) => {
       },
     });
 
-    // Enqueue BullMQ job to start generating the video asynchronously.
-    await queueReelGeneration(reel.id, series.id);
+    // Enqueue BullMQ job to start generating the video asynchronously with correct delay
+    const delay = Math.max(0, scheduledDate.getTime() - Date.now());
+    await reelGenerationQueue.add(
+      'generate-reel',
+      { reelId: reel.id, seriesId: series.id },
+      {
+        jobId: `reel-${reel.id}`,
+        delay,
+      }
+    );
 
     res.status(201).json({
       success: true,
@@ -255,6 +253,11 @@ router.patch('/series/:seriesId/toggle-active', requireAuth, async (req: any, re
       where: { id: seriesId },
       data: { isActive: !series.isActive },
     });
+
+    if (updatedSeries.isActive) {
+      // Automatically trigger scheduling the next reel since series is active now
+      await scheduleNextReel(seriesId);
+    }
 
     res.status(200).json({ success: true, data: updatedSeries });
   } catch (error) {
