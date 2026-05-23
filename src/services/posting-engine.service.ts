@@ -178,6 +178,7 @@ export class PostingEngineService {
             targetRatio = 0.8; // 4:5 portrait is ideal for Threads media
           }
 
+          const conformTempFiles: string[] = [];
           try {
             let fixedBuffer: Buffer;
             let fixedType: 'image' | 'video' = mediaItem.type;
@@ -190,6 +191,8 @@ export class PostingEngineService {
               // Use proper extensions so FFmpeg identifies formats correctly
               const tempImage = path.join(tempDir, `${Date.now()}-input.jpg`);
               const tempVideo = path.join(tempDir, `${Date.now()}-output.mp4`);
+              
+              conformTempFiles.push(tempImage, tempVideo);
               fs.writeFileSync(tempImage, mediaItem.file);
               
               // Target dimensions: 9:16 for Shorts, 16:9 for standard Video
@@ -231,6 +234,7 @@ export class PostingEngineService {
               if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
               
               const tempInput = path.join(tempDir, `${Date.now()}-input.mp4`);
+              conformTempFiles.push(tempInput);
               fs.writeFileSync(tempInput, mediaItem.file);
 
               // --- DURATION TRIM: If the only/primary error is duration, trim first ---
@@ -248,6 +252,7 @@ export class PostingEngineService {
                 }
                 logToFile(`AUTO-FIX: Trimming video to ${maxDuration}s for ${platform} (${platformOpts.postType || 'FEED'})`);
                 const trimmedPath = path.join(tempDir, `${Date.now()}-trimmed.mp4`);
+                conformTempFiles.push(trimmedPath);
                 await new Promise<void>((resolve, reject) => {
                   ffmpeg(tempInput)
                     .outputOptions([
@@ -270,6 +275,8 @@ export class PostingEngineService {
               // -------------------------------------------------------------------
 
               const { videoPath, thumbnailPath } = await storageService.conformVideo(tempInput, targetRatio);
+              if (videoPath) conformTempFiles.push(videoPath);
+              if (thumbnailPath) conformTempFiles.push(thumbnailPath);
               fixedBuffer = fs.readFileSync(videoPath);
               
               // If a thumbnail was generated, we can attach it to the postOptions for YouTube
@@ -311,6 +318,15 @@ export class PostingEngineService {
             }
           } catch (fixError) {
             logToFile(`AUTO-FIX: Error during conforming: ${fixError}`);
+          } finally {
+            // Guarantee intermediate file deletion
+            for (const f of conformTempFiles) {
+              try {
+                if (f && fs.existsSync(f)) {
+                  fs.unlinkSync(f);
+                }
+              } catch (e) {}
+            }
           }
         }
 
@@ -407,12 +423,15 @@ export class PostingEngineService {
 
           if (firstMedia.type === 'video') {
             // Extract frame from the actual video
+            const thumbTempFiles: string[] = [];
             try {
               logToFile('THUMBNAIL: Auto-extracting thumbnail from video...');
               const srcExt = firstMedia.originalName?.split('.').pop() || 'mp4';
               const tempVideo = path.join(tempDir, `${Date.now()}-thumb-src.${srcExt}`);
               const thumbName = `${Date.now()}-auto-thumb.jpg`;
               const thumbPath = path.join(tempDir, thumbName);
+              
+              thumbTempFiles.push(tempVideo, thumbPath);
 
               fs.writeFileSync(tempVideo, firstMedia.file);
 
@@ -431,12 +450,17 @@ export class PostingEngineService {
                 });
                 platformOpts.thumbnailUrl = thumbUpload.url;
                 logToFile(`THUMBNAIL: Auto-thumb uploaded → ${thumbUpload.url}`);
-                // Cleanup
-                fs.existsSync(thumbPath) && fs.unlinkSync(thumbPath);
               }
-              fs.existsSync(tempVideo) && fs.unlinkSync(tempVideo);
             } catch (e) {
               logToFile(`THUMBNAIL: Auto-extract failed (non-fatal): ${e}`);
+            } finally {
+              for (const f of thumbTempFiles) {
+                try {
+                  if (fs.existsSync(f)) {
+                    fs.unlinkSync(f);
+                  }
+                } catch (err) {}
+              }
             }
 
           } else if (firstMedia.type === 'image') {

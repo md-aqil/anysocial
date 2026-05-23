@@ -1,6 +1,7 @@
 # Cloudflare Tunnel Configuration
 tunnel: f16a31a0-253c-4a86-a9c9-d0c19e321944
-credentials-file: /Users/mdaqil/Documents/socialsched.vibeship.in/tunnel-config/credentials.json
+credentials-file: /Users/mdaqil/Documents/anysocial/tunnel-config/credentials.json
+
 
 ingress:
   # API, OAuth, and Uploads to Backend (3001)

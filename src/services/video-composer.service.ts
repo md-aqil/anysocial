@@ -242,7 +242,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Poppins,30,&H00FFFFFF,&H0000FFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2.5,1,2,10,10,500,1
+Style: Default,Poppins,44,&H00FFFFFF,&H0000FFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,3.0,0,2,10,10,420,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -259,7 +259,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       const lineDurationCs = Math.round(durationPerLine * 100);
       const wordsCount = lineWords.length;
       
-      let textWithKaraoke = '';
+      // Add a pop animation at the start of each dialog segment
+      let textWithKaraoke = '{\\t(0,100,\\fscx108\\fscy108)\\t(100,200,\\fscx100\\fscy100)}';
       let remainingCs = lineDurationCs;
       
       for (let j = 0; j < wordsCount; j++) {
@@ -279,6 +280,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     fs.writeFileSync(assPath, assContent);
     return assPath;
   }
+
 
   /**
    * Merges a final video with a primary audio track (e.g., voiceover) and burns subtitles.

@@ -51,6 +51,7 @@ export class ReelWorker {
   private async processJob(job: Job<{ reelId: string; seriesId: string }>) {
     const { reelId, seriesId } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
+    const tempFilesToCleanup: string[] = [];
 
     try {
       // 1. Update status to GENERATING
@@ -86,10 +87,10 @@ export class ReelWorker {
       }
       
       const scriptPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".
-
+ 
 CRITICAL AUDIENCE & VOCABULARY RULE: 
 The script and tone MUST be engaging, edgy, and highly relatable for teenagers (Gen Z audience). Do not talk to them like a child. Use punchy, dynamic, modern vocabulary that holds a teen's attention. Keep it fast-paced, suspenseful, and captivating.
-
+ 
 KOKORO TTS OPTIMIZATION RULES (CRITICAL):
 1. NO HASHTAGS OR EMOJIS: Do not use any emojis, hashtags, or special characters like @, $, %.
 2. SPELL OUT NUMBERS: Always write numbers as words (e.g., write "one hundred" instead of "100").
@@ -99,21 +100,21 @@ KOKORO TTS OPTIMIZATION RULES (CRITICAL):
    - DO NOT use markdown brackets or parentheses like [word](+1). The TTS engine will read them out loud by mistake.
    - Example: "He opened the door, and suddenly... there was nothing inside."
 4. SHORT SENTENCES: Break long ideas into very short sentences. Kokoro sounds most natural and emotional when reading short, punchy statements.
-
+ 
 STORYTELLING STRUCTURE:
 1. HOOK (0-3s): Start with a very simple, surprising question or statement.
 2. STORY/FACTS: Explain the core topic using the simplest words possible. Make it sound like you are telling a campfire story to a friend.
 3. THE TWIST/PEAK: The most mind-blowing or interesting part of the story.
 4. ENDING: End with a lingering thought or simple call to action.
-
+ 
 PACING & RULES:
 - The script MUST be exactly ${wordCount} words to fit the video timing.
 - ${languagePrompt}
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
-
+ 
 For the 'keywords' array, generate exactly ${numKeywords} highly detailed image prompts. 
 CRITICAL IMAGE RULE: Each image prompt MUST strictly describe the exact visual scene happening in the script at that specific moment. Ensure the visuals match an edgy, cinematic, and modern aesthetic appealing to teenagers, explicitly avoiding any overly childish or babyish imagery. Do not generate random beautiful images; generate exactly what the viewer should see while the narrator is speaking that sentence.
-
+ 
 Output ONLY valid JSON: 
 {
   "script": "...", 
@@ -152,6 +153,9 @@ Output ONLY valid JSON:
       
       try {
         ttsPath = await aiOrchestrator.generateVoiceover(script, series.voiceId || 'en-US-Journey-F', series.language || 'English');
+        if (ttsPath) {
+          tempFilesToCleanup.push(ttsPath);
+        }
         
         try {
           actualDuration = await VideoComposerService.getMediaDuration(ttsPath);
@@ -200,8 +204,13 @@ Output ONLY valid JSON:
       const abortController = new AbortController();
 
       const imageDuration = Math.ceil(actualDuration / numKeywords);
-      const { clipPaths } = await VideoComposerService.createVideoClips(imageUrls, imageDuration, 'vertical', abortController.signal);
-      const { outputPath: concatVideoPath } = await VideoComposerService.concatVideos(clipPaths, abortController.signal);
+      const { clipPaths, tempFiles: composerTempFiles } = await VideoComposerService.createVideoClips(imageUrls, imageDuration, 'vertical', abortController.signal);
+      if (clipPaths) tempFilesToCleanup.push(...clipPaths);
+      if (composerTempFiles) tempFilesToCleanup.push(...composerTempFiles);
+
+      const { outputPath: concatVideoPath, tempFiles: concatTempFiles } = await VideoComposerService.concatVideos(clipPaths, abortController.signal);
+      if (concatVideoPath) tempFilesToCleanup.push(concatVideoPath);
+      if (concatTempFiles) tempFilesToCleanup.push(...concatTempFiles);
 
       // 6. Generate BGM & Mix Final Audio
       let finalVideoPath = concatVideoPath;
@@ -220,12 +229,19 @@ Output ONLY valid JSON:
         const finalMusicPrompt = aiMusicPrompt || fallbackPrompt;
         
         const bgmPath = await aiOrchestrator.generateMusic(finalMusicPrompt);
-        const { outputPath: mixedAudioPath } = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, actualDuration, abortController.signal);
+        if (bgmPath) tempFilesToCleanup.push(bgmPath);
+
+        const { outputPath: mixedAudioPath, tempFiles: bgmTempFiles } = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, actualDuration, abortController.signal);
+        if (mixedAudioPath) tempFilesToCleanup.push(mixedAudioPath);
+        if (bgmTempFiles) tempFilesToCleanup.push(...bgmTempFiles);
         
         await updateProgress('💬 Burning animated subtitles into final video...');
         const subtitlePath = await VideoComposerService.generateSubtitlesFile(script, actualDuration);
+        if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
 
-        const { outputPath: videoWithAudio } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, subtitlePath, abortController.signal);
+        const { outputPath: videoWithAudio, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, subtitlePath, abortController.signal);
+        if (videoWithAudio) tempFilesToCleanup.push(videoWithAudio);
+        if (mergeTempFiles) tempFilesToCleanup.push(...mergeTempFiles);
         
         finalVideoPath = videoWithAudio;
       } catch (audioError: any) {
@@ -286,6 +302,23 @@ Output ONLY valid JSON:
         },
       });
       throw error;
+    } finally {
+      // Clean up all intermediate temp files proactively
+      logger.info({ event: 'reel_cleanup_started', reelId, totalFiles: tempFilesToCleanup.length });
+      const uniqueFiles = Array.from(new Set(tempFilesToCleanup));
+      for (const filePath of uniqueFiles) {
+        try {
+          if (filePath && fs.existsSync(filePath)) {
+            // Guard: Never delete the final exposed public upload video asset
+            if (!filePath.includes('/frontend/public/uploads/reels/')) {
+              fs.unlinkSync(filePath);
+              logger.debug({ event: 'reel_cleanup_success', filePath });
+            }
+          }
+        } catch (cleanupErr: any) {
+          logger.error({ event: 'reel_cleanup_failed', filePath, error: cleanupErr.message });
+        }
+      }
     }
   }
 

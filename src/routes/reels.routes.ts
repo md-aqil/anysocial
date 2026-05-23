@@ -165,7 +165,7 @@ router.put('/series/:seriesId', requireAuth, async (req: any, res: any) => {
   try {
     const { seriesId } = req.params;
     const userId = req.userId;
-    const { name, isActive, voiceId, artStyle } = req.body;
+    const { name, isActive, voiceId, artStyle, socialChannels, scheduleDays, scheduleTime } = req.body;
     
     const series = await prisma.reelSeries.findUnique({
       where: { id: seriesId, userId },
@@ -181,7 +181,10 @@ router.put('/series/:seriesId', requireAuth, async (req: any, res: any) => {
         name: name !== undefined ? name : series.name,
         isActive: isActive !== undefined ? isActive : series.isActive,
         voiceId: voiceId !== undefined ? voiceId : series.voiceId,
-        artStyle: artStyle !== undefined ? artStyle : series.artStyle
+        artStyle: artStyle !== undefined ? artStyle : series.artStyle,
+        socialChannels: socialChannels !== undefined ? (typeof socialChannels === 'string' ? socialChannels : JSON.stringify(socialChannels)) : series.socialChannels,
+        scheduleDays: scheduleDays !== undefined ? (typeof scheduleDays === 'string' ? scheduleDays : JSON.stringify(scheduleDays)) : series.scheduleDays,
+        scheduleTime: scheduleTime !== undefined ? scheduleTime : series.scheduleTime
       }
     });
 
@@ -209,12 +212,12 @@ router.post('/series/:seriesId/generate', requireAuth, async (req: any, res: any
       return res.status(404).json({ success: false, error: 'Series not found' });
     }
 
-    // Create the new Reel entry
+    // Create the new Reel entry, inheriting socialChannels from the series
     const reel = await prisma.reel.create({
       data: {
         seriesId: series.id,
         status: 'PENDING',
-        socialChannels: '[]', // Optional: could inherit from series if we added it there
+        socialChannels: series.socialChannels, // Inherit social channels from the parent series
       },
     });
 
