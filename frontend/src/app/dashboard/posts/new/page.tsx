@@ -17,7 +17,7 @@ import {
   AlertCircle, Calendar, Check, CircleHelp, Clock, FileText,
   Loader2, Moon, Plus, Sun, Upload, X, Zap, Edit3, ImageDown,
   Paperclip, Play, Send, Smile, Wand2, Hash, Video, Music2,
-  AtSign, Pin, Sparkles, MessageSquareText, MousePointer2, Type, RotateCcw
+  AtSign, Pin, Sparkles, MessageSquareText, MousePointer2, Type, RotateCcw, RefreshCw
 } from 'lucide-react';
 import {
   InstagramLogo, FacebookLogo, LinkedinLogo, TwitterLogo,
@@ -155,6 +155,49 @@ export default function NewPostPage() {
   }>>({});
 
   const [editingPlatform, setEditingPlatform] = useState<string | null>(null);
+
+  const connectMutation = useMutation({
+    mutationFn: async (platform: string) => {
+      const { authUrl, state } = await api.oauth.connect(platform.toLowerCase());
+      localStorage.setItem(`oauth_state_${platform.toLowerCase()}`, state);
+      window.location.href = authUrl;
+    },
+    onError: (err: any) => {
+      showToast(err?.message || 'Failed to initiate re-authentication.', 'error');
+    }
+  });
+
+  const DisconnectionBanner = ({ platform }: { platform: string }) => {
+    const account = accountsData?.accounts?.find(a => a.platform === platform);
+    if (!account || account.status === 'CONNECTED') return null;
+
+    return (
+      <div className="mb-4 flex flex-col gap-3 rounded-xl border border-rose-100 bg-rose-50/50 p-4 shadow-sm">
+        <div className="flex items-start gap-2.5">
+          <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5 animate-pulse" />
+          <div className="min-w-0 flex-1">
+            <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider">Connection Expired</h4>
+            <p className="mt-0.5 text-[11px] text-rose-600 leading-relaxed font-medium">
+              Your {platformStyles[platform]?.name || platform} account needs to be re-authenticated to publish posts.
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          onClick={() => connectMutation.mutate(platform)}
+          disabled={connectMutation.isPending}
+          className="h-8 w-full rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-1.5"
+        >
+          {connectMutation.isPending && connectMutation.variables === platform ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
+          <span>Re-authenticate Channel</span>
+        </Button>
+      </div>
+    );
+  };
 
 
   const [publishLog, setPublishLog] = useState<LogEntry[]>([]);
@@ -559,6 +602,7 @@ export default function NewPostPage() {
               const selected = selectedPlatforms?.includes(platformId);
               const Logo = config.icon;
               const accountName = account.metadata?.accountName || account.externalAccountId;
+              const isDisconnected = account.status !== 'CONNECTED';
 
               return (
                 <button
@@ -569,24 +613,33 @@ export default function NewPostPage() {
                     'group relative flex h-14 w-14 items-center justify-center rounded-[22px] transition-all duration-300',
                     selected
                       ? 'border scale-105'
-                      : 'bg-white border border-[#D9E3D9] hover:border-[#D27D50]/30 hover:bg-[#F9FAF9]'
+                      : 'bg-white border border-[#D9E3D9] hover:border-[#D27D50]/30 hover:bg-[#F9FAF9]',
+                    isDisconnected && 'border-rose-300 bg-rose-50/30'
                   )}
                   style={{
-                    backgroundColor: selected ? config.bg : undefined,
-                    borderColor: selected ? config.color : undefined
+                    backgroundColor: selected ? (isDisconnected ? '#FFF1F1' : config.bg) : undefined,
+                    borderColor: selected ? (isDisconnected ? '#FDA4AF' : config.color) : (isDisconnected ? '#FCA5A5' : undefined)
                   }}
-                  title={`${accountName} (${config.name})`}
+                  title={`${accountName} (${config.name})${isDisconnected ? ' - Connection Expired' : ''}`}
                 >
                   <Logo
                     className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
-                    style={{ color: selected ? config.color : '#A1A1AA' }}
+                    style={{ color: selected ? (isDisconnected ? '#EF4444' : config.color) : (isDisconnected ? '#F87171' : '#A1A1AA') }}
                     strokeWidth={selected ? 2.5 : 2}
                   />
 
+                  {isDisconnected && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white border-2 border-white shadow-md animate-pulse">
+                      !
+                    </span>
+                  )}
 
                   <div className="absolute left-full ml-4 hidden group-hover:block z-50">
-                    <div className="whitespace-nowrap rounded-lg bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white shadow-xl">
-                      {accountName}
+                    <div className="whitespace-nowrap rounded-lg bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white shadow-xl flex items-center gap-1.5">
+                      {isDisconnected && <AlertCircle className="h-3.5 w-3.5 text-rose-400 shrink-0" />}
+                      <span>
+                        {accountName} {isDisconnected ? `(Disconnected: ${account.status})` : `(${config.name})`}
+                      </span>
                     </div>
                   </div>
                 </button>
@@ -892,6 +945,7 @@ export default function NewPostPage() {
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="FACEBOOK" value={fbType || 'FEED'} />
                 <div className="space-y-3 px-4 py-3">
+                  <DisconnectionBanner platform="FACEBOOK" />
                   <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={fbType || 'FEED'} onChange={(value) => setValue('facebookPostType', value as any)} color={platformStyles.FACEBOOK.color} />
                   {fbType === 'REEL' && <Input placeholder="Reel title" {...register('reelTitle')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />}
                   <Input placeholder="Location" {...register('location')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
@@ -913,6 +967,7 @@ export default function NewPostPage() {
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="LINKEDIN" value="Story" />
                 <div className="space-y-3 px-5 py-4">
+                  <DisconnectionBanner platform="LINKEDIN" />
                   <SegmentedOptions label="Post Type" options={['Post', 'Story']} value="Story" onChange={() => undefined} color={platformStyles.LINKEDIN.color} />
                   <SegmentedOptions label="Visibility" options={['Anyone', 'Connections']} value="Connections" onChange={() => undefined} color="#171717" />
                   <SwitchRow label="Auto-fix media" checked={true} onChange={() => undefined} />
@@ -933,6 +988,7 @@ export default function NewPostPage() {
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="TWITTER" value="Post" />
                 <div className="space-y-3 px-5 py-4">
+                  <DisconnectionBanner platform="TWITTER" />
                   <SegmentedOptions label="Who can reply" options={['everyone', 'following', 'mentionedUsers']} value={watch('twitterReplySettings') || 'everyone'} onChange={(value) => setValue('twitterReplySettings', value as any)} color={platformStyles.TWITTER.color} />
                   <Controller name="twitterAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" checked={field.value} onChange={field.onChange} />} />
                   <Button
@@ -952,6 +1008,7 @@ export default function NewPostPage() {
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="INSTAGRAM" value={igType || 'FEED'} />
                 <div className="space-y-3 px-5 py-4">
+                  <DisconnectionBanner platform="INSTAGRAM" />
                   <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={igType || 'FEED'} onChange={(value) => setValue('instagramPostType', value as any)} color={platformStyles.INSTAGRAM.color} />
                   {igType === 'REEL' && <SwitchRow label="Share Reel to Feed" checked={watch('shareToFeed')} onChange={(value) => setValue('shareToFeed', value)} />}
                   <SwitchRow label="Auto-fix media" description="Conforms to IG specs" checked={igAutoFix} onChange={(value) => setValue('instagramAutoFix', value)} />
@@ -972,6 +1029,7 @@ export default function NewPostPage() {
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="YOUTUBE" value={watch('youtubePostType')} />
                 <div className="space-y-3 px-5 py-4">
+                  <DisconnectionBanner platform="YOUTUBE" />
                   <SegmentedOptions label="Format" options={['VIDEO', 'SHORTS']} value={watch('youtubePostType')} onChange={(value) => setValue('youtubePostType', value as any)} color={platformStyles.YOUTUBE.color} />
                   <div className="grid grid-cols-2 gap-2">
                     <select className="h-9 rounded-lg border border-[#D9E3D9] bg-white px-2 text-xs text-stone-600" {...register('youtubePrivacy')}>
@@ -1014,6 +1072,7 @@ export default function NewPostPage() {
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="THREADS" value="Post" />
                 <div className="px-4 py-4 space-y-3">
+                  <DisconnectionBanner platform="THREADS" />
                   <Controller name="threadsAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" description="Force 4:5 portrait for Threads" checked={field.value} onChange={field.onChange} />} />
                   <Button
                     type="button"
@@ -1032,6 +1091,7 @@ export default function NewPostPage() {
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="PINTEREST" value="Pin" />
                 <div className="space-y-3 px-4 py-4">
+                  <DisconnectionBanner platform="PINTEREST" />
                   {isLoadingBoards ? (
                     <p className="flex items-center gap-2 text-xs text-stone-500"><Loader2 className="h-3 w-3 animate-spin" /> Fetching boards...</p>
                   ) : pinterestBoards.length > 0 ? (
@@ -1059,6 +1119,7 @@ export default function NewPostPage() {
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
                 <OverrideHeader platform="SNAPCHAT" value={watch('snapchatPostType') || 'STORY'} />
                 <div className="px-4 py-4 space-y-3">
+                  <DisconnectionBanner platform="SNAPCHAT" />
                   <SegmentedOptions label="Post Type" options={['STORY', 'SPOTLIGHT']} value={watch('snapchatPostType') || 'STORY'} onChange={(value) => setValue('snapchatPostType', value as any)} color={platformStyles.SNAPCHAT.color} />
                   <Button
                     type="button"

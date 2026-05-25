@@ -388,12 +388,11 @@ Output ONLY valid JSON:
               resolvedPlatforms.add(acc.platform.toString().toUpperCase());
             }
           }
-          
           const mappedPlatforms = Array.from(resolvedPlatforms);
           
           if (mappedPlatforms.length > 0) {
             console.log(`[Worker] Auto-posting/scheduling reel for platforms: ${JSON.stringify(mappedPlatforms)}`);
-            await postingEngine.schedulePost(series.userId, {
+            const scheduleResult = await postingEngine.schedulePost(series.userId, {
               content: script.substring(0, 2000),
               media: [{
                 file: videoBuffer,
@@ -405,12 +404,40 @@ Output ONLY valid JSON:
               scheduledAt: isSafeFuture && scheduledTime ? scheduledTime.toISOString() : undefined,
               platformOptions: {}
             });
-            logger.info({ event: 'reel_post_queued', reelId, platforms: mappedPlatforms, isScheduled: !!isSafeFuture });
+
+            const newReelStatus = isSafeFuture ? 'SCHEDULED' : 'PUBLISHING';
+            await prisma.reel.update({
+              where: { id: reelId },
+              data: {
+                status: newReelStatus,
+                postId: scheduleResult.postId,
+                statusMessage: isSafeFuture 
+                  ? `Scheduled to post on ${scheduledTime.toISOString()}` 
+                  : 'Reel is being published to channels...'
+              }
+            });
+
+            logger.info({ event: 'reel_post_queued', reelId, postId: scheduleResult.postId, platforms: mappedPlatforms, isScheduled: !!isSafeFuture });
           } else {
             logger.warn({ event: 'reel_post_skip_no_platforms', reelId, reason: 'No connected accounts matched the selected channels' });
+            // Even if no platforms matched, set status to READY (unposted)
+            await prisma.reel.update({
+              where: { id: reelId },
+              data: {
+                status: 'READY',
+                statusMessage: 'No connected accounts matched the selected channels.'
+              }
+            });
           }
         } catch (postError: any) {
           logger.error({ event: 'reel_post_queue_failed', reelId, error: postError.message });
+          await prisma.reel.update({
+            where: { id: reelId },
+            data: {
+              status: 'FAILED',
+              statusMessage: `Failed to schedule publishing: ${postError.message}`
+            }
+          });
         }
       }
 

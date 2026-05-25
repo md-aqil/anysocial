@@ -141,6 +141,7 @@ model Post {
   maxRetries      Int             @default(3) @map("max_retries")
   media           PostMedia[]
   analytics       PostAnalytics[]
+  reels           Reel[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -313,6 +314,8 @@ model Reel {
   statusMessage  String?
   scheduledFor   DateTime?
   socialChannels String // JSON array of selected channel IDs (Platform enums or SocialAccount IDs)
+  postId         String?
+  post           Post?      @relation(fields: [postId], references: [id], onDelete: SetNull)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 

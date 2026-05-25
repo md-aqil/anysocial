@@ -77,7 +77,14 @@ const getReelStatus = (reel: any) => {
     return {
       label: 'FAILED',
       classes: 'bg-red-100/90 text-red-700 border-red-200',
-      icon: <AlertCircle className="h-3.5 w-3.5" />
+      icon: <AlertCircle className="h-3.5 w-3.5 text-red-600" />
+    };
+  }
+  if (reel.status === 'PARTIALLY_FAILED') {
+    return {
+      label: 'PARTIALLY FAILED',
+      classes: 'bg-amber-100/90 text-amber-700 border-amber-200',
+      icon: <AlertCircle className="h-3.5 w-3.5 text-amber-600 animate-pulse" />
     };
   }
   if (reel.status === 'GENERATING') {
@@ -109,20 +116,77 @@ const getReelStatus = (reel: any) => {
       icon: <Play className="h-3.5 w-3.5 text-teal-600" />
     };
   }
-  
+
+  // If there is a linked Post, check its actual status!
+  if (reel.post) {
+    if (reel.post.status === 'PUBLISHED' || reel.status === 'PUBLISHED') {
+      return {
+        label: 'POSTED',
+        classes: 'bg-emerald-100/90 text-emerald-700 border-emerald-200',
+        icon: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+      };
+    }
+    if (reel.post.status === 'FAILED') {
+      return {
+        label: 'FAILED TO POST',
+        classes: 'bg-red-100/90 text-red-700 border-red-200',
+        icon: <AlertCircle className="h-3.5 w-3.5 text-red-600" />
+      };
+    }
+    if (reel.post.status === 'PARTIALLY_FAILED') {
+      return {
+        label: 'PARTIALLY FAILED',
+        classes: 'bg-amber-100/90 text-amber-700 border-amber-200',
+        icon: <AlertCircle className="h-3.5 w-3.5 text-amber-600 animate-pulse" />
+      };
+    }
+    if (reel.post.status === 'PROCESSING') {
+      return {
+        label: 'PUBLISHING',
+        classes: 'bg-blue-100/90 text-blue-700 border-blue-200 animate-pulse',
+        icon: <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      };
+    }
+    if (reel.post.status === 'QUEUED') {
+      const isFuture = reel.scheduledFor ? new Date(reel.scheduledFor) > new Date() : false;
+      if (isFuture) {
+        return {
+          label: 'SCHEDULED',
+          classes: 'bg-amber-100/90 text-amber-700 border-amber-200',
+          icon: <Calendar className="h-3.5 w-3.5 text-amber-600" />
+        };
+      } else {
+        return {
+          label: 'PUBLISHING',
+          classes: 'bg-blue-100/90 text-blue-700 border-blue-200 animate-pulse',
+          icon: <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        };
+      }
+    }
+  }
+
+  // Fallback if no Post relation yet
   const isFuture = reel.scheduledFor ? new Date(reel.scheduledFor) > new Date() : false;
   if (isFuture) {
     return {
       label: 'SCHEDULED',
       classes: 'bg-amber-100/90 text-amber-700 border-amber-200',
-      icon: <Calendar className="h-3.5 w-3.5" />
+      icon: <Calendar className="h-3.5 w-3.5 text-amber-600" />
+    };
+  }
+
+  if (reel.statusMessage && (reel.statusMessage.toLowerCase().includes('fail') || reel.statusMessage.toLowerCase().includes('error'))) {
+    return {
+      label: 'FAILED',
+      classes: 'bg-red-100/90 text-red-700 border-red-200',
+      icon: <AlertCircle className="h-3.5 w-3.5 text-red-600" />
     };
   }
   
   return {
     label: 'POSTED',
     classes: 'bg-emerald-100/90 text-emerald-700 border-emerald-200',
-    icon: <CheckCircle2 className="h-3.5 w-3.5" />
+    icon: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
   };
 };
 
@@ -478,39 +542,107 @@ export default function ReelsDashboard() {
                               } catch {}
                               const hasChannels = channels.length > 0;
 
+                              const isFailed = reel.status === 'FAILED' || (reel.post && reel.post.status === 'FAILED');
+
                               return (
-                                <div className="flex items-center gap-1.5">
-                                  {reel.scheduledFor ? (
-                                    <>
-                                      <Calendar className={`h-3.5 w-3.5 ${isFuture ? 'text-amber-500' : 'text-emerald-500'}`} />
-                                      <span>
-                                        {hasChannels 
-                                          ? (isFuture ? 'Scheduled to Post:' : 'Posted on:')
-                                          : (isFuture ? 'Scheduled to Generate:' : 'Generated on:')}{' '}
-                                        <span className="font-semibold text-stone-700">
-                                          {format(new Date(reel.scheduledFor), 'MMM d, yyyy @ p')}
+                                <>
+                                  <div className="flex items-center gap-1.5">
+                                    {reel.scheduledFor ? (
+                                      <>
+                                        <Calendar className={`h-3.5 w-3.5 ${isFailed ? 'text-red-500' : (isFuture ? 'text-amber-500' : 'text-emerald-500')}`} />
+                                        <span>
+                                          {hasChannels 
+                                            ? (isFailed ? 'Failed to Post:' : (isFuture ? 'Scheduled to Post:' : 'Posted on:'))
+                                            : (isFuture ? 'Scheduled to Generate:' : 'Generated on:')}{' '}
+                                          <span className="font-semibold text-stone-700">
+                                            {format(new Date(reel.scheduledFor), 'MMM d, yyyy @ p')}
+                                          </span>
                                         </span>
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Clock className="h-3.5 w-3.5 text-stone-400" />
-                                      <span>
-                                        Created:{' '}
-                                        <span className="font-semibold text-stone-700">
-                                          {format(new Date(reel.createdAt), 'MMM d, yyyy @ p')}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Clock className="h-3.5 w-3.5 text-stone-400" />
+                                        <span>
+                                          Created:{' '}
+                                          <span className="font-semibold text-stone-700">
+                                            {format(new Date(reel.createdAt), 'MMM d, yyyy @ p')}
+                                          </span>
                                         </span>
-                                      </span>
-                                    </>
+                                      </>
+                                    )}
+                                  </div>
+
+                                  {/* Premium Platform-specific status icons */}
+                                  {hasChannels && (
+                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-stone-100/60">
+                                      <span className="text-[9px] text-stone-400 font-extrabold uppercase tracking-wider">Channels:</span>
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        {channels.map((channel) => {
+                                          const platformName = channel.toUpperCase();
+                                          
+                                          // Find platform result in linked post
+                                          const platformRes = reel.post?.platformResults?.find((r: any) => r.platform.toUpperCase() === platformName);
+                                          
+                                          let statusColor = 'text-stone-400 border-stone-200 bg-stone-50'; // Default gray/ready
+                                          let tooltip = `${channel}: Ready to publish`;
+                                          
+                                          if (platformRes) {
+                                            if (platformRes.status === 'PUBLISHED') {
+                                              statusColor = 'text-emerald-600 border-emerald-200 bg-emerald-50';
+                                              tooltip = `${channel}: Posted successfully`;
+                                            } else if (platformRes.status === 'FAILED') {
+                                              statusColor = 'text-red-600 border-red-200 bg-red-50';
+                                              tooltip = `${channel}: Failed - ${platformRes.error || 'Unknown error'}`;
+                                            } else if (platformRes.status === 'QUEUED' || platformRes.status === 'PROCESSING') {
+                                              statusColor = 'text-blue-600 border-blue-200 bg-blue-50 animate-pulse';
+                                              tooltip = `${channel}: Publishing in progress`;
+                                            }
+                                          } else if (reel.status === 'FAILED') {
+                                            statusColor = 'text-red-600 border-red-200 bg-red-50';
+                                            tooltip = `${channel}: Failed to schedule - ${reel.statusMessage || 'Check logs'}`;
+                                          } else if (isFuture) {
+                                            statusColor = 'text-amber-600 border-amber-200 bg-amber-50';
+                                            tooltip = `${channel}: Scheduled`;
+                                          }
+                                          
+                                          // Map platform name to short label
+                                          const shortLabel = platformName.substring(0, 2);
+                                          
+                                          return (
+                                            <span 
+                                              key={channel}
+                                              className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold border uppercase tracking-wider ${statusColor}`}
+                                              title={tooltip}
+                                            >
+                                              {shortLabel}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
                                   )}
-                                </div>
+                                </>
                               );
                             })()}
                             
-                            {/* Detailed Error Reason Display */}
-                            {reel.status === 'FAILED' && reel.statusMessage && (
-                              <div className="w-full mt-2 text-[10px] sm:text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100 font-mono break-all" title={reel.statusMessage}>
+                            {/* Detailed General/Generation Error Reason Display */}
+                            {(reel.status === 'FAILED' || reel.status === 'PARTIALLY_FAILED') && reel.statusMessage && (
+                              <div className="w-full mt-2 text-[10px] sm:text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 font-mono break-words shadow-sm">
                                 <strong>Error:</strong> {reel.statusMessage}
+                              </div>
+                            )}
+
+                            {/* Detailed Platform Post Errors from linked Post model */}
+                            {reel.post?.status === 'FAILED' && reel.post?.platformResults?.some((r: any) => r.error) && (
+                              <div className="w-full mt-2 text-[10px] sm:text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 font-mono break-words shadow-sm">
+                                <strong>Posting Errors:</strong>
+                                <ul className="list-disc pl-3.5 mt-1 space-y-0.5 text-[9px] leading-relaxed">
+                                  {reel.post.platformResults.map((r: any) => r.error ? (
+                                    <li key={r.platform}>
+                                      <span className="font-bold">{r.platform}:</span> {r.error}
+                                    </li>
+                                  ) : null)}
+                                </ul>
                               </div>
                             )}
                           </div>

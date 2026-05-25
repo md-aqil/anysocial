@@ -121,6 +121,7 @@ router.get('/series', requireAuth, async (req: any, res: any) => {
         reels: {
           orderBy: { createdAt: 'desc' },
           take: 5,
+          include: { post: true }
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -143,7 +144,12 @@ router.get('/series/:seriesId', requireAuth, async (req: any, res: any) => {
     const userId = req.userId;
     const series = await prisma.reelSeries.findUnique({
       where: { id: seriesId, userId },
-      include: { reels: true }
+      include: {
+        reels: {
+          orderBy: { createdAt: 'desc' },
+          include: { post: true }
+        }
+      }
     });
 
     if (!series) {

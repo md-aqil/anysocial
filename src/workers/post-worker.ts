@@ -295,6 +295,57 @@ export class PostWorker {
         status: overallStatus
       }
     });
+
+    // Sync to associated Reel if one exists
+    try {
+      const associatedReel = await prisma.reel.findFirst({
+        where: { postId }
+      });
+
+      if (associatedReel) {
+        let reelStatus = 'PUBLISHING';
+        let reelMessage = 'Reel is being published...';
+
+        if (overallStatus === 'PUBLISHED') {
+          reelStatus = 'PUBLISHED';
+          reelMessage = 'Published successfully to all channels!';
+        } else if (overallStatus === 'FAILED') {
+          reelStatus = 'FAILED';
+          const errors = platformResults
+            .map((r: any) => r.error ? `${r.platform}: ${r.error}` : null)
+            .filter(Boolean);
+          reelMessage = `Failed to post: ${errors.join(', ')}`;
+        } else if (overallStatus === 'PARTIALLY_FAILED') {
+          reelStatus = 'PARTIALLY_FAILED';
+          const errors = platformResults
+            .map((r: any) => r.error ? `${r.platform}: ${r.error}` : null)
+            .filter(Boolean);
+          reelMessage = `Partially failed: ${errors.join(', ')}`;
+        }
+
+        await prisma.reel.update({
+          where: { id: associatedReel.id },
+          data: {
+            status: reelStatus,
+            statusMessage: reelMessage
+          }
+        });
+
+        logger.info({
+          event: 'reel_post_status_synced',
+          reelId: associatedReel.id,
+          postId,
+          status: reelStatus,
+          message: reelMessage
+        });
+      }
+    } catch (syncErr: any) {
+      logger.error({
+        event: 'reel_post_sync_error',
+        postId,
+        error: syncErr.message
+      });
+    }
   }
 
   /**
