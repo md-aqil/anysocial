@@ -392,6 +392,19 @@ Output ONLY valid JSON:
           
           if (mappedPlatforms.length > 0) {
             console.log(`[Worker] Auto-posting/scheduling reel for platforms: ${JSON.stringify(mappedPlatforms)}`);
+            // Build platform options - reels are vertical 9:16 and should be posted as REEL/SHORTS type
+            const platformOptions: Record<string, any> = {};
+            for (const plat of mappedPlatforms) {
+              // Reels are vertical 9:16; set appropriate post types for each platform
+              if (plat === 'INSTAGRAM' || plat === 'FACEBOOK') {
+                platformOptions[plat] = { postType: 'REEL', autoFix: true };
+              } else if (plat === 'YOUTUBE') {
+                platformOptions[plat] = { postType: 'SHORTS', autoFix: true };
+              } else {
+                platformOptions[plat] = { autoFix: true };
+              }
+            }
+            
             const scheduleResult = await postingEngine.schedulePost(series.userId, {
               content: script.substring(0, 2000),
               media: [{
@@ -402,7 +415,7 @@ Output ONLY valid JSON:
               platforms: mappedPlatforms,
               timezone: 'UTC',
               scheduledAt: isSafeFuture && scheduledTime ? scheduledTime.toISOString() : undefined,
-              platformOptions: {}
+              platformOptions
             });
 
             const newReelStatus = isSafeFuture ? 'SCHEDULED' : 'PUBLISHING';

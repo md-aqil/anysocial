@@ -468,6 +468,10 @@ export default function NewPostPage() {
             const filename = decodedUrl.split('/').pop() || 'reel-video.mp4';
             const file = new File([blob], filename, { type: 'video/mp4' });
             setMediaFiles([file]);
+            // Auto-set Instagram post type to REEL for reel videos (vertical 9:16)
+            if (accountsData?.accounts?.some(acc => acc.platform.toUpperCase() === 'INSTAGRAM')) {
+              setValue('instagramPostType', 'REEL');
+            }
           })
           .catch(err => console.error("Failed to fetch video from URL", err));
       }
