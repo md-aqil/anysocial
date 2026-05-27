@@ -172,10 +172,13 @@ export class VideoComposerService {
                 '-preset superfast'
               ]);
           } else {
+            // Pre-crop image to 9:16 ratio at double resolution to prevent any stretching before zoompan
+            const cropW = 1440;
+            const cropH = 2560;
             proc.inputOptions(['-loop 1'])
               .outputOptions([
                 `-t ${duration}`,
-                '-vf', `scale=iw*2:-2,zoompan=z='min(zoom+0.0006,1.5)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${width}x${height}:fps=${fps}`,
+                '-vf', `scale=${cropW}:${cropH}:force_original_aspect_ratio=increase,crop=${cropW}:${cropH},setsar=1,zoompan=z='min(zoom+0.0006,1.5)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${width}x${height}:fps=${fps}`,
                 '-c:v libx264',
                 '-pix_fmt yuv420p',
                 `-r ${fps}`,
@@ -211,24 +214,51 @@ export class VideoComposerService {
     return { clipPaths, tempFiles };
   }
 
-  /**
-   * Concatenates multiple video clips into a single video file.
-   */
-  static async concatVideos(videoPaths: string[], signal?: AbortSignal): Promise<{ outputPath: string, tempFiles: string[] }> {
+  static async concatVideos(videoPaths: string[], signal?: AbortSignal, clipDuration: number = 4.0): Promise<{ outputPath: string, tempFiles: string[] }> {
+    if (videoPaths.length <= 1) {
+      return { outputPath: videoPaths[0] || '', tempFiles: [] };
+    }
+
     const outputPath = path.join(os.tmpdir(), `concat_${Date.now()}.mp4`);
-    const listPath = path.join(os.tmpdir(), `list_${Date.now()}.txt`);
-    
-    // Create a file list for ffmpeg concat demuxer
-    const listContent = videoPaths.map(p => `file '${p}'`).join('\n');
-    fs.writeFileSync(listPath, listContent);
+    const tempFiles: string[] = [];
 
     await new Promise((resolve, reject) => {
-      const proc = ffmpeg()
-        .input(listPath)
-        .inputOptions(['-f concat', '-safe 0'])
-        .outputOptions(['-c copy'])
+      const proc = ffmpeg();
+      
+      // Add all input clips
+      for (const p of videoPaths) {
+        proc.input(p);
+      }
+
+      const transitionDuration = 0.5; // 0.5s zoom-in transition
+      let filterString = '';
+      let lastOutput = '[0:v]';
+
+      for (let i = 0; i < videoPaths.length - 1; i++) {
+        const nextInput = `[${i + 1}:v]`;
+        const outputLabel = `[v_trans_${i}]`;
+        
+        // Exact offset mathematical formula to trigger transition at clip boundary
+        const offset = (i + 1) * clipDuration - (i + 1) * transitionDuration;
+        
+        filterString += `${lastOutput}${nextInput}xfade=transition=zoomin:duration=${transitionDuration}:offset=${offset}${outputLabel};`;
+        lastOutput = outputLabel;
+      }
+
+      if (filterString.endsWith(';')) {
+        filterString = filterString.slice(0, -1);
+      }
+
+      proc.complexFilter([filterString])
+        .map(lastOutput)
+        .videoCodec('libx264')
+        .outputOptions([
+          '-pix_fmt yuv420p',
+          '-preset superfast'
+        ])
         .on('error', (err) => {
           if (signal?.aborted) return resolve(false);
+          console.error('[Concat Zoom Transition Error]:', err.message);
           reject(err);
         })
         .on('end', resolve);
@@ -243,7 +273,7 @@ export class VideoComposerService {
       proc.save(outputPath);
     });
 
-    return { outputPath, tempFiles: [listPath] };
+    return { outputPath, tempFiles };
   }
 
   /**
@@ -334,75 +364,110 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   /**
    * Merges a final video with a primary audio track (e.g., voiceover) and burns subtitles.
    */
-  static async mergeAudioVideo(videoPath: string, audioUrl: string, subtitlePath?: string, signal?: AbortSignal): Promise<{ outputPath: string, tempFiles: string[] }> {
+  static async mergeAudioVideo(videoPath: string, audioUrl?: string | null, subtitlePath?: string, signal?: AbortSignal, hookText?: string, duration?: number): Promise<{ outputPath: string, tempFiles: string[] }> {
     const tempFiles: string[] = [];
-    const audioPath = audioUrl.startsWith('/') ? audioUrl : await downloadToTemp(audioUrl, `audio_${Date.now()}.mp3`);
-    if (!audioUrl.startsWith('/')) tempFiles.push(audioPath);
+    let audioPath: string | null = null;
+    if (audioUrl) {
+      audioPath = audioUrl.startsWith('/') ? audioUrl : await downloadToTemp(audioUrl, `audio_${Date.now()}.mp3`);
+      if (!audioUrl.startsWith('/')) tempFiles.push(audioPath);
+    }
     
     const finalOutputPath = path.join(os.tmpdir(), `final_${Date.now()}.mp4`);
-
+    
     await new Promise((resolve, reject) => {
-        const outputOpts = [
-          '-c:a aac',
-          '-b:a 192k',
-          '-map 0:v:0',
-          '-map 1:a:0',
-          '-shortest'
-        ];
-
+        const filters: string[] = [];
+        
         if (subtitlePath) {
           // Burn subtitles into video using escaped path to ensure robustness
           const escapedPath = subtitlePath.replace(/\\/g, '/').replace(/:/g, '\\:');
-          outputOpts.unshift('-c:v libx264', '-preset superfast', `-vf subtitles='${escapedPath}'`);
-        } else {
-          outputOpts.unshift('-c:v copy');
+          filters.push(`subtitles='${escapedPath}'`);
+        }
+    
+        // Hook overlay if provided (render it at the top of the viewport)
+        if (hookText) {
+          const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'Poppins-Bold.ttf');
+          const escapedHook = hookText.replace(/'/g, "'\\''");
+          // position it dynamically at the upper center
+          filters.push(`drawtext=text='${escapedHook}':fontfile='${fontPath}':fontcolor=white:fontsize=44:box=1:boxcolor=black@0.5:x=(w-text_w)/2:y=120`);
         }
 
+        const outputOpts: string[] = [];
+
+        if (audioPath) {
+          outputOpts.push(
+            '-c:a aac',
+            '-b:a 192k',
+            '-map 0:v:0',
+            '-map 1:a:0',
+            '-shortest'
+          );
+        } else {
+          outputOpts.push(
+            '-map 0:v:0',
+            '-c:a copy'
+          );
+        }
+    
+        // Trim to duration if specified
+        if (duration) {
+          outputOpts.push(`-t ${duration}`);
+        }
+    
         const proc = ffmpeg()
-          .input(videoPath)
-          .input(audioPath)
-          .outputOptions(outputOpts)
+          .input(videoPath);
+
+        if (audioPath) {
+          proc.input(audioPath);
+        }
+
+        if (filters.length > 0) {
+          proc.videoCodec('libx264')
+              .videoFilters(filters);
+          outputOpts.push('-preset', 'superfast');
+        } else {
+          proc.videoCodec('copy');
+        }
+
+        proc.outputOptions(outputOpts)
           .on('error', (err) => {
           if (signal?.aborted) return resolve(false);
           reject(err);
         })
         .on('end', resolve);
-
+    
       if (signal) {
         signal.addEventListener('abort', () => {
           try { (proc as any).kill('SIGKILL'); } catch (e) {}
           reject(new Error('Aborted'));
         });
       }
-
+    
       proc.save(finalOutputPath);
     });
-
+    
     return { outputPath: finalOutputPath, tempFiles };
   }
 
   /**
    * Mixes a primary audio track (voiceover) with background music.
    */
-  static async addBackgroundMusic(
-    mainAudioPath: string, 
-    bgMusicPath: string,
-    mainDuration: number,
-    signal?: AbortSignal
-  ): Promise<{ outputPath: string, tempFiles: string[] }> {
-    const tempFiles: string[] = [];
-    const outputPath = path.join(os.tmpdir(), `audio_with_bg_${Date.now()}.mp3`);
-
+  static async addBackgroundMusic(voiceoverPath: string, bgmPath: string, duration: number, signal?: AbortSignal): Promise<{ outputPath: string, tempFiles: string[] }> {
+    const outputPath = path.join(os.tmpdir(), `mixed_${Date.now()}.mp3`);
+    
     await new Promise((resolve, reject) => {
       const proc = ffmpeg()
-        .input(bgMusicPath)
-        .inputOptions(['-stream_loop -1']) // Loop the background music indefinitely
-        .input(mainAudioPath)
-        .outputOptions([
-          '-filter_complex', `[0:a]volume=0.09,afade=t=out:st=${Math.max(0, mainDuration - 3)}:d=3[bg];[1:a][bg]amix=inputs=2:duration=first:dropout_transition=3`,
-          '-c:a', 'libmp3lame',
-          '-b:a', '320k'
+        .input(voiceoverPath)
+        .input(bgmPath)
+        .complexFilter([
+          // Downmix BGM volume to make voiceover clearly audible
+          '[1:a]volume=0.15[bgm]',
+          // Mix background audio with voiceover. Finish when voiceover ends (duration=first)
+          '[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=2[out]'
         ])
+        .map('[out]')
+        .audioCodec('libmp3lame')
+        .audioBitrate(192)
+        .outputOptions([`-t ${duration}`])
         .on('error', (err) => {
           if (signal?.aborted) return resolve(false);
           reject(err);
@@ -419,6 +484,20 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       proc.save(outputPath);
     });
 
-    return { outputPath, tempFiles: [bgMusicPath] };
+    return { outputPath, tempFiles: [] };
+  }
+
+  // New method: generateThumbnail extracts a single frame as JPEG.
+  static async generateThumbnail(videoPath: string, outputPath?: string): Promise<string> {
+    const outPath = outputPath ?? path.join(path.dirname(videoPath), `thumb_${path.basename(videoPath, path.extname(videoPath))}.jpg`);
+    await new Promise((resolve, reject) => {
+      ffmpeg(videoPath)
+        .outputOptions(['-vframes 1', '-q:v 2'])
+        .output(outPath)
+        .on('end', resolve)
+        .on('error', reject)
+        .run();
+    });
+    return outPath;
   }
 }

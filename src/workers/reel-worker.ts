@@ -13,9 +13,25 @@ import { scheduleNextReel } from '../services/reel-scheduler.service.js';
 
 const pipeline = promisify(stream.pipeline);
 
-async function downloadToTemp(url: string, fileName: string): Promise<string> {
+async function downloadToTemp(url: string, fileName: string, strict: boolean = false): Promise<string> {
   const tempPath = path.join(os.tmpdir(), fileName);
   try {
+    // Robust local resolution for localhost URLs and relative paths
+    let cleanUrl = url;
+    if (url.startsWith('http://localhost:3000') || url.startsWith('http://localhost:3001') || url.startsWith('http://127.0.0.1')) {
+      cleanUrl = url.replace(/^https?:\/\/[^\/]+/, '');
+    }
+
+    if (cleanUrl.startsWith('/')) {
+      // Resolve path in the frontend public directory
+      const localFilePath = path.join(process.cwd(), 'frontend', 'public', cleanUrl);
+      if (fs.existsSync(localFilePath)) {
+        console.log(`[Worker Local Copy] Copying local asset directly from ${localFilePath}`);
+        fs.copyFileSync(localFilePath, tempPath);
+        return tempPath;
+      }
+    }
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -32,6 +48,10 @@ async function downloadToTemp(url: string, fileName: string): Promise<string> {
     await pipeline(response.body, fileStream);
     return tempPath;
   } catch (err: any) {
+    if (strict) {
+      console.error(`[Worker Download Strict Error] Failed to download exact user asset: ${url}. Error: ${err.message}`);
+      throw new Error(`Failed to download user-provided asset: ${err.message}`);
+    }
     console.error(`[Worker Download Fallback] Failed to download ${url}: ${err.message}. Using backup asset.`);
     
     const isAudio = url.includes('.mp3') || url.includes('.wav') || url.includes('.ogg') || fileName.includes('audio') || fileName.includes('bgm');
@@ -91,8 +111,15 @@ export class ReelWorker {
     });
   }
 
-  private async processJob(job: Job<{ reelId: string; seriesId: string }>) {
-    const { reelId, seriesId } = job.data;
+  private async processJob(job: Job<{ 
+    reelId: string; 
+    seriesId?: string;
+    enableMusic?: boolean;
+    enableVoice?: boolean;
+    scriptText?: string | null;
+    hookText?: string | null;
+  }>) {
+    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
     const tempFilesToCleanup: string[] = [];
 
@@ -106,7 +133,184 @@ export class ReelWorker {
         });
       };
       
-      await updateProgress('🚀 Initializing Premium AI Engine...');
+      await updateProgress('🚀 Initializing AI Engine...');
+
+      const reelWithDetails = await prisma.reel.findUniqueOrThrow({
+        where: { id: reelId },
+        include: {
+          user: true,
+          assets: true,
+          series: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+      
+      if (reelWithDetails.type === 'PRODUCT') {
+        await updateProgress('🚀 Initializing AI Product Reel Engine...');
+  
+        const assets = reelWithDetails.assets;
+        if (!assets || assets.length === 0) {
+          throw new Error('No assets found for this product reel.');
+        }
+
+        await updateProgress(`Downloading ${assets.length} product assets...`);
+        const downloadedAssetPaths: string[] = [];
+        for (const asset of assets) {
+          const fileName = `${reelId}_${path.basename(asset.url)}`;
+          // Use strict = true to ensure only original provided images are kept and no random fallbacks are generated
+          const downloadedPath = await downloadToTemp(asset.url, fileName, true);
+          downloadedAssetPaths.push(downloadedPath);
+          tempFilesToCleanup.push(downloadedPath);
+        }
+
+        // Calculate custom duration based on number of user provided images (4 seconds per image)
+        const secondsPerAsset = 4.0;
+        const targetDuration = Math.max(8, downloadedAssetPaths.length * secondsPerAsset);
+        // Average speech rate is 2.3 words/sec. Instruct LLM to fit this exactly.
+        const targetWordCount = Math.round(targetDuration * 2.3);
+
+        await updateProgress(`🤖 Preparing AI Product Reel copy...`);
+        let scriptText = customScriptText !== undefined && customScriptText !== null ? customScriptText.trim() : '';
+        let hookText = customHookText !== undefined && customHookText !== null ? customHookText.trim() : '';
+
+        // If script is not provided, disable voice narration functionality
+        let activeEnableVoice = enableVoice;
+        if (!scriptText || scriptText.length === 0) {
+          activeEnableVoice = false;
+        }
+
+        let ttsPath: string | null = null;
+        if (activeEnableVoice && scriptText && scriptText.length > 0) {
+          await updateProgress('🗣️ Synthesizing premium brand voiceover...');
+          ttsPath = await aiOrchestrator.generateVoiceover(scriptText, 'en-US-Journey-F', 'English');
+          tempFilesToCleanup.push(ttsPath);
+        }
+
+        await updateProgress('🎬 Assembling your cinematic masterpiece...');
+        // Clip duration is exactly based on the secondsPerAsset value
+        const { clipPaths, tempFiles: composerTempFiles } = await VideoComposerService.createVideoClips(
+          downloadedAssetPaths, 
+          secondsPerAsset, 
+          'vertical', 
+          new AbortController().signal
+        );
+        if (clipPaths) tempFilesToCleanup.push(...clipPaths);
+        if (composerTempFiles) tempFilesToCleanup.push(...composerTempFiles);
+
+        const { outputPath: concatVideoPath, tempFiles: concatTempFiles } = await VideoComposerService.concatVideos(clipPaths, new AbortController().signal, secondsPerAsset);
+        if (concatVideoPath) tempFilesToCleanup.push(concatVideoPath);
+        if (concatTempFiles) tempFilesToCleanup.push(...concatTempFiles);
+
+        let finalVideoPath = concatVideoPath;
+
+        try {
+          let bgmPath: string | null = null;
+          if (enableMusic) {
+            await updateProgress("🎵 Composing background music and assembling video...");
+            
+            // Dynamic BGM vibe selection to prevent same BGM in every product reel
+            let musicVibePrompt = "cinematic ambient background music";
+            if (scriptText) {
+              try {
+                const promptForMusicVibe = `Based on this product ad script, describe the perfect instrumental background music genre, tempo, and emotion in a 10-word description (e.g. "Upbeat, energetic electronic synth-pop beat with an advertising feel"). Do not write any other text. Script: "${scriptText.substring(0, 300)}"`;
+                const vibeResult = await aiOrchestrator.generateContent(promptForMusicVibe);
+                const cleanedVibe = vibeResult.trim().replace(/['"“”\.]/g, '');
+                if (cleanedVibe.length > 5) {
+                  musicVibePrompt = `${cleanedVibe} background music`;
+                }
+                console.log(`[Music AI] Dynamically determined BGM vibe: "${musicVibePrompt}"`);
+              } catch (musicVibeErr) {
+                console.error('[Music AI] Error determining music vibe:', musicVibeErr);
+              }
+            } else if (reelWithDetails.script) {
+              // Fallback to initial prompt context if script is blank
+              try {
+                const promptForMusicVibe = `Based on this product context, describe the perfect instrumental background music genre in 10 words. Context: "${reelWithDetails.script.substring(0, 200)}"`;
+                const vibeResult = await aiOrchestrator.generateContent(promptForMusicVibe);
+                const cleanedVibe = vibeResult.trim().replace(/['"“”\.]/g, '');
+                if (cleanedVibe.length > 5) {
+                  musicVibePrompt = `${cleanedVibe} background music`;
+                }
+              } catch {}
+            }
+            bgmPath = await aiOrchestrator.generateMusic(musicVibePrompt);
+            if (bgmPath) tempFilesToCleanup.push(bgmPath);
+          }
+
+          let mixedAudioPath: string | null = null;
+          if (ttsPath && bgmPath) {
+            const { outputPath: mixed, tempFiles: bgmTempFiles } = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, targetDuration, new AbortController().signal);
+            mixedAudioPath = mixed;
+            if (mixedAudioPath) tempFilesToCleanup.push(mixedAudioPath);
+            if (bgmTempFiles) tempFilesToCleanup.push(...bgmTempFiles);
+          } else if (ttsPath) {
+            mixedAudioPath = ttsPath;
+          } else if (bgmPath) {
+            mixedAudioPath = bgmPath;
+          }
+          
+          let subtitlePath: string | undefined = undefined;
+          if (activeEnableVoice && scriptText && scriptText.length > 0) {
+            await updateProgress("💬 Burning animated subtitles into final video...");
+            subtitlePath = await VideoComposerService.generateSubtitlesFile(scriptText, targetDuration);
+            if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
+          }
+
+          // Render both subtitlePath and our new viral hookText with exact targetDuration!
+          const { outputPath: videoWithAudio, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(
+            concatVideoPath, 
+            mixedAudioPath, 
+            subtitlePath, 
+            new AbortController().signal, 
+            hookText || undefined, 
+            targetDuration
+          );
+          if (videoWithAudio) tempFilesToCleanup.push(videoWithAudio);
+          if (mergeTempFiles) tempFilesToCleanup.push(...mergeTempFiles);
+          
+          finalVideoPath = videoWithAudio;
+        } catch (audioError: any) {
+          logger.error({ event: "reel_bgm_failed", reelId, error: audioError.message });
+        }
+
+
+        const publicFilename = `reel_${reelId}_${Date.now()}.mp4`;
+        const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels');
+        if (!fs.existsSync(publicDir)) {
+          fs.mkdirSync(publicDir, { recursive: true });
+        }
+        const publicFilePath = path.join(publicDir, publicFilename);
+        fs.copyFileSync(finalVideoPath, publicFilePath);
+        
+        const videoUrl = `/uploads/reels/${publicFilename}`;
+        
+        // Generate thumbnail for the video and save both
+        const thumbnailPath = await VideoComposerService.generateThumbnail(publicFilePath);
+        const thumbnailFilename = `thumb_${publicFilename}`;
+        const thumbnailDestPath = path.join(publicDir, thumbnailFilename);
+        fs.copyFileSync(thumbnailPath, thumbnailDestPath);
+        const thumbnailDestUrl = `/uploads/reels/${thumbnailFilename}`;
+
+        await prisma.reel.update({
+          where: { id: reelId },
+          data: { 
+            status: 'READY', 
+            videoUrl, 
+            script: scriptText,
+            thumbnail: thumbnailDestUrl 
+          },
+        });
+
+        return { success: true, videoUrl };
+      } 
+
+      // Existing logic for series reels
+      if (!seriesId) {
+        throw new Error('seriesId is required for SERIES type reels');
+      }
 
       const series = await prisma.reelSeries.findUniqueOrThrow({
         where: { id: seriesId },

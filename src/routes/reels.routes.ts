@@ -4,8 +4,38 @@ import { jwtAuth as requireAuth } from '../middleware/jwt-auth.js';
 import { prisma } from '../db/prisma.js';
 import { queueReelGeneration, reelGenerationQueue } from '../queues/reel-queue.js';
 import { scheduleNextReel, getNextScheduledDate } from '../services/reel-scheduler.service.js';
+import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const router = Router();
+
+// Multer disk storage for local uploads in reels
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'frontend', 'public', 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname.replace(/[^a-zA-Z0-9.]/g, ''));
+  }
+});
+
+const upload = multer({ storage });
+
+// POST /api/reels/upload - Upload file to public directory
+router.post('/upload', requireAuth, upload.single('file'), (req: any, res: any) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, error: 'No file uploaded' });
+  }
+  const fileUrl = `/uploads/${req.file.filename}`;
+  res.status(200).json({ success: true, url: fileUrl });
+});
 
 // Validation schema for creating a reel series
 const createReelSeriesSchema = z.object({
@@ -69,6 +99,7 @@ router.post('/', requireAuth, async (req: any, res: any) => {
     // Create the initial Reel entry (Pending Generation)
     const reel = await prisma.reel.create({
       data: {
+        userId,
         seriesId: series.id,
         status: 'PENDING',
         scheduledFor: scheduledDate,
@@ -221,6 +252,7 @@ router.post('/series/:seriesId/generate', requireAuth, async (req: any, res: any
     // Create the new Reel entry, inheriting socialChannels from the series
     const reel = await prisma.reel.create({
       data: {
+        userId,
         seriesId: series.id,
         status: 'PENDING',
         socialChannels: series.socialChannels, // Inherit social channels from the parent series
@@ -303,6 +335,131 @@ router.delete('/series/:seriesId', requireAuth, async (req: any, res: any) => {
     res.status(200).json({ success: true, message: 'Series deleted successfully' });
   } catch (error) {
     console.error('Error deleting series:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/reels/write-script
+ * Generate highly compelling script and hook using AI for pre-editing.
+ */
+router.post("/write-script", requireAuth, async (req: any, res: any) => {
+  try {
+    const { prompt, whatMakesItHit, vibe, duration } = req.body;
+    const targetWordCount = Math.round((duration || 15) * 2.3);
+
+    const copywritingPrompt = `You are a world-class viral ad copywriter for short-form TikTok, Reels, and YouTube Shorts. 
+We are creating a high-retention video ad. 
+
+Product context: "${prompt || 'Check out our amazing new product!'}"
+Key Selling Points (what makes it hit): "${whatMakesItHit || 'Premium quality, sleek design, and satisfying user experience.'}"
+Vibe / Tone of ad: "${vibe || 'High-energy, direct, and captivating'}"
+
+Your task:
+1. Write a highly compelling viral ad script of EXACTLY ${targetWordCount} words (this is critical to match the speaking pace of a ${duration || 15}-second video). Do NOT use any emojis, hashtags, or special characters. Spell out all numbers as words. Make it punchy and rhythmic.
+2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the hook phase (e.g. "Secret Revealed...", "Must-Have Tech!", "Luxury Discovered...").
+
+Output your response strictly as a valid JSON object with NO extra text:
+{
+  "script": "the full voiceover script...",
+  "hook": "THE BOLD HOOK TEXT"
+}`;
+
+    const resultText = await aiOrchestrator.generateContent(copywritingPrompt);
+    const rawContent = resultText.replace(/```json\n?|```/g, '').trim();
+    const parsed = JSON.parse(rawContent);
+
+    res.status(200).json({
+      success: true,
+      script: parsed.script,
+      hook: parsed.hook,
+    });
+  } catch (error: any) {
+    console.error("Error writing script:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+      details: error?.message || String(error),
+    });
+  }
+});
+
+// Validation schema for creating a product reel
+const generateProductReelSchema = z.object({
+  prompt: z.string().optional(),
+  assets: z.array(z.object({
+    url: z.string(),
+    type: z.string(), // IMAGE or VIDEO
+  })),
+  enableMusic: z.boolean().optional().default(true),
+  enableVoice: z.boolean().optional().default(true),
+  scriptText: z.string().optional().nullable(),
+  hookText: z.string().optional().nullable(),
+});
+
+/**
+ * POST /api/reels/generate-product-reel
+ * Create a new one-time product reel.
+ */
+router.post("/generate-product-reel", requireAuth, async (req: any, res: any) => {
+  try {
+    const userId = req.userId;
+    const validatedData = generateProductReelSchema.parse(req.body);
+
+    const reel = await prisma.reel.create({
+      data: {
+        userId,
+        type: "PRODUCT",
+        status: "PENDING",
+        script: validatedData.scriptText || validatedData.prompt || null,
+        assets: {
+          create: validatedData.assets.map((asset) => ({
+            url: asset.url,
+            type: asset.type,
+          })),
+        },
+      },
+    });
+
+    // Pass detailed customization flags to the worker queue
+    await reelGenerationQueue.add("generate-reel", { 
+      reelId: reel.id,
+      enableMusic: validatedData.enableMusic,
+      enableVoice: validatedData.enableVoice,
+      scriptText: validatedData.scriptText,
+      hookText: validatedData.hookText,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        reel,
+      },
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ success: false, errors: error.errors });
+    }
+    console.error("Error creating Product Reel:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Internal server error", 
+      details: error?.message || String(error),
+    });
+  }
+});
+
+// GET /api/reels/product - fetch product reels for the user
+router.get('/product', requireAuth, async (req: any, res: any) => {
+  try {
+    const userId = req.userId;
+    const productReels = await prisma.reel.findMany({
+      where: { userId, type: 'PRODUCT' },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.status(200).json({ success: true, data: productReels });
+  } catch (error) {
+    console.error('Error fetching product reels:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });

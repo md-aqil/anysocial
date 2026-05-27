@@ -78,6 +78,7 @@ model User {
   notifications    Notification[]
   notificationLogs NotificationLog[]
   reelSeries       ReelSeries[]
+  reels            Reel[]
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
 
@@ -300,25 +301,47 @@ model ReelSeries {
   updatedAt    DateTime @updatedAt
   reels        Reel[]
 
-  @@index([userId])
   @@map("reel_series")
 }
 
+enum ReelType {
+  SERIES
+  PRODUCT
+}
+
 model Reel {
-  id             String     @id @default(uuid())
-  seriesId       String
-  series         ReelSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  id             String      @id @default(uuid())
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           ReelType    @default(SERIES)
+  seriesId       String?
+  series         ReelSeries? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   script         String?
   videoUrl       String?
-  status         String     @default("PENDING") // PENDING, GENERATING, READY, PUBLISHED, FAILED
+  thumbnail      String?
+  status         String      @default("PENDING") // PENDING, GENERATING, READY, PUBLISHED, FAILED
   statusMessage  String?
   scheduledFor   DateTime?
-  socialChannels String // JSON array of selected channel IDs (Platform enums or SocialAccount IDs)
+  socialChannels String      @default("[]") // JSON array of selected channel IDs (Platform enums or SocialAccount IDs)
   postId         String?
-  post           Post?      @relation(fields: [postId], references: [id], onDelete: SetNull)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  post           Post?       @relation(fields: [postId], references: [id], onDelete: SetNull)
+  assets         ProductReelAsset[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   @@index([seriesId])
+  @@index([userId])
   @@map("reels")
+}
+
+model ProductReelAsset {
+  id        String   @id @default(uuid())
+  reelId    String
+  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  url       String
+  type      String   // IMAGE or VIDEO
+  createdAt DateTime @default(now())
+
+  @@index([reelId])
+  @@map("product_reel_assets")
 }

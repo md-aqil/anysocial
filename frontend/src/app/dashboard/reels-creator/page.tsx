@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { 
@@ -193,6 +194,7 @@ const getReelStatus = (reel: any) => {
 export default function ReelsDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<'series' | 'product'>('series');
 
   const generateMutation = useMutation({
     mutationFn: async (seriesId: string) => {
@@ -271,39 +273,100 @@ export default function ReelsDashboard() {
     refetchInterval: 5000 // Refetch every 5 seconds to get updates on GENERATING status
   });
 
+  // Fetch product reels for the logged‑in user
+  const { data: productReels, isLoading: loadingProduct } = useQuery({
+    queryKey: ['product-reels'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/reels/product`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Failed to fetch product reels');
+      const json = await res.json();
+      return json.data || [];
+    },
+    refetchInterval: 60000 // refresh every minute
+  });
+
   return (
     <div className="max-w-6xl mx-auto p-6 lg:p-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-stone-900 tracking-tight">Reel Creator</h1>
-          <p className="text-stone-500 mt-2">Manage your automated short-form video series</p>
+          <h1 className="text-3xl font-extrabold text-stone-900 tracking-tight flex items-center gap-2.5">
+            <Video className="h-8 w-8 text-violet-600" />
+            Reel Creator
+          </h1>
+          <p className="text-stone-500 mt-2">Scale your short-form video presence with AI-generated automated series or single product clips.</p>
         </div>
-        <Button 
-          onClick={() => router.push('/dashboard/reels-creator/new')}
-          className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md"
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          Create New Series
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button 
+            onClick={() => router.push('/dashboard/reels-creator/ai-product-reel')}
+            variant="outline"
+            className="border-violet-600 text-violet-600 hover:bg-violet-100 hover:text-violet-700 rounded-xl h-11 px-6 shadow-md font-semibold"
+          >
+            <Sparkles className="mr-2 h-5 w-5 text-violet-600" />
+            AI Product Reel
+          </Button>
+          <Button 
+            onClick={() => router.push('/dashboard/reels-creator/new')}
+            className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Create New Series
+          </Button>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"></div>
-        </div>
-      ) : seriesList?.length === 0 ? (
+      {/* Premium Glassmorphic Tab Bar */}
+      <div className="flex border-b border-stone-200 mb-8 space-x-6">
+        <button
+          onClick={() => setActiveTab('series')}
+          className={`pb-4 text-base font-bold border-b-2 transition-all relative ${
+            activeTab === 'series' 
+              ? 'border-violet-600 text-violet-600' 
+              : 'border-transparent text-stone-500 hover:text-stone-900'
+          }`}
+        >
+          Automated Series
+          {seriesList && seriesList.length > 0 && (
+            <span className="ml-2 px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full">
+              {seriesList.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('product')}
+          className={`pb-4 text-base font-bold border-b-2 transition-all relative ${
+            activeTab === 'product' 
+              ? 'border-violet-600 text-violet-600' 
+              : 'border-transparent text-stone-500 hover:text-stone-900'
+          }`}
+        >
+          AI Product Reels
+          {productReels && productReels.length > 0 && (
+            <span className="ml-2 px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full">
+              {productReels.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'series' ? (
+        <>
+          {isLoading ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"/>
+            </div>
+          ) : seriesList?.length === 0 ? (
         <div className="bg-white rounded-3xl border border-stone-200 p-12 text-center shadow-sm">
           <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="h-10 w-10" />
+            <Sparkles className="h-10 w-10"/>
           </div>
           <h2 className="text-xl font-bold text-stone-900 mb-2">No Series Yet</h2>
           <p className="text-stone-500 mb-8 max-w-md mx-auto">
             Create an automated video series and let our AI generate, assemble, and post highly engaging reels for you automatically.
           </p>
-          <Button 
-            onClick={() => router.push('/dashboard/reels-creator/new')}
-            className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl"
-          >
+          <Button onClick={() => router.push('/dashboard/reels-creator/new')} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl">
             Create Your First Series
           </Button>
         </div>
@@ -676,6 +739,144 @@ export default function ReelsDashboard() {
             </div>
           ))}
         </div>
+      )}
+
+        </>
+      ) : (
+        <>
+          {loadingProduct ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600"/>
+            </div>
+          ) : !productReels || productReels.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-stone-200 p-12 text-center shadow-sm">
+              <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Sparkles className="h-10 w-10"/>
+              </div>
+              <h2 className="text-xl font-bold text-stone-900 mb-2">No Product Reels Yet</h2>
+              <p className="text-stone-500 mb-8 max-w-md mx-auto">
+                Generate high-converting cinematic reels directly from your product images and video clips in one click.
+              </p>
+              <Button 
+                onClick={() => router.push('/dashboard/reels-creator/ai-product-reel')} 
+                className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
+              >
+                Create Your First Product Reel
+              </Button>
+            </div>
+          ) : (
+            <section className="pt-2">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
+                    <Sparkles className="h-6 w-6 text-violet-500 animate-pulse" />
+                    Your AI Product Reels
+                  </h2>
+                  <p className="text-stone-500 text-sm mt-1">High-converting social clips generated from your products</p>
+                </div>
+              </div>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {productReels.map((reel: any) => {
+                  const badge = getReelStatus(reel);
+                  const hasThumbnail = !!reel.thumbnail;
+                  const thumbnailPath = hasThumbnail 
+                    ? reel.thumbnail 
+                    : '/uploads/styles/cinematic.jpg';
+
+                  return (
+                    <div 
+                      key={reel.id} 
+                      className="group relative border border-stone-200/70 rounded-2xl bg-white/60 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col transform hover:-translate-y-1"
+                    >
+                      <div className="w-full h-48 relative bg-stone-100 border-b border-stone-100 overflow-hidden">
+                        <img 
+                          src={thumbnailPath} 
+                          alt="Reel preview"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                        
+                        {/* Status Badge */}
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full flex items-center gap-1.5 shadow-sm border backdrop-blur-md ${badge.classes}`}>
+                            {badge.icon}
+                            {badge.label}
+                          </span>
+                        </div>
+
+                        {/* Play Overlay Button if Ready */}
+                        {reel.videoUrl && (
+                          <a 
+                            href={reel.videoUrl} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-xs"
+                          >
+                            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg text-violet-600 hover:scale-110 transition-transform">
+                              <Play className="h-6 w-6 fill-violet-600" />
+                            </div>
+                          </a>
+                        )}
+                      </div>
+
+                      <div className="p-4 flex-1 flex flex-col">
+                        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">
+                          {reel.createdAt ? format(new Date(reel.createdAt), 'MMM d, yyyy') : 'Recently'}
+                        </p>
+                        <p className="text-sm text-stone-700 font-medium line-clamp-3 mb-4 italic leading-relaxed">
+                          "{reel.script || 'No script text generated'}"
+                        </p>
+
+                        {/* Error message block */}
+                        {reel.status === 'FAILED' && reel.statusMessage && (
+                          <div className="mb-4 text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 font-mono break-words">
+                            {reel.statusMessage}
+                          </div>
+                        )}
+
+                        {reel.videoUrl && (
+                          <div className="mt-auto space-y-2">
+                            {/* Action buttons */}
+                            <div className="flex gap-2">
+                              <a 
+                                href={reel.videoUrl} 
+                                download 
+                                className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors shadow-sm"
+                              >
+                                <Video className="h-3.5 w-3.5 text-violet-600" />
+                                Download Reel
+                              </a>
+                              
+                              {hasThumbnail && (
+                                <a 
+                                  href={reel.thumbnail} 
+                                  download={`thumb_${reel.videoUrl.split('/').pop() || 'reel'}`}
+                                  className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors shadow-sm"
+                                >
+                                  <FileText className="h-3.5 w-3.5 text-violet-600" />
+                                  Thumbnail
+                                </a>
+                              )}
+                            </div>
+
+                            {/* Compose / Schedule */}
+                            <Link
+                              href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent('[]')}`}
+                              className="flex items-center justify-center gap-1.5 w-full py-2 bg-gradient-to-r from-violet-600 to-indigo-600 border border-transparent rounded-xl text-xs font-bold text-white hover:from-violet-700 hover:to-indigo-700 transition-all hover:scale-[1.01] shadow-md shadow-violet-500/10"
+                            >
+                              <Send className="h-3.5 w-3.5" />
+                              Publish to Social Media
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );
