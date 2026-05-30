@@ -11,6 +11,34 @@ import {
 import { uploadFile } from '@/lib/upload';
 import { useRouter } from 'next/navigation';
 
+
+const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
+  'English': [
+    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS',   type: 'Male',   description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS', type: 'Male',   description: 'Deep, resonant and authoritative. Cinematic narrator.' },
+    { id: 'Fenrir', name: 'Fenrir — Gemini 3.1 TTS', type: 'Male',   description: 'Gruff and dramatic. Great for intense storytelling.' },
+    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS',  type: 'Female', description: 'Expressive and engaging. Warm storyteller voice.' },
+    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS',   type: 'Female', description: 'Calm and soothing. Perfect for mystery & suspense.' },
+    { id: 'Leda',   name: 'Leda — Gemini 3.1 TTS',   type: 'Female', description: 'Clear and confident. Great for educational reels.' },
+  ],
+  'Hindi': [
+    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS (Hindi)',   type: 'Male',   description: 'Energetic and upbeat Hindi voice.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Hindi)', type: 'Male',   description: 'Deep and authoritative Hindi voice.' },
+    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS (Hindi)',  type: 'Female', description: 'Expressive and engaging Hindi narrator.' },
+    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS (Hindi)',   type: 'Female', description: 'Calm soothing Hindi storyteller.' },
+  ],
+  'Spanish': [
+    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS (Spanish)',   type: 'Male',   description: 'Energetic Spanish voice.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Spanish)', type: 'Male',   description: 'Deep Spanish narrator.' },
+    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS (Spanish)',  type: 'Female', description: 'Expressive Spanish female voice.' },
+    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS (Spanish)',   type: 'Female', description: 'Calm Spanish storyteller.' },
+  ]
+};
+
+const DEFAULT_VOICE_FALLBACK = [
+  { id: 'default-voice', name: 'Auto-detect Voice', type: 'Auto', description: 'The system will automatically pick the best premium voice.' }
+];
+
 export default function AIProductReelPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -19,6 +47,8 @@ export default function AIProductReelPage() {
   const [enableVoice, setEnableVoice] = useState(true);
   const [scriptText, setScriptText] = useState('');
   const [hookText, setHookText] = useState('');
+  const [language, setLanguage] = useState('English');
+  const [voiceId, setVoiceId] = useState('Puck');
   
   // Custom interactive copywriting popup states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -108,7 +138,9 @@ export default function AIProductReelPage() {
           enableMusic,
           enableVoice,
           scriptText: enableVoice ? scriptText : '',
-          hookText
+          hookText,
+          language,
+          voiceId
         }),
       });
 
@@ -238,7 +270,7 @@ export default function AIProductReelPage() {
         <div className="lg:col-span-2 space-y-6">
           
           {/* Media Upload Box */}
-          <div className="bg-white rounded-3xl shadow-sm border border-stone-200 p-6 sm:p-8 space-y-6">
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-md border border-stone-200/60 p-6 sm:p-8 space-y-6">
             <div>
               <h2 className="text-lg font-bold text-stone-900 mb-1">Product Media</h2>
               <p className="text-xs text-stone-500">Upload 9:16 vertical photos or video clips of your product. High-res images are best.</p>
@@ -300,7 +332,7 @@ export default function AIProductReelPage() {
           </div>
 
           {/* Copywriting / Script Panel */}
-          <div className="bg-white rounded-3xl shadow-sm border border-stone-200 p-6 sm:p-8 space-y-6">
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-md border border-stone-200/60 p-6 sm:p-8 space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-stone-900 mb-1">Viral Copywriting & Scripts</h2>
@@ -379,10 +411,55 @@ export default function AIProductReelPage() {
         <div className="space-y-6">
           
           {/* Audio Setup Card */}
-          <div className="bg-white rounded-3xl shadow-sm border border-stone-200 p-6 space-y-6">
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-md border border-stone-200/60 p-6 space-y-6">
             <h2 className="text-lg font-bold text-stone-900">Audio Composition</h2>
 
             <div className="space-y-4">
+              {/* Language & Voice Selector */}
+              <div className="space-y-3 bg-stone-50/50 p-4 rounded-2xl border border-stone-100">
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Language</label>
+                  <select 
+                    className="w-full h-10 px-3 border border-stone-200 rounded-xl outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 text-sm font-medium bg-white"
+                    value={language}
+                    onChange={(e) => {
+                      setLanguage(e.target.value);
+                      const voices = VOICES_BY_LANGUAGE[e.target.value] || DEFAULT_VOICE_FALLBACK;
+                      setVoiceId(voices[0].id);
+                    }}
+                  >
+                    <option value="English">🇬🇧 English</option>
+                    <option value="Spanish">🇪🇸 Spanish</option>
+                    <option value="French">🇫🇷 French</option>
+                    <option value="German">🇩🇪 German</option>
+                    <option value="Italian">🇮🇹 Italian</option>
+                    <option value="Portuguese">🇵🇹 Portuguese</option>
+                    <option value="Japanese">🇯🇵 Japanese</option>
+                    <option value="Korean">🇰🇷 Korean</option>
+                    <option value="Chinese">🇨🇳 Chinese</option>
+                    <option value="Arabic">🇸🇦 Arabic</option>
+                    <option value="Hindi">🇮🇳 Hindi</option>
+                  </select>
+                </div>
+                
+                {enableVoice && (
+                  <div>
+                    <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Voice Style</label>
+                    <select 
+                      className="w-full h-10 px-3 border border-stone-200 rounded-xl outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 text-sm font-medium bg-white"
+                      value={voiceId}
+                      onChange={(e) => setVoiceId(e.target.value)}
+                    >
+                      {(VOICES_BY_LANGUAGE[language] || DEFAULT_VOICE_FALLBACK).map(voice => (
+                        <option key={voice.id} value={voice.id}>
+                          {voice.name} - {voice.description}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               {/* Voiceover Toggle */}
               <div 
                 onClick={() => setEnableVoice(!enableVoice)}

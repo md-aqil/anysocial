@@ -118,8 +118,10 @@ export class ReelWorker {
     enableVoice?: boolean;
     scriptText?: string | null;
     hookText?: string | null;
+    language?: string;
+    voiceId?: string;
   }>) {
-    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText } = job.data;
+    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'en-US-Journey-F' } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
     const tempFilesToCleanup: string[] = [];
 
@@ -185,7 +187,7 @@ export class ReelWorker {
         let ttsPath: string | null = null;
         if (activeEnableVoice && scriptText && scriptText.length > 0) {
           await updateProgress('🗣️ Synthesizing premium brand voiceover...');
-          ttsPath = await aiOrchestrator.generateVoiceover(scriptText, 'en-US-Journey-F', 'English');
+          ttsPath = await aiOrchestrator.generateVoiceover(scriptText, voiceId, language);
           tempFilesToCleanup.push(ttsPath);
         }
 

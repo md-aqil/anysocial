@@ -395,6 +395,8 @@ const generateProductReelSchema = z.object({
   enableVoice: z.boolean().optional().default(true),
   scriptText: z.string().optional().nullable(),
   hookText: z.string().optional().nullable(),
+  language: z.string().optional().default('English'),
+  voiceId: z.string().optional().default('en-US-Journey-F'),
 });
 
 /**
@@ -428,6 +430,8 @@ router.post("/generate-product-reel", requireAuth, async (req: any, res: any) =>
       enableVoice: validatedData.enableVoice,
       scriptText: validatedData.scriptText,
       hookText: validatedData.hookText,
+      language: validatedData.language,
+      voiceId: validatedData.voiceId,
     });
 
     res.status(201).json({
