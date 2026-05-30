@@ -205,14 +205,27 @@ export class OAuthController {
     try {
       const userId = (req as any).userId;
 
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+
       const accounts = await prisma.socialAccount.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' }
+        where: isAdmin ? {} : { userId },
+        orderBy: { createdAt: 'desc' },
+        include: isAdmin ? { user: { select: { email: true } } } : undefined
       });
 
       // Sanitize accounts (remove tokens)
       const sanitized = accounts.map((account: any) => {
-        const { accessToken, refreshToken, ...rest } = account;
+        const { accessToken, refreshToken, user: accountUser, ...rest } = account;
+        
+        // If admin, prepend the owner's email to the account name so they know who it belongs to
+        if (isAdmin && accountUser?.email) {
+          rest.metadata = {
+            ...(rest.metadata || {}),
+            accountName: `[${accountUser.email}] ${rest.metadata?.accountName || rest.externalAccountId}`
+          };
+        }
+        
         return rest;
       });
 

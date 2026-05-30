@@ -41,6 +41,9 @@ else
     npx prisma db push --accept-data-loss
 fi
 
+echo "👑 Applying admin roles..."
+node scripts/make-admin.mjs
+
 echo "🏗️ Building Backend..."
 npm run build
 
