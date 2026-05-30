@@ -17,7 +17,7 @@ const upload = multer({
 
 // Zod validation schema
 const createPostSchema = z.object({
-  content: z.string().min(1).max(5000),
+  content: z.string().max(5000).optional().default(''),
   title: z.string().optional(),
   platforms: z.array(z.string()),
   scheduledAt: z.string().optional(), // ISO 8601

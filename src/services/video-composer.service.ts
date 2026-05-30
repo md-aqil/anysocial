@@ -164,6 +164,7 @@ export class VideoComposerService {
           
           if (isVideo) {
             proc.outputOptions([
+                `-t ${currentDuration + 2}`,
                 `-vf scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${fps},tpad=stop_mode=clone:stop_duration=2`,
                 '-c:v libx264',
                 '-pix_fmt yuv420p',
