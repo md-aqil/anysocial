@@ -388,7 +388,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'Poppins-Bold.ttf');
           const escapedHook = hookText.replace(/'/g, "'\\''");
           // position it dynamically at the upper center
-          filters.push(`drawtext=text='${escapedHook}':fontfile='${fontPath}':fontcolor=white:fontsize=42:bordercolor=black:borderw=4:shadowcolor=black@0.6:shadowx=3:shadowy=3:x=(w-text_w)/2:y=120`);
+          filters.push(`drawtext=text='${escapedHook}':fontfile='${fontPath}':fontcolor=white:fontsize=32:bordercolor=black:borderw=3:shadowcolor=black@0.6:shadowx=2:shadowy=2:x=(w-text_w)/2:y=120`);
         }
 
         const outputOpts: string[] = [];

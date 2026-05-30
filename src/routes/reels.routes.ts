@@ -350,7 +350,7 @@ router.post("/write-script", requireAuth, async (req: any, res: any) => {
 
     let languagePrompt = `Write the script ONLY in ${language || 'English'}.`;
     if (language === 'Hindi') {
-      languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in Roman (Hinglish/English alphabet), NOT Devanagari script. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (e.g., 'kya time ho raha hai', 'feeling great', 'suspense'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable.`;
+      languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. However, the TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (transliterated into Devanagari, e.g., 'टाइम', 'फीलिंग', 'सस्पेंस'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable.`;
     }
 
     const copywritingPrompt = `You are a world-class viral ad copywriter for short-form TikTok, Reels, and YouTube Shorts. 
