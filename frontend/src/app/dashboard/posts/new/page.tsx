@@ -896,10 +896,17 @@ export default function NewPostPage() {
                       <div className="mt-auto">
                         <Button
                           type="button"
-                          onClick={() => setShowScheduler(false)}
+                          disabled={createPostMutation.isPending || !scheduledAt}
+                          onClick={async () => {
+                            if (scheduledAt) {
+                              setValue('publishNow', false);
+                              await handleSubmit(onSubmit)();
+                              setShowScheduler(false);
+                            }
+                          }}
                           className="h-14 w-full rounded-2xl bg-[#D27D50] text-sm font-bold text-white shadow-lg shadow-[#D27D50]/20 transition hover:bg-[#C06A3D] active:scale-[0.98]"
                         >
-                          Set Schedule
+                          {createPostMutation.isPending ? 'Scheduling...' : 'Schedule Post'}
                         </Button>
                       </div>
                     </div>

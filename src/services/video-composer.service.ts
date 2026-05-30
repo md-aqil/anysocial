@@ -164,7 +164,7 @@ export class VideoComposerService {
           
           if (isVideo) {
             proc.outputOptions([
-                `-vf scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${fps}`,
+                `-vf scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${fps},tpad=stop_mode=clone:stop_duration=2`,
                 '-c:v libx264',
                 '-pix_fmt yuv420p',
                 `-r ${fps}`,
@@ -176,7 +176,7 @@ export class VideoComposerService {
             const cropH = 2560;
             proc.inputOptions(['-loop 1'])
               .outputOptions([
-                `-t ${currentDuration}`,
+                `-t ${currentDuration + 2}`,
                 '-vf', `scale=${cropW}:${cropH}:force_original_aspect_ratio=increase,crop=${cropW}:${cropH},setsar=1,zoompan=z='min(zoom+0.0006,1.5)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${width}x${height}:fps=${fps}`,
                 '-c:v libx264',
                 '-pix_fmt yuv420p',
@@ -279,6 +279,29 @@ export class VideoComposerService {
     return { outputPath, tempFiles };
   }
 
+  static transliterateHindiToRoman(text: string): string {
+    const charMap: Record<string, string> = {
+      'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ऋ': 'ri', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
+      'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng', 'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
+      'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n', 'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+      'प': 'p', 'फ': 'f', 'ब': 'b', 'भ': 'bh', 'म': 'm', 'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
+      'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy',
+      'ा': 'a', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
+      'ं': 'n', 'ँ': 'n', 'ः': 'h', '्': '', '़': '', 'ऽ': 'a', 'ॐ': 'om', '।': '.', '॥': '.'
+    };
+    
+    let result = '';
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (charMap[char] !== undefined) {
+        result += charMap[char];
+      } else {
+        result += char;
+      }
+    }
+    return result;
+  }
+
   /**
    * Generates a premium animated Advanced SubStation Alpha (.ass) subtitle file.
    * Utilizes the custom Poppins font with dynamic karaoke timing tags for highlighting words as they are spoken.
@@ -286,8 +309,11 @@ export class VideoComposerService {
   static async generateSubtitlesFile(script: string, durationInSeconds: number): Promise<string> {
     const assPath = path.join(os.tmpdir(), `subs_${Date.now()}.ass`);
     
-    // Clean script: Keep alphanumeric, spaces, and Devanagari (Hindi) characters
-    const cleanScript = script.replace(/[^\w\s\u0900-\u097F]/g, '');
+    // Transliterate to Roman script first, then clean
+    let romanScript = this.transliterateHindiToRoman(script);
+    
+    // Clean script: Keep alphanumeric, spaces, and basic punctuation
+    const cleanScript = romanScript.replace(/[^\w\s.,!?'"’-]/g, '');
     const words = cleanScript.split(/\s+/).filter(w => w.length > 0);
     
     if (words.length === 0) {
@@ -295,15 +321,28 @@ export class VideoComposerService {
       return assPath;
     }
 
+    // Improve Syncing: Character-based timing instead of uniform timing
+    const totalChars = words.reduce((sum, word) => sum + word.length, 0);
+    const durationPerChar = durationInSeconds / totalChars;
+
     // Snappy TikTok/Reels style: Group words into blocks of 3 words per line
     const wordsPerLine = 3;
-    const lines: string[][] = [];
+    const lines: { text: string[], duration: number, wordsCs: number[] }[] = [];
+    
     for (let i = 0; i < words.length; i += wordsPerLine) {
-      lines.push(words.slice(i, i + wordsPerLine));
+      const lineWords = words.slice(i, i + wordsPerLine);
+      let lineDuration = 0;
+      const wordsCs: number[] = [];
+      
+      for (const word of lineWords) {
+        // Base duration on character count for much more accurate TTS sync
+        const wordDur = word.length * durationPerChar;
+        lineDuration += wordDur;
+        wordsCs.push(Math.round(wordDur * 100)); // centiseconds for karaoke
+      }
+      
+      lines.push({ text: lineWords, duration: lineDuration, wordsCs });
     }
-
-    const totalLines = lines.length;
-    const durationPerLine = durationInSeconds / totalLines;
 
     const formatTime = (timeInSeconds: number) => {
       const hours = Math.floor(timeInSeconds / 3600);
@@ -330,31 +369,34 @@ Style: Default,Poppins,64,&H00FFFFFF,&H0000FFFF,&H00000000,&H00000000,-1,0,0,0,1
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 `;
 
-    for (let i = 0; i < totalLines; i++) {
-      const lineWords = lines[i];
-      const startTime = i * durationPerLine;
-      const endTime = (i + 1) * durationPerLine;
+    let currentTime = 0;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const startTime = currentTime;
+      const endTime = currentTime + line.duration;
+      currentTime = endTime;
       
       const startStr = formatTime(startTime);
       const endStr = formatTime(endTime);
       
-      const lineDurationCs = Math.round(durationPerLine * 100);
-      const wordsCount = lineWords.length;
+      const lineDurationCs = Math.round(line.duration * 100);
       
       // Add a continuous slow zoom effect over the entire duration of the segment
       const durationMs = lineDurationCs * 10;
       let textWithKaraoke = `{\\fscx95\\fscy95\\t(0,${durationMs},\\fscx115\\fscy115)}`;
       let remainingCs = lineDurationCs;
       
-      for (let j = 0; j < wordsCount; j++) {
-        let wordDurationCs = Math.floor(lineDurationCs / wordsCount);
-        if (j === wordsCount - 1) {
-          wordDurationCs = remainingCs;
+      for (let j = 0; j < line.text.length; j++) {
+        let wordDurationCs = line.wordsCs[j];
+        
+        if (j === line.text.length - 1) {
+          wordDurationCs = remainingCs; // prevent rounding drift
         } else {
           remainingCs -= wordDurationCs;
         }
         
-        textWithKaraoke += `{\\kf${wordDurationCs}}${lineWords[j]} `;
+        textWithKaraoke += `{\\kf${wordDurationCs}}${line.text[j]} `;
       }
 
       assContent += `Dialogue: 0,${startStr},${endStr},Default,,0000,0000,0000,,${textWithKaraoke.trim()}\n`;
