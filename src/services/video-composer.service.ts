@@ -124,7 +124,7 @@ export class VideoComposerService {
    */
   static async createVideoClips(
     imageUrls: string[], 
-    duration: number = 10, 
+    duration: number | number[] = 10, 
     orientation: 'vertical' | 'horizontal' = 'vertical', 
     signal?: AbortSignal
   ): Promise<{ clipPaths: string[], tempFiles: string[] }> {
@@ -157,14 +157,13 @@ export class VideoComposerService {
 
         await new Promise((resolve, reject) => {
           const fps = 25;
-          const isVideo = imagePath.toLowerCase().endsWith('.mp4') || imagePath.toLowerCase().endsWith('.webm');
+          const isVideo = imagePath.toLowerCase().endsWith('.mp4') || imagePath.toLowerCase().endsWith('.webm') || imagePath.toLowerCase().endsWith('.mov');
+          const currentDuration = Array.isArray(duration) ? duration[index] : duration;
           
           const proc = ffmpeg(imagePath);
           
           if (isVideo) {
-            proc.inputOptions(['-stream_loop -1'])
-              .outputOptions([
-                `-t ${duration}`,
+            proc.outputOptions([
                 `-vf scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${fps}`,
                 '-c:v libx264',
                 '-pix_fmt yuv420p',
@@ -177,7 +176,7 @@ export class VideoComposerService {
             const cropH = 2560;
             proc.inputOptions(['-loop 1'])
               .outputOptions([
-                `-t ${duration}`,
+                `-t ${currentDuration}`,
                 '-vf', `scale=${cropW}:${cropH}:force_original_aspect_ratio=increase,crop=${cropW}:${cropH},setsar=1,zoompan=z='min(zoom+0.0006,1.5)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${width}x${height}:fps=${fps}`,
                 '-c:v libx264',
                 '-pix_fmt yuv420p',
@@ -214,7 +213,7 @@ export class VideoComposerService {
     return { clipPaths, tempFiles };
   }
 
-  static async concatVideos(videoPaths: string[], signal?: AbortSignal, clipDuration: number = 4.0): Promise<{ outputPath: string, tempFiles: string[] }> {
+  static async concatVideos(videoPaths: string[], signal?: AbortSignal, clipDuration: number | number[] = 4.0): Promise<{ outputPath: string, tempFiles: string[] }> {
     if (videoPaths.length <= 1) {
       return { outputPath: videoPaths[0] || '', tempFiles: [] };
     }
@@ -233,13 +232,17 @@ export class VideoComposerService {
       const transitionDuration = 0.5; // 0.5s zoom-in transition
       let filterString = '';
       let lastOutput = '[0:v]';
+      let accumulatedDuration = 0;
 
       for (let i = 0; i < videoPaths.length - 1; i++) {
         const nextInput = `[${i + 1}:v]`;
         const outputLabel = `[v_trans_${i}]`;
         
+        const currentClipDuration = Array.isArray(clipDuration) ? clipDuration[i] : clipDuration;
+        accumulatedDuration += currentClipDuration;
+        
         // Exact offset mathematical formula to trigger transition at clip boundary
-        const offset = (i + 1) * clipDuration - (i + 1) * transitionDuration;
+        const offset = accumulatedDuration - (i + 1) * transitionDuration;
         
         filterString += `${lastOutput}${nextInput}xfade=transition=zoomin:duration=${transitionDuration}:offset=${offset}${outputLabel};`;
         lastOutput = outputLabel;
@@ -338,8 +341,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       const lineDurationCs = Math.round(durationPerLine * 100);
       const wordsCount = lineWords.length;
       
-      // Add a pop animation at the start of each dialog segment
-      let textWithKaraoke = '{\\t(0,100,\\fscx108\\fscy108)\\t(100,200,\\fscx100\\fscy100)}';
+      // Add a continuous slow zoom effect over the entire duration of the segment
+      const durationMs = lineDurationCs * 10;
+      let textWithKaraoke = `{\\fscx95\\fscy95\\t(0,${durationMs},\\fscx115\\fscy115)}`;
       let remainingCs = lineDurationCs;
       
       for (let j = 0; j < wordsCount; j++) {
@@ -460,7 +464,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         .input(bgmPath)
         .complexFilter([
           // Downmix BGM volume to make voiceover clearly audible
-          '[1:a]volume=0.12[bgm]',
+          '[1:a]volume=0.25[bgm]',
           // Mix background audio with voiceover. Finish when voiceover ends (duration=first)
           '[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=2[out]'
         ])

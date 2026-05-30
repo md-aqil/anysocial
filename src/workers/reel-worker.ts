@@ -168,9 +168,28 @@ export class ReelWorker {
           tempFilesToCleanup.push(downloadedPath);
         }
 
-        // Calculate custom duration based on number of user provided images (4 seconds per image)
         const secondsPerAsset = 4.0;
-        const targetDuration = Math.max(8, downloadedAssetPaths.length * secondsPerAsset);
+        const clipDurations: number[] = [];
+        let computedTotalDuration = 0;
+        
+        for (const assetPath of downloadedAssetPaths) {
+          const isVideo = assetPath.toLowerCase().endsWith('.mp4') || assetPath.toLowerCase().endsWith('.webm') || assetPath.toLowerCase().endsWith('.mov');
+          if (isVideo) {
+            try {
+              const videoDur = await VideoComposerService.getMediaDuration(assetPath);
+              clipDurations.push(videoDur);
+              computedTotalDuration += videoDur;
+            } catch (err) {
+              clipDurations.push(secondsPerAsset);
+              computedTotalDuration += secondsPerAsset;
+            }
+          } else {
+            clipDurations.push(secondsPerAsset);
+            computedTotalDuration += secondsPerAsset;
+          }
+        }
+
+        const targetDuration = Math.max(8, computedTotalDuration);
         // Average speech rate is 2.3 words/sec. Instruct LLM to fit this exactly.
         const targetWordCount = Math.round(targetDuration * 2.3);
 
@@ -192,17 +211,17 @@ export class ReelWorker {
         }
 
         await updateProgress('🎬 Assembling your cinematic masterpiece...');
-        // Clip duration is exactly based on the secondsPerAsset value
+        // Clip duration is dynamically based on asset type
         const { clipPaths, tempFiles: composerTempFiles } = await VideoComposerService.createVideoClips(
           downloadedAssetPaths, 
-          secondsPerAsset, 
+          clipDurations, 
           'vertical', 
           new AbortController().signal
         );
         if (clipPaths) tempFilesToCleanup.push(...clipPaths);
         if (composerTempFiles) tempFilesToCleanup.push(...composerTempFiles);
 
-        const { outputPath: concatVideoPath, tempFiles: concatTempFiles } = await VideoComposerService.concatVideos(clipPaths, new AbortController().signal, secondsPerAsset);
+        const { outputPath: concatVideoPath, tempFiles: concatTempFiles } = await VideoComposerService.concatVideos(clipPaths, new AbortController().signal, clipDurations);
         if (concatVideoPath) tempFilesToCleanup.push(concatVideoPath);
         if (concatTempFiles) tempFilesToCleanup.push(...concatTempFiles);
 
@@ -360,7 +379,7 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
-        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. However, the TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (transliterated into Devanagari, e.g., 'टाइम', 'फीलिंग', 'सस्पेंस'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable.`;
+        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the script twice. First, "script_tts" MUST be written exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. Second, "script" MUST be written in Roman (Hinglish/English characters), which will be used for on-screen subtitles. The TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words, exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable. Both scripts must say exactly the same thing.`;
       }
       
       const scriptPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}
@@ -395,11 +414,13 @@ CRITICAL IMAGE RULE: Each image prompt MUST strictly describe the exact visual s
 Output ONLY valid JSON: 
 {
   "script": "...", 
+  "script_tts": "...", 
   "keywords": ["detailed image prompt 1", "detailed image prompt 2", ...], 
-  "audio_prompt": "Describe the perfect cinematic background music to match the emotional tone and pacing of this story."
+  "audio_prompt": "Describe the perfect cinematic background music to match the emotional tone and pacing of this story in detail. Example: 'Deep, atmospheric cinematic ambient synth pads with a slow, emotional buildup.'"
 }`;
 
       let script = '';
+      let scriptTts = '';
       let keywords: string[] = [];
 
       try {
@@ -408,6 +429,7 @@ Output ONLY valid JSON:
         const parsed = JSON.parse(rawContent);
         if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
         script = parsed.script;
+        scriptTts = parsed.script_tts || parsed.script;
         keywords = parsed.keywords || ['cinematic', 'trending'];
         // Default to a cinematic sound if the AI doesn't provide an audio prompt
         (series as any).aiMusicPrompt = parsed.audio_prompt;
@@ -429,7 +451,7 @@ Output ONLY valid JSON:
       let actualDuration = 60;
       
       try {
-        ttsPath = await aiOrchestrator.generateVoiceover(script, series.voiceId || 'en-US-Journey-F', series.language || 'English');
+        ttsPath = await aiOrchestrator.generateVoiceover(scriptTts, series.voiceId || 'en-US-Journey-F', series.language || 'English');
         if (ttsPath) {
           tempFilesToCleanup.push(ttsPath);
         }
