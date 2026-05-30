@@ -345,8 +345,13 @@ router.delete('/series/:seriesId', requireAuth, async (req: any, res: any) => {
  */
 router.post("/write-script", requireAuth, async (req: any, res: any) => {
   try {
-    const { prompt, whatMakesItHit, vibe, duration } = req.body;
+    const { prompt, whatMakesItHit, vibe, duration, language } = req.body;
     const targetWordCount = Math.round((duration || 15) * 2.3);
+
+    let languagePrompt = `Write the script ONLY in ${language || 'English'}.`;
+    if (language === 'Hindi') {
+      languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. However, the TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (transliterated into Devanagari, e.g., 'टाइम', 'फीलिंग', 'सस्पेंस'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable.`;
+    }
 
     const copywritingPrompt = `You are a world-class viral ad copywriter for short-form TikTok, Reels, and YouTube Shorts. 
 We are creating a high-retention video ad. 
@@ -356,8 +361,8 @@ Key Selling Points (what makes it hit): "${whatMakesItHit || 'Premium quality, s
 Vibe / Tone of ad: "${vibe || 'High-energy, direct, and captivating'}"
 
 Your task:
-1. Write a highly compelling viral ad script of EXACTLY ${targetWordCount} words (this is critical to match the speaking pace of a ${duration || 15}-second video). Do NOT use any emojis, hashtags, or special characters. Spell out all numbers as words. Make it punchy and rhythmic.
-2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the hook phase (e.g. "Secret Revealed...", "Must-Have Tech!", "Luxury Discovered...").
+1. ${languagePrompt} Write a highly compelling viral ad script of EXACTLY ${targetWordCount} words (this is critical to match the speaking pace of a ${duration || 15}-second video). Do NOT use any emojis, hashtags, or special characters. Spell out all numbers as words. Make it punchy and rhythmic.
+2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the hook phase (e.g. "Secret Revealed...", "Must-Have Tech!", "Luxury Discovered..."). Ensure the hook is also in the selected language.
 
 Output your response strictly as a valid JSON object with NO extra text:
 {

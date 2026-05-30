@@ -95,7 +95,7 @@ export default function AIProductReelPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ prompt, whatMakesItHit, vibe, duration }),
+        body: JSON.stringify({ prompt, whatMakesItHit, vibe, duration, language }),
       });
 
       if (!res.ok) throw new Error('Failed to generate script');

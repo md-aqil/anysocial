@@ -460,7 +460,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         .input(bgmPath)
         .complexFilter([
           // Downmix BGM volume to make voiceover clearly audible
-          '[1:a]volume=0.15[bgm]',
+          '[1:a]volume=0.08[bgm]',
           // Mix background audio with voiceover. Finish when voiceover ends (duration=first)
           '[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=2[out]'
         ])
