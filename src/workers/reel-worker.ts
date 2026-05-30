@@ -274,7 +274,16 @@ export class ReelWorker {
           }
           
           let subtitlePath: string | undefined = undefined;
-          if (activeEnableVoice && scriptText && scriptText.length > 0) {
+          if (activeEnableVoice && scriptText && scriptText.length > 0 && ttsPath) {
+            await updateProgress("💬 Burning animated subtitles into final video...");
+            let actualAudioDuration = targetDuration;
+            try {
+              actualAudioDuration = await VideoComposerService.getMediaDuration(ttsPath);
+            } catch(e) {}
+            subtitlePath = await VideoComposerService.generateSubtitlesFile(scriptText, actualAudioDuration);
+            if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
+          } else if (activeEnableVoice && scriptText && scriptText.length > 0) {
+            // Fallback if voiceover wasn't generated but text exists
             await updateProgress("💬 Burning animated subtitles into final video...");
             subtitlePath = await VideoComposerService.generateSubtitlesFile(scriptText, targetDuration);
             if (subtitlePath) tempFilesToCleanup.push(subtitlePath);

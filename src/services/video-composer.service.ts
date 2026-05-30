@@ -113,7 +113,7 @@ export class VideoComposerService {
     return new Promise((resolve, reject) => {
       ffmpeg.ffprobe(filePath, (err, metadata) => {
         if (err) return reject(err);
-        resolve(metadata.format.duration || 60);
+        resolve(parseFloat(metadata.format.duration as string) || 60);
       });
     });
   }
