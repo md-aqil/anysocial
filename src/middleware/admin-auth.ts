@@ -2,13 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { jwtAuth } from './jwt-auth.js';
 import { prisma } from '../db/prisma.js';
 
-export const adminAuth = async (req: Request, res: Response, next: NextFunction) => {
+export const adminAuth = (req: Request, res: Response, next: NextFunction) => {
   // First run the standard JWT auth
   jwtAuth(req, res, async () => {
     try {
       const userId = (req as any).userId;
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
       }
 
       const user = await prisma.user.findUnique({
@@ -17,7 +18,8 @@ export const adminAuth = async (req: Request, res: Response, next: NextFunction)
       });
 
       if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
-        return res.status(403).json({ error: 'Forbidden: Admin access required' });
+        res.status(403).json({ error: 'Forbidden: Admin access required' });
+        return;
       }
 
       next();

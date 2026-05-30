@@ -163,7 +163,10 @@ export class OAuthController {
       const { id } = req.params;
       const userId = (req as any).userId;
 
-      await oauthService.revokeAccount(id, userId);
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+
+      await oauthService.revokeAccount(id, userId, isAdmin);
 
       res.json({ success: true, message: 'Account revoked' });
     } catch (error) {

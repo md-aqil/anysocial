@@ -444,7 +444,7 @@ export class OAuthService {
     return response.data.items;
   }
 
-  async revokeAccount(accountId: string, userId: string): Promise<void> {
+  async revokeAccount(accountId: string, userId: string, isAdmin: boolean = false): Promise<void> {
     const account = await prisma.socialAccount.findUnique({
       where: { id: accountId }
     });
@@ -453,7 +453,7 @@ export class OAuthService {
       throw new OAuthError('Account not found', 'ACCOUNT_NOT_FOUND', 404);
     }
 
-    if (account.userId !== userId) {
+    if (account.userId !== userId && !isAdmin) {
       throw new OAuthError('Unauthorized', 'UNAUTHORIZED', 403);
     }
 
