@@ -355,9 +355,19 @@ export default function SocialAccountsPage() {
                                 <p className="text-sm font-black text-slate-900 truncate">
                                   {account.metadata?.accountName || account.externalAccountId}
                                 </p>
-                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">
-                                  {account.status}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">
+                                    {account.status}
+                                  </p>
+                                  {account.metadata?.username && account.metadata.username !== account.metadata?.accountName && (
+                                    <>
+                                      <span className="text-stone-300 text-[10px]">•</span>
+                                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter truncate max-w-[120px]">
+                                        @{account.metadata.username}
+                                      </p>
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
