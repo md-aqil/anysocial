@@ -14,12 +14,16 @@ const FFPROBE_PATH = fs.existsSync('/usr/bin/ffprobe')
 ffmpeg.setFfprobePath(FFPROBE_PATH);
 
 function logToFile(message: string) {
-  const logPath = path.join(process.cwd(), 'scratch', 'backend-debug.log');
-  const timestamp = new Date().toISOString();
-  if (!fs.existsSync(path.dirname(logPath))) {
-    fs.mkdirSync(path.dirname(logPath), { recursive: true });
+  try {
+    const logPath = path.join(process.cwd(), 'scratch', 'backend-debug.log');
+    const timestamp = new Date().toISOString();
+    if (!fs.existsSync(path.dirname(logPath))) {
+      fs.mkdirSync(path.dirname(logPath), { recursive: true });
+    }
+    fs.appendFileSync(logPath, `[${timestamp}] MEDIA_VALIDATOR: ${message}\n`);
+  } catch (err) {
+    console.error('logToFile failed:', err);
   }
-  fs.appendFileSync(logPath, `[${timestamp}] MEDIA_VALIDATOR: ${message}\n`);
 }
 
 export interface MediaValidationResult {

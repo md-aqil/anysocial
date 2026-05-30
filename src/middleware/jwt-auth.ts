@@ -4,12 +4,16 @@ import fs from 'fs';
 import path from 'path';
 
 function logToFile(message: string) {
-  const logPath = path.join(process.cwd(), 'scratch', 'backend-debug.log');
-  const timestamp = new Date().toISOString();
-  if (!fs.existsSync(path.dirname(logPath))) {
-    fs.mkdirSync(path.dirname(logPath), { recursive: true });
+  try {
+    const logPath = path.join(process.cwd(), 'scratch', 'backend-debug.log');
+    const timestamp = new Date().toISOString();
+    if (!fs.existsSync(path.dirname(logPath))) {
+      fs.mkdirSync(path.dirname(logPath), { recursive: true });
+    }
+    fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
+  } catch (err) {
+    console.error('logToFile failed:', err);
   }
-  fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
 }
 
 export function jwtAuth(req: Request, res: Response, next: NextFunction): void {
