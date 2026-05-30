@@ -13,6 +13,9 @@ echo "------------------------------------------------"
 # Navigate to app directory
 cd $APP_DIR
 
+# Ensure the current user owns the directory to avoid EACCES during npm install
+sudo chown -R $USER:$USER .
+
 # Pull latest code (reset --hard to overwrite modified tracked files,
 # clean -fd to remove any now-ignored untracked dirs like .next, Gemini, scratch)
 echo "📥 Pulling latest code from main..."
