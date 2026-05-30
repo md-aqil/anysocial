@@ -7,6 +7,8 @@ import { webhookRoutes } from './webhooks.routes.js';
 import { configRoutes } from './config.routes.js';
 import { adminHealthRoutes } from '../admin/health.routes.js';
 import { adminAuditRoutes } from '../admin/audit.routes.js';
+import { adminRoutes } from '../admin/admin.routes.js';
+
 import { jwtAuth } from '../middleware/jwt-auth.js';
 import { aiGenerationRoutes } from './ai-generation.routes.js';
 import { reelsRoutes } from './reels.routes.js';
@@ -43,6 +45,7 @@ router.use('/api/config', configRoutes);
 // Admin routes
 router.use('/admin', adminHealthRoutes);
 router.use('/admin/audit', adminAuditRoutes);
+router.use('/api/admin', adminRoutes);
 
 // AI Generation routes
 router.use('/api/ai', aiGenerationRoutes);

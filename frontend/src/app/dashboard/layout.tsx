@@ -17,6 +17,7 @@ import {
   Settings,
   Share2,
   Star,
+  Users,
   X,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Reel Creator', href: '/dashboard/reels-creator', icon: Star },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
+  { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
 
 export default function DashboardLayout({
@@ -62,7 +64,7 @@ export default function DashboardLayout({
                 </Button>
               </div>
               <nav className="space-y-1">
-                {navigation.map((item) => {
+                {navigation.filter(item => !item.adminOnly || user?.role === 'super_admin' || user?.role === 'admin').map((item) => {
                   const isActive = pathname === item.href;
                   return (
                     <Link
@@ -100,7 +102,7 @@ export default function DashboardLayout({
             <Brand />
           </div>
           <nav className="flex-1 space-y-2 px-3 py-6">
-            {navigation.map((item) => {
+            {navigation.filter(item => !item.adminOnly || user?.role === 'super_admin' || user?.role === 'admin').map((item) => {
               const isActive = pathname === item.href || (item.href === '/dashboard/posts' && pathname === '/dashboard/drafts');
               return (
                 <Link

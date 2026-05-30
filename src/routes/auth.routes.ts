@@ -45,7 +45,8 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
         id: user.id,
         email: user.email,
         name: user.name,
-        avatarUrl: user.avatarUrl
+        avatarUrl: user.avatarUrl,
+        role: user.role
       },
       token
     });
@@ -79,7 +80,8 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
         id: user.id,
         email: user.email,
         name: user.name,
-        avatarUrl: user.avatarUrl
+        avatarUrl: user.avatarUrl,
+        role: user.role
       },
       token
     });
@@ -114,7 +116,8 @@ router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
       id: user.id,
       email: user.email,
       name: user.name,
-      avatarUrl: user.avatarUrl
+      avatarUrl: user.avatarUrl,
+      role: user.role
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Authentication failed';

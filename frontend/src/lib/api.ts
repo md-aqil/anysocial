@@ -306,6 +306,9 @@ export const api = {
         body: JSON.stringify({ content, platform }),
       }),
   },
+  admin: {
+    getUsers: () => request<{ users: any[] }>('/api/admin/users'),
+  },
 };
 
 export interface User {
@@ -313,6 +316,7 @@ export interface User {
   email: string;
   name: string | null;
   avatarUrl: string | null;
+  role: string;
 }
 
 export interface SocialAccount {

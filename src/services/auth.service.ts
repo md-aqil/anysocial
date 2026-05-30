@@ -15,6 +15,7 @@ export interface AuthUser {
   email: string;
   name: string | null;
   avatarUrl: string | null;
+  role: string;
 }
 
 export class AuthService {
@@ -38,7 +39,8 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
-        avatarUrl: true
+        avatarUrl: true,
+        role: true
       }
     });
 
@@ -60,7 +62,8 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name,
-      avatarUrl: user.avatarUrl
+      avatarUrl: user.avatarUrl,
+      role: user.role
     };
   }
 
@@ -83,7 +86,8 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
-        avatarUrl: true
+        avatarUrl: true,
+        role: true
       }
     });
 
@@ -93,7 +97,8 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name,
-      avatarUrl: user.avatarUrl
+      avatarUrl: user.avatarUrl,
+      role: user.role
     };
   }
 
@@ -108,7 +113,8 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
-        avatarUrl: true
+        avatarUrl: true,
+        role: true
       }
     });
 
