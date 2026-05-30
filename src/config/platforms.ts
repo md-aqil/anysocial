@@ -101,6 +101,16 @@ export const platformConfigs: Record<string, PlatformOAuthConfig> = {
     clientIdKey: 'SNAPCHAT_CLIENT_ID',
     clientSecretKey: 'SNAPCHAT_CLIENT_SECRET',
     usePKCE: false
+  },
+  
+  REDDIT: {
+    authUrl: 'https://www.reddit.com/api/v1/authorize',
+    tokenUrl: 'https://www.reddit.com/api/v1/access_token',
+    scopes: ['identity', 'submit', 'read'],
+    clientIdKey: 'REDDIT_CLIENT_ID',
+    clientSecretKey: 'REDDIT_CLIENT_SECRET',
+    usePKCE: false, // Standard Reddit OAuth uses state, but PKCE is usually not required for basic auth exchange
+    extraTokenExchangeHeaders: { 'Content-Type': 'application/x-www-form-urlencoded' }
   }
 };
 

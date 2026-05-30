@@ -17,6 +17,7 @@ enum Platform {
   THREADS
   PINTEREST
   SNAPCHAT
+  REDDIT
 }
 
 enum AccountStatus {

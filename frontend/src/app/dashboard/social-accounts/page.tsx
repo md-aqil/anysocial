@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { 
   InstagramLogo, FacebookLogo, LinkedinLogo, TwitterLogo, 
-  TiktokLogo, YoutubeLogo, ThreadsLogo, PinterestLogo, SnapchatLogo 
+  TiktokLogo, YoutubeLogo, ThreadsLogo, PinterestLogo, SnapchatLogo,
+  RedditLogo
 } from '@/components/icons/social-icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -30,6 +31,7 @@ const PlatformLogos: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   threads: ThreadsLogo,
   pinterest: PinterestLogo,
   snapchat: SnapchatLogo,
+  reddit: RedditLogo,
 };
 
 interface PlatformConfig {
@@ -113,6 +115,14 @@ const platforms: PlatformConfig[] = [
     bg: 'bg-amber-50',
     border: 'border-amber-100',
     description: 'Share authentic moments to your Snapchat profile.'
+  },
+  {
+    id: 'reddit',
+    name: 'Reddit',
+    color: 'text-orange-600',
+    bg: 'bg-orange-50',
+    border: 'border-orange-100',
+    description: 'Engage with communities by posting to your favorite subreddits.'
   }
 ];
 

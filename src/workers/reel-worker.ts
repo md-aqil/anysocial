@@ -270,7 +270,8 @@ export class ReelWorker {
           } else if (ttsPath) {
             mixedAudioPath = ttsPath;
           } else if (bgmPath) {
-            mixedAudioPath = bgmPath;
+            mixedAudioPath = await VideoComposerService.extendAudio(bgmPath, targetDuration, new AbortController().signal);
+            tempFilesToCleanup.push(mixedAudioPath);
           }
           
           let subtitlePath: string | undefined = undefined;

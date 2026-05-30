@@ -344,10 +344,12 @@ export class OAuthService {
         'Content-Type': 'application/x-www-form-urlencoded'
       };
 
-      if (account.platform === 'TWITTER') {
+      if (account.platform === 'TWITTER' || account.platform === 'REDDIT') {
         const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
         headers['Authorization'] = `Basic ${basicAuth}`;
-        body.append('client_id', clientId);
+        if (account.platform === 'TWITTER') {
+          body.append('client_id', clientId);
+        }
       } else {
         body.append('client_id', clientId);
         body.append('client_secret', clientSecret);
@@ -528,11 +530,12 @@ export class OAuthService {
       'Content-Type': 'application/x-www-form-urlencoded'
     };
 
-    if (platform === 'TWITTER') {
+    if (platform === 'TWITTER' || platform === 'REDDIT') {
       const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
       headers['Authorization'] = `Basic ${basicAuth}`;
-      // For PKCE with Confidential Client on Twitter, client_id requires Basic Auth.
-      body.append('client_id', clientId); 
+      if (platform === 'TWITTER') {
+        body.append('client_id', clientId); 
+      }
     } else {
       body.append('client_id', clientId);
       body.append('client_secret', clientSecret);
@@ -757,15 +760,22 @@ export class OAuthService {
         }
 
         case 'SNAPCHAT': {
-          const response = await axios.get('https://businessapi.snapchat.com/v1/me/public_profiles', {
+          const response = await axios.get('https://businessapi.snapchat.com/v1/me', {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
-          // response.data.public_profiles is an array
-          return response.data.public_profiles.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            username: p.username || p.name
-          }));
+          const me = response.data.me;
+          return [{
+            id: me.id,
+            name: me.display_name || 'Snapchat Account',
+            username: me.display_name
+          }];
+        }
+
+        case 'REDDIT': {
+          const response = await axios.get('https://oauth.reddit.com/api/v1/me', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          return [{ id: response.data.id, name: response.data.name, username: response.data.name }];
         }
 
         default:

@@ -444,8 +444,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             '-c:a aac',
             '-b:a 192k',
             '-map 0:v:0',
-            '-map 1:a:0',
-            '-shortest'
+            '-map 1:a:0'
           );
         } else {
           outputOpts.push(
@@ -454,9 +453,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           );
         }
     
-        // Trim to duration if specified
+        // Trim to duration if specified, otherwise use shortest stream
         if (duration) {
           outputOpts.push(`-t ${duration}`);
+        } else if (audioPath) {
+          outputOpts.push('-shortest');
         }
     
         const proc = ffmpeg()
@@ -504,11 +505,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       const proc = ffmpeg()
         .input(voiceoverPath)
         .input(bgmPath)
+        .inputOptions(['-stream_loop', '-1'])
         .complexFilter([
           // Downmix BGM volume to make voiceover clearly audible
           '[1:a]volume=0.25[bgm]',
-          // Mix background audio with voiceover. Finish when voiceover ends (duration=first)
-          '[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=2[out]'
+          // Mix background audio with voiceover. Finish when infinite bgm is cut by -t duration
+          '[0:a][bgm]amix=inputs=2:duration=longest:dropout_transition=2[out]'
         ])
         .map('[out]')
         .audioCodec('libmp3lame')
@@ -531,6 +533,30 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     });
 
     return { outputPath, tempFiles: [] };
+  }
+
+  /**
+   * Loops an audio file to reach a target duration.
+   */
+  static async extendAudio(audioPath: string, duration: number, signal?: AbortSignal): Promise<string> {
+    const outputPath = path.join(os.tmpdir(), `extended_${Date.now()}.mp3`);
+    await new Promise((resolve, reject) => {
+      const proc = ffmpeg(audioPath)
+        .inputOptions(['-stream_loop', '-1'])
+        .outputOptions([`-t ${duration}`])
+        .audioCodec('libmp3lame')
+        .on('end', resolve)
+        .on('error', reject);
+      
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          try { (proc as any).kill('SIGKILL'); } catch (e) {}
+          reject(new Error('Aborted'));
+        });
+      }
+      proc.save(outputPath);
+    });
+    return outputPath;
   }
 
   // New method: generateThumbnail extracts a single frame as JPEG.
