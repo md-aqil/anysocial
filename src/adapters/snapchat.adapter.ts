@@ -45,29 +45,59 @@ export class SnapchatAdapter implements PlatformAdapter {
       const accessToken = payload.platformSpecificFields.accessToken as string;
       if (!accessToken) throw new Error('Missing Snapchat access token');
 
+      // Resolve Public Profile ID
+      let profileId = accountId;
+      try {
+        const orgsRes = await axios.get('https://adsapi.snapchat.com/v1/me/organizations', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const orgId = orgsRes.data.organizations?.[0]?.organization?.id;
+        if (orgId) {
+          const profilesRes = await axios.get(`https://adsapi.snapchat.com/v1/organizations/${orgId}/public_profiles`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          const fetchedProfileId = profilesRes.data.public_profiles?.[0]?.public_profile?.id;
+          if (fetchedProfileId) {
+             profileId = fetchedProfileId;
+          }
+        }
+      } catch (err: any) {
+        console.warn('Could not dynamically resolve Snapchat public profile ID, falling back:', err.message);
+      }
+
       const mediaUrl = payload.mediaUrls[0];
-      const mediaId = await this.uploadMedia(mediaUrl, accessToken, accountId);
+      const mediaId = await this.uploadMedia(mediaUrl, accessToken, profileId);
 
       const postType = (payload.platformSpecificFields.postType as string) || 'STORY';
       let result;
 
       if (postType === 'SPOTLIGHT') {
-        result = await this.postToSpotlight(mediaId, payload.caption, accessToken, accountId);
+        result = await this.postToSpotlight(mediaId, payload.caption, accessToken, profileId);
       } else {
-        result = await this.postToStory(mediaId, accessToken, accountId);
+        result = await this.postToStory(mediaId, accessToken, profileId);
       }
 
       return {
         success: true,
-        platformPostId: result.id || 'snap-post',
-        url: `https://www.snapchat.com/add/${accountId}` // Placeholder
+        platformPostId: result?.id || 'snap-post',
+        url: `https://www.snapchat.com/add/${profileId}`
       };
     } catch (error: any) {
+      let errorMessage = error.message;
+      
+      if (error.response) {
+        const dataStr = typeof error.response.data === 'object' ? JSON.stringify(error.response.data) : error.response.data;
+        errorMessage += ` - ${dataStr}`;
+        if (error.response.status === 403) {
+          errorMessage = `HTTP 403 Forbidden: ${dataStr}. Note: The Snapchat Public Profile API is currently allowlist-only. Your OAuth App Client ID must be explicitly allowlisted by Snapchat Support for Public Profile API access, otherwise publish requests will be rejected.`;
+        }
+      }
+
       return {
         success: false,
         platformPostId: '',
         url: '',
-        error: `Snapchat publish failed: ${error.message}`
+        error: `Snapchat publish failed: ${errorMessage}`
       };
     }
   }
