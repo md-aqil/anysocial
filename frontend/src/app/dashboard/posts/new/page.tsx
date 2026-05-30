@@ -142,6 +142,17 @@ export default function NewPostPage() {
     return () => clearTimeout(timer);
   }, [accountsData, selectedPlatforms.length]);
 
+  // Clean up selectedPlatforms if an account was disconnected
+  useEffect(() => {
+    if (accountsData) {
+      const connectedPlatforms = accountsData.accounts.map((a: any) => a.platform.toUpperCase());
+      const validSelected = selectedPlatforms.filter(p => connectedPlatforms.includes(p));
+      if (validSelected.length !== selectedPlatforms.length) {
+        setPlatforms(validSelected);
+      }
+    }
+  }, [accountsData, selectedPlatforms, setPlatforms]);
+
   const { data: rules } = useQuery({
     queryKey: ['platform-rules'],
     queryFn: () => api.config.getRules(),
