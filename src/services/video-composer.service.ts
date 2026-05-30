@@ -388,7 +388,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'Poppins-Bold.ttf');
           const escapedHook = hookText.replace(/'/g, "'\\''");
           // position it dynamically at the upper center
-          filters.push(`drawtext=text='${escapedHook}':fontfile='${fontPath}':fontcolor=yellow:fontsize=52:box=1:boxcolor=black@0.7:boxborderw=10:x=(w-text_w)/2:y=120`);
+          filters.push(`drawtext=text='${escapedHook}':fontfile='${fontPath}':fontcolor=white:fontsize=42:bordercolor=black:borderw=4:shadowcolor=black@0.6:shadowx=3:shadowy=3:x=(w-text_w)/2:y=120`);
         }
 
         const outputOpts: string[] = [];
@@ -460,7 +460,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         .input(bgmPath)
         .complexFilter([
           // Downmix BGM volume to make voiceover clearly audible
-          '[1:a]volume=0.08[bgm]',
+          '[1:a]volume=0.12[bgm]',
           // Mix background audio with voiceover. Finish when voiceover ends (duration=first)
           '[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=2[out]'
         ])
