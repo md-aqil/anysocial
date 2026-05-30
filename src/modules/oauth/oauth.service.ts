@@ -760,15 +760,19 @@ export class OAuthService {
         }
 
         case 'SNAPCHAT': {
-          const response = await axios.get('https://businessapi.snapchat.com/v1/me', {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          });
-          const me = response.data.me;
-          return [{
-            id: me.id,
-            name: me.display_name || 'Snapchat Account',
-            username: me.display_name
-          }];
+          try {
+            const response = await axios.get('https://adsapi.snapchat.com/v1/me', {
+              headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            const me = response.data.me;
+            return [{
+              id: me.id || 'snapchat-user',
+              name: me.display_name || me.email || 'Snapchat User',
+              username: me.email || me.display_name
+            }];
+          } catch (e: any) {
+             throw new Error('Snapchat API failed: ' + (e.response?.data?.error?.message || e.message));
+          }
         }
 
         case 'REDDIT': {
