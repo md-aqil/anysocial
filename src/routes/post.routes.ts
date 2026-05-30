@@ -19,7 +19,7 @@ const upload = multer({
 const createPostSchema = z.object({
   content: z.string().min(1).max(5000),
   title: z.string().optional(),
-  platforms: z.array(z.string()).min(1),
+  platforms: z.array(z.string()),
   scheduledAt: z.string().optional(), // ISO 8601
   timezone: z.string(),
   publishNow: z.boolean().optional()
@@ -43,6 +43,7 @@ router.post('/', requireAuth, upload.any(), async (req: Request, res: Response) 
     const validationResult = createPostSchema.safeParse(body);
 
     if (!validationResult.success) {
+      console.error('[POST /api/posts] Validation failed:', validationResult.error.errors);
       res.status(400).json({
         error: 'Validation failed',
         details: validationResult.error.errors
@@ -51,6 +52,16 @@ router.post('/', requireAuth, upload.any(), async (req: Request, res: Response) 
     }
 
     const { content, title, platforms, scheduledAt, timezone, publishNow } = validationResult.data;
+
+    // Manual check: If publishing or scheduling, at least one platform is required.
+    if ((publishNow || scheduledAt) && (!platforms || platforms.length === 0)) {
+      console.error('[POST /api/posts] Validation failed: No platforms selected for publishing.');
+      res.status(400).json({
+        error: 'Validation failed',
+        details: [{ message: 'Select at least one platform to publish.' }]
+      });
+      return;
+    }
     
     // Extract optional platformOptions safely from form body since we appended it separately
     let platformOptions: Record<string, any> = {};
@@ -104,6 +115,7 @@ router.post('/', requireAuth, upload.any(), async (req: Request, res: Response) 
   } catch (error: any) {
     // Platform-specific validation errors (e.g. Instagram rules)
     if (error.name === 'MediaValidationError') {
+      console.error('[POST /api/posts] MediaValidationError:', error.message, error.details);
       res.status(400).json({
         error: error.message,
         code: error.code,
@@ -114,6 +126,7 @@ router.post('/', requireAuth, upload.any(), async (req: Request, res: Response) 
 
     // Scheduling errors
     if (error.name === 'SchedulingError') {
+      console.error('[POST /api/posts] SchedulingError:', error.message);
       res.status(400).json({
         error: error.message,
         code: error.code
@@ -123,6 +136,7 @@ router.post('/', requireAuth, upload.any(), async (req: Request, res: Response) 
 
     // Generic fallback for other errors
     const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[POST /api/posts] Unknown error:', message, error.stack);
     res.status(500).json({ error: message });
   }
 });
