@@ -362,7 +362,7 @@ Vibe / Tone of ad: "${vibe || 'High-energy, direct, and captivating'}"
 
 Your task:
 1. ${languagePrompt} Write a highly compelling viral ad script of EXACTLY ${targetWordCount} words (this is critical to match the speaking pace of a ${duration || 15}-second video). Do NOT use any emojis, hashtags, or special characters. Spell out all numbers as words. Make it punchy and rhythmic.
-2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the hook phase (e.g. "Secret Revealed...", "Must-Have Tech!", "Luxury Discovered..."). Ensure the hook is also in the selected language.
+2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the hook phase (e.g. "Secret Revealed...", "Must-Have Tech!", "Luxury Discovered..."). CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
 
 Output your response strictly as a valid JSON object with NO extra text:
 {

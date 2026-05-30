@@ -293,7 +293,7 @@ export default function AIProductReelPage() {
                   <span className="font-semibold text-violet-600 hover:text-violet-500">Upload files</span>
                   <p className="pl-1">or drag and drop</p>
                 </div>
-                <p className="text-xs text-stone-400">Supports JPG, PNG, WEBP, and MP4 (Up to 50MB)</p>
+                <p className="text-xs text-stone-400">Supports JPG, PNG, WEBP, and MP4 (Up to 500MB)</p>
               </div>
             </div>
 

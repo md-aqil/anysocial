@@ -165,7 +165,7 @@ export class VideoComposerService {
             proc.inputOptions(['-stream_loop -1'])
               .outputOptions([
                 `-t ${duration}`,
-                `-vf scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height},setsar=1,fps=${fps}`,
+                `-vf scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${fps}`,
                 '-c:v libx264',
                 '-pix_fmt yuv420p',
                 `-r ${fps}`,
@@ -321,7 +321,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Poppins,44,&H00FFFFFF,&H0000FFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,3.0,0,2,10,10,420,1
+Style: Default,Poppins,64,&H00FFFFFF,&H0000FFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,3.0,0,2,10,10,420,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -388,7 +388,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'Poppins-Bold.ttf');
           const escapedHook = hookText.replace(/'/g, "'\\''");
           // position it dynamically at the upper center
-          filters.push(`drawtext=text='${escapedHook}':fontfile='${fontPath}':fontcolor=white:fontsize=44:box=1:boxcolor=black@0.5:x=(w-text_w)/2:y=120`);
+          filters.push(`drawtext=text='${escapedHook}':fontfile='${fontPath}':fontcolor=yellow:fontsize=52:box=1:boxcolor=black@0.7:boxborderw=10:x=(w-text_w)/2:y=120`);
         }
 
         const outputOpts: string[] = [];

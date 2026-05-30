@@ -780,7 +780,7 @@ export default function NewPostPage() {
                   <Upload className="h-5 w-5" strokeWidth={1.8} />
                 </span>
                 <p className="text-[16px] font-bold text-[#5F5A54]">Drop media here or <span className="text-[#D9774B]">browse</span></p>
-                <p className="mt-1 text-[13px] text-[#AAA39D]">JPG, PNG, MP4, MOV · Max 50MB</p>
+                <p className="mt-1 text-[13px] text-[#AAA39D]">JPG, PNG, MP4, MOV · Max 500MB</p>
                 <input id="media-upload" type="file" multiple hidden accept="image/*,video/*" onChange={handleFileSelect} />
               </div>
 
