@@ -47,6 +47,9 @@ fi
 echo "👑 Applying admin roles..."
 node scripts/make-admin.mjs
 
+echo "🧹 Cleaning revoked accounts..."
+node scripts/clean-revoked.mjs
+
 echo "🏗️ Building Backend..."
 npm run build
 
