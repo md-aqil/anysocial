@@ -407,16 +407,16 @@ export class OAuthService {
         error: error.message
       });
 
-      // Mark as expired/revoked based on error
-      const status =
-        error.response?.data?.error === 'invalid_grant'
-          ? 'REVOKED'
-          : 'ERROR';
-
-      await prisma.socialAccount.update({
-        where: { id: accountId },
-        data: { status }
-      });
+      if (error.response?.data?.error === 'invalid_grant') {
+        await prisma.socialAccount.delete({
+          where: { id: accountId }
+        });
+      } else {
+        await prisma.socialAccount.update({
+          where: { id: accountId },
+          data: { status: 'ERROR' }
+        });
+      }
 
       throw new OAuthError(
         `Token refresh failed: ${error.message}`,
@@ -469,10 +469,9 @@ export class OAuthService {
       });
     }
 
-    // Update status
-    await prisma.socialAccount.update({
-      where: { id: accountId },
-      data: { status: 'REVOKED' }
+    // Completely delete the account instead of just updating status
+    await prisma.socialAccount.delete({
+      where: { id: accountId }
     });
 
     logger.info({

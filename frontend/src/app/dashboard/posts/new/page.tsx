@@ -343,6 +343,7 @@ export default function NewPostPage() {
       twitterReplySettings: 'everyone',
       twitterAutoFix: true,
       threadsAutoFix: true,
+      youtubeAutoFix: true,
       shareToFeed: true,
       platforms: []
     },
@@ -397,8 +398,11 @@ export default function NewPostPage() {
 
   const connectedPlatforms = accountsData?.accounts?.map((a) => a.platform) || [];
 
-
-
+  const getAccountName = (platform: string) => {
+    const account = accountsData?.accounts?.find((a) => a.platform === platform);
+    if (!account) return undefined;
+    return account.metadata?.accountName || account.metadata?.username || account.externalAccountId;
+  };
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const draftId = params.get("id");
@@ -947,7 +951,7 @@ export default function NewPostPage() {
 
             {selectedPlatforms?.includes('FACEBOOK') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                <OverrideHeader platform="FACEBOOK" value={fbType || 'FEED'} />
+                <OverrideHeader platform="FACEBOOK" value={fbType || 'FEED'} accountName={getAccountName('FACEBOOK')} />
                 <div className="space-y-3 px-4 py-3">
                   <DisconnectionBanner platform="FACEBOOK" />
                   <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={fbType || 'FEED'} onChange={(value) => setValue('facebookPostType', value as any)} color={platformStyles.FACEBOOK.color} />
@@ -969,7 +973,7 @@ export default function NewPostPage() {
 
             {selectedPlatforms?.includes('LINKEDIN') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                <OverrideHeader platform="LINKEDIN" value="Story" />
+                <OverrideHeader platform="LINKEDIN" value="Story" accountName={getAccountName('LINKEDIN')} />
                 <div className="space-y-3 px-5 py-4">
                   <DisconnectionBanner platform="LINKEDIN" />
                   <SegmentedOptions label="Post Type" options={['Post', 'Story']} value="Story" onChange={() => undefined} color={platformStyles.LINKEDIN.color} />
@@ -990,7 +994,7 @@ export default function NewPostPage() {
 
             {selectedPlatforms?.includes('TWITTER') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                <OverrideHeader platform="TWITTER" value="Post" />
+                <OverrideHeader platform="TWITTER" value="Post" accountName={getAccountName('TWITTER')} />
                 <div className="space-y-3 px-5 py-4">
                   <DisconnectionBanner platform="TWITTER" />
                   <SegmentedOptions label="Who can reply" options={['everyone', 'following', 'mentionedUsers']} value={watch('twitterReplySettings') || 'everyone'} onChange={(value) => setValue('twitterReplySettings', value as any)} color={platformStyles.TWITTER.color} />
@@ -1010,7 +1014,7 @@ export default function NewPostPage() {
 
             {selectedPlatforms?.includes('INSTAGRAM') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                <OverrideHeader platform="INSTAGRAM" value={igType || 'FEED'} />
+                <OverrideHeader platform="INSTAGRAM" value={igType || 'FEED'} accountName={getAccountName('INSTAGRAM')} />
                 <div className="space-y-3 px-5 py-4">
                   <DisconnectionBanner platform="INSTAGRAM" />
                   <SegmentedOptions label="Post Type" options={['FEED', 'REEL', 'STORY']} value={igType || 'FEED'} onChange={(value) => setValue('instagramPostType', value as any)} color={platformStyles.INSTAGRAM.color} />
@@ -1031,7 +1035,7 @@ export default function NewPostPage() {
 
             {selectedPlatforms?.includes('YOUTUBE') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                <OverrideHeader platform="YOUTUBE" value={watch('youtubePostType')} />
+                <OverrideHeader platform="YOUTUBE" value={watch('youtubePostType')} accountName={getAccountName('YOUTUBE')} />
                 <div className="space-y-3 px-5 py-4">
                   <DisconnectionBanner platform="YOUTUBE" />
                   <SegmentedOptions label="Format" options={['VIDEO', 'SHORTS']} value={watch('youtubePostType')} onChange={(value) => setValue('youtubePostType', value as any)} color={platformStyles.YOUTUBE.color} />
@@ -1074,7 +1078,7 @@ export default function NewPostPage() {
 
             {selectedPlatforms?.includes('THREADS') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                <OverrideHeader platform="THREADS" value="Post" />
+                <OverrideHeader platform="THREADS" value="Post" accountName={getAccountName('THREADS')} />
                 <div className="px-4 py-4 space-y-3">
                   <DisconnectionBanner platform="THREADS" />
                   <Controller name="threadsAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" description="Force 4:5 portrait for Threads" checked={field.value} onChange={field.onChange} />} />
@@ -1093,7 +1097,7 @@ export default function NewPostPage() {
 
             {selectedPlatforms?.includes('PINTEREST') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                <OverrideHeader platform="PINTEREST" value="Pin" />
+                <OverrideHeader platform="PINTEREST" value="Pin" accountName={getAccountName('PINTEREST')} />
                 <div className="space-y-3 px-4 py-4">
                   <DisconnectionBanner platform="PINTEREST" />
                   {isLoadingBoards ? (
@@ -1121,7 +1125,7 @@ export default function NewPostPage() {
 
             {selectedPlatforms?.includes('SNAPCHAT') && (
               <div className="rounded-2xl border border-[#D9E3D9] bg-white">
-                <OverrideHeader platform="SNAPCHAT" value={watch('snapchatPostType') || 'STORY'} />
+                <OverrideHeader platform="SNAPCHAT" value={watch('snapchatPostType') || 'STORY'} accountName={getAccountName('SNAPCHAT')} />
                 <div className="px-4 py-4 space-y-3">
                   <DisconnectionBanner platform="SNAPCHAT" />
                   <SegmentedOptions label="Post Type" options={['STORY', 'SPOTLIGHT']} value={watch('snapchatPostType') || 'STORY'} onChange={(value) => setValue('snapchatPostType', value as any)} color={platformStyles.SNAPCHAT.color} />
@@ -1323,7 +1327,7 @@ export default function NewPostPage() {
   );
 }
 
-function OverrideHeader({ platform, value }: { platform: string; value?: string }) {
+function OverrideHeader({ platform, value, accountName }: { platform: string; value?: string; accountName?: string }) {
   const config = platformStyles[platform];
   if (!config) return null;
   const Icon = config.icon;
@@ -1333,7 +1337,10 @@ function OverrideHeader({ platform, value }: { platform: string; value?: string 
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: config.bg }}>
         <Icon className="h-3 w-3" style={{ color: config.color }} />
       </span>
-      <span className="text-[13px] font-bold text-[#2F281F]">{config.name}</span>
+      <span className="text-[13px] font-bold text-[#2F281F]">
+        {config.name}
+        {accountName && <span className="ml-1.5 font-normal text-[#AAA39D]">• {accountName}</span>}
+      </span>
       {value && (
         <span className="ml-auto rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ backgroundColor: config.bg, color: config.color }}>
           {value}

@@ -12,6 +12,14 @@ export class AdminController {
           name: true,
           role: true,
           createdAt: true,
+          socialAccounts: {
+            select: {
+              id: true,
+              platform: true,
+              status: true,
+              externalAccountId: true
+            }
+          },
           _count: {
             select: {
               posts: true,
