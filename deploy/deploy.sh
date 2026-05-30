@@ -13,8 +13,8 @@ echo "------------------------------------------------"
 # Navigate to app directory
 cd $APP_DIR
 
-# Ensure the current user owns the directory to avoid EACCES during npm install
-sudo chown -R $USER:$USER .
+# Ensure the deployment user owns the directory to avoid EACCES during git fetch and npm install
+sudo chown -R aqil:aqil /var/www/socialsched
 
 # Pull latest code (reset --hard to overwrite modified tracked files,
 # clean -fd to remove any now-ignored untracked dirs like .next, Gemini, scratch)
@@ -60,6 +60,11 @@ npm install
 echo "🏗️ Building Frontend..."
 npm run build
 cd ..
+
+# Ensure the app service can write to scratch and uploads
+echo "🔒 Setting up runtime permissions..."
+mkdir -p scratch frontend/public/uploads
+sudo chown -R socialsched:socialsched scratch frontend/public/uploads
 
 # Restart services
 echo "🔄 Restarting Systemd Services..."
