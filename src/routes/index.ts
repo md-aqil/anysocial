@@ -12,6 +12,7 @@ import { adminRoutes } from '../admin/admin.routes.js';
 import { jwtAuth } from '../middleware/jwt-auth.js';
 import { aiGenerationRoutes } from './ai-generation.routes.js';
 import { reelsRoutes } from './reels.routes.js';
+import { curationRoutes } from './curation.routes.js';
 
 const router = Router();
 
@@ -52,5 +53,8 @@ router.use('/api/ai', aiGenerationRoutes);
 
 // Reels Creator routes
 router.use('/api/reels', jwtAuth, reelsRoutes);
+
+// Curation routes
+router.use('/api/curation', curationRoutes);
 
 export const routes = router;

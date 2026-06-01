@@ -19,6 +19,7 @@ import {
   Star,
   Users,
   X,
+  List,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -29,6 +30,7 @@ const navigation = [
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Reel Creator', href: '/dashboard/reels-creator', icon: Star },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
+  { name: 'Feed Curation', href: '/dashboard/curation', icon: List },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
 

@@ -80,6 +80,7 @@ model User {
   notificationLogs NotificationLog[]
   reelSeries       ReelSeries[]
   reels            Reel[]
+  curatedPosts     CuratedPost[]
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
 
@@ -345,4 +346,22 @@ model ProductReelAsset {
 
   @@index([reelId])
   @@map("product_reel_assets")
+}
+
+model CuratedPost {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform       Platform
+  externalPostId String   @map("external_post_id")
+  content        String?
+  mediaUrls      String[] @map("media_urls")
+  metrics        Json?
+  publishedAt    DateTime @map("published_at")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, platform, externalPostId])
+  @@index([userId])
+  @@map("curated_posts")
 }
