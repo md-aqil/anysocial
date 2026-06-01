@@ -2,7 +2,6 @@ import { prisma } from '../db/prisma.js';
 import { tokenCrypto } from '../crypto/token-crypto.service.js';
 import { Platform } from '@prisma/client';
 import { logger } from '../logger/pino.js';
-import fetch from 'node-fetch';
 
 export interface FetchedPost {
   externalPostId: string;

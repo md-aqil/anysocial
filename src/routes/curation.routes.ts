@@ -15,7 +15,8 @@ router.get('/feed/:platform', jwtAuth, async (req, res, next) => {
     const platform = req.params.platform.toUpperCase() as Platform;
 
     if (!Object.values(Platform).includes(platform)) {
-      return res.status(400).json({ error: 'Invalid platform' });
+      res.status(400).json({ error: 'Invalid platform' });
+      return;
     }
 
     const posts = await feedCurationService.fetchFeed(userId, platform);
@@ -45,7 +46,8 @@ router.post('/select', jwtAuth, async (req, res, next) => {
     const validationResult = selectPostsSchema.safeParse(req.body);
 
     if (!validationResult.success) {
-      return res.status(400).json({ error: 'Validation failed', details: validationResult.error.errors });
+      res.status(400).json({ error: 'Validation failed', details: validationResult.error.errors });
+      return;
     }
 
     const { platform, posts } = validationResult.data;
