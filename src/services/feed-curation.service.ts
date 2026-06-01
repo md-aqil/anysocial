@@ -49,7 +49,8 @@ export class FeedCurationService {
     try {
       // 2. Fetch the UGC Posts
       // See: https://learn.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api
-      const url = `https://api.linkedin.com/v2/ugcPosts?q=authors&authors=List(${authorUrn})&sortBy=LAST_MODIFIED`;
+      const encodedUrn = encodeURIComponent(authorUrn);
+      const url = `https://api.linkedin.com/v2/ugcPosts?q=authors&authors=List(${encodedUrn})`;
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
