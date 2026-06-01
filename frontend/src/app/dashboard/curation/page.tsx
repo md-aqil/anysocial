@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle2, Image as ImageIcon, Sparkles, Filter } from 'lucide-react';
+import { RefreshCw, CheckCircle2, Image as ImageIcon, Sparkles, Filter, Heart, MessageCircle, Send, Bookmark, MoreHorizontal } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -148,15 +148,32 @@ export default function FeedCurationPage() {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {posts.map((post, i) => {
             const isSelected = selectedIds.has(post.externalPostId);
+            
+            const formatInstagramTime = (dateString: string) => {
+              const date = new Date(dateString);
+              const now = new Date();
+              const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+              
+              if (diffHours < 24) return `${diffHours} HOURS AGO`;
+              const diffDays = Math.floor(diffHours / 24);
+              if (diffDays < 7) return `${diffDays} DAYS AGO`;
+              return date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }).toUpperCase();
+            };
+
             return (
               <div 
                 key={post.externalPostId}
                 onClick={() => toggleSelection(post.externalPostId)}
                 className={cn(
-                  'group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300',
+                  'group relative flex cursor-pointer flex-col overflow-hidden bg-white transition-all duration-300',
+                  platform === 'INSTAGRAM' ? 'rounded-sm border border-slate-200 sm:rounded-lg' : 'rounded-2xl border border-[#D9E3D9]',
                   isSelected 
-                    ? 'scale-[0.98] border-2 border-[#D9774B] shadow-md ring-4 ring-[#D9774B]/10' 
-                    : 'border border-[#D9E3D9] shadow-sm hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5'
+                    ? platform === 'INSTAGRAM' 
+                      ? 'scale-[0.98] border-2 border-indigo-500 shadow-md ring-4 ring-indigo-500/10'
+                      : 'scale-[0.98] border-2 border-[#D9774B] shadow-md ring-4 ring-[#D9774B]/10' 
+                    : platform === 'INSTAGRAM'
+                      ? 'shadow-sm hover:shadow-md'
+                      : 'shadow-sm hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5'
                 )}
                 style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
               >
@@ -165,45 +182,110 @@ export default function FeedCurationPage() {
                   <div className={cn(
                     'flex h-7 w-7 items-center justify-center rounded-full border-2 backdrop-blur-md transition-all',
                     isSelected 
-                      ? 'border-transparent bg-[#D9774B] text-white shadow-sm' 
+                      ? platform === 'INSTAGRAM'
+                        ? 'border-transparent bg-indigo-500 text-white shadow-sm'
+                        : 'border-transparent bg-[#D9774B] text-white shadow-sm' 
                       : 'border-white/80 bg-black/20 text-transparent opacity-0 group-hover:opacity-100'
                   )}>
                     <CheckCircle2 className="h-5 w-5" />
                   </div>
                 </div>
 
-                {/* Media Section */}
-                <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden bg-[#F0F4F0]">
-                  {post.mediaUrls && post.mediaUrls.length > 0 ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img 
-                      src={post.mediaUrls[0]} 
-                      alt="Post media" 
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center text-[#AAA39D]">
-                      <ImageIcon className="mb-2 h-10 w-10 opacity-40" />
-                      <span className="text-[11px] font-bold uppercase tracking-widest opacity-60">Text Post</span>
+                {platform === 'INSTAGRAM' ? (
+                  <>
+                    {/* Instagram Header */}
+                    <div className="flex items-center justify-between p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-fuchsia-600 p-[2px]">
+                          <div className="h-full w-full rounded-full border-2 border-white bg-slate-200"></div>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-900">anysocial_user</span>
+                      </div>
+                      <MoreHorizontal className="h-5 w-5 text-slate-900" />
                     </div>
-                  )}
-                  {/* Subtle Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                </div>
 
-                {/* Content Section */}
-                <div className="flex flex-1 flex-col justify-between p-5">
-                  <div>
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="inline-flex items-center rounded-full bg-[#F9EEE8] px-2.5 py-0.5 text-[11px] font-semibold text-[#D9774B]">
-                        {new Date(post.publishedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
+                    {/* Instagram Media */}
+                    <div className="relative flex aspect-square w-full items-center justify-center bg-black">
+                      {post.mediaUrls && post.mediaUrls.length > 0 ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img 
+                          src={post.mediaUrls[0]} 
+                          alt="Post media" 
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center text-slate-400">
+                          <ImageIcon className="mb-2 h-8 w-8 opacity-50" />
+                        </div>
+                      )}
                     </div>
-                    <p className="line-clamp-3 text-sm leading-relaxed text-[#3C342C]">
-                      {post.content || 'No text content'}
-                    </p>
-                  </div>
-                </div>
+
+                    {/* Instagram Actions & Content */}
+                    <div className="p-3 pb-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Heart className="h-6 w-6 text-slate-900 transition-colors hover:text-slate-600" strokeWidth={1.5} />
+                          <MessageCircle className="h-6 w-6 text-slate-900 transition-colors hover:text-slate-600" strokeWidth={1.5} />
+                          <Send className="h-6 w-6 text-slate-900 transition-colors hover:text-slate-600" strokeWidth={1.5} />
+                        </div>
+                        <Bookmark className="h-6 w-6 text-slate-900 transition-colors hover:text-slate-600" strokeWidth={1.5} />
+                      </div>
+
+                      <div className="mb-1 text-sm font-semibold text-slate-900">
+                        {post.metrics?.likes?.toLocaleString() || 0} likes
+                      </div>
+
+                      <div className="text-sm text-slate-900 line-clamp-2">
+                        <span className="mr-1 font-semibold">anysocial_user</span>
+                        {post.content}
+                      </div>
+                      
+                      {post.metrics?.comments > 0 && (
+                        <div className="mt-1 text-sm text-slate-500">
+                          View all {post.metrics.comments.toLocaleString()} comments
+                        </div>
+                      )}
+
+                      <div className="mt-1 text-[10px] text-slate-500">
+                        {formatInstagramTime(post.publishedAt)}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Default/LinkedIn Media Section */}
+                    <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden bg-[#F0F4F0]">
+                      {post.mediaUrls && post.mediaUrls.length > 0 ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img 
+                          src={post.mediaUrls[0]} 
+                          alt="Post media" 
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center text-[#AAA39D]">
+                          <ImageIcon className="mb-2 h-10 w-10 opacity-40" />
+                          <span className="text-[11px] font-bold uppercase tracking-widest opacity-60">Text Post</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    </div>
+
+                    {/* Default/LinkedIn Content Section */}
+                    <div className="flex flex-1 flex-col justify-between p-5">
+                      <div>
+                        <div className="mb-3 flex items-center justify-between">
+                          <span className="inline-flex items-center rounded-full bg-[#F9EEE8] px-2.5 py-0.5 text-[11px] font-semibold text-[#D9774B]">
+                            {new Date(post.publishedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <p className="line-clamp-3 text-sm leading-relaxed text-[#3C342C]">
+                          {post.content || 'No text content'}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             );
           })}
