@@ -309,6 +309,23 @@ export const api = {
   admin: {
     getUsers: () => request<{ users: any[] }>('/api/admin/users'),
   },
+  curation: {
+    getFeed: (platform: string) => 
+      request<{ success: boolean; posts: any[] }>(`/api/curation/feed/${platform}`),
+    
+    selectPosts: (platform: string, posts: any[]) =>
+      request<{ success: boolean; message: string }>('/api/curation/select', {
+        method: 'POST',
+        body: JSON.stringify({ platform, posts }),
+      }),
+      
+    getPublicFeed: (userId: string, platform?: string) => {
+      const url = platform 
+        ? `/api/curation/public/${userId}?platform=${platform}` 
+        : `/api/curation/public/${userId}`;
+      return request<{ success: boolean; posts: any[] }>(url);
+    }
+  }
 };
 
 export interface User {

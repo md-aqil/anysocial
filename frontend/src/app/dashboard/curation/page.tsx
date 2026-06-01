@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, CheckCircle2, Image as ImageIcon, Sparkles, Filter } from 'lucide-react';
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -26,8 +26,8 @@ export default function FeedCurationPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/api/curation/feed/${platform}`);
-      setPosts(response.data.posts || []);
+      const response = await api.curation.getFeed(platform);
+      setPosts(response.posts || []);
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.error || 'Failed to fetch posts. Make sure your account is connected.');
@@ -56,10 +56,7 @@ export default function FeedCurationPage() {
     setIsSaving(true);
     try {
       const selectedPosts = posts.filter(p => selectedIds.has(p.externalPostId));
-      await api.post('/api/curation/select', {
-        platform,
-        posts: selectedPosts
-      });
+      await api.curation.selectPosts(platform, selectedPosts);
       alert('Selected posts saved successfully!');
       setSelectedIds(new Set()); // Reset selection after save
     } catch (err: any) {

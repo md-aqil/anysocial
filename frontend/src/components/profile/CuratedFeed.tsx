@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Heart, MessageCircle, Image as ImageIcon } from 'lucide-react';
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 
 interface CuratedPost {
   id: string;
@@ -21,11 +21,8 @@ export function CuratedFeed({ userId, platform }: { userId: string, platform?: s
   useEffect(() => {
     const fetchFeed = async () => {
       try {
-        const url = platform 
-          ? `/api/curation/public/${userId}?platform=${platform}` 
-          : `/api/curation/public/${userId}`;
-        const response = await api.get(url);
-        setPosts(response.data.posts || []);
+        const response = await api.curation.getPublicFeed(userId, platform);
+        setPosts(response.posts || []);
       } catch (error) {
         console.error('Failed to load curated feed', error);
       } finally {
