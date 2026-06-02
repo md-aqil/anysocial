@@ -46,7 +46,7 @@ export const platformConfigs: Record<string, PlatformOAuthConfig> = {
   LINKEDIN: {
     authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
     tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
-    scopes: ['openid', 'profile', 'email', 'w_member_social', 'r_member_social'],
+    scopes: ['openid', 'profile', 'email', 'w_member_social'],
     clientIdKey: 'LINKEDIN_CLIENT_ID',
     clientSecretKey: 'LINKEDIN_CLIENT_SECRET',
     usePKCE: false
