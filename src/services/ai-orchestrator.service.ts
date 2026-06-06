@@ -52,7 +52,66 @@ Make sure the output is a valid JSON object.`;
       ]
     };
 
-    const result = await model.generateContent(request);
+    let result;
+    try {
+      result = await model.generateContent(request);
+    } catch (e: any) {
+      console.error('AI Media Analysis failed:', e.message);
+      try {
+        console.log('[NVIDIA Vision] Attempting fallback for media analysis caption...');
+        
+        const isImage = mediaFile.mimetype.startsWith('image/');
+        const messagesContent: any[] = [{ type: "text", text: prompt }];
+        
+        if (isImage) {
+          messagesContent.push({
+            type: "image_url",
+            image_url: { url: `data:${mediaFile.mimetype};base64,${mediaFile.buffer.toString('base64')}` }
+          });
+        }
+        
+        const nvapiKey = process.env.NVIDIA_API_KEY || "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";
+        const payload = {
+          model: "meta/llama-3.2-90b-vision-instruct",
+          messages: [{ role: "user", content: messagesContent }],
+          max_tokens: 8192,
+          temperature: 0.7,
+          top_p: 1.00,
+          stream: false
+        };
+
+        const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${nvapiKey}`,
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+           const errText = await response.text();
+           throw new Error(`NVIDIA Vision API Error ${response.status}: ${errText.substring(0, 200)}`);
+        }
+
+        const data = await response.json() as any;
+        const textFallback = data.choices?.[0]?.message?.content || '';
+
+        try {
+          const match = textFallback.match(/```json\n(.*)\n```/s);
+          if (match && match[1]) {
+            return JSON.parse(match[1]);
+          }
+          return JSON.parse(textFallback);
+        } catch (parseErr) {
+          return { caption: textFallback, keywords: "social, media", tags: "#newpost" };
+        }
+      } catch (nvErr: any) {
+        console.error('NVIDIA Fallback failed:', nvErr.message);
+        return { caption: "Check out this amazing new content! 🚀", keywords: "social, new, update", tags: "#amazing #trending" };
+      }
+    }
     const response = result.response;
 
     if (!response || !response.candidates || response.candidates.length === 0) {
@@ -179,11 +238,11 @@ Make sure the output is a valid JSON object.`;
   }
 
   async generateNvidiaKimiText(prompt: string): Promise<string> {
-    console.log(`[NVIDIA Kimi] Attempting text generation...`);
+    console.log(`[NVIDIA Llama Vision] Attempting text generation...`);
     const invokeUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
     const nvapiKey = process.env.NVIDIA_API_KEY || "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";
     const payload = {
-      model: "moonshotai/kimi-k2.6",
+      model: "meta/llama-3.2-90b-vision-instruct",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 8192,
       temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.7'),
