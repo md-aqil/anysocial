@@ -99,11 +99,18 @@ Make sure the output is a valid JSON object.`;
         const textFallback = data.choices?.[0]?.message?.content || '';
 
         try {
-          const match = textFallback.match(/```json\n(.*)\n```/s);
+          let jsonStr = textFallback;
+          const match = textFallback.match(/```(?:json)?\n?(.*?)\n?```/s);
           if (match && match[1]) {
-            return JSON.parse(match[1]);
+            jsonStr = match[1];
+          } else {
+            const start = textFallback.indexOf('{');
+            const end = textFallback.lastIndexOf('}');
+            if (start !== -1 && end !== -1 && end > start) {
+              jsonStr = textFallback.substring(start, end + 1);
+            }
           }
-          return JSON.parse(textFallback);
+          return JSON.parse(jsonStr);
         } catch (parseErr) {
           return { caption: textFallback, keywords: "social, media", tags: "#newpost" };
         }
@@ -125,11 +132,18 @@ Make sure the output is a valid JSON object.`;
     }
 
     try {
-      const match = content.match(/```json\n(.*)\n```/s);
+      let jsonStr = content;
+      const match = content.match(/```(?:json)?\n?(.*?)\n?```/s);
       if (match && match[1]) {
-        return JSON.parse(match[1]);
+        jsonStr = match[1];
+      } else {
+        const start = content.indexOf('{');
+        const end = content.lastIndexOf('}');
+        if (start !== -1 && end !== -1 && end > start) {
+          jsonStr = content.substring(start, end + 1);
+        }
       }
-      return JSON.parse(content);
+      return JSON.parse(jsonStr);
     } catch (error) {
       console.error('AI Analysis parsing error:', error);
       // if parsing fails, just return the raw content as the caption
