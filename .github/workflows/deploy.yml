@@ -24,8 +24,11 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/socialsched
-            git fetch origin
-            git reset --hard origin/main
-            git clean -fd --force
-            chmod +x deploy/deploy.sh
-            ./deploy/deploy.sh
+            
+            # Use sudo with a password injected via a GitHub secret (VPS_PASSWORD)
+            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S git config --global --add safe.directory /var/www/socialsched
+            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S git fetch origin
+            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S git reset --hard origin/main
+            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S git clean -fd --force
+            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S chmod +x deploy/deploy.sh
+            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S bash deploy/deploy.sh
