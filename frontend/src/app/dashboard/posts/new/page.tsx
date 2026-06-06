@@ -55,6 +55,7 @@ const postSchema = z.object({
   pinterestBoardId: z.string().optional(),
   pinterestLink: z.string().optional(),
   snapchatPostType: z.enum(['STORY', 'SPOTLIGHT']).default('STORY').optional(),
+  snapchatAutoFix: z.boolean().default(true),
   facebookContent: z.string().optional(),
   instagramContent: z.string().optional(),
   twitterContent: z.string().optional(),
@@ -288,6 +289,7 @@ export default function NewPostPage() {
           },
           SNAPCHAT: {
             postType: data.snapchatPostType,
+            autoFix: data.snapchatAutoFix,
             content: data.snapchatContent
           },
           LINKEDIN: {
@@ -355,6 +357,7 @@ export default function NewPostPage() {
       twitterAutoFix: true,
       threadsAutoFix: true,
       youtubeAutoFix: true,
+      snapchatAutoFix: true,
       shareToFeed: true,
       platforms: []
     },
@@ -1147,6 +1150,7 @@ export default function NewPostPage() {
                 <div className="px-4 py-4 space-y-3">
                   <DisconnectionBanner platform="SNAPCHAT" />
                   <SegmentedOptions label="Post Type" options={['STORY', 'SPOTLIGHT']} value={watch('snapchatPostType') || 'STORY'} onChange={(value) => setValue('snapchatPostType', value as any)} color={platformStyles.SNAPCHAT.color} />
+                  <Controller name="snapchatAutoFix" control={control} render={({ field }) => <SwitchRow label="Auto-fix media" description="Force 9:16 portrait for Snapchat" checked={field.value} onChange={field.onChange} />} />
                   <Button
                     type="button"
                     variant="outline"

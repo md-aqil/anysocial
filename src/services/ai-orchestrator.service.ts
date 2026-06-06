@@ -99,16 +99,25 @@ Make sure the output is a valid JSON object.`;
       contents: [{ role: 'user', parts: [{ text: prompt }] }]
     };
 
-    const result = await model.generateContent(request);
-    const response = result.response;
-
-    if (!response || !response.candidates || response.candidates.length === 0) {
-      return { adaptedContent: content };
+    let aiResponse = "";
+    try {
+      const result = await model.generateContent(request);
+      const response = result.response;
+      if (response && response.candidates && response.candidates.length > 0) {
+        aiResponse = response.candidates[0].content.parts[0].text;
+      }
+    } catch (err: any) {
+      console.error("[Gemini Adapt Error]:", err.message);
     }
 
-    const aiResponse = response.candidates[0].content.parts[0].text;
-
-    if (!aiResponse) return { adaptedContent: content };
+    if (!aiResponse) {
+      try {
+        aiResponse = await this.generateNvidiaKimiText(prompt);
+      } catch (nvErr: any) {
+        console.error("[NVIDIA Kimi Adapt Error]:", nvErr.message);
+        return { adaptedContent: content };
+      }
+    }
 
     try {
       const match = aiResponse.match(/```json\n(.*)\n```/s);
@@ -159,9 +168,52 @@ Make sure the output is a valid JSON object.`;
       return text;
     } catch (err: any) {
       console.error("[Gemini Text Error]:", err.message);
-      // Fallback to ensure pipeline never crashes
-      return "Did you know that there is a secret hidden in the deepest part of the ocean? Most people never think about it, but scientists recently discovered something massive moving down there. It completely changes everything we thought we knew about the deep sea. The craziest part? It might be older than the dinosaurs. Follow for more mysteries.";
+      try {
+        return await this.generateNvidiaKimiText(prompt);
+      } catch (nvErr: any) {
+        console.error("[NVIDIA Kimi Fallback Error]:", nvErr.message);
+        // Final Fallback to ensure pipeline never crashes
+        return "Did you know that there is a secret hidden in the deepest part of the ocean? Most people never think about it, but scientists recently discovered something massive moving down there. It completely changes everything we thought we knew about the deep sea. The craziest part? It might be older than the dinosaurs. Follow for more mysteries.";
+      }
     }
+  }
+
+  async generateNvidiaKimiText(prompt: string): Promise<string> {
+    console.log(`[NVIDIA Kimi] Attempting text generation...`);
+    const invokeUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
+    const nvapiKey = process.env.NVIDIA_API_KEY || "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";
+    const payload = {
+      model: "moonshotai/kimi-k2.6",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 8192,
+      temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.7'),
+      top_p: 1.00,
+      stream: false
+    };
+
+    const response = await fetch(invokeUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${nvapiKey}`,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`NVIDIA API Error ${response.status}: ${errText.substring(0, 200)}`);
+    }
+
+    const data = await response.json() as any;
+    const text = data.choices?.[0]?.message?.content || '';
+    if (!text) {
+       throw new Error("No text returned from NVIDIA API");
+    }
+    
+    console.log(`[NVIDIA Kimi] ✅ Script generated (${text.length} chars)`);
+    return text;
   }
 
 

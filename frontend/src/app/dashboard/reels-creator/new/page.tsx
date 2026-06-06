@@ -49,6 +49,13 @@ const PRESETS = [
   { id: 'mythology', title: 'Ancient Mythology', description: 'Epic tales of gods, monsters, and forgotten civilizations.' },
   { id: 'tech', title: 'Creepy Tech & AI', description: 'Rogue AI, dystopian futures, and unsettling technological advancements.' },
   { id: 'survival', title: 'Extreme Survival', description: 'Incredible stories of human endurance against impossible odds.' },
+  { 
+    id: 'fashion-edu', 
+    title: 'Indian Fashion Education', 
+    description: 'Beginner-friendly guide to personal style for Indian women, focusing on practical rules.',
+    customNiche: "A beginner-friendly guide to personal style and self-confidence specifically for **Indian women**. The content should focus on practical fashion rules applied ONLY to Indian ethnic and fusion wear (like kurtis, lehngas, sararas, and palazzos). NO JEANS OR WESTERN WEAR. Key concepts include the **Sandwich Rule**, the **Three-Color Rule**, and the **Third Piece Rule**. **CRITICAL INSTRUCTION:** Always use **Indian-based images and models** that reflect the diversity of Indian skin tones and body shapes. The tone should be that of an encouraging 'Didi' (older sister), emphasizing that fashion is about self-expression and confidence, not just expensive clothes. Image generator must be highly consistent and strictly follow scene descriptions without hallucinating elements.",
+    customPrompt: "CRITICAL SYSTEM INSTRUCTION: Ensure absolute visual consistency across all generated images. Images MUST EXACTLY match the described visual scene. DO NOT include any jeans, trousers, or western clothing. ONLY use Indian ethnic women's fashion.\n\nVisual Hook (0:00-0:03):\n*   Visual: An Indian woman looking at a closet with a mix of beautiful kurtis and traditional palazzos, looking confused.\n*   Text Overlay: \"Nothing to wear? Let’s fix that, Sis! ✨\"\n*   Audio: \"You don't need a new wardrobe to look stylish. You just need these three rules.\"\n\nPoint 1: The Sandwich Rule (Desi Version) (0:03-0:10):\n*   Visual: Transition from a mismatched outfit to a pink kurti, white palazzos, and pink jootis.\n*   Audio: \"First, the Sandwich Rule. Match your top and your footwear color, like this pink kurti and pink jooti. It creates a balanced, put-together look instantly.\"\n*   Text Overlay: Rule #1: The Sandwich Rule 🥪\n\nPoint 2: The Third Piece Rule (0:10-0:18):\n*   Visual: Showing a simple white kurti and leggings, then adding a beautifully printed dupatta or an embroidered ethnic jacket.\n*   Audio: \"Next, the Third Piece Rule. A basic top and bottom is just 'clothes.' Add a jacket, a belt, or a dupatta to turn it into an 'outfit'.\"\n*   Text Overlay: Rule #2: Add a 'Third Piece' 🧣\n\nPoint 3: The Shopping \"Rule of Three\" (0:18-0:25):\n*   Visual: A woman in a bustling Indian local market holding a trendy ethnic top but looking thoughtful.\n*   Audio: \"Stop 'revenge shopping' just because there's a sale! Before buying, ask: 'Can I style this in three different ways?' If the answer is yes, it’s a smart investment.\"\n*   Text Overlay: Rule #3: The Rule of Three 🛍️\n\nThe Confidence Closer (0:25-0:30):\n*   Visual: Close-up of a woman smiling confidently, standing with straight posture and making eye contact, wearing a stylish Anarkali.\n*   Audio: \"The best thing you can wear is your confidence. Stand tall, own your vibe, and remember—you look your best when you feel your best!\"\n*   Text Overlay: \"I AM CONFIDENT\" 💖\n\nSpecific Instructions for the AI Agent's Visuals:\n*   Imagery: Use images of women in Indian settings (e.g., college campuses, local markets, or family functions). Must be HIGHLY ACCURATE to the photo described in scene. Duration: 1 minute.\n*   Clothing Constraints: NO JEANS, NO WESTERN WEAR. Only Indian ethnic and fusion wear (kurtis, lehngas, sararas).\n*   Footwear Focus: Ensure the AI shows jootis, mojaris, or ethnic flats ONLY.\n*   Accessory Focus: Use visuals of minimalist jewelry like simple golden/silver chains, jhumkas, and bangles.\n*   Wardrobe Staples: Feature elegant kurtis, matching leggings, and vibrant dupattas as the \"must-have\" basics for the Indian wardrobe."
+  },
 ];
 
 const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
@@ -162,9 +169,10 @@ export default function ReelCreatorPage() {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No token found');
 
+      const selected = PRESETS.find(p => p.id === selectedPreset);
       const payload = {
-        niche: nicheType === 'preset' ? PRESETS.find(p => p.id === selectedPreset)?.title : customNiche,
-        customPrompt: customScript,
+        niche: nicheType === 'preset' ? (selected?.customNiche || selected?.title) : customNiche,
+        customPrompt: nicheType === 'preset' ? (selected?.customPrompt || '') : customScript,
         language,
         voiceId,
         artStyle,

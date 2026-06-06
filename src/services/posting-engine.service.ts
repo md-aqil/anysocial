@@ -180,6 +180,8 @@ export class PostingEngineService {
             targetRatio = 1.777; // Twitter feeds look best in standard 16:9 Landscape
           } else if (platform === 'THREADS') {
             targetRatio = 0.8; // 4:5 portrait is ideal for Threads media
+          } else if (platform === 'SNAPCHAT') {
+            targetRatio = 0.562; // 9:16 portrait is strictly required for Snapchat
           }
 
           const conformTempFiles: string[] = [];

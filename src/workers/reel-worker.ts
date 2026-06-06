@@ -378,14 +378,14 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
 
       // 2. Generate Script using Vertex AI (Gemini)
       await updateProgress('✍️ Writing cinematic script with Gemini 3.1 Pro...');
-      const durationStr = '1-minute compacted';
-      const numKeywords = 8;
+      const durationStr = 'exactly 60-second';
+      const numKeywords = 12;
       
       const hookText = series.hookType || 'Engaging Hook';
       const toneText = series.tone || 'Cinematic';
       const structureText = series.storyStructure || 'Beginning, Middle, End';
       
-      const wordCount = '135 to 150 words';
+      const wordCount = '180 to 220 words';
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
