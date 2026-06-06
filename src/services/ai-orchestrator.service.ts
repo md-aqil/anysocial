@@ -104,7 +104,7 @@ Make sure the output is a valid JSON object.`;
       const result = await model.generateContent(request);
       const response = result.response;
       if (response && response.candidates && response.candidates.length > 0) {
-        aiResponse = response.candidates[0].content.parts[0].text;
+        aiResponse = response.candidates[0].content.parts[0].text || "";
       }
     } catch (err: any) {
       console.error("[Gemini Adapt Error]:", err.message);
