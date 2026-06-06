@@ -14,7 +14,7 @@ export const platformConfigs: Record<string, PlatformOAuthConfig> = {
   INSTAGRAM: {
     authUrl: 'https://www.facebook.com/v21.0/dialog/oauth',
     tokenUrl: 'https://graph.facebook.com/v21.0/oauth/access_token',
-    scopes: ['instagram_basic', 'instagram_content_publish', 'instagram_manage_insights', 'pages_show_list', 'pages_read_engagement'],
+    scopes: ['instagram_basic', 'instagram_content_publish', 'instagram_manage_insights', 'pages_show_list', 'pages_read_engagement', 'pages_read_user_content'],
     clientIdKey: 'FACEBOOK_CLIENT_ID',
     clientSecretKey: 'FACEBOOK_CLIENT_SECRET',
     configIdKey: 'FACEBOOK_CONFIG_ID',
@@ -35,7 +35,7 @@ export const platformConfigs: Record<string, PlatformOAuthConfig> = {
   FACEBOOK: {
     authUrl: 'https://www.facebook.com/v21.0/dialog/oauth',
     tokenUrl: 'https://graph.facebook.com/v21.0/oauth/access_token',
-    scopes: ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list', 'business_management'],
+    scopes: ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list', 'pages_read_user_content', 'pages_manage_metadata', 'business_management'],
     clientIdKey: 'FACEBOOK_CLIENT_ID',
     clientSecretKey: 'FACEBOOK_CLIENT_SECRET',
     configIdKey: 'FACEBOOK_CONFIG_ID',
