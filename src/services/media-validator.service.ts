@@ -155,6 +155,16 @@ export class MediaValidatorService {
         minHeight = 480; // Lowered to support more dimensions
       }
     }
+    
+    // YouTube specific logic for Shorts
+    if (platform === 'YOUTUBE') {
+      const ytType = options?.postType || 'VIDEO';
+      if (ytType === 'SHORTS') {
+        targetAspectRatios = [0.562, 0.5, 0.45, 0.4, 0.8]; // Support vertical
+        minWidth = 320; 
+        minHeight = 480;
+      }
+    }
 
     if (!targetAspectRatios.some((validRatio) => Math.abs(aspectRatio - validRatio) <= 0.15)) {
       errors.push(
@@ -178,6 +188,9 @@ export class MediaValidatorService {
         if (igType === 'REEL') effectiveDurationLimit = 90;       // Reels: up to 90s
         else if (igType === 'STORY') effectiveDurationLimit = 15;  // Stories: 15s per clip
         // FEED stays at 60s
+      } else if (platform === 'YOUTUBE') {
+        const ytType = options?.postType || 'VIDEO';
+        if (ytType === 'SHORTS') effectiveDurationLimit = 60; // Shorts cap at 60s
       }
 
       if (duration > 0 && duration > effectiveDurationLimit) {

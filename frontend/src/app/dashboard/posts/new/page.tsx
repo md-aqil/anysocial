@@ -745,7 +745,8 @@ export default function NewPostPage() {
                   try {
                     const mediaFile = mediaFiles[0];
                     const result = await api.ai.analyzeMedia(mediaFile);
-                    setValue("content", result.caption);
+                    const contentText = result.title ? `Title: ${result.title}\n\n${result.caption}` : result.caption;
+                    setValue("content", contentText);
                     setValue("youtubeTags", result.tags);
                   } catch (error) {
                     console.error(error);
@@ -925,34 +926,6 @@ export default function NewPostPage() {
               </div>
             )}
 
-            {publishLog.length > 0 && (
-              <div className="rounded-2xl border border-stone-800 bg-stone-950 p-4 font-mono text-xs">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="font-bold uppercase tracking-widest text-stone-400">
-                    {createPostMutation.isPending ? 'Publishing...' : publishError ? 'Failed' : 'Done'}
-                  </span>
-                  <button type="button" onClick={() => { setPublishLog([]); setPublishError(null); }} className="text-stone-500 hover:text-white">
-                    clear
-                  </button>
-                </div>
-                <div className="max-h-60 space-y-1 overflow-y-auto">
-                  {publishLog.map((entry, index) => (
-                    <div
-                      key={`${entry.ts}-${index}`}
-                      className={cn(
-                        'flex gap-2',
-                        entry.level === 'error' ? 'text-red-400' :
-                          entry.level === 'success' ? 'text-green-400' :
-                            entry.level === 'warn' ? 'text-yellow-400' : 'text-stone-400'
-                      )}
-                    >
-                      <span className="shrink-0 text-stone-600">{entry.ts}</span>
-                      <span className="break-all">{entry.msg}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </main>
 
@@ -1291,6 +1264,34 @@ export default function NewPostPage() {
 
 
       <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#D9E3D9] bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur-sm lg:left-[300px]">
+        {publishLog.length > 0 && (
+          <div className="absolute bottom-[calc(100%+16px)] right-4 lg:right-8 w-full max-w-sm rounded-2xl border border-stone-800 bg-stone-950/95 backdrop-blur-md p-4 font-mono text-xs shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-bold uppercase tracking-widest text-stone-400">
+                {createPostMutation.isPending ? 'Publishing...' : publishError ? 'Failed' : 'Done'}
+              </span>
+              <button type="button" onClick={() => { setPublishLog([]); setPublishError(null); }} className="text-stone-500 hover:text-white">
+                clear
+              </button>
+            </div>
+            <div className="max-h-60 space-y-1 overflow-y-auto custom-scrollbar">
+              {publishLog.map((entry, index) => (
+                <div
+                  key={`${entry.ts}-${index}`}
+                  className={cn(
+                    'flex gap-2',
+                    entry.level === 'error' ? 'text-red-400' :
+                      entry.level === 'success' ? 'text-green-400' :
+                        entry.level === 'warn' ? 'text-yellow-400' : 'text-stone-400'
+                  )}
+                >
+                  <span className="shrink-0 text-stone-600">{entry.ts}</span>
+                  <span className="break-all">{entry.msg}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex min-h-16 flex-col gap-3 px-5 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <button
             type="button"

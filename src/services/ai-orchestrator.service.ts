@@ -33,10 +33,11 @@ export class AiOrchestratorService {
       },
     };
 
-    const prompt = `Analyze this media and generate a social media post. Your response should be a JSON object with three properties:
-1.  **caption**: A compelling and engaging caption for the post.
-2.  **keywords**: A list of relevant keywords as a comma-separated string.
-3.  **tags**: A list of relevant tags as a comma-separated string, including hashtags.
+    const prompt = `Analyze this media and generate a social media post. Your response should be a JSON object with four properties:
+1.  **title**: A short, catchy title (under 100 characters) specifically optimized for platforms like YouTube and TikTok.
+2.  **caption**: A compelling and engaging caption for the post.
+3.  **keywords**: A list of relevant keywords as a comma-separated string.
+4.  **tags**: A list of relevant tags as a comma-separated string, including hashtags.
 
 Make sure the output is a valid JSON object.`;
 
@@ -112,11 +113,11 @@ Make sure the output is a valid JSON object.`;
           }
           return JSON.parse(jsonStr);
         } catch (parseErr) {
-          return { caption: textFallback, keywords: "social, media", tags: "#newpost" };
+          return { title: "New Video", caption: textFallback, keywords: "social, media", tags: "#newpost" };
         }
       } catch (nvErr: any) {
         console.error('NVIDIA Fallback failed:', nvErr.message);
-        return { caption: "Check out this amazing new content! 🚀", keywords: "social, new, update", tags: "#amazing #trending" };
+        return { title: "Amazing Update!", caption: "Check out this amazing new content! 🚀", keywords: "social, new, update", tags: "#amazing #trending" };
       }
     }
     const response = result.response;
@@ -147,7 +148,7 @@ Make sure the output is a valid JSON object.`;
     } catch (error) {
       console.error('AI Analysis parsing error:', error);
       // if parsing fails, just return the raw content as the caption
-      return { caption: content, keywords: "", tags: "" };
+      return { title: "New Video", caption: content, keywords: "", tags: "" };
     }
   }
 

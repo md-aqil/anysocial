@@ -24,8 +24,12 @@ export class YouTubeAdapter implements PlatformAdapter {
     let title: string;
     let description: string;
 
-    if (lines.length > 1 && lines[0].length <= 100) {
-      title = lines[0].trim();
+    const firstLine = lines[0].trim();
+    if (firstLine.toLowerCase().startsWith('title:')) {
+      title = firstLine.replace(/^title:\s*/i, '');
+      description = lines.slice(1).join('\n').trim();
+    } else if (lines.length > 1 && firstLine.length <= 100) {
+      title = firstLine;
       description = lines.slice(1).join('\n').trim();
     } else {
       title = content.substring(0, 100).trim();
@@ -131,11 +135,12 @@ export class YouTubeAdapter implements PlatformAdapter {
     if (payload.mediaUrls.length === 0) throw new Error('No video URL provided');
 
     const videoUrl = payload.mediaUrls[0];
-    const title = (payload.metadata.title as string) || (payload.platformSpecificFields.title as string) || 'Untitled Video';
-    const description = payload.caption || '';
+    let title = (payload.metadata.title as string) || (payload.platformSpecificFields.title as string) || 'Untitled Video';
+    let description = payload.caption || '';
     const privacyStatus = (payload.platformSpecificFields.privacy as string) || 'public';
     const categoryId = (payload.platformSpecificFields.category as string) || '22';
     const selfDeclaredMadeForKids = payload.platformSpecificFields.madeForKids === true;
+    const postType = payload.platformSpecificFields.postType as string;
 
     // Build tags array
     let tags: string[] = [];
@@ -143,6 +148,15 @@ export class YouTubeAdapter implements PlatformAdapter {
       tags = payload.metadata.tags as string[];
     } else if (typeof payload.platformSpecificFields.tags === 'string') {
       tags = (payload.platformSpecificFields.tags as string).split(',').map(t => t.trim()).filter(Boolean);
+    }
+
+    if (postType === 'SHORTS') {
+      if (!description.toLowerCase().includes('#shorts')) {
+        description += '\n\n#shorts';
+      }
+      if (!tags.includes('shorts')) {
+        tags.push('shorts');
+      }
     }
 
     console.log(`[YT] Downloading video from: ${videoUrl}`);
