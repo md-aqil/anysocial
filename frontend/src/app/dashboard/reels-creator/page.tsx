@@ -110,7 +110,7 @@ const getReelStatus = (reel: any) => {
     channels = [];
   }
 
-  if (channels.length === 0) {
+  if (channels.length === 0 || reel.status === 'READY') {
     return {
       label: 'READY',
       classes: 'bg-teal-100/90 text-teal-700 border-teal-200',

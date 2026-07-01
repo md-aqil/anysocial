@@ -319,6 +319,7 @@ Make sure the output is a valid JSON object.`;
         parameters: {
           aspectRatio: "9:16",
           sampleCount: 1,
+          negativePrompt: "male, man, men, boy, boys, cross-dressing, wrong gender, western clothing, ugly, deformed, cartoon, illustration, low quality, unnatural, mutated",
           outputOptions: {
             mimeType: "image/jpeg",
             compressionQuality: 95

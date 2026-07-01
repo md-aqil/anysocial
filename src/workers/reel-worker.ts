@@ -419,7 +419,9 @@ PACING & RULES:
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
  
 For the 'keywords' array, generate exactly ${numKeywords} highly detailed image prompts. 
-CRITICAL IMAGE RULE: Each image prompt MUST strictly describe the exact visual scene happening in the script at that specific moment. Ensure the visuals match an edgy, cinematic, and modern aesthetic appealing to teenagers, explicitly avoiding any overly childish or babyish imagery. Do not generate random beautiful images; generate exactly what the viewer should see while the narrator is speaking that sentence.
+CRITICAL IMAGE RULE: Each image prompt MUST strictly describe the exact visual scene happening in the script at that specific moment. 
+EXTREMELY IMPORTANT GENDER/SUBJECT RULE: If the topic involves fashion, people, or a specific demographic (e.g., "Indian women"), you MUST explicitly start EVERY single image prompt with the exact subject (e.g., "A beautiful Indian woman wearing..."). Never use vague terms like "person", "model", or "someone", as the image generator will hallucinate the wrong gender or race.
+Ensure the visuals match an edgy, cinematic, and modern aesthetic appealing to teenagers, explicitly avoiding any overly childish or babyish imagery. Do not generate random beautiful images; generate exactly what the viewer should see while the narrator is speaking that sentence.
  
 Output ONLY valid JSON: 
 {
