@@ -3,7 +3,7 @@ export async function uploadFile(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
   const res = await fetch(`${API_BASE}/api/reels/upload`, {
     method: 'POST',
     headers: {
