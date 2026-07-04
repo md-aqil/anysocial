@@ -376,15 +376,9 @@ ${pastScriptsList}
 You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for this next reel. Do not repeat any of the main concepts, historical events, locations, figure names, or hooks from the list above. Choose something fresh and completely unrelated so that viewers get a new experience in every single video in the series. For example, if you wrote about 'Cicada 3301', write about a completely different mystery (e.g., Lake Karachay, the Max Headroom intrusion, Sad Satan game, mysterious radio signals, dark web mysteries, deep ocean sounds, etc.).`;
       }
 
-      // 2. Generate Script using Vertex AI (Gemini)
-      await updateProgress('✍️ Writing cinematic script with Gemini 3.1 Pro...');
+      // 2. Phase 1: Generate Story Script (The Director)
+      await updateProgress('✍️ Phase 1: Director is writing the cinematic script...');
       const durationStr = 'exactly 60-second';
-      const numKeywords = 12;
-      
-      const hookText = series.hookType || 'Engaging Hook';
-      const toneText = series.tone || 'Cinematic';
-      const structureText = series.storyStructure || 'Beginning, Middle, End';
-      
       const wordCount = '180 to 220 words';
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
@@ -392,7 +386,7 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
         languagePrompt = `Language: Hindi. CRITICAL: You MUST write the script twice. First, "script_tts" MUST be written exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. Second, "script" MUST be written in Roman (Hinglish/English characters), which will be used for on-screen subtitles. The TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words, exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable. Both scripts must say exactly the same thing.`;
       }
       
-      const scriptPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}
+      const storyPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}
  
 CRITICAL AUDIENCE & VOCABULARY RULE: 
 The script and tone MUST be engaging, edgy, and highly relatable for teenagers (Gen Z audience). Do not talk to them like a child. Use punchy, dynamic, modern vocabulary that holds a teen's attention. Keep it fast-paced, suspenseful, and captivating.
@@ -418,36 +412,91 @@ PACING & RULES:
 - ${languagePrompt}
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
  
-For the 'keywords' array, generate exactly ${numKeywords} highly detailed image prompts. 
-CRITICAL IMAGE RULE: Each image prompt MUST strictly describe the exact visual scene happening in the script at that specific moment. 
-EXTREMELY IMPORTANT GENDER/SUBJECT RULE: If the topic involves fashion, people, or a specific demographic (e.g., "Indian women"), you MUST explicitly start EVERY single image prompt with the exact subject (e.g., "A beautiful Indian woman wearing..."). Never use vague terms like "person", "model", or "someone", as the image generator will hallucinate the wrong gender or race.
-Ensure the visuals match an edgy, cinematic, and modern aesthetic appealing to teenagers, explicitly avoiding any overly childish or babyish imagery. Do not generate random beautiful images; generate exactly what the viewer should see while the narrator is speaking that sentence.
- 
 Output ONLY valid JSON: 
 {
   "script": "...", 
   "script_tts": "...", 
-  "keywords": ["detailed image prompt 1", "detailed image prompt 2", ...], 
   "audio_prompt": "Describe the perfect cinematic background music to match the emotional tone and pacing of this story in detail. Example: 'Deep, atmospheric cinematic ambient synth pads with a slow, emotional buildup.'"
 }`;
 
       let script = '';
       let scriptTts = '';
-      let keywords: string[] = [];
+      let characterContext = '';
+      let locationContext = '';
+      let visuals: any[] = [];
+      const numKeywords = 12;
 
       try {
-        const aiResultText = await aiOrchestrator.generateContent(scriptPrompt);
+        const aiResultText = await aiOrchestrator.generateContent(storyPrompt);
         const rawContent = aiResultText.replace(/```json\n?|```/g, '').trim();
         const parsed = JSON.parse(rawContent);
         if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
         script = parsed.script;
         scriptTts = parsed.script_tts || parsed.script;
-        keywords = parsed.keywords || ['cinematic', 'trending'];
-        // Default to a cinematic sound if the AI doesn't provide an audio prompt
         (series as any).aiMusicPrompt = parsed.audio_prompt;
       } catch (e: any) {
         logger.error({ event: 'reel_ai_script_failed', reelId, error: e.message });
         throw new Error(`AI Script Failed: ${e.message}`);
+      }
+
+      await prisma.reel.update({
+        where: { id: reelId },
+        data: { script },
+      });
+
+      // Phase 2: Memory Extraction (Art Director)
+      await updateProgress('🧠 Phase 2: Art Director is parsing Memory Core...');
+      try {
+        const memoryPrompt = `Analyze the following script and extract the main characters and locations.
+Script: "${script}"
+Output ONLY valid JSON:
+{
+  "characters": [{ "name": "...", "physical": "...", "wardrobe": "..." }],
+  "locations": [{ "name": "...", "architecture": "...", "lighting": "..." }]
+}`;
+        const memoryResText = await aiOrchestrator.generateContent(memoryPrompt);
+        const memParsed = JSON.parse(memoryResText.replace(/```json\n?|```/g, '').trim());
+        characterContext = JSON.stringify(memParsed.characters || []);
+        locationContext = JSON.stringify(memParsed.locations || []);
+        
+        for (const char of memParsed.characters || []) {
+            await prisma.seriesCharacter.create({ data: { seriesId: series.id, name: char.name, physical: char.physical, wardrobe: char.wardrobe } });
+        }
+      } catch (e) {
+        console.warn("[Art Director] Failed to parse memory core, proceeding with empty context.");
+      }
+
+      // Phase 3: Shot Planning (Cinematographer)
+      await updateProgress('🎥 Phase 3: Cinematographer is planning the Shot List...');
+      try {
+         const cinePrompt = `You are an elite Cinematographer. Break down this script into exactly ${numKeywords} cinematic shots.
+Script: "${script}"
+Characters: ${characterContext}
+Locations: ${locationContext}
+
+CRITICAL MEDIA RULE: 
+- Use "ai_image" if the scene requires specific characters/fashion.
+- Use "stock_video" if the scene is generic b-roll, a landscape, or cityscape.
+
+CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
+
+Output ONLY valid JSON:
+{
+  "visuals": [
+    { 
+      "keyword": "detailed description of the exact visual frame, explicitly naming characters and environment.", 
+      "media_type": "ai_image", 
+      "camera_movement": "zoom_in",
+      "lighting": "High contrast rim lighting"
+    }
+  ]
+}`;
+         const cineResText = await aiOrchestrator.generateContent(cinePrompt);
+         const cineParsed = JSON.parse(cineResText.replace(/```json\n?|```/g, '').trim());
+         visuals = cineParsed.visuals || [];
+      } catch (e) {
+         console.error("[Cinematographer] Failed, falling back to basic shots.");
+         throw new Error("Cinematographer planning failed.");
       }
 
       await prisma.reel.update({
@@ -484,41 +533,67 @@ Output ONLY valid JSON:
         throw new Error(`Voice Generation Failed: ${audioError.message}`);
       }
 
-      // 4. Generate Images
-      await updateProgress(`🎨 Rendering ${numKeywords} visuals with Imagen 3 (${actualDuration}s video)...`);
+      // 4. Generate Images & QA Loop
+      await updateProgress(`🎨 Phase 4: Production & QA Loop (${actualDuration}s video)...`);
       logger.info({ event: 'reel_generating_images', reelId });
       
       // Use a consistent seed for all images in this reel to enforce visual consistency
       const reelSeed = Math.floor(Math.random() * 1000000);
       
       const imageUrls: string[] = [];
-      for (const keyword of keywords.slice(0, numKeywords)) {
-        try {
-          const url = await aiOrchestrator.generateImage(`${keyword}, ${series.artStyle} style, identical consistency, highly detailed`, reelSeed);
-          imageUrls.push(url);
-          await new Promise(r => setTimeout(r, 1000));
-        } catch (e: any) {
-          logger.warn({ event: 'reel_image_gen_failed', keyword, error: e.message });
-          try {
-            // Fallback to Stock API chain (Google -> NVIDIA -> Pixabay)
-            const stockUrl = await aiOrchestrator.fetchStockImage(keyword);
-            imageUrls.push(stockUrl);
-          } catch (stockErr) {
+      const cameraMovements: string[] = [];
+      let currentShotIndex = 1;
+      const totalShots = visuals.slice(0, numKeywords).length;
+
+      for (const visual of visuals.slice(0, numKeywords)) {
+        await updateProgress(`🎨 Phase 4: Production & QA (Shot ${currentShotIndex}/${totalShots})...`);
+        const keyword = visual.keyword;
+        const mediaType = visual.media_type || 'ai_image';
+        const intendedMovement = visual.camera_movement || 'zoom_in';
+        const lighting = visual.lighting || 'cinematic';
+        
+        let attempts = 0;
+        const maxAttempts = 3;
+        let finalUrl = '';
+        
+        while (attempts < maxAttempts) {
+            attempts++;
             try {
-              console.log(`[Worker] Stock chain failed. Trying direct NVIDIA Flux with generic prompt...`);
-              const fallbackUrl = await aiOrchestrator.generateNvidiaFluxImage("beautiful vertical scene consistent style", reelSeed);
-              imageUrls.push(fallbackUrl);
-            } catch (fluxErr: any) {
-              try {
-                console.log(`[Worker] Direct Flux failed. Trying generic Pixabay...`);
-                const pixabayUrl = await aiOrchestrator.fetchPixabayImage("abstract vertical background");
-                imageUrls.push(pixabayUrl);
-              } catch (pixErr: any) {
-                throw new Error("Could not generate or search any fallback image asset");
+              if (mediaType === 'stock_video') {
+                finalUrl = await aiOrchestrator.getBestStockVideo(keyword);
+                break; // Skip QA for stock
+              } else if (mediaType === 'stock_photo') {
+                finalUrl = await aiOrchestrator.getBestStockImage(keyword);
+                break; // Skip QA for stock
+              } else {
+                // Phase 4: Prompt Engineering
+                const engineeredPrompt = `(${keyword}) in (${lighting}) shot on 50mm lens, photorealistic, 8k, ${series.artStyle} style, identical consistency --no ugly, deformed`;
+                
+                finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts);
+                await new Promise(r => setTimeout(r, 1000));
+                
+                // Phase 5: Vision QA Inspector
+                const qaResult = await aiOrchestrator.evaluateImage(finalUrl, keyword, characterContext);
+                if (qaResult.passed) {
+                    break; // Image is good!
+                } else {
+                    console.log(`[QA Failed] Attempt ${attempts}: ${qaResult.reason}. Regenerating...`);
+                }
+              }
+            } catch (e: any) {
+              logger.warn({ event: 'reel_media_gen_failed', keyword, attempt: attempts, error: e.message });
+              if (attempts === maxAttempts) {
+                  try {
+                    finalUrl = await aiOrchestrator.fetchStockImage(keyword);
+                  } catch (e) {
+                    finalUrl = await aiOrchestrator.generateImage("beautiful vertical scene", reelSeed);
+                  }
               }
             }
-          }
         }
+        imageUrls.push(finalUrl);
+        cameraMovements.push(intendedMovement);
+        currentShotIndex++;
       }
 
       // 5. Compose Video using VideoComposerService (FFmpeg)
@@ -526,7 +601,7 @@ Output ONLY valid JSON:
       const abortController = new AbortController();
 
       const imageDuration = Math.ceil(actualDuration / numKeywords);
-      const { clipPaths, tempFiles: composerTempFiles } = await VideoComposerService.createVideoClips(imageUrls, imageDuration, 'vertical', abortController.signal);
+      const { clipPaths, tempFiles: composerTempFiles } = await VideoComposerService.createVideoClips(imageUrls, imageDuration, 'vertical', abortController.signal, cameraMovements);
       if (clipPaths) tempFilesToCleanup.push(...clipPaths);
       if (composerTempFiles) tempFilesToCleanup.push(...composerTempFiles);
 

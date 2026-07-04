@@ -126,7 +126,8 @@ export class VideoComposerService {
     imageUrls: string[], 
     duration: number | number[] = 10, 
     orientation: 'vertical' | 'horizontal' = 'vertical', 
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    movements?: string[]
   ): Promise<{ clipPaths: string[], tempFiles: string[] }> {
     const width = orientation === 'horizontal' ? 1280 : 720;
     const height = orientation === 'horizontal' ? 720 : 1280;
@@ -175,10 +176,28 @@ export class VideoComposerService {
             // Pre-crop image to 9:16 ratio at double resolution to prevent any stretching before zoompan
             const cropW = 1440;
             const cropH = 2560;
+            
+            const currentMovement = movements && movements[index] ? movements[index] : 'zoom_in';
+            let zoomPanFilter = `zoompan=z='min(zoom+0.0006,1.5)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${width}x${height}:fps=${fps}`; // Default zoom_in
+            
+            if (currentMovement === 'zoom_out') {
+              zoomPanFilter = `zoompan=z='max(1.3-0.001*in,1.0)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${width}x${height}:fps=${fps}`;
+            } else if (currentMovement === 'pan_right') {
+              zoomPanFilter = `zoompan=z='1.2':d=1:x='min(x+2,iw-iw/zoom)':y='ih/2-(ih/zoom/2)':s=${width}x${height}:fps=${fps}`;
+            } else if (currentMovement === 'pan_left') {
+              zoomPanFilter = `zoompan=z='1.2':d=1:x='max(iw-iw/zoom-x-2,0)':y='ih/2-(ih/zoom/2)':s=${width}x${height}:fps=${fps}`;
+            } else if (currentMovement === 'pan_up') {
+              zoomPanFilter = `zoompan=z='1.2':d=1:x='iw/2-(iw/zoom/2)':y='max(ih-ih/zoom-y-2,0)':s=${width}x${height}:fps=${fps}`;
+            } else if (currentMovement === 'pan_down') {
+              zoomPanFilter = `zoompan=z='1.2':d=1:x='iw/2-(iw/zoom/2)':y='min(y+2,ih-ih/zoom)':s=${width}x${height}:fps=${fps}`;
+            } else if (currentMovement === 'static') {
+              zoomPanFilter = `scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height}`;
+            }
+
             proc.inputOptions(['-loop 1'])
               .outputOptions([
                 `-t ${currentDuration + 2}`,
-                '-vf', `scale=${cropW}:${cropH}:force_original_aspect_ratio=increase,crop=${cropW}:${cropH},setsar=1,zoompan=z='min(zoom+0.0006,1.5)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${width}x${height}:fps=${fps}`,
+                '-vf', `scale=${cropW}:${cropH}:force_original_aspect_ratio=increase,crop=${cropW}:${cropH},setsar=1,${zoomPanFilter}`,
                 '-c:v libx264',
                 '-pix_fmt yuv420p',
                 `-r ${fps}`,

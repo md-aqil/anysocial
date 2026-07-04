@@ -302,6 +302,9 @@ model ReelSeries {
   createdAt      DateTime @default(now())
   updatedAt    DateTime @updatedAt
   reels        Reel[]
+  characters   SeriesCharacter[]
+  locations    SeriesLocation[]
+  objects      SeriesObject[]
 
   @@map("reel_series")
 }
@@ -364,4 +367,55 @@ model CuratedPost {
   @@unique([userId, platform, externalPostId])
   @@index([userId])
   @@map("curated_posts")
+}
+
+model SeriesCharacter {
+  id             String      @id @default(uuid())
+  seriesId       String      @map("series_id")
+  series         ReelSeries  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  name           String
+  demographics   Json?       
+  physical       Json?       
+  wardrobe       Json?       
+  mannerisms     Json?       
+  loraReference  String?     @map("lora_reference")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([seriesId])
+  @@map("series_characters")
+}
+
+model SeriesLocation {
+  id             String      @id @default(uuid())
+  seriesId       String      @map("series_id")
+  series         ReelSeries  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  name           String
+  architecture   String?
+  lighting       String?
+  atmosphere     String?
+  colorPalette   Json?       @map("color_palette")
+  keyObjects     Json?       @map("key_objects")
+  cameraMood     String?     @map("camera_mood")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([seriesId])
+  @@map("series_locations")
+}
+
+model SeriesObject {
+  id             String      @id @default(uuid())
+  seriesId       String      @map("series_id")
+  series         ReelSeries  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  name           String
+  material       String?
+  details        String?
+  scale          String?
+  state          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([seriesId])
+  @@map("series_objects")
 }

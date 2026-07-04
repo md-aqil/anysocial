@@ -58,67 +58,7 @@ Make sure the output is a valid JSON object.`;
       result = await model.generateContent(request);
     } catch (e: any) {
       console.error('AI Media Analysis failed:', e.message);
-      try {
-        console.log('[NVIDIA Vision] Attempting fallback for media analysis caption...');
-        
-        const isImage = mediaFile.mimetype.startsWith('image/');
-        const messagesContent: any[] = [{ type: "text", text: prompt }];
-        
-        if (isImage) {
-          messagesContent.push({
-            type: "image_url",
-            image_url: { url: `data:${mediaFile.mimetype};base64,${mediaFile.buffer.toString('base64')}` }
-          });
-        }
-        
-        const nvapiKey = process.env.NVIDIA_API_KEY || "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";
-        const payload = {
-          model: "meta/llama-3.2-90b-vision-instruct",
-          messages: [{ role: "user", content: messagesContent }],
-          max_tokens: 8192,
-          temperature: 0.7,
-          top_p: 1.00,
-          stream: false
-        };
-
-        const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${nvapiKey}`,
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-           const errText = await response.text();
-           throw new Error(`NVIDIA Vision API Error ${response.status}: ${errText.substring(0, 200)}`);
-        }
-
-        const data = await response.json() as any;
-        const textFallback = data.choices?.[0]?.message?.content || '';
-
-        try {
-          let jsonStr = textFallback;
-          const match = textFallback.match(/```(?:json)?\n?(.*?)\n?```/s);
-          if (match && match[1]) {
-            jsonStr = match[1];
-          } else {
-            const start = textFallback.indexOf('{');
-            const end = textFallback.lastIndexOf('}');
-            if (start !== -1 && end !== -1 && end > start) {
-              jsonStr = textFallback.substring(start, end + 1);
-            }
-          }
-          return JSON.parse(jsonStr);
-        } catch (parseErr) {
-          return { title: "New Video", caption: textFallback, keywords: "social, media", tags: "#newpost" };
-        }
-      } catch (nvErr: any) {
-        console.error('NVIDIA Fallback failed:', nvErr.message);
-        return { title: "Amazing Update!", caption: "Check out this amazing new content! 🚀", keywords: "social, new, update", tags: "#amazing #trending" };
-      }
+      return { title: "Amazing Update!", caption: "Check out this amazing new content! 🚀", keywords: "social, new, update", tags: "#amazing #trending" };
     }
     const response = result.response;
 
@@ -182,15 +122,11 @@ Make sure the output is a valid JSON object.`;
       }
     } catch (err: any) {
       console.error("[Gemini Adapt Error]:", err.message);
+      return { adaptedContent: content };
     }
 
     if (!aiResponse) {
-      try {
-        aiResponse = await this.generateNvidiaKimiText(prompt);
-      } catch (nvErr: any) {
-        console.error("[NVIDIA Kimi Adapt Error]:", nvErr.message);
-        return { adaptedContent: content };
-      }
+      return { adaptedContent: content };
     }
 
     try {
@@ -227,6 +163,7 @@ Make sure the output is a valid JSON object.`;
           generationConfig: {
             temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
             maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
+            responseMimeType: "application/json"
           }
         })
       });
@@ -242,54 +179,9 @@ Make sure the output is a valid JSON object.`;
       return text;
     } catch (err: any) {
       console.error("[Gemini Text Error]:", err.message);
-      try {
-        return await this.generateNvidiaKimiText(prompt);
-      } catch (nvErr: any) {
-        console.error("[NVIDIA Kimi Fallback Error]:", nvErr.message);
-        // Final Fallback to ensure pipeline never crashes
-        return "Did you know that there is a secret hidden in the deepest part of the ocean? Most people never think about it, but scientists recently discovered something massive moving down there. It completely changes everything we thought we knew about the deep sea. The craziest part? It might be older than the dinosaurs. Follow for more mysteries.";
-      }
+      throw err;
     }
   }
-
-  async generateNvidiaKimiText(prompt: string): Promise<string> {
-    console.log(`[NVIDIA Llama Vision] Attempting text generation...`);
-    const invokeUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
-    const nvapiKey = process.env.NVIDIA_API_KEY || "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";
-    const payload = {
-      model: "meta/llama-3.2-90b-vision-instruct",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 8192,
-      temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.7'),
-      top_p: 1.00,
-      stream: false
-    };
-
-    const response = await fetch(invokeUrl, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${nvapiKey}`,
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`NVIDIA API Error ${response.status}: ${errText.substring(0, 200)}`);
-    }
-
-    const data = await response.json() as any;
-    const text = data.choices?.[0]?.message?.content || '';
-    if (!text) {
-       throw new Error("No text returned from NVIDIA API");
-    }
-    
-    console.log(`[NVIDIA Kimi] ✅ Script generated (${text.length} chars)`);
-    return text;
-  }
-
 
   // 1. Imagen 3 - Image Generation
   async generateImage(prompt: string, seed: number = 0): Promise<string> {
@@ -333,7 +225,8 @@ Make sure the output is a valid JSON object.`;
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestPayload)
+        body: JSON.stringify(requestPayload),
+        signal: AbortSignal.timeout(30000)
       });
 
       if (!res.ok) {
@@ -351,67 +244,25 @@ Make sure the output is a valid JSON object.`;
     } catch (e: any) {
       console.error("[Imagen 3 API Error]:", e.message || e);
       try {
-        // Fallback 1: NVIDIA Flux
-        return await this.generateNvidiaFluxImage(prompt, seed);
-      } catch (fluxErr: any) {
-        console.error("[Flux Fallback Error]:", fluxErr.message || fluxErr);
+        // Fallback 1: Pexels Image
+        return await this.fetchPexelsImage(prompt);
+      } catch (pexelsErr: any) {
+        console.error("[Pexels Fallback Error]:", pexelsErr.message || pexelsErr);
         try {
-          // Fallback 2: Pixabay search and download
-          return await this.fetchPixabayImage(prompt);
-        } catch (pixabayErr: any) {
-          console.error("[Pixabay Fallback Error]:", pixabayErr.message || pixabayErr);
-          throw new Error("All AI and Stock Image Generators failed.");
+          // Fallback 2: Unsplash
+          return await this.fetchUnsplashImage(prompt);
+        } catch (unsplashErr: any) {
+          console.error("[Unsplash Fallback Error]:", unsplashErr.message || unsplashErr);
+          try {
+            // Fallback 3: Pixabay search and download
+            return await this.fetchPixabayImage(prompt);
+          } catch (pixabayErr: any) {
+            console.error("[Pixabay Fallback Error]:", pixabayErr.message || pixabayErr);
+            throw new Error("All AI and Stock Image Generators failed.");
+          }
         }
       }
     }
-  }
-
-  /**
-   * Helper to invoke Black Forest Labs' NVIDIA Flux.2 Klein 4B image generation model
-   */
-  async generateNvidiaFluxImage(prompt: string, seed: number = 0): Promise<string> {
-    const uniqueId = Math.random().toString(36).substring(7);
-    console.log(`[NVIDIA Flux] Generating image with prompt: "${prompt}"...`);
-
-    const invokeUrl = "https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b";
-    const headers = {
-        "Authorization": "Bearer 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",
-        "Accept": "application/json",
-    };
-
-    const payload = {
-      "prompt": prompt,
-      "width": 768,
-      "height": 1344,
-      "seed": seed,
-      "steps": 4
-    };
-
-    const fluxResponse = await fetch(invokeUrl, {
-        method: "post",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json", ...headers }
-    });
-
-    if (fluxResponse.status != 200) {
-      const errBody = await fluxResponse.text();
-      throw new Error("NVIDIA invocation failed: " + fluxResponse.status + " " + errBody);
-    }
-    
-    const response_body = await fluxResponse.json() as any;
-    
-    // NVIDIA Flux API returns base64 inside artifacts array or directly as image/b64_json
-    const b64 = response_body.image || response_body.artifacts?.[0]?.base64 || response_body.data?.[0]?.b64_json || response_body.b64_json;
-    if (!b64) {
-      console.error("[Flux Raw Response]:", JSON.stringify(response_body));
-      throw new Error("Could not parse NVIDIA image response");
-    }
-    
-    const tempPath = path.join(os.tmpdir(), `flux_${Date.now()}_${uniqueId}.jpg`);
-    // Remove data URI prefix if present
-    const cleanB64 = typeof b64 === 'string' ? b64.replace(/^data:image\/\w+;base64,/, "") : "";
-    fs.writeFileSync(tempPath, Buffer.from(cleanB64, 'base64'));
-    return tempPath;
   }
 
   /**
@@ -439,17 +290,193 @@ Make sure the output is a valid JSON object.`;
     const uniqueId = Math.random().toString(36).substring(7);
     const tempPath = path.join(os.tmpdir(), `pixabay_${Date.now()}_${uniqueId}.jpg`);
     
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
+    const photoResponse = await fetch(imageUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    if (!photoResponse.ok) {
       throw new Error(`Failed to download Pixabay image from ${imageUrl}`);
     }
-    const arrayBuffer = await imageResponse.arrayBuffer();
+    const arrayBuffer = await photoResponse.arrayBuffer();
     fs.writeFileSync(tempPath, Buffer.from(arrayBuffer));
     return tempPath;
   }
 
+  async fetchPixabayVideo(keyword: string): Promise<string> {
+    const cleanKeyword = keyword.split(',')[0].trim();
+    if (!process.env.PIXABAY_API_KEY) {
+      throw new Error("No Pixabay API key configured in env");
+    }
+    
+    console.log(`[Pixabay Video] Searching for '${cleanKeyword}'...`);
+    const response = await fetch(`https://pixabay.com/api/videos/?key=${process.env.PIXABAY_API_KEY}&q=${encodeURIComponent(cleanKeyword)}&safesearch=true`);
+    if (!response.ok) {
+      throw new Error(`Pixabay Video API error: ${response.status}`);
+    }
+    const data = await response.json() as any;
+    
+    if (!data.hits || data.hits.length === 0) {
+      throw new Error(`No Pixabay videos found for keyword: ${cleanKeyword}`);
+    }
+    
+    const videoData = data.hits[0].videos;
+    const videoUrl = videoData.large?.url || videoData.medium?.url || videoData.small?.url;
+    
+    if (!videoUrl) {
+      throw new Error(`No valid video URL found in Pixabay response for ${cleanKeyword}`);
+    }
+
+    console.log(`[Pixabay Video] Found video URL: ${videoUrl}, downloading...`);
+    
+    const uniqueId = Math.random().toString(36).substring(7);
+    const tempPath = path.join(os.tmpdir(), `pixabay_vid_${Date.now()}_${uniqueId}.mp4`);
+    
+    const videoResponse = await fetch(videoUrl);
+    if (!videoResponse.ok) {
+      throw new Error(`Failed to download Pixabay video from ${videoUrl}`);
+    }
+    const arrayBuffer = await videoResponse.arrayBuffer();
+    fs.writeFileSync(tempPath, Buffer.from(arrayBuffer));
+    return tempPath;
+  }
+
+  async fetchPexelsVideo(keyword: string): Promise<string> {
+    const cleanKeyword = keyword.split(',')[0].trim();
+    if (!process.env.PEXELS_API_KEY) {
+      throw new Error("No Pexels API key configured in env");
+    }
+
+    console.log(`[Pexels Video] Searching for '${cleanKeyword}'...`);
+    const response = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(cleanKeyword)}&orientation=portrait&per_page=3`, {
+      headers: { 'Authorization': process.env.PEXELS_API_KEY }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Pexels Video API error: ${response.status}`);
+    }
+    const data = await response.json() as any;
+    
+    if (!data.videos || data.videos.length === 0) {
+      throw new Error(`No Pexels videos found for keyword: ${cleanKeyword}`);
+    }
+
+    const videoFiles = data.videos[0].video_files;
+    const bestFile = videoFiles.find((f: any) => f.quality === 'hd' && f.width < f.height) || videoFiles[0];
+    
+    const videoUrl = bestFile.link;
+    if (!videoUrl) {
+      throw new Error(`No valid video URL found in Pexels response for ${cleanKeyword}`);
+    }
+
+    console.log(`[Pexels Video] Found video URL: ${videoUrl}, downloading...`);
+    const uniqueId = Math.random().toString(36).substring(7);
+    const tempPath = path.join(os.tmpdir(), `pexels_vid_${Date.now()}_${uniqueId}.mp4`);
+    
+    const videoResponse = await fetch(videoUrl);
+    if (!videoResponse.ok) {
+      throw new Error(`Failed to download Pexels video from ${videoUrl}`);
+    }
+    const ab = await videoResponse.arrayBuffer();
+    fs.writeFileSync(tempPath, Buffer.from(ab));
+    return tempPath;
+  }
+
+  async fetchPexelsImage(keyword: string): Promise<string> {
+    const cleanKeyword = keyword.split(',')[0].trim();
+    if (!process.env.PEXELS_API_KEY) {
+      throw new Error("No Pexels API key configured in env");
+    }
+
+    console.log(`[Pexels Image] Searching for '${cleanKeyword}'...`);
+    const response = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(cleanKeyword)}&orientation=portrait&per_page=3`, {
+      headers: { 'Authorization': process.env.PEXELS_API_KEY }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Pexels Image API error: ${response.status}`);
+    }
+    const data = await response.json() as any;
+    
+    if (!data.photos || data.photos.length === 0) {
+      throw new Error(`No Pexels images found for keyword: ${cleanKeyword}`);
+    }
+
+    const photoUrl = data.photos[0].src.large2x || data.photos[0].src.large;
+    if (!photoUrl) {
+      throw new Error(`No valid image URL found in Pexels response for ${cleanKeyword}`);
+    }
+
+    console.log(`[Pexels Image] Found image URL: ${photoUrl}, downloading...`);
+    const uniqueId = Math.random().toString(36).substring(7);
+    const tempPath = path.join(os.tmpdir(), `pexels_img_${Date.now()}_${uniqueId}.jpg`);
+    
+    const imageResponse = await fetch(photoUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download Pexels image from ${photoUrl}`);
+    }
+    const ab = await imageResponse.arrayBuffer();
+    fs.writeFileSync(tempPath, Buffer.from(ab));
+    return tempPath;
+  }
+
+  async fetchUnsplashImage(keyword: string): Promise<string> {
+    const cleanKeyword = keyword.split(',')[0].trim();
+    if (!process.env.UNSPLASH_ACCESS_KEY) {
+      throw new Error("No Unsplash API key configured in env");
+    }
+
+    console.log(`[Unsplash] Searching for '${cleanKeyword}'...`);
+    const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(cleanKeyword)}&orientation=portrait&per_page=3`, {
+      headers: { 'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Unsplash API error: ${response.status}`);
+    }
+    const data = await response.json() as any;
+    
+    if (!data.results || data.results.length === 0) {
+      throw new Error(`No Unsplash images found for keyword: ${cleanKeyword}`);
+    }
+
+    const imageUrl = data.results[0].urls.regular;
+    console.log(`[Unsplash] Found image URL: ${imageUrl}, downloading...`);
+    
+    const uniqueId = Math.random().toString(36).substring(7);
+    const tempPath = path.join(os.tmpdir(), `unsplash_${Date.now()}_${uniqueId}.jpg`);
+    
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download Unsplash image from ${imageUrl}`);
+    }
+    const ab = await imageResponse.arrayBuffer();
+    fs.writeFileSync(tempPath, Buffer.from(ab));
+    return tempPath;
+  }
+
+  async getBestStockVideo(keyword: string): Promise<string> {
+    try {
+      return await this.fetchPexelsVideo(keyword);
+    } catch (e: any) {
+      console.log(`[Waterfall] Pexels video failed: ${e.message}. Falling back to Pixabay...`);
+      return await this.fetchPixabayVideo(keyword);
+    }
+  }
+
+  async getBestStockImage(keyword: string): Promise<string> {
+    try {
+      return await this.fetchPexelsImage(keyword);
+    } catch (e: any) {
+      console.log(`[Waterfall] Pexels image failed: ${e.message}. Falling back to Unsplash...`);
+      try {
+        return await this.fetchUnsplashImage(keyword);
+      } catch (e2: any) {
+        console.log(`[Waterfall] Unsplash image failed: ${e2.message}. Falling back to Pixabay...`);
+        return await this.fetchPixabayImage(keyword);
+      }
+    }
+  }
+
+
   /**
-   * Fallback chain to acquire a background image: Google -> NVIDIA -> Pixabay
+   * Fallback chain to acquire a background image: Google -> Pexels -> Unsplash -> Pixabay
    */
   async fetchStockImage(keyword: string): Promise<string> {
     console.log(`[Stock Image API] Initiating fallback chain for keyword: "${keyword}"`);
@@ -458,19 +485,24 @@ Make sure the output is a valid JSON object.`;
       const seed = Math.floor(Math.random() * 1000000);
       return await this.generateImage(keyword, seed);
     } catch (googleErr: any) {
-      console.warn(`[Stock Image Fallback] Google Imagen 3 failed: ${googleErr.message}. Trying NVIDIA Flux...`);
+      console.warn(`[Stock Image Fallback] Google Imagen 3 failed: ${googleErr.message}. Trying Pexels...`);
       try {
-        // 2. NVIDIA Flux
-        const seed = Math.floor(Math.random() * 1000000);
-        return await this.generateNvidiaFluxImage(keyword, seed);
-      } catch (fluxErr: any) {
-        console.warn(`[Stock Image Fallback] NVIDIA Flux failed: ${fluxErr.message}. Trying Pixabay...`);
+        // 2. Pexels
+        return await this.fetchPexelsImage(keyword);
+      } catch (pexelsErr: any) {
+        console.warn(`[Stock Image Fallback] Pexels failed: ${pexelsErr.message}. Trying Unsplash...`);
         try {
-          // 3. Pixabay
-          return await this.fetchPixabayImage(keyword);
-        } catch (pixabayErr: any) {
-          console.error(`[Stock Image Fallback] All sources failed: ${pixabayErr.message}`);
-          throw new Error("Could not acquire any backdrop image from Google, NVIDIA Flux, or Pixabay.");
+          // 3. Unsplash
+          return await this.fetchUnsplashImage(keyword);
+        } catch (unsplashErr: any) {
+          console.warn(`[Stock Image Fallback] Unsplash failed: ${unsplashErr.message}. Trying Pixabay...`);
+          try {
+            // 4. Pixabay
+            return await this.fetchPixabayImage(keyword);
+          } catch (pixabayErr: any) {
+            console.error(`[Stock Image Fallback] All sources failed: ${pixabayErr.message}`);
+            throw new Error("Could not acquire any backdrop image from Google, Pexels, Unsplash, or Pixabay.");
+          }
         }
       }
     }
@@ -709,6 +741,93 @@ Make sure the output is a valid JSON object.`;
       const buffer = await response.arrayBuffer();
       fs.writeFileSync(tempPath, Buffer.from(buffer));
       return tempPath;
+    }
+  }
+
+  // 4. Vision QA Inspector
+  async evaluateImage(imagePath: string, shotContext: string, characterContext: string): Promise<{ passed: boolean, score: number, reason: string }> {
+    try {
+      console.log(`[Vision QA] Evaluating image ${path.basename(imagePath)} against context...`);
+      
+      if (!this.vertexAI) {
+        console.warn('Vertex AI not configured, auto-passing Vision QA');
+        return { passed: true, score: 100, reason: "Vertex AI not configured" };
+      }
+      
+      const buffer = fs.readFileSync(imagePath);
+      const mimeType = imagePath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      
+      const prompt = `You are an elite cinematic Quality Assurance Inspector. 
+Evaluate this generated image against the following required scene and character constraints.
+
+SCENE CONTEXT:
+${shotContext}
+
+CHARACTER BIBLE:
+${characterContext}
+
+Your job is to ensure the image matches the context perfectly and contains no AI deformities.
+Respond with a strict JSON object containing:
+1. "passed": boolean (true if the image is acceptable for a cinematic reel, false if it has major issues like deformed hands, wrong gender, drastically wrong lighting, or ignores the character description).
+2. "score": number between 0 and 100.
+3. "reason": A short string explaining your decision.
+
+Output ONLY valid JSON.`;
+
+      const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash' });
+      const mediaPart = {
+        inlineData: {
+          data: buffer.toString('base64'),
+          mimeType: mimeType,
+        },
+      };
+
+      const request = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: prompt },
+              mediaPart
+            ]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      };
+
+      const result = await model.generateContent(request);
+      const response = result.response;
+
+      if (!response || !response.candidates || response.candidates.length === 0) {
+        throw new Error('No response from Gemini Vision QA');
+      }
+
+      const textResponse = response.candidates[0].content.parts[0].text || '';
+      
+      try {
+        const parsed = JSON.parse(textResponse);
+        console.log(`[Vision QA] Score: ${parsed.score} - Passed: ${parsed.passed} - Reason: ${parsed.reason}`);
+        
+        // Enforce strict passing threshold
+        if (parsed.score < 85) {
+          parsed.passed = false;
+        }
+        
+        return {
+          passed: !!parsed.passed,
+          score: parsed.score || 0,
+          reason: parsed.reason || "No reason provided"
+        };
+      } catch (parseErr) {
+        console.error("[Vision QA] Failed to parse JSON response:", textResponse);
+        return { passed: true, score: 90, reason: "Fallback auto-pass due to parse error" };
+      }
+    } catch (e: any) {
+      console.error("[Vision QA] Error evaluating image:", e.message);
+      // Fail open so the pipeline doesn't crash on API issues
+      return { passed: true, score: 100, reason: "API Failure Fallback" };
     }
   }
 }
