@@ -26,7 +26,10 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 500 * 1024 * 1024 } // 500MB limit
+});
 
 // POST /api/reels/upload - Upload file to public directory
 router.post('/upload', requireAuth, upload.single('file'), (req: any, res: any) => {

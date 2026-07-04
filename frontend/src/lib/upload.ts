@@ -3,7 +3,8 @@ export async function uploadFile(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await fetch('/api/reels/upload', {
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const res = await fetch(`${API_BASE}/api/reels/upload`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`
@@ -12,7 +13,8 @@ export async function uploadFile(file: File): Promise<string> {
   });
 
   if (!res.ok) {
-    throw new Error('Failed to upload product media to the server');
+    const errorText = await res.text().catch(() => 'No response body');
+    throw new Error(`Failed to upload media (HTTP ${res.status}): ${errorText.substring(0, 100)}`);
   }
 
   const data = await res.json();
