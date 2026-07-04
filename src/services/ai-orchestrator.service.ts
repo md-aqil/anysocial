@@ -142,39 +142,24 @@ Make sure the output is a valid JSON object.`;
 
   async generateContent(prompt: string): Promise<string> {
     try {
-      // Use the Generative Language API which has Gemini 3.1 Pro Preview access
-      const auth = new GoogleAuth({ 
-        scopes: [
-          'https://www.googleapis.com/auth/cloud-platform',
-          'https://www.googleapis.com/auth/generative-language'
-        ]
-      });
-      const client = await auth.getClient();
-      const token = (await client.getAccessToken()).token;
-      
-      const modelName = process.env.VERTEX_AI_MODEL || 'gemini-3.1-pro-preview';
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-      
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
-            maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
-            responseMimeType: "application/json"
-          }
-        })
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`GenAI API ${res.status}: ${errText.substring(0, 200)}`);
+      if (!this.vertexAI) {
+        throw new Error("Vertex AI is not configured.");
       }
 
-      const data = await res.json() as any;
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const modelName = process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash';
+      const model = this.vertexAI.getGenerativeModel({ model: modelName });
+      
+      const request = {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
+          maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
+          responseMimeType: "application/json"
+        }
+      };
+
+      const result = await model.generateContent(request);
+      const text = result.response?.candidates?.[0]?.content?.parts?.[0]?.text || '';
       console.log(`[Gemini] ✅ Script generated via ${modelName} (${text.length} chars)`);
       return text;
     } catch (err: any) {

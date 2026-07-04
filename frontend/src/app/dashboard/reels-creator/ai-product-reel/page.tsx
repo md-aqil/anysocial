@@ -75,10 +75,6 @@ export default function AIProductReelPage() {
   };
 
   const handleGenerateScript = async () => {
-    if (files.length === 0) {
-      alert("Please upload at least one image/video clip to generate a script.");
-      return;
-    }
     setIsWritingScript(true);
     setIsModalOpen(false); // Close the beautiful modal
     setStatusMessage("Writing a high-retention viral script...");
@@ -86,8 +82,8 @@ export default function AIProductReelPage() {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No token found');
 
-      // 4 seconds per asset
-      const duration = Math.max(8, files.length * 4.0);
+      // Default to 15 seconds if no files, otherwise 4 seconds per asset
+      const duration = files.length > 0 ? Math.max(8, files.length * 4.0) : 15;
 
       const res = await fetch(`/api/reels/write-script`, {
         method: 'POST',
@@ -341,14 +337,8 @@ export default function AIProductReelPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  if (files.length === 0) {
-                    alert("Please upload at least one image/video clip to generate a script.");
-                    return;
-                  }
-                  setIsModalOpen(true);
-                }}
-                disabled={isWritingScript || files.length === 0}
+                onClick={() => setIsModalOpen(true)}
+                disabled={isWritingScript}
                 className="border-violet-200 text-violet-700 hover:bg-violet-50 font-semibold gap-1.5 rounded-xl shadow-xs"
               >
                 <Wand2 className="h-4 w-4 text-violet-600 animate-pulse" />
