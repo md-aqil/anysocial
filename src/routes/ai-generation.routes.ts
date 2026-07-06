@@ -36,4 +36,20 @@ router.post('/adapt-content', jwtAuth, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/ai/chat
+ * Conversational AI endpoint for post writing.
+ */
+router.post('/chat', jwtAuth, upload.single('media'), async (req: Request, res: Response) => {
+  try {
+    const messages = JSON.parse(req.body.messages || '[]');
+    // @ts-ignore
+    const mediaFile = req.file;
+    const text = await aiOrchestrator.chatContent(messages, mediaFile);
+    res.json({ text });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export const aiGenerationRoutes = router;

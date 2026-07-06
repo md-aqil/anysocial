@@ -305,6 +305,29 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ content, platform }),
       }),
+    chat: async (messages: Array<{ role: string; content: string }>, mediaFile?: File): Promise<{ text: string }> => {
+      const formData = new FormData();
+      formData.append("messages", JSON.stringify(messages));
+      if (mediaFile) {
+        formData.append("media", mediaFile);
+      }
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const response = await fetch(`${API_BASE}/api/ai/chat`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: "An error occurred" }));
+        throw new ApiError(response.status, error.error || "An error occurred", error.details);
+      }
+
+      return response.json();
+    },
   },
   admin: {
     getUsers: () => request<{ users: any[] }>('/api/admin/users'),

@@ -168,6 +168,51 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
+  async chatContent(messages: any[], mediaFile?: any): Promise<string> {
+    try {
+      if (!this.vertexAI) {
+        throw new Error("Vertex AI is not configured.");
+      }
+
+      const modelName = process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash';
+      const model = this.vertexAI.getGenerativeModel({ model: modelName });
+      
+      const systemPrompt = "You are an elite social media copywriter. You help the user brainstorm, write, and refine highly engaging social media posts. Follow the user's instructions regarding tone, length, and platform constraints. Do not use markdown headers unless necessary.\n\n";
+
+      const contents = messages.map((msg, index) => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: index === 0 && msg.role !== 'assistant' ? systemPrompt + msg.content : msg.content }]
+      }));
+
+      if (mediaFile && contents.length > 0) {
+        const lastUserMsgIndex = contents.map(c => c.role).lastIndexOf('user');
+        if (lastUserMsgIndex !== -1) {
+          contents[lastUserMsgIndex].parts.push({
+            inlineData: {
+              data: mediaFile.buffer.toString('base64'),
+              mimeType: mediaFile.mimetype,
+            }
+          } as any);
+        }
+      }
+
+      const request = {
+        contents,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2048,
+        }
+      };
+
+      const result = await model.generateContent(request);
+      const text = result.response?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return text;
+    } catch (err: any) {
+      console.error("[Gemini Chat Error]:", err.message);
+      throw err;
+    }
+  }
+
   // 1. Imagen 3 - Image Generation
   async generateImage(prompt: string, seed: number = 0): Promise<string> {
     const uniqueId = Math.random().toString(36).substring(7);

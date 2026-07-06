@@ -1,9 +1,10 @@
 'use client';
+import confetti from 'canvas-confetti';
 
-import { useState, useCallback, useEffect, type ComponentType, type SVGProps } from 'react';
+import { useState, useCallback, useEffect, useRef, type ComponentType, type SVGProps } from 'react';
 import { useComposerStore } from '@/store/composer-store';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -102,12 +103,47 @@ type LogEntry = { ts: string; level: 'info' | 'success' | 'error' | 'warn'; msg:
 
 export default function NewPostPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [showScheduler, setShowScheduler] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isAiAssisting, setIsAiAssisting] = useState(false);
   const [pinterestBoards, setPinterestBoards] = useState<any[]>([]);
   const [isLoadingBoards, setIsLoadingBoards] = useState(false);
+  
+  // AI Chat Assistant State
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatting, setIsChatting] = useState(false);
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (chatMessagesEndRef.current) {
+      chatMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages]);
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
+    
+    const newMessages = [...chatMessages, { role: 'user' as const, content: chatInput }];
+    setChatMessages(newMessages);
+    setChatInput('');
+    setIsChatting(true);
+
+    try {
+      const mediaFile = mediaFiles.length > 0 ? mediaFiles[0] : undefined;
+      const res = await api.ai.chat(newMessages, mediaFile);
+      setChatMessages([...newMessages, { role: 'assistant', content: res.text }]);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to get AI response', 'error');
+    } finally {
+      setIsChatting(false);
+    }
+  };
   const {
     selectedPlatforms,
     activePlatform,
@@ -328,6 +364,13 @@ export default function NewPostPage() {
         showToast('Draft saved successfully!');
         return;
       }
+      
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
       resetComposer();
       // Short delay so user can read the success log before navigating
       setTimeout(() => router.push('/dashboard/posts'), 1800);
@@ -385,6 +428,17 @@ export default function NewPostPage() {
   useEffect(() => {
     setValue('platforms', selectedPlatforms);
   }, [selectedPlatforms, setValue]);
+
+  useEffect(() => {
+    const scheduledAtParam = searchParams.get('scheduledAt');
+    if (scheduledAtParam) {
+      const date = new Date(scheduledAtParam);
+      if (!isNaN(date.getTime())) {
+        setValue('scheduledAt', date);
+        setShowScheduler(true);
+      }
+    }
+  }, [searchParams, setValue]);
 
   const handlePlatformToggle = (platformId: string) => {
     togglePlatform(platformId);
@@ -736,25 +790,7 @@ export default function NewPostPage() {
               <span className="h-6 w-px bg-[#E8EEE8]" />
               <button
                 type="button"
-                onClick={async () => {
-                  if (mediaFiles.length === 0) {
-                    alert("Please upload a media file first.");
-                    return;
-                  }
-                  setIsAiAssisting(true);
-                  try {
-                    const mediaFile = mediaFiles[0];
-                    const result = await api.ai.analyzeMedia(mediaFile);
-                    const contentText = result.title ? `Title: ${result.title}\n\n${result.caption}` : result.caption;
-                    setValue("content", contentText);
-                    setValue("youtubeTags", result.tags);
-                  } catch (error) {
-                    console.error(error);
-                    alert("Failed to get AI assistance.");
-                  } finally {
-                    setIsAiAssisting(false);
-                  }
-                }}
+                onClick={() => setIsChatModalOpen(true)}
                 className="flex h-9 items-center gap-2 rounded-xl bg-[#FBF3EE] px-3 text-[14px] font-bold text-[#D9774B]"
                 disabled={isAiAssisting}
               >
@@ -1346,6 +1382,135 @@ export default function NewPostPage() {
           </div>
         </div>
       </footer>
+      {/* AI Chat Modal */}
+      {isChatModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#2F281F]/40 p-4 backdrop-blur-md">
+          <div className="flex h-[85vh] w-full max-w-2xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden border border-[#D27D50]/20">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#F0F4F0] bg-white px-6 py-5">
+              <div className="flex items-center gap-3.5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FBF3EE] text-[#D27D50]">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-extrabold text-[#2F281F] tracking-tight">AI Copywriter</h3>
+                  <p className="text-xs font-medium text-[#AAA39D]">
+                    {mediaFiles.length > 0 
+                      ? `Analyzing ${mediaFiles.length} attached media file(s)...` 
+                      : "Ready to help you write the perfect post"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsChatModalOpen(false)}
+                className="rounded-full p-2 text-[#AAA39D] hover:bg-[#F2F6F2] hover:text-[#2F281F] transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Chat Area */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-[#F9FAF9] custom-scrollbar">
+              {chatMessages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center max-w-md mx-auto space-y-6">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FBF3EE] text-[#D27D50] shadow-sm mb-2">
+                    <Wand2 className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-[#2F281F] mb-2">What are we posting today?</h4>
+                    <p className="text-sm text-[#AAA39D] leading-relaxed">
+                      I can help you brainstorm ideas, write catchy captions, or refine your draft. Try asking me for something specific!
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+                    {[
+                      "Write a catchy Instagram caption",
+                      "Make it shorter and punchier",
+                      "Add trending hashtags",
+                      "Suggest a poll question"
+                    ].map(hint => (
+                      <button
+                        key={hint}
+                        type="button"
+                        onClick={() => { setChatInput(hint); }}
+                        className="rounded-full border border-[#D27D50]/30 bg-white px-4 py-2 text-[13px] font-semibold text-[#D27D50] hover:bg-[#FBF3EE] transition"
+                      >
+                        {hint}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {chatMessages.map((msg, idx) => (
+                <div key={idx} className={cn("flex flex-col max-w-[85%]", msg.role === 'user' ? "ml-auto" : "")}>
+                  <div className={cn(
+                    "rounded-2xl p-4 text-[15px] leading-relaxed shadow-sm whitespace-pre-wrap",
+                    msg.role === 'user' 
+                      ? "bg-[#D27D50] text-white rounded-br-none" 
+                      : "bg-white border border-[#F0F4F0] text-[#2F281F] rounded-bl-none"
+                  )}>
+                    {msg.content}
+                  </div>
+                  {msg.role === 'assistant' && (
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setValue('content', msg.content);
+                          showToast('Content inserted into post!');
+                          setIsChatModalOpen(false);
+                        }}
+                        className="flex items-center gap-1.5 rounded-lg bg-white border border-[#D27D50]/20 px-3 py-1.5 text-xs font-bold text-[#D27D50] hover:bg-[#FBF3EE] transition shadow-sm"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Insert into Post
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {isChatting && (
+                <div className="flex max-w-[85%]">
+                  <div className="rounded-2xl p-4 bg-white border border-[#F0F4F0] rounded-bl-none shadow-sm flex items-center gap-3 text-[#AAA39D]">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#D27D50]" />
+                    <span className="text-[13px] font-semibold tracking-wide uppercase">AI is writing...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={chatMessagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="border-t border-[#F0F4F0] bg-white p-4">
+              <div className="flex items-center gap-3">
+                <Input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder="Ask the AI copywriter..."
+                  className="flex-1 rounded-xl bg-[#F9FAF9] border-transparent focus:border-[#D27D50] focus:ring focus:ring-[#D27D50]/20 focus:bg-white h-12 text-[#2F281F] placeholder:text-[#AAA39D]"
+                  disabled={isChatting}
+                />
+                <Button
+                  type="button"
+                  onClick={handleSendMessage}
+                  disabled={isChatting || !chatInput.trim()}
+                  className="h-12 w-12 rounded-xl bg-[#D27D50] hover:bg-[#C06A3D] p-0 shadow-md text-white disabled:opacity-50 transition"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
@@ -1646,6 +1811,7 @@ function SegmentedOptions({
               {option.charAt(0).toUpperCase() + option.slice(1).toLowerCase()}
             </button>
           );
+        })}
         })}
       </div>
     </div>

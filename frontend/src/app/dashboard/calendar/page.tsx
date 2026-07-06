@@ -1,0 +1,196 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { 
+  format, 
+  addDays, 
+  subDays, 
+  startOfWeek, 
+  endOfWeek, 
+  eachDayOfInterval,
+  isToday,
+  parseISO,
+  startOfToday,
+  setHours,
+  setMinutes
+} from 'date-fns';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+export default function CalendarPage() {
+  const router = useRouter();
+  const [currentDate, setCurrentDate] = useState(startOfToday());
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['calendar-posts'],
+    queryFn: () => api.posts.list({ limit: 100 })
+  });
+
+  const posts = data?.posts || [];
+
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+  const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  const nextWeek = () => setCurrentDate(addDays(currentDate, 7));
+  const prevWeek = () => setCurrentDate(subDays(currentDate, 7));
+
+  const postsByTime = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    posts.forEach((post: any) => {
+      if (!post.scheduledAt) return;
+      const date = parseISO(post.scheduledAt);
+      const dayKey = format(date, 'yyyy-MM-dd');
+      const hour = date.getHours();
+      const key = `${dayKey}-${hour}`;
+      if (!map[key]) map[key] = [];
+      map[key].push(post);
+    });
+    return map;
+  }, [posts]);
+
+  const handleCellClick = (day: Date, hour: number) => {
+    const scheduledDate = setMinutes(setHours(day, hour), 0);
+    router.push(`/dashboard/posts/new?scheduledAt=${scheduledDate.toISOString()}`);
+  };
+
+  const getPlatformIcon = (platform: string) => {
+    const colors: Record<string, string> = {
+      FACEBOOK: 'bg-[#1877F2]',
+      INSTAGRAM: 'bg-[#E4405F]',
+      TWITTER: 'bg-[#1DA1F2]',
+      LINKEDIN: 'bg-[#0A66C2]',
+      YOUTUBE: 'bg-[#FF0000]',
+      TIKTOK: 'bg-[#000000]',
+      THREADS: 'bg-[#000000]',
+      PINTEREST: 'bg-[#E60023]',
+      SNAPCHAT: 'bg-[#FFFC00]'
+    };
+    return (
+      <div className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-1 ring-white/30", colors[platform] || 'bg-gray-500')}>
+        {platform.substring(0, 1)}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex h-[calc(100vh-64px)] flex-col p-6 max-w-[1600px] mx-auto overflow-hidden">
+      <div className="flex items-center justify-between mb-6 shrink-0">
+        <div>
+          <h1 className="text-2xl font-bold text-[#2F281F]">Content Calendar</h1>
+          <p className="text-sm text-[#7B746D] mt-1">Plan and schedule your social media posts</p>
+        </div>
+        
+        <div className="flex items-center gap-4 bg-white rounded-xl shadow-[0_2px_12px_rgba(47,40,31,0.04)] border border-[#F0F4F0] p-1.5">
+          <button onClick={prevWeek} className="p-2 hover:bg-[#F2F6F2] rounded-lg text-[#2F281F] transition">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <span className="font-semibold text-sm min-w-[140px] text-center text-[#2F281F]">
+            {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+          </span>
+          <button onClick={nextWeek} className="p-2 hover:bg-[#F2F6F2] rounded-lg text-[#2F281F] transition">
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-auto rounded-2xl bg-white shadow-[0_2px_24px_rgba(47,40,31,0.04)] border border-[#F0F4F0]">
+        <div className="min-w-[900px]">
+          {/* Header row */}
+          <div className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_1fr_1fr_1fr] border-b border-[#F0F4F0] sticky top-0 bg-white/95 backdrop-blur-md z-20 shadow-sm">
+            <div className="p-4 flex items-center justify-center text-[11px] font-bold uppercase tracking-widest text-[#AAA39D]">
+              Time
+            </div>
+            {daysInWeek.map((day) => (
+              <div 
+                key={day.toString()} 
+                className={cn(
+                  "p-4 flex flex-col items-center justify-center gap-1.5 border-l border-[#F0F4F0]",
+                  isToday(day) && "bg-[#FBF3EE]"
+                )}
+              >
+                <span className={cn("text-xs font-bold uppercase tracking-wider", isToday(day) ? "text-[#D27D50]" : "text-[#7B746D]")}>
+                  {format(day, 'EEE')}
+                </span>
+                <span className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full text-[15px] font-black",
+                  isToday(day) ? "bg-[#D27D50] text-white shadow-md" : "text-[#2F281F]"
+                )}>
+                  {format(day, 'd')}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Grid body */}
+          <div className="relative pb-10">
+            {HOURS.map((hour) => (
+              <div key={hour} className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_1fr_1fr_1fr] border-b border-[#F0F4F0]/60 group">
+                <div className="p-3 text-[11px] font-bold text-[#AAA39D] flex items-start justify-center pt-3 border-r border-[#F0F4F0]/60 bg-[#FAFBFA]">
+                  {format(setHours(new Date(), hour), 'h a')}
+                </div>
+                {daysInWeek.map((day) => {
+                  const dayKey = format(day, 'yyyy-MM-dd');
+                  const key = `${dayKey}-${hour}`;
+                  const cellPosts = postsByTime[key] || [];
+
+                  return (
+                    <div 
+                      key={day.toString()} 
+                      onClick={() => handleCellClick(day, hour)}
+                      className={cn(
+                        "relative min-h-[90px] border-l border-[#F0F4F0]/60 p-2 cursor-pointer transition-colors duration-150",
+                        "hover:bg-[#F9FAF9]",
+                        isToday(day) && "bg-[#FBF3EE]/30 hover:bg-[#FBF3EE]/50"
+                      )}
+                    >
+                      {/* Hover Add Button */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-0 hover:!opacity-100 transition-opacity z-20">
+                         <div className="bg-[#D27D50] text-white p-2.5 rounded-full shadow-lg transform scale-90 hover:scale-100 transition-transform">
+                           <Plus className="h-5 w-5" />
+                         </div>
+                      </div>
+
+                      {/* Scheduled Posts */}
+                      <div className="relative z-10 flex flex-col gap-2 h-full">
+                        {cellPosts.map(post => (
+                          <div 
+                            key={post.id} 
+                            className="bg-[#D27D50] text-white p-2.5 rounded-xl shadow-md flex items-center gap-2.5 transform transition hover:scale-[1.02] cursor-default"
+                            onClick={(e) => e.stopPropagation()}
+                            title={post.title || post.content || 'Untitled Post'}
+                          >
+                            <div className="flex -space-x-1.5 shrink-0">
+                              {post.platforms.map((p: string, i: number) => (
+                                <div key={i} className="relative z-10 rounded-full">
+                                  {getPlatformIcon(p)}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-bold truncate text-[10px] uppercase opacity-90 tracking-wider">
+                                {format(parseISO(post.scheduledAt!), 'h:mm a')}
+                              </span>
+                              <span className="truncate text-[11px] font-medium leading-tight">
+                                {post.title || post.content || 'Untitled Post'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

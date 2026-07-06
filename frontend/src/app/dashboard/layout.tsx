@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/auth-store';
 import {
   Bell,
   BarChart3,
+  Calendar,
   Grid2X2,
   FileText,
   LogOut,
@@ -25,6 +26,7 @@ import { useState } from 'react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Grid2X2 },
+  { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
