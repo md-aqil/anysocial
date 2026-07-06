@@ -11,27 +11,16 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Play, Sparkles } from 'lucide-react';
 
 const REELS = [
-  { id: 1, image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?q=80&w=600&auto=format&fit=crop', video: 'https://lcsw.dpdns.org/uploads/4841c60a-acc4-4df4-9171-4d4f1f28f06f-Flowdelpmaspu.mp4' },
-  { id: 2, image: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=600&auto=format&fit=crop', video: '/uploads/reels/reel_03bd3955-7821-4d7f-bcd3-7f0d177410a1_1779375770916.mp4' },
+  { id: 1, image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?q=80&w=600&auto=format&fit=crop', video: '/uploads/landing-reel/reel_d5ba96a2-cfa4-432a-8858-0b260d165e3f_1779902560345.mp4' },
+  { id: 2, image: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=600&auto=format&fit=crop', video: '/uploads/landing-reel/reel_4355339a-11e4-4a86-ac83-dacacc1094f5_1783164248084.mp4' },
+  { id: 3, image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?q=80&w=600&auto=format&fit=crop', video: '/uploads/landing-reel/reel_7e469a9b-affc-46df-bc17-eda51f5a5a16_1779904464075.mp4' },
+  { id: 4, image: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=600&auto=format&fit=crop', video: '/uploads/landing-reel/reel-7-july.mp4' },
+  { id: 5, image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?q=80&w=600&auto=format&fit=crop', video: '/uploads/landing-reel/926b3a94-17c3-45d0-b87a-766b7ee20a21-2.mp4' },
+  { id: 6, image: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=600&auto=format&fit=crop', video: '/uploads/landing-reel/reel-6-july.mp4' },
 ];
 
 export default function HomePage() {
-  const [reels, setReels] = useState<any[]>(REELS);
-
-  useEffect(() => {
-    fetch('/api/public/reels')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.data && data.data.length > 0) {
-          setReels(data.data.map((r: any) => ({
-            id: r.id,
-            video: r.videoUrl || r.finalVideoUrl || r.url,
-            image: r.thumbnailUrl || 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?q=80&w=600&auto=format&fit=crop'
-          })));
-        }
-      })
-      .catch(err => console.error(err));
-  }, []);
+  const [reels] = useState<any[]>(REELS);
   return (
     <div className="min-h-screen bg-[#09090B] text-white selection:bg-[#D27D50]/30 overflow-x-hidden">
       {/* Dynamic Background Glows */}
@@ -144,7 +133,7 @@ export default function HomePage() {
             {[...reels, ...reels, ...reels, ...reels, ...reels].map((reel, idx) => (
               <div key={idx} className="w-48 md:w-64 shrink-0 px-2">
                 <div className="relative aspect-[9/16] rounded-3xl overflow-hidden border border-white/10 shadow-2xl group cursor-pointer bg-stone-900">
-                  <video src={reel.video} poster={reel.image} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all" autoPlay muted loop playsInline />
+                  <video src={reel.video} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all" autoPlay muted loop playsInline />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
@@ -163,6 +152,66 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Showcase Video Section */}
+        <section className="container mx-auto px-4 py-20 max-w-6xl relative">
+          {/* Ambient Glow behind the video container */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#D27D50]/5 via-transparent to-purple-600/5 rounded-[3rem] blur-3xl -z-10" />
+
+          <div className="text-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm mb-6 shadow-sm"
+            >
+              <Sparkles className="w-4 h-4 text-[#D27D50]" />
+              <span className="text-xs font-semibold text-stone-300 uppercase tracking-widest">
+                See It In Action
+              </span>
+            </motion.div>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-6 text-white"
+            >
+              Experience the <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D27D50] via-[#E9967A] to-[#FFB6C1]">Future</span>
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-stone-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed"
+            >
+              Watch how our AI seamlessly crafts, edits, and schedules high-converting content across all your social channels.
+            </motion.p>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 30 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="relative rounded-[2.5rem] p-2 md:p-3 bg-gradient-to-br from-white/20 via-white/5 to-white/10 backdrop-blur-xl border border-white/20 shadow-[0_0_80px_rgba(210,125,80,0.15)] group"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-[#D27D50]/30 to-purple-600/30 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-[2.5rem] -z-10" />
+            <div className="rounded-[2rem] overflow-hidden relative bg-black aspect-video flex items-center justify-center shadow-2xl border border-white/10">
+              <video
+                src="/showcase.mp4"
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+              />
+              {/* Optional overlay for play button if needed, but native controls are enabled */}
+            </div>
+          </motion.div>
         </section>
       </main>
 

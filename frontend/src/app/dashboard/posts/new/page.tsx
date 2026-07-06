@@ -756,6 +756,19 @@ export default function NewPostPage() {
 
         <main className="relative flex min-w-0 flex-1 flex-col bg-[#F2F6F2] px-5 pb-24 pt-8 lg:px-8">
           <div className="mx-auto w-full max-w-[880px]">
+            <div className="flex justify-end mb-6">
+              <Button
+                type="button"
+                onClick={() => {
+                  const firstPlatform = selectedPlatforms[0] || 'FACEBOOK';
+                  setEditingPlatform(firstPlatform);
+                }}
+                className="h-10 rounded-xl bg-white text-[#D9774B] border border-[#D9E3D9] hover:bg-[#FBF3EE] font-bold shadow-sm flex items-center"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Preview Post
+              </Button>
+            </div>
             {scheduledAt && (
               <div className="mb-8 flex animate-in fade-in slide-in-from-top-4 duration-300 items-center justify-between rounded-2xl border border-[#D9774B]/20 bg-[#FBF3EE] px-5 py-4 shadow-[0_4px_12px_rgba(217,119,75,0.08)]">
                 <div className="flex items-center gap-4">
@@ -1213,6 +1226,14 @@ export default function NewPostPage() {
           setEditingPlatform(null);
         }}
         mediaFiles={mediaFiles}
+        accountData={accountsData?.accounts?.find((a: any) => a.platform.toUpperCase() === editingPlatform)}
+        selectedPlatforms={selectedPlatforms}
+        onSwitchPlatform={(newPlatform, content) => {
+          if (editingPlatform) {
+            setValue(`${editingPlatform.toLowerCase()}Content` as any, content);
+          }
+          setEditingPlatform(newPlatform);
+        }}
       />
 
       {/* Onboarding / Channel Selection Modal */}
@@ -1566,7 +1587,10 @@ function ContentEditorModal({
   globalContent,
   customContent,
   onSave,
-  mediaFiles
+  mediaFiles,
+  accountData,
+  selectedPlatforms,
+  onSwitchPlatform
 }: {
   platform: string | null;
   onClose: () => void;
@@ -1574,6 +1598,9 @@ function ContentEditorModal({
   customContent: string;
   onSave: (content: string) => void;
   mediaFiles: File[];
+  accountData?: any;
+  selectedPlatforms?: string[];
+  onSwitchPlatform?: (newPlatform: string, currentContent: string) => void;
 }) {
   const [content, setContent] = useState(customContent || globalContent || '');
   const [isAdapting, setIsAdapting] = useState(false);
@@ -1630,7 +1657,24 @@ function ContentEditorModal({
               </div>
               <div>
                 <h2 className="text-xl font-bold text-[#171717]">Customize for {config.name}</h2>
-                <p className="text-[13px] text-[#AAA39D]">Override global content for this platform only</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  {selectedPlatforms?.map(p => {
+                    const pConfig = platformStyles[p];
+                    if (!pConfig) return null;
+                    const PIcon = pConfig.icon;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => onSwitchPlatform?.(p, content)}
+                        className={cn("w-6 h-6 rounded flex items-center justify-center transition-all", p === platform ? "ring-2 ring-offset-1 ring-stone-900 shadow-sm" : "opacity-40 hover:opacity-100 hover:bg-stone-100")}
+                        style={p === platform ? { backgroundColor: pConfig.bg, color: pConfig.color } : { color: pConfig.color }}
+                        title={`Switch to ${pConfig.name}`}
+                      >
+                        <PIcon className="w-3.5 h-3.5" />
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -1731,10 +1775,20 @@ function ContentEditorModal({
                   {/* Content Header */}
                   <div className="flex items-center gap-3 p-4 border-b border-[#F0F4F0]">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-0.5">
-                      <div className="h-full w-full rounded-full border-2 border-white bg-stone-200" />
+                      <div className="h-full w-full rounded-full border-2 border-white bg-stone-200 overflow-hidden relative">
+                        {accountData?.metadata?.profilePicUrl ? (
+                          <img src={accountData.metadata.profilePicUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-white">
+                            <Icon className="h-5 w-5" style={{ color: config.color }} />
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
-                      <p className="text-[13px] font-bold leading-tight">Your Channel</p>
+                      <p className="text-[13px] font-bold leading-tight">
+                        {accountData?.metadata?.accountName || accountData?.metadata?.username || accountData?.externalAccountId || 'Your Channel'}
+                      </p>
                       <p className="text-[11px] text-stone-400">Previewing as {config.name}</p>
                     </div>
                   </div>
