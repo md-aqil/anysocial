@@ -76,9 +76,9 @@ router.get('/api/public/reels', async (req, res) => {
       };
     });
     
-    res.json({ success: true, data: productReels });
+    return res.json({ success: true, data: productReels });
   } catch (err) {
-    res.status(500).json({ success: false, error: 'Failed to fetch' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch' });
   }
 });
 
