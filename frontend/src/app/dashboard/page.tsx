@@ -10,7 +10,7 @@ import {
   Plus, Link2, FileText, Clock, CheckCircle, XCircle, 
   Loader2, Zap, ArrowUpRight, Calendar, Users, BarChart3,
   MessageSquare, Settings, Bell, Search, TrendingUp,
-  LayoutDashboard, Share2
+  LayoutDashboard, Share2, Video
 } from 'lucide-react';
 import { 
   InstagramLogo, FacebookLogo, LinkedinLogo, TwitterLogo, 
@@ -154,7 +154,13 @@ export default function DashboardPage() {
                 >
                   <div className="h-16 w-16 rounded-2xl bg-[#F8FAF8] border border-[#F0F4F0] flex items-center justify-center overflow-hidden shrink-0">
                     {post.mediaUrls?.[0] ? (
-                      <img src={post.mediaUrls[0]} className="h-full w-full object-cover" alt="" />
+                      post.mediaUrls[0].match(/\.(mp4|mov|webm)/i) ? (
+                        <div className="w-full h-full flex items-center justify-center bg-stone-900">
+                          <Video className="h-6 w-6 text-white opacity-40" />
+                        </div>
+                      ) : (
+                        <img src={post.mediaUrls[0]} className="h-full w-full object-cover" alt="" />
+                      )
                     ) : (
                       <FileText className="h-6 w-6 text-stone-300" />
                     )}

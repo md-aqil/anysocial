@@ -177,7 +177,7 @@ Make sure the output is a valid JSON object.`;
       const modelName = process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash';
       const model = this.vertexAI.getGenerativeModel({ model: modelName });
       
-      const systemPrompt = "You are an elite social media copywriter. You help the user brainstorm, write, and refine highly engaging social media posts. Follow the user's instructions regarding tone, length, and platform constraints. Do not use markdown headers unless necessary.\n\n";
+      const systemPrompt = "You are an elite social media copywriter. You help the user brainstorm, write, and refine highly engaging social media posts. Follow the user's instructions regarding tone, length, and platform constraints. Do not use markdown headers unless necessary.\n\nIMPORTANT: When you write a caption for the user, ONLY output the final postable content itself. DO NOT include conversational filler like 'Got it!' or 'Here is your caption:'. Return ONLY the raw caption text so it can be directly inserted into a text box.\n\n";
 
       const contents = messages.map((msg, index) => ({
         role: msg.role === 'assistant' ? 'model' : 'user',

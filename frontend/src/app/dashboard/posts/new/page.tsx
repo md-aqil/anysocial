@@ -34,6 +34,7 @@ const postSchema = z.object({
   platforms: z.array(z.string()).min(1, 'Select at least one platform'),
   facebookPostType: z.enum(['FEED', 'REEL', 'STORY']).default('FEED').optional(),
   facebookAutoFix: z.boolean().default(true),
+  facebookShareToStory: z.boolean().default(false).optional(),
   instagramPostType: z.enum(['FEED', 'REEL', 'STORY']).default('FEED').optional(),
   instagramAutoFix: z.boolean().default(true),
   scheduledAt: z.date().optional(),
@@ -286,6 +287,7 @@ export default function NewPostPage() {
           FACEBOOK: {
             postType: data.facebookPostType,
             autoFix: data.facebookAutoFix,
+            shareToStory: data.facebookShareToStory,
             reelTitle: data.reelTitle,
             location: data.location,
             content: data.facebookContent
@@ -392,6 +394,7 @@ export default function NewPostPage() {
     defaultValues: {
       timezone: 'America/New_York',
       facebookAutoFix: true,
+      facebookShareToStory: false,
       instagramAutoFix: true,
       facebookPostType: 'FEED',
       instagramPostType: 'FEED',
@@ -439,6 +442,22 @@ export default function NewPostPage() {
       }
     }
   }, [searchParams, setValue]);
+
+  useEffect(() => {
+    const savedFb = localStorage.getItem('lastFbPostType');
+    if (savedFb) setValue('facebookPostType', savedFb as any);
+    
+    const savedIg = localStorage.getItem('lastIgPostType');
+    if (savedIg) setValue('instagramPostType', savedIg as any);
+  }, [setValue]);
+
+  useEffect(() => {
+    if (fbType) localStorage.setItem('lastFbPostType', fbType);
+  }, [fbType]);
+
+  useEffect(() => {
+    if (igType) localStorage.setItem('lastIgPostType', igType);
+  }, [igType]);
 
   const handlePlatformToggle = (platformId: string) => {
     togglePlatform(platformId);
@@ -988,6 +1007,7 @@ export default function NewPostPage() {
                   {fbType === 'REEL' && <Input placeholder="Reel title" {...register('reelTitle')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />}
                   <Input placeholder="Location" {...register('location')} className="h-9 rounded-lg border-[#D9E3D9] text-xs" />
                   <SwitchRow label="Auto-fix media" description="Trim & reformat to platform specs" checked={fbAutoFix} onChange={(value) => setValue('facebookAutoFix', value)} />
+                  <SwitchRow label="Share to Story" description="Also share this post to your Facebook Story" checked={watch('facebookShareToStory')} onChange={(value) => setValue('facebookShareToStory', value)} />
                   <Button
                     type="button"
                     variant="outline"
@@ -1811,7 +1831,6 @@ function SegmentedOptions({
               {option.charAt(0).toUpperCase() + option.slice(1).toLowerCase()}
             </button>
           );
-        })}
         })}
       </div>
     </div>

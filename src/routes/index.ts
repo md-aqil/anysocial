@@ -54,6 +54,34 @@ router.use('/api/ai', aiGenerationRoutes);
 // Reels Creator routes
 router.use('/api/reels', jwtAuth, reelsRoutes);
 
+// Public route for landing page reels
+import fs from 'fs';
+import path from 'path';
+
+router.get('/api/public/reels', async (req, res) => {
+  try {
+    const uploadDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'landing-reel');
+    if (!fs.existsSync(uploadDir)) {
+      return res.json({ success: true, data: [] });
+    }
+    const files = fs.readdirSync(uploadDir);
+    const videoFiles = files.filter(f => f.endsWith('.mp4') && !f.startsWith('thumb_'));
+    
+    const productReels = videoFiles.map(f => {
+      const thumb = files.find(t => t === `thumb_${f}`);
+      return {
+        id: f,
+        videoUrl: `/uploads/landing-reel/${f}`,
+        thumbnailUrl: thumb ? `/uploads/landing-reel/${thumb}` : undefined
+      };
+    });
+    
+    res.json({ success: true, data: productReels });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch' });
+  }
+});
+
 // Curation routes
 router.use('/api/curation', curationRoutes);
 
