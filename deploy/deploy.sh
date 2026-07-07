@@ -63,8 +63,8 @@ cd ..
 
 # Ensure the app service can write to scratch and uploads
 echo "🔒 Setting up runtime permissions..."
-mkdir -p scratch frontend/public/uploads
-sudo chown -R socialsched:socialsched-dev scratch frontend/public/uploads
+mkdir -p scratch frontend/public/uploads/reels frontend/public/uploads/ai-images
+sudo chmod -R 777 scratch frontend/public/uploads
 
 # Restart services
 echo "🔄 Restarting Systemd Services..."
