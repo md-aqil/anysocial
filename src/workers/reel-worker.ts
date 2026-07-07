@@ -453,8 +453,8 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
 
       // 2. Phase 1: Generate Story Script (The Director)
       await updateProgress('✍️ Phase 1: Director is writing the cinematic script...');
-      const durationStr = 'organic';
-      const wordCountGoal = 'as many words as naturally needed to tell a great story (roughly 30 to 90 seconds of spoken audio)';
+      const durationStr = 'compact short-form';
+      const wordCountGoal = 'sixty to one hundred ten words total, roughly twenty five to forty five seconds of spoken audio';
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
@@ -486,7 +486,9 @@ STORYTELLING STRUCTURE:
 4. ENDING: End with a lingering thought or simple call to action.
  
 PACING & RULES:
-- The script should be organically paced. Use ${wordCountGoal}. Do not artificially pad or trim the story.
+- The script must be compact and tightly paced. Use ${wordCountGoal}.
+- Keep the story small enough to visualize in fewer than ten clips. Prefer one clear hook, two to four story beats, one twist, and one ending.
+- Do not artificially pad the script with extra background, repeated suspense lines, or multiple unrelated facts.
 - ${languagePrompt}
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
  
@@ -502,7 +504,7 @@ Output ONLY valid JSON:
       let characterContext = '';
       let locationContext = '';
       let visuals: any[] = [];
-      let numKeywords = 12;
+      let numKeywords = 9;
 
       try {
         const aiResultText = await aiOrchestrator.generateContent(storyPrompt);
@@ -548,9 +550,9 @@ Output ONLY valid JSON:
         console.warn("[Art Director] Failed to parse memory core, proceeding with empty context.");
       }
 
-      // Dynamically calculate the number of shots required for organic pacing (1 shot ~every 15 words)
+      // Dynamically calculate shots for compact story pacing, capped below 10 clips.
       const scriptWordCount = script.split(/\s+/).length;
-      numKeywords = Math.max(4, Math.ceil(scriptWordCount / 15));
+      numKeywords = Math.min(9, Math.max(4, Math.ceil(scriptWordCount / 18)));
 
       // Phase 3: Shot Planning (Cinematographer)
       await updateProgress(`🎥 Phase 3: Cinematographer is planning the Shot List (${numKeywords} shots)...`);
@@ -659,14 +661,8 @@ Output ONLY valid JSON:
                 shotIndex: currentShotIndex,
                 totalShots,
                 seriesTopic: series.niche || series.customPrompt || series.name,
-                script,
-                keyword,
-                artStyle: series.artStyle,
-                lighting,
-                characterContext,
-                locationContext,
-                targetRegion: series.targetRegion
-              });
+              // Phase 4: Prompt Engineering
+              const engineeredPrompt = `A breathtaking, vertical 9:16 portrait masterpiece of: ${keyword}. Story & Scene Matching: This image MUST perfectly depict the exact action and story described. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion of the scene. Lighting: ${lighting}, cinematic and atmospheric. Camera: Shot on 50mm lens, highly detailed, photorealistic, 8k resolution, ${series.artStyle} style. CRITICAL QUALITY RULES: The image MUST have perfect human anatomy, beautiful symmetrical faces, no distortion, no extra limbs, no weird hands, and absolutely NO text, NO watermarks, and NO borders.`;
               
               finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts);
               await new Promise(r => setTimeout(r, 1000));
@@ -682,9 +678,10 @@ Output ONLY valid JSON:
               logger.warn({ event: 'reel_media_gen_failed', keyword, attempt: attempts, error: e.message });
               if (attempts === maxAttempts) {
                   try {
+                    // Final failsafe: fallback to stock media if AI generation repeatedly fails
+                    finalUrl = await aiOrchestrator.fetchStockImage(keyword);
+                  } catch (e) {
                     finalUrl = await aiOrchestrator.generateImage(`Original LLM-generated vertical 9:16 reel frame. Scene: ${keyword.substring(0, 300)}. Style: ${series.artStyle}. No text, no logo, no watermark, clean anatomy.`, reelSeed);
-                  } catch (fallbackError: any) {
-                    throw new Error(`LLM image generation failed for shot ${currentShotIndex}: ${fallbackError.message}`);
                   }
               }
             }
