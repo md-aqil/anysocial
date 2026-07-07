@@ -669,6 +669,7 @@ Output ONLY valid JSON:
                   break; // Image is good!
               } else {
                   console.log(`[QA Failed] Attempt ${attempts}: ${qaResult.reason}. Regenerating...`);
+                  throw new Error(`Vision QA rejected image: ${qaResult.reason}`);
               }
             } catch (e: any) {
               logger.warn({ event: 'reel_media_gen_failed', keyword, attempt: attempts, error: e.message });
