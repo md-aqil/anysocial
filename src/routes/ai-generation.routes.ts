@@ -1,6 +1,8 @@
 
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
 import { jwtAuth } from '../middleware/jwt-auth.js';
 
@@ -68,8 +70,6 @@ router.post('/generate-image', jwtAuth, async (req: Request, res: Response) => {
     const tempImagePath = await aiOrchestrator.generateImage(prompt, 0, false);
     
     // Move to public uploads folder
-    const fs = require('fs');
-    const path = require('path');
     const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-images');
     if (!fs.existsSync(publicDir)) {
       fs.mkdirSync(publicDir, { recursive: true });
