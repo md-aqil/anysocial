@@ -499,99 +499,109 @@ Output ONLY valid JSON:
   "audio_prompt": "Describe the perfect cinematic background music to match the emotional tone and pacing of this story in detail. Example: 'Deep, atmospheric cinematic ambient synth pads with a slow, emotional buildup.'"
 }`;
 
-      let script = '';
-      let scriptTts = '';
+      let script = customScriptText || '';
+      let scriptTts = customScriptText || '';
       let characterContext = '';
       let locationContext = '';
       let visuals: any[] = [];
       let numKeywords = 9;
 
-      try {
-        const aiResultText = await aiOrchestrator.generateContent(storyPrompt);
-        const rawContent = aiResultText.replace(/```json\n?|```/g, '').trim();
-        const parsed = JSON.parse(rawContent);
-        if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
-        script = parsed.script;
-        scriptTts = parsed.script_tts || parsed.script;
-        (series as any).aiMusicPrompt = parsed.audio_prompt;
-      } catch (e: any) {
-        logger.error({ event: 'reel_ai_script_failed', reelId, error: e.message });
-        throw new Error(`AI Script Failed: ${e.message}`);
-      }
-
-      await prisma.reel.update({
-        where: { id: reelId },
-        data: { script },
-      });
-
-      // Phase 2: Memory Extraction (Art Director)
-      await updateProgress('🧠 Phase 2: Art Director is parsing Memory Core...');
-      try {
-        const regionMemoryRule = series.targetRegion && series.targetRegion !== 'Global'
-          ? `\nCRITICAL: Ensure all extracted/generated characters explicitly have physical traits and demographics matching ${series.targetRegion} origin in their descriptions.`
-          : '';
-          
-        const memoryPrompt = `Analyze the following script and extract the main characters and locations.${regionMemoryRule}
-Script: "${script}"
-Output ONLY valid JSON:
-{
-  "characters": [{ "name": "...", "physical": "...", "wardrobe": "..." }],
-  "locations": [{ "name": "...", "architecture": "...", "lighting": "..." }]
-}`;
-        const memoryResText = await aiOrchestrator.generateContent(memoryPrompt);
-        const memParsed = JSON.parse(memoryResText.replace(/```json\n?|```/g, '').trim());
-        characterContext = JSON.stringify(memParsed.characters || []);
-        locationContext = JSON.stringify(memParsed.locations || []);
-        
-        for (const char of memParsed.characters || []) {
-            await prisma.seriesCharacter.create({ data: { seriesId: series.id, name: char.name, physical: char.physical, wardrobe: char.wardrobe } });
+      if (isRecompose && reelWithDetails.metadata) {
+        // Re-composition bypasses AI story generation and shot planning
+        await updateProgress(`🔄 Re-composing Reel... Bypassing AI Script & Planning.`);
+        const meta = reelWithDetails.metadata as any;
+        visuals = meta.shots || [];
+        numKeywords = visuals.length;
+        script = customScriptText || reelWithDetails.script || '';
+        scriptTts = script;
+      } else {
+        try {
+          const aiResultText = await aiOrchestrator.generateContent(storyPrompt);
+          const rawContent = aiResultText.replace(/```json\n?|```/g, '').trim();
+          const parsed = JSON.parse(rawContent);
+          if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
+          script = parsed.script;
+          scriptTts = parsed.script_tts || parsed.script;
+          (series as any).aiMusicPrompt = parsed.audio_prompt;
+        } catch (e: any) {
+          logger.error({ event: 'reel_ai_script_failed', reelId, error: e.message });
+          throw new Error(`AI Script Failed: ${e.message}`);
         }
-      } catch (e) {
-        console.warn("[Art Director] Failed to parse memory core, proceeding with empty context.");
+
+        await prisma.reel.update({
+          where: { id: reelId },
+          data: { script },
+        });
+
+        // Phase 2: Memory Extraction (Art Director)
+        await updateProgress('🧠 Phase 2: Art Director is parsing Memory Core...');
+        try {
+          const regionMemoryRule = series.targetRegion && series.targetRegion !== 'Global'
+            ? `\nCRITICAL: Ensure all extracted/generated characters explicitly have physical traits and demographics matching ${series.targetRegion} origin in their descriptions.`
+            : '';
+            
+          const memoryPrompt = `Analyze the following script and extract the main characters and locations.${regionMemoryRule}
+  Script: "${script}"
+  Output ONLY valid JSON:
+  {
+    "characters": [{ "name": "...", "physical": "...", "wardrobe": "..." }],
+    "locations": [{ "name": "...", "architecture": "...", "lighting": "..." }]
+  }`;
+          const memoryResText = await aiOrchestrator.generateContent(memoryPrompt);
+          const memParsed = JSON.parse(memoryResText.replace(/```json\n?|```/g, '').trim());
+          characterContext = JSON.stringify(memParsed.characters || []);
+          locationContext = JSON.stringify(memParsed.locations || []);
+          
+          for (const char of memParsed.characters || []) {
+              await prisma.seriesCharacter.create({ data: { seriesId: series.id, name: char.name, physical: char.physical, wardrobe: char.wardrobe } });
+          }
+        } catch (e) {
+          console.warn("[Art Director] Failed to parse memory core, proceeding with empty context.");
+        }
+
+        // Dynamically calculate shots for compact story pacing, capped below 10 clips.
+        const scriptWordCount = script.split(/\s+/).length;
+        numKeywords = Math.min(9, Math.max(4, Math.ceil(scriptWordCount / 18)));
+
+        // Phase 3: Shot Planning (Cinematographer)
+        await updateProgress(`🎥 Phase 3: Cinematographer is planning the Shot List (${numKeywords} shots)...`);
+        try {
+           const cinePrompt = `You are an elite Cinematographer. Break down this organic script into an appropriately paced sequence of exactly ${numKeywords} cinematic shots.
+  Script: "${script}"
+  Characters: ${characterContext}
+  Locations: ${locationContext}
+
+  CRITICAL MEDIA RULE: 
+  - Every shot MUST use "ai_image". Do not choose stock photos, stock videos, search APIs, archival footage, or generic B-roll.
+  - Each keyword must describe a specific generated frame, not a search query.
+  - Include the subject, action, environment, emotional tone, camera framing, and visual details needed for an image model to render the scene.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly include "${series.targetRegion}" and mention ${series.targetRegion} demographics, places, clothing, objects, and architecture where relevant in EVERY keyword description.` : ''}
+
+  CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
+
+  Output ONLY valid JSON:
+  {
+    "visuals": [
+      { 
+        "keyword": "detailed description of the exact visual frame, explicitly naming characters and environment.", 
+        "media_type": "ai_image", 
+        "camera_movement": "zoom_in",
+        "lighting": "High contrast rim lighting"
       }
+    ]
+  }`;
+           const cineResText = await aiOrchestrator.generateContent(cinePrompt);
+           const cineParsed = JSON.parse(cineResText.replace(/```json\n?|```/g, '').trim());
+           visuals = cineParsed.visuals || [];
+        } catch (e) {
+           console.error("[Cinematographer] Failed, falling back to basic shots.");
+           throw new Error("Cinematographer planning failed.");
+        }
 
-      // Dynamically calculate shots for compact story pacing, capped below 10 clips.
-      const scriptWordCount = script.split(/\s+/).length;
-      numKeywords = Math.min(9, Math.max(4, Math.ceil(scriptWordCount / 18)));
-
-      // Phase 3: Shot Planning (Cinematographer)
-      await updateProgress(`🎥 Phase 3: Cinematographer is planning the Shot List (${numKeywords} shots)...`);
-      try {
-         const cinePrompt = `You are an elite Cinematographer. Break down this organic script into an appropriately paced sequence of exactly ${numKeywords} cinematic shots.
-Script: "${script}"
-Characters: ${characterContext}
-Locations: ${locationContext}
-
-CRITICAL MEDIA RULE: 
-- Every shot MUST use "ai_image". Do not choose stock photos, stock videos, search APIs, archival footage, or generic B-roll.
-- Each keyword must describe a specific generated frame, not a search query.
-- Include the subject, action, environment, emotional tone, camera framing, and visual details needed for an image model to render the scene.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly include "${series.targetRegion}" and mention ${series.targetRegion} demographics, places, clothing, objects, and architecture where relevant in EVERY keyword description.` : ''}
-
-CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
-
-Output ONLY valid JSON:
-{
-  "visuals": [
-    { 
-      "keyword": "detailed description of the exact visual frame, explicitly naming characters and environment.", 
-      "media_type": "ai_image", 
-      "camera_movement": "zoom_in",
-      "lighting": "High contrast rim lighting"
-    }
-  ]
-}`;
-         const cineResText = await aiOrchestrator.generateContent(cinePrompt);
-         const cineParsed = JSON.parse(cineResText.replace(/```json\n?|```/g, '').trim());
-         visuals = cineParsed.visuals || [];
-      } catch (e) {
-         console.error("[Cinematographer] Failed, falling back to basic shots.");
-         throw new Error("Cinematographer planning failed.");
+        await prisma.reel.update({
+          where: { id: reelId },
+          data: { script },
+        });
       }
-
-      await prisma.reel.update({
-        where: { id: reelId },
-        data: { script },
-      });
 
       // 3. Generate Voiceover First (to determine exact video length)
       await updateProgress('🗣️ Synthesizing voice with Gemini 3.1 Flash TTS...');
@@ -641,47 +651,61 @@ Output ONLY valid JSON:
       const imageUrls: string[] = [];
       const cameraMovements: string[] = [];
       let currentShotIndex = 1;
-      const totalShots = visuals.slice(0, numKeywords).length;
-
       for (const visual of visuals.slice(0, numKeywords)) {
         await updateProgress(`🎨 Phase 4: Production & QA (Shot ${currentShotIndex}/${totalShots})...`);
         const keyword = visual.keyword;
         const mediaType = 'ai_image';
-        const intendedMovement = visual.camera_movement || 'zoom_in';
+        const intendedMovement = visual.camera_movement || visual.cameraMovement || 'zoom_in';
         const lighting = visual.lighting || 'cinematic';
         
-        let attempts = 0;
-        const maxAttempts = 1; // Try only once to save time and credits
         let finalUrl = '';
+        let actualModelUsed = 'gemini-2.5-flash-image';
+        let isReused = false;
+        let attemptsUsed = 1;
         
-        while (attempts < maxAttempts) {
-            attempts++;
-            try {
-              // Phase 4: Prompt Engineering
-              const engineeredPrompt = `A breathtaking, vertical 9:16 portrait masterpiece of: ${keyword}. Story & Scene Matching: This image MUST perfectly depict the exact action and story described. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion of the scene. Lighting: ${lighting}, cinematic and atmospheric. Camera: Shot on 50mm lens, highly detailed, photorealistic, 8k resolution, ${series.artStyle} style. CRITICAL QUALITY RULES: The image MUST have perfect human anatomy, beautiful symmetrical faces, no distortion, no extra limbs, no weird hands, and absolutely NO text, NO watermarks, and NO borders.`;
-              
-              finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts);
-              await new Promise(r => setTimeout(r, 1000));
-              
-              // Phase 5: Vision QA Inspector
-              // Bypassed: accepting the first generated image to save time and credits!
-              break;
-            } catch (e: any) {
-              logger.warn({ event: 'reel_media_gen_failed', keyword, attempt: attempts, error: e.message });
-              if (attempts === maxAttempts) {
-                  try {
-                    // Fallback 1: Pollinations AI
-                    finalUrl = await aiOrchestrator.fetchPollinationsImage(keyword, reelSeed + attempts);
-                  } catch (e1) {
-                    try {
-                      // Fallback 2: Stock Image
-                      finalUrl = await aiOrchestrator.fetchStockImage(keyword);
-                    } catch (e2) {
-                      // Fallback 3: Black Image (Handled internally by fetchStockImage, but just in case)
-                      finalUrl = await aiOrchestrator.fetchStockImage('fallback');
-                    }
+        if (isRecompose && !regenerateShots.includes(visual.shotIndex)) {
+            // Keep existing image
+            finalUrl = path.join(process.cwd(), 'frontend', 'public', visual.imageUrl);
+            actualModelUsed = visual.model || 'gemini-2.5-flash-image';
+            isReused = true;
+            attemptsUsed = visual.attempts || 1;
+        } else {
+            let attempts = 0;
+            const maxAttempts = 1; // Try only once to save time and credits
+            
+            while (attempts < maxAttempts) {
+                attempts++;
+                attemptsUsed = attempts;
+                try {
+                  // Phase 4: Prompt Engineering
+                  const engineeredPrompt = `A breathtaking, vertical 9:16 portrait masterpiece of: ${keyword}. Story & Scene Matching: This image MUST perfectly depict the exact action and story described. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion of the scene. Lighting: ${lighting}, cinematic and atmospheric. Camera: Shot on 50mm lens, highly detailed, photorealistic, 8k resolution, ${series.artStyle} style. CRITICAL QUALITY RULES: The image MUST have perfect human anatomy, beautiful symmetrical faces, no distortion, no extra limbs, no weird hands, and absolutely NO text, NO watermarks, and NO borders.`;
+                  
+                  finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts);
+                  await new Promise(r => setTimeout(r, 1000));
+                  
+                  // Phase 5: Vision QA Inspector
+                  // Bypassed: accepting the first generated image to save time and credits!
+                  break;
+                } catch (e: any) {
+                  logger.warn({ event: 'reel_media_gen_failed', keyword, attempt: attempts, error: e.message });
+                  if (attempts === maxAttempts) {
+                      try {
+                        // Fallback 1: Pollinations AI
+                        finalUrl = await aiOrchestrator.fetchPollinationsImage(keyword, reelSeed + attempts);
+                        actualModelUsed = 'pollinations.ai';
+                      } catch (e1) {
+                        try {
+                          // Fallback 2: Stock Image
+                          finalUrl = await aiOrchestrator.fetchStockImage(keyword);
+                          actualModelUsed = 'stock-api (pexels/pixabay)';
+                        } catch (e2) {
+                          // Fallback 3: Black Image (Handled internally by fetchStockImage, but just in case)
+                          finalUrl = await aiOrchestrator.fetchStockImage('fallback');
+                          actualModelUsed = 'failsafe-fallback';
+                        }
+                      }
                   }
-              }
+                }
             }
         }
 
@@ -689,24 +713,28 @@ Output ONLY valid JSON:
           throw new Error(`LLM image generation returned no image for shot ${currentShotIndex}.`);
         }
         
-        // We need to copy the final image to a public folder so the UI can display it in the Generation Details
-        const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-images');
-        if (!fs.existsSync(publicDir)) {
-          fs.mkdirSync(publicDir, { recursive: true });
+        let publicImageUrl = visual.imageUrl;
+        if (!isReused) {
+            // We need to copy the final image to a public folder so the UI can display it in the Generation Details
+            const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-images');
+            if (!fs.existsSync(publicDir)) {
+              fs.mkdirSync(publicDir, { recursive: true });
+            }
+            const publicFilename = `reel_shot_${reelId}_${currentShotIndex}_${Date.now()}.jpg`;
+            const publicFilePath = path.join(publicDir, publicFilename);
+            fs.copyFileSync(finalUrl, publicFilePath);
+            publicImageUrl = `/uploads/ai-images/${publicFilename}`;
         }
-        const publicFilename = `reel_shot_${reelId}_${currentShotIndex}_${Date.now()}.jpg`;
-        const publicFilePath = path.join(publicDir, publicFilename);
-        fs.copyFileSync(finalUrl, publicFilePath);
-        const publicImageUrl = `/uploads/ai-images/${publicFilename}`;
         
         generationMetadata.shots.push({
           shotIndex: currentShotIndex,
           keyword,
           mediaType,
-          attempts,
-          source: 'ai_image',
-          model: 'gemini-2.5-flash-image',
-          imageUrl: publicImageUrl
+          attempts: attemptsUsed,
+          source: actualModelUsed.includes('stock') || actualModelUsed.includes('failsafe') ? 'stock_image' : 'ai_image',
+          model: actualModelUsed,
+          imageUrl: publicImageUrl,
+          cameraMovement: intendedMovement
         });
         
         imageUrls.push(finalUrl);

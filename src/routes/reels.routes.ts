@@ -478,4 +478,48 @@ router.get('/product', requireAuth, async (req: any, res: any) => {
   }
 });
 
+const recomposeReelSchema = z.object({
+  script: z.string(),
+  voiceModel: z.string(),
+  regenerateShots: z.array(z.number()),
+  seriesId: z.string(),
+});
+
+router.post("/:id/recompose", requireAuth, async (req: any, res: any) => {
+  try {
+    const reelId = req.params.id;
+    const validatedData = recomposeReelSchema.parse(req.body);
+
+    const reel = await prisma.reel.findUnique({
+      where: { id: reelId, userId: req.userId },
+    });
+
+    if (!reel) {
+      return res.status(404).json({ success: false, error: "Reel not found" });
+    }
+
+    await prisma.reel.update({
+      where: { id: reelId },
+      data: { status: "PROCESSING", script: validatedData.script },
+    });
+
+    await reelGenerationQueue.add("generate-reel", { 
+      reelId: reel.id,
+      seriesId: validatedData.seriesId,
+      isRecompose: true,
+      scriptText: validatedData.script,
+      voiceId: validatedData.voiceModel,
+      regenerateShots: validatedData.regenerateShots,
+    });
+
+    res.status(200).json({ success: true, message: "Recomposition queued" });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ success: false, errors: error.errors });
+    }
+    console.error("Error recomposing Reel:", error);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+});
+
 export const reelsRoutes = router;

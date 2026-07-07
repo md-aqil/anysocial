@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckCircle2, AlertCircle, Wand2, MoreVertical, Trash2, Edit2, PauseCircle, Send, X } from 'lucide-react';
+import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckCircle2, AlertCircle, Wand2, MoreVertical, Trash2, Edit2, PauseCircle, Send, X, RefreshCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -196,7 +196,34 @@ export default function ReelsDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'series' | 'product'>('series');
   const [selectedMetadataReel, setSelectedMetadataReel] = useState<any | null>(null);
+  const [editedScript, setEditedScript] = useState("");
+  const [editedVoiceModel, setEditedVoiceModel] = useState("");
+  const [shotsToRegenerate, setShotsToRegenerate] = useState<number[]>([]);
 
+  const handleViewDetails = (reel: any) => {
+    setSelectedMetadataReel(reel);
+    setEditedScript(reel.script || "");
+    const meta = reel.metadata as any;
+    setEditedVoiceModel(meta?.model_voice || reel.series?.voiceId || "en-US-Journey-F");
+    setShotsToRegenerate([]);
+  };
+
+  const recomposeMutation = useMutation({
+    mutationFn: async (data: { reelId: string; script: string; voiceModel: string; regenerateShots: number[]; seriesId: string }) => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/reels/${data.reelId}/recompose`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error('Failed to recompose reel');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reel-series'] });
+      setSelectedMetadataReel(null);
+    }
+  });
   const generateMutation = useMutation({
     mutationFn: async (seriesId: string) => {
       const token = localStorage.getItem('token');
@@ -574,7 +601,7 @@ export default function ReelsDashboard() {
                               {reel.metadata && (
                                 <button
                                   type="button"
-                                  onClick={() => setSelectedMetadataReel(reel)}
+                                  onClick={() => handleViewDetails(reel)}
                                   className="mb-4 flex w-full items-center justify-center gap-1.5 bg-[#F2F6F2] hover:bg-[#E8EDE8] border border-emerald-100/50 text-emerald-700 font-semibold text-xs py-2 rounded-lg transition-colors shadow-sm"
                                 >
                                   <Sparkles className="h-3.5 w-3.5" />
@@ -906,16 +933,39 @@ export default function ReelsDashboard() {
               <div className="space-y-6">
                 
                 {/* Generated Script */}
+                {/* Voice & Script Edit */}
                 {selectedMetadataReel.script && (
-                  <div>
-                    <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      Generated Script
-                    </h4>
-                    <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
-                      <p className="text-sm italic text-stone-600 leading-relaxed whitespace-pre-wrap">
-                        "{selectedMetadataReel.script}"
-                      </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        Voice Model
+                      </h4>
+                      <select
+                        value={editedVoiceModel}
+                        onChange={(e) => setEditedVoiceModel(e.target.value)}
+                        className="w-full rounded-xl border-stone-200 bg-white text-sm focus:border-violet-500 focus:ring-violet-500 shadow-sm p-3"
+                      >
+                        {Object.entries(VOICES_BY_LANGUAGE).map(([lang, voices]) => (
+                          <optgroup key={lang} label={lang}>
+                            {voices.map(v => (
+                              <option key={v.id} value={v.id}>{v.name}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Edit Script
+                      </h4>
+                      <textarea
+                        value={editedScript}
+                        onChange={(e) => setEditedScript(e.target.value)}
+                        rows={6}
+                        className="w-full rounded-2xl border-stone-200 bg-white p-4 text-sm font-medium text-stone-700 leading-relaxed shadow-sm focus:border-violet-500 focus:ring-violet-500 resize-none"
+                      />
                     </div>
                   </div>
                 )}
@@ -944,23 +994,49 @@ export default function ReelsDashboard() {
                     </h4>
                     <div className="space-y-3">
                       {(selectedMetadataReel.metadata as any).shots.map((shot: any, idx: number) => (
-                        <div key={idx} className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex flex-col gap-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">Shot {shot.shotIndex}</span>
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200 uppercase tracking-wider">
-                              {shot.model}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-semibold text-stone-400 uppercase block mb-1">Generated Prompt / Search Query</span>
-                            <p className="text-xs font-mono text-stone-700 leading-relaxed bg-stone-50 p-2.5 rounded-lg border border-stone-100">
-                              {shot.keyword}
-                            </p>
-                            {shot.imageUrl && (
-                              <div className="mt-3 relative w-full h-48 bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
-                                <img src={shot.imageUrl} alt={`Shot ${shot.shotIndex}`} className="w-full h-full object-contain bg-stone-900" />
+                        <div key={idx} className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex flex-row gap-4">
+                          {/* LEFT: Image */}
+                          {shot.imageUrl ? (
+                            <div className="flex-shrink-0 w-24 h-40 bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                              <img src={shot.imageUrl} alt={`Shot ${shot.shotIndex}`} className="w-full h-full object-cover bg-stone-900" />
+                            </div>
+                          ) : (
+                            <div className="flex-shrink-0 w-24 h-40 bg-stone-100 rounded-lg border border-stone-200 flex items-center justify-center">
+                               <span className="text-[10px] text-stone-400 font-bold uppercase">No Image</span>
+                            </div>
+                          )}
+                          
+                          {/* RIGHT: Metadata */}
+                          <div className="flex flex-col flex-grow min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">Shot {shot.shotIndex}</span>
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200 uppercase tracking-wider truncate max-w-[150px]">
+                                {shot.model}
+                              </span>
+                            </div>
+                            <div className="flex-grow flex flex-col justify-between">
+                              <div>
+                                <span className="text-[10px] font-semibold text-stone-400 uppercase block mb-1">Generated Prompt / Search Query</span>
+                                <p className="text-xs font-mono text-stone-700 leading-relaxed bg-stone-50 p-2.5 rounded-lg border border-stone-100 max-h-24 overflow-y-auto mb-2">
+                                  {shot.keyword}
+                                </p>
                               </div>
-                            )}
+                              <label className="flex items-center gap-2 cursor-pointer mt-1">
+                                <input 
+                                  type="checkbox" 
+                                  className="rounded border-stone-300 text-violet-600 focus:ring-violet-600"
+                                  checked={shotsToRegenerate.includes(shot.shotIndex)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setShotsToRegenerate(prev => [...prev, shot.shotIndex]);
+                                    } else {
+                                      setShotsToRegenerate(prev => prev.filter(s => s !== shot.shotIndex));
+                                    }
+                                  }}
+                                />
+                                <span className="text-xs font-bold text-stone-600">Regenerate Image on Re-compose</span>
+                              </label>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -971,13 +1047,30 @@ export default function ReelsDashboard() {
               </div>
             </div>
             
-            <div className="p-4 border-t border-stone-100 bg-white flex justify-end">
-              <button
-                onClick={() => setSelectedMetadataReel(null)}
-                className="px-6 py-2.5 bg-stone-900 text-white text-sm font-bold rounded-xl hover:bg-stone-800 transition-colors"
-              >
-                Close Audit
-              </button>
+            <div className="p-4 border-t border-stone-100 bg-stone-50 flex justify-between items-center">
+              <p className="text-xs text-stone-500 font-medium max-w-sm hidden md:block">Re-composing will keep unflagged images but update timings to match the new audio track.</p>
+              <div className="flex gap-3 w-full md:w-auto justify-end">
+                <button
+                  onClick={() => setSelectedMetadataReel(null)}
+                  className="px-6 py-2.5 bg-white text-stone-700 border border-stone-200 text-sm font-bold rounded-xl hover:bg-stone-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => recomposeMutation.mutate({
+                    reelId: selectedMetadataReel.id,
+                    seriesId: selectedMetadataReel.seriesId,
+                    script: editedScript,
+                    voiceModel: editedVoiceModel,
+                    regenerateShots: shotsToRegenerate
+                  })}
+                  disabled={recomposeMutation.isPending}
+                  className="px-6 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {recomposeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
+                  Re-compose Reel
+                </button>
+              </div>
             </div>
           </div>
         </div>
