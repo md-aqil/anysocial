@@ -544,6 +544,7 @@ Output ONLY valid JSON:
             
           const memoryPrompt = `Analyze the following script and extract the main characters and locations.${regionMemoryRule}
   Script: "${script}"
+  CRITICAL INSTRUCTION: ONLY extract characters if they are explicitly mentioned or physically present in the narrative story. Do NOT invent a 'Narrator', 'Advisor', or generic human character if the script is primarily discussing concepts, objects, or locations.
   Output ONLY valid JSON:
   {
     "characters": [{ "name": "...", "physical": "...", "wardrobe": "..." }],
@@ -577,6 +578,7 @@ Output ONLY valid JSON:
   - Every shot MUST use "ai_image". Do not choose stock photos, stock videos, search APIs, archival footage, or generic B-roll.
   - Each keyword must describe a specific generated frame, not a search query.
   - Include the subject, action, environment, emotional tone, camera framing, and visual details needed for an image model to render the scene.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly include "${series.targetRegion}" and mention ${series.targetRegion} demographics, places, clothing, objects, and architecture where relevant in EVERY keyword description.` : ''}
+  - CRITICAL SUBJECT RULE: Do NOT force human characters into the frame. If the script discusses concepts, properties, or objects, focus the imagery entirely on those subjects (cinematic B-roll style) rather than showing someone talking.
 
   CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
 
