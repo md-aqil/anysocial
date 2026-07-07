@@ -214,10 +214,11 @@ Make sure the output is a valid JSON object.`;
   }
 
   // 1. Imagen 3 - Image Generation
-  async generateImage(prompt: string, seed: number = 0): Promise<string> {
+  async generateImage(prompt: string, seed: number = 0, allowStockFallback: boolean = true): Promise<string> {
     const uniqueId = Math.random().toString(36).substring(7);
     
     if (!process.env.VERTEX_AI_PROJECT_ID) {
+      if (!allowStockFallback) throw new Error("Vertex AI not configured and fallbacks disabled");
       const fallbackUrl = `https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop&random=${uniqueId}`;
       const tempPath = path.join(os.tmpdir(), `imagen_fallback_${Date.now()}_${uniqueId}.jpg`);
       const response = await fetch(fallbackUrl);
@@ -241,6 +242,7 @@ Make sure the output is a valid JSON object.`;
         parameters: {
           aspectRatio: "9:16",
           sampleCount: 1,
+          seed: seed || Math.floor(Math.random() * 1000000),
           negativePrompt: "male, man, men, boy, boys, cross-dressing, wrong gender, western clothing, ugly, deformed, cartoon, illustration, low quality, unnatural, mutated",
           outputOptions: {
             mimeType: "image/jpeg",
@@ -273,6 +275,8 @@ Make sure the output is a valid JSON object.`;
       return tempPath;
     } catch (e: any) {
       console.error("[Imagen 3 API Error]:", e.message || e);
+      if (!allowStockFallback) throw e;
+
       try {
         // Fallback 1: Pexels Image
         return await this.fetchPexelsImage(prompt);
@@ -288,11 +292,41 @@ Make sure the output is a valid JSON object.`;
             return await this.fetchPixabayImage(prompt);
           } catch (pixabayErr: any) {
             console.error("[Pixabay Fallback Error]:", pixabayErr.message || pixabayErr);
-            throw new Error("All AI and Stock Image Generators failed.");
+            try {
+              // Fallback 4: Pollinations AI (Free, No API Key)
+              return await this.fetchPollinationsImage(prompt);
+            } catch (pollinationsErr: any) {
+              console.error("[Pollinations Fallback Error]:", pollinationsErr.message || pollinationsErr);
+              throw new Error("All AI and Stock Image Generators failed.");
+            }
           }
         }
       }
     }
+  }
+
+  /**
+   * Helper to fetch a free AI image from Pollinations (no API key required)
+   */
+  async fetchPollinationsImage(prompt: string): Promise<string> {
+    // Sanitize prompt for URL usage (remove parentheses, remove negative prompts)
+    const cleanKeyword = prompt.replace(/[()]/g, '').replace(/--no[\w\s,]*/g, '').trim();
+    console.log(`[Pollinations] Generating AI image for '${cleanKeyword}'...`);
+    
+    // Pollinations generates images instantly based on URL
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanKeyword)}`;
+    
+    const imageResponse = await fetch(imageUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download Pollinations image from ${imageUrl}`);
+    }
+    
+    const uniqueId = Math.random().toString(36).substring(7);
+    const tempPath = path.join(os.tmpdir(), `pollinations_img_${Date.now()}_${uniqueId}.jpg`);
+    
+    const ab = await imageResponse.arrayBuffer();
+    fs.writeFileSync(tempPath, Buffer.from(ab));
+    return tempPath;
   }
 
   /**

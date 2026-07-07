@@ -569,7 +569,7 @@ Output ONLY valid JSON:
                 // Phase 4: Prompt Engineering
                 const engineeredPrompt = `(${keyword}) in (${lighting}) shot on 50mm lens, photorealistic, 8k, ${series.artStyle} style, identical consistency --no ugly, deformed`;
                 
-                finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts);
+                finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts, false);
                 await new Promise(r => setTimeout(r, 1000));
                 
                 // Phase 5: Vision QA Inspector
@@ -586,7 +586,7 @@ Output ONLY valid JSON:
                   try {
                     finalUrl = await aiOrchestrator.fetchStockImage(keyword);
                   } catch (e) {
-                    finalUrl = await aiOrchestrator.generateImage("beautiful vertical scene", reelSeed);
+                    finalUrl = await aiOrchestrator.generateImage("beautiful vertical scene", reelSeed, true);
                   }
               }
             }
