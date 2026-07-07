@@ -75,7 +75,7 @@ export default function DashboardPage() {
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-[#D27D50] font-bold text-xs uppercase tracking-widest mb-2">
+          <div className="flex items-center gap-2 text-[#D27D50] font-black text-[10px] uppercase tracking-[0.2em] mb-2">
             <Zap className="h-3.5 w-3.5 fill-current" />
             Social Command Center
           </div>
@@ -83,7 +83,7 @@ export default function DashboardPage() {
           <p className="text-stone-500 font-medium mt-1 text-lg">Here's what's happening across your channels today.</p>
         </div>
         <Link href="/dashboard/posts/new">
-          <Button className="h-14 bg-slate-900 hover:bg-slate-800 text-white px-8 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-200 transition-all active:scale-95">
+          <Button className="h-14 bg-slate-900 hover:bg-slate-800 text-white px-8 rounded-[1.25rem] font-black text-sm uppercase tracking-widest shadow-[0_8px_20px_rgba(15,23,42,0.15)] transition-all active:scale-95">
             <Plus className="h-5 w-5 mr-2 stroke-[3]" />
             Create New Post
           </Button>
@@ -99,17 +99,17 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className="border-[#D9E3D9] shadow-sm rounded-[32px] overflow-hidden group hover:shadow-md transition-all duration-300">
+            <Card className="border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-gradient-to-b from-white to-[#FAFCFA] rounded-[2.5rem] overflow-hidden group hover:shadow-[0_15px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300">
               <CardContent className="p-8">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: stat.bg }}>
-                    <stat.icon className="h-6 w-6" style={{ color: stat.color }} />
+                  <div className="h-12 w-12 rounded-[1.25rem] flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm border border-black/[0.03]" style={{ backgroundColor: stat.bg }}>
+                    <stat.icon className="h-5 w-5" style={{ color: stat.color }} strokeWidth={2.5} />
                   </div>
-                  <ArrowUpRight className="h-5 w-5 text-stone-300 group-hover:text-stone-400 transition-colors" />
+                  <ArrowUpRight className="h-5 w-5 text-stone-300 group-hover:text-[#D27D50] transition-colors" />
                 </div>
-                <div className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</div>
-                <div className="text-sm font-bold text-stone-400 uppercase tracking-widest mt-1">{stat.label}</div>
-                <div className="mt-4 pt-4 border-t border-[#F0F4F0] text-xs font-medium text-stone-500">
+                <div className="text-4xl font-black text-slate-900 tracking-tighter">{stat.value}</div>
+                <div className="text-[11px] font-black text-stone-400 uppercase tracking-[0.15em] mt-2">{stat.label}</div>
+                <div className="mt-5 pt-4 border-t border-stone-100 text-[13px] font-semibold text-stone-500">
                   {stat.sub}
                 </div>
               </CardContent>
@@ -123,46 +123,46 @@ export default function DashboardPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">Recent Activity</h2>
-            <Link href="/dashboard/posts" className="text-sm font-bold text-[#D27D50] hover:underline uppercase tracking-widest">
+            <Link href="/dashboard/posts" className="text-[11px] font-black text-[#D27D50] hover:text-[#B86A42] hover:underline uppercase tracking-[0.15em] transition-colors">
               View All Posts
             </Link>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             {postsLoading ? (
               [...Array(3)].map((_, i) => (
-                <div key={i} className="h-24 rounded-3xl bg-stone-50 animate-pulse border border-[#D9E3D9]" />
+                <div key={i} className="h-24 rounded-3xl bg-stone-50/50 animate-pulse border border-stone-100" />
               ))
             ) : posts.length === 0 ? (
-              <Card className="border-2 border-dashed border-[#D9E3D9] bg-[#F8FAF8] rounded-[40px] p-12 text-center">
-                <div className="h-16 w-16 bg-white rounded-3xl flex items-center justify-center shadow-sm mx-auto mb-4">
+              <Card className="border border-dashed border-stone-200 bg-stone-50/50 rounded-[2.5rem] p-12 text-center shadow-sm">
+                <div className="h-16 w-16 bg-white rounded-[1.25rem] flex items-center justify-center shadow-sm mx-auto mb-4 border border-stone-100">
                   <FileText className="h-8 w-8 text-stone-300" />
                 </div>
-                <h3 className="text-xl font-black text-slate-900">No posts yet</h3>
-                <p className="text-stone-500 mt-2 max-w-[300px] mx-auto">Start reaching your audience by creating your first scheduled post.</p>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">No posts yet</h3>
+                <p className="text-stone-500 font-medium mt-2 max-w-[300px] mx-auto text-sm">Start reaching your audience by creating your first scheduled post.</p>
                 <Link href="/dashboard/posts/new">
-                  <Button className="mt-8 bg-[#D27D50] hover:bg-[#B86A42] text-white px-8 rounded-xl font-bold">Get Started</Button>
+                  <Button className="mt-8 bg-[#D27D50] hover:bg-[#B86A42] text-white px-8 rounded-xl font-bold shadow-[0_4px_14px_rgba(210,125,80,0.25)]">Get Started</Button>
                 </Link>
               </Card>
             ) : (
               posts.slice(0, 5).map((post) => (
                 <motion.div
                   key={post.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="group relative flex items-center gap-5 p-5 bg-white rounded-[32px] border border-[#D9E3D9] hover:border-[#D27D50]/30 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all"
+                  className="group relative flex items-center gap-5 p-5 bg-white rounded-3xl border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:border-[#D27D50]/20 hover:shadow-[0_10px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
                 >
-                  <div className="h-16 w-16 rounded-2xl bg-[#F8FAF8] border border-[#F0F4F0] flex items-center justify-center overflow-hidden shrink-0">
+                  <div className="h-16 w-16 rounded-[1.25rem] bg-stone-50/50 border border-stone-100 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
                     {post.mediaUrls?.[0] ? (
                       post.mediaUrls[0].match(/\.(mp4|mov|webm)/i) ? (
                         <div className="w-full h-full flex items-center justify-center bg-stone-900">
-                          <Video className="h-6 w-6 text-white opacity-40" />
+                          <Video className="h-6 w-6 text-white opacity-60" />
                         </div>
                       ) : (
                         <img src={post.mediaUrls[0]} className="h-full w-full object-cover" alt="" />
                       )
                     ) : (
-                      <FileText className="h-6 w-6 text-stone-300" />
+                      <FileText className="h-6 w-6 text-stone-300" strokeWidth={2} />
                     )}
                   </div>
                   
@@ -213,46 +213,46 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black text-slate-900 tracking-tight">Channels</h2>
               <Link href="/dashboard/social-accounts">
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg bg-[#F8FAF8] text-stone-400 hover:text-[#D27D50]">
-                  <Plus className="h-4 w-4" />
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg bg-white shadow-sm border border-stone-100 text-stone-400 hover:text-[#D27D50] hover:bg-stone-50">
+                  <Plus className="h-4 w-4 stroke-[3]" />
                 </Button>
               </Link>
             </div>
             
-            <Card className="border-[#D9E3D9] shadow-sm rounded-[32px] overflow-hidden">
+            <Card className="border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-gradient-to-b from-white to-[#FAFCFA] rounded-[2.5rem] overflow-hidden">
               <CardContent className="p-6">
                 {accountsLoading ? (
-                  <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-stone-200" /></div>
+                  <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-stone-300" /></div>
                 ) : accounts.length === 0 ? (
                   <div className="text-center py-4">
-                    <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">No Channels</p>
+                    <p className="text-[11px] font-black text-stone-400 uppercase tracking-[0.15em]">No Channels</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {accounts.map((account) => {
                       const platformId = account.platform.toUpperCase();
                       const Logo = platformLogos[platformId];
                       const statusColor = statusColors[account.status as keyof typeof statusColors] || statusColors.ERROR;
                       
                       return (
-                        <div key={account.id} className="flex items-center justify-between">
+                        <div key={account.id} className="flex items-center justify-between p-2 hover:bg-stone-50/50 rounded-2xl transition-colors -mx-2">
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl bg-[#F8FAF8] border border-[#F0F4F0] flex items-center justify-center p-2.5">
+                            <div className="h-10 w-10 rounded-[0.85rem] bg-white border border-stone-100 shadow-sm flex items-center justify-center p-2.5">
                               {Logo ? <Logo className="h-full w-full" /> : <Share2 className="h-5 w-5 text-stone-400" />}
                             </div>
                             <div>
-                              <p className="text-sm font-black text-slate-900 leading-tight">{account.platform}</p>
+                              <p className="text-[13px] font-bold text-slate-900 leading-tight">{account.platform}</p>
                               <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{account.status.toLowerCase()}</p>
                             </div>
                           </div>
-                          <div className={cn("h-2 w-2 rounded-full", statusColor.split(' ')[0].replace('text-', 'bg-'))} />
+                          <div className={cn("h-1.5 w-1.5 rounded-full shadow-sm", statusColor.split(' ')[0].replace('text-', 'bg-'))} />
                         </div>
                       );
                     })}
                   </div>
                 )}
                 <Link href="/dashboard/social-accounts">
-                  <Button className="w-full mt-6 h-11 rounded-xl bg-[#FBF3EE] text-[#D27D50] hover:bg-[#F2E5DC] font-bold text-xs uppercase tracking-widest border-none">
+                  <Button className="w-full mt-6 h-11 rounded-[1rem] bg-stone-900 text-white hover:bg-stone-800 font-bold text-[11px] uppercase tracking-[0.15em] border-none shadow-md">
                     Manage Channels
                   </Button>
                 </Link>
@@ -261,8 +261,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Tips Card */}
-          <Card className="border-none bg-gradient-to-br from-slate-900 to-slate-800 rounded-[32px] overflow-hidden shadow-xl">
-            <CardContent className="p-8 text-white">
+          <Card className="border border-slate-700/50 bg-gradient-to-br from-slate-900 to-[#0B0F19] rounded-[2.5rem] overflow-hidden shadow-[0_20px_40px_rgba(15,23,42,0.15)] relative">
+            <div className="absolute top-[-50px] right-[-50px] w-[150px] h-[150px] bg-[#D27D50]/10 blur-[50px] rounded-full pointer-events-none" />
+            <CardContent className="p-8 text-white relative z-10">
               <Zap className="h-8 w-8 text-[#D27D50] mb-4 fill-current" />
               <h3 className="text-lg font-black tracking-tight">Growth Tip</h3>
               <p className="text-slate-400 text-sm mt-2 leading-relaxed">

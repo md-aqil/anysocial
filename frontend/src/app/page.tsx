@@ -154,6 +154,185 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Features Bento Grid Section */}
+        <section className="container mx-auto px-4 py-24 max-w-6xl relative z-20">
+          <div className="text-center mb-16">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-6 text-white"
+            >
+              All the tools required for social<br className="hidden md:block" /> media growth in one place
+            </motion.h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Card 1: Reel Creator */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-[#110C16] border border-purple-500/20 rounded-[2.5rem] p-8 md:p-12 flex flex-col relative overflow-hidden group hover:border-purple-500/40 transition-colors shadow-[0_8px_30px_rgba(168,85,247,0.05)] min-h-[480px]"
+            >
+               <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/20 rounded-full blur-[80px] -z-10 group-hover:bg-purple-600/30 transition-colors" />
+               
+               <span className="inline-block px-4 py-1.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-widest w-fit mb-6 border border-purple-500/20">Video Creation</span>
+               
+               <h3 className="text-3xl font-bold text-white mb-4">AI Product Reels</h3>
+               <p className="text-stone-400 text-base mb-8 max-w-sm">Turn simple product links into viral, high-retention vertical videos instantly with our smart AI director.</p>
+               
+               <div className="mt-auto relative w-full h-56 rounded-t-2xl bg-black/40 border border-white/10 border-b-0 overflow-hidden flex items-end justify-center pb-0">
+                  <div className="w-[70%] h-[90%] bg-[#09090B] rounded-t-xl border border-white/10 flex flex-col relative shadow-2xl overflow-hidden group-hover:-translate-y-2 transition-transform duration-500">
+                     <div className="w-full h-[60%] bg-white/5 flex flex-col items-center justify-center border-b border-white/10">
+                        <Play className="w-8 h-8 text-white/30" />
+                     </div>
+                     <div className="p-4 space-y-3">
+                        <div className="w-3/4 h-2 bg-purple-500/40 rounded-full" />
+                        <div className="w-1/2 h-2 bg-white/10 rounded-full" />
+                     </div>
+                  </div>
+               </div>
+            </motion.div>
+
+            {/* Card 2: Scheduling */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-[#160E0B] border border-[#D27D50]/20 rounded-[2.5rem] p-8 md:p-12 flex flex-col relative overflow-hidden group hover:border-[#D27D50]/40 transition-colors shadow-[0_8px_30px_rgba(210,125,80,0.05)] min-h-[480px]"
+            >
+               <div className="absolute top-0 right-0 w-64 h-64 bg-[#D27D50]/20 rounded-full blur-[80px] -z-10 group-hover:bg-[#D27D50]/30 transition-colors" />
+               
+               <span className="inline-block px-4 py-1.5 rounded-full bg-[#D27D50]/20 text-[#D27D50] text-[10px] font-bold uppercase tracking-widest w-fit mb-6 border border-[#D27D50]/20">Planning</span>
+               
+               <h3 className="text-3xl font-bold text-white mb-4">Seamless scheduling</h3>
+               <p className="text-stone-400 text-base mb-8 max-w-sm">Schedule, analyze, and engage with your audience. Cross-post into multiple channels simultaneously.</p>
+               
+               <div className="mt-auto relative w-full h-56 rounded-t-2xl bg-black/40 border border-white/10 border-b-0 overflow-hidden p-6 grid grid-cols-4 gap-3 group-hover:-translate-y-2 transition-transform duration-500">
+                  {Array.from({length: 12}).map((_, i) => (
+                     <div key={i} className="bg-white/5 rounded-lg h-full flex items-end p-2 border border-white/5 relative">
+                        {i % 4 === 1 && (
+                          <div className="absolute bottom-2 left-2 right-2 h-6 bg-gradient-to-r from-[#D27D50] to-[#E8A583] rounded text-[8px] text-white font-bold flex items-center justify-center px-1 shadow-lg">Post</div>
+                        )}
+                        {i === 6 && (
+                          <div className="absolute bottom-2 left-2 right-2 h-6 bg-purple-500/80 rounded text-[8px] text-white font-bold flex items-center justify-center px-1 shadow-lg">Reel</div>
+                        )}
+                     </div>
+                  ))}
+               </div>
+            </motion.div>
+
+            {/* Card 3: Series Creator */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="md:col-span-2 bg-[#0C1217] border border-blue-500/20 rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center gap-12 relative overflow-hidden group hover:border-blue-500/40 transition-colors shadow-[0_8px_30px_rgba(59,130,246,0.05)]"
+            >
+               <div className="absolute bottom-0 left-0 w-[80%] h-64 bg-blue-600/10 rounded-full blur-[100px] -z-10 group-hover:bg-blue-600/20 transition-colors" />
+               
+               <div className="flex-1 order-2 md:order-1 w-full">
+                 <span className="inline-block px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest w-fit mb-6 border border-blue-500/20">Storytelling</span>
+                 <h3 className="text-3xl font-bold text-white mb-4">AI Series Creator</h3>
+                 <p className="text-stone-400 text-base max-w-md">Generate engaging, episodic content. Build a loyal audience over time with interconnected stories and consistent characters, completely automated by AI.</p>
+               </div>
+               
+               <div className="flex-1 w-full order-1 md:order-2 aspect-[16/10] max-w-md bg-black/40 rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex relative group-hover:scale-[1.02] transition-transform duration-500">
+                  <div className="w-1/3 border-r border-white/10 bg-white/5 p-4 space-y-3">
+                     <div className="w-full h-10 bg-white/10 rounded-lg" />
+                     <div className="w-full h-10 bg-blue-500/20 border border-blue-500/30 rounded-lg relative overflow-hidden">
+                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />
+                     </div>
+                     <div className="w-full h-10 bg-white/10 rounded-lg" />
+                  </div>
+                  <div className="flex-1 p-6 flex flex-col justify-between">
+                     <div className="space-y-3">
+                       <div className="w-3/4 h-3 bg-white/20 rounded-full" />
+                       <div className="w-1/2 h-3 bg-white/10 rounded-full" />
+                       <div className="w-2/3 h-3 bg-white/10 rounded-full" />
+                     </div>
+                     <div className="w-full h-1/2 bg-gradient-to-br from-blue-500/10 to-transparent rounded-xl border border-blue-500/20 flex items-center justify-center mt-6">
+                        <Sparkles className="w-8 h-8 text-blue-400 animate-pulse" />
+                     </div>
+                  </div>
+               </div>
+            </motion.div>
+
+            {/* Card 4: AI Content Assistant */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="bg-[#0A1110] border border-emerald-500/20 rounded-[2.5rem] p-8 md:p-12 flex flex-col relative overflow-hidden group hover:border-emerald-500/40 transition-colors shadow-[0_8px_30px_rgba(16,185,129,0.05)] min-h-[480px]"
+            >
+               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-[80px] -z-10 group-hover:bg-emerald-600/30 transition-colors" />
+               
+               <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest w-fit mb-6 border border-emerald-500/20">Artificial Intelligence</span>
+               
+               <h3 className="text-3xl font-bold text-white mb-4">AI Content Assistant</h3>
+               <p className="text-stone-400 text-base mb-8 max-w-sm">Improve your content creation process with an AI Agent that performs all tasks for you, acting as your personal social media manager.</p>
+               
+               <div className="mt-auto relative w-full h-56 rounded-t-2xl bg-black/40 border border-white/10 border-b-0 overflow-hidden flex flex-col p-6 space-y-4 group-hover:-translate-y-2 transition-transform duration-500">
+                  <div className="flex items-start gap-3 w-[80%]">
+                     <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                       <Sparkles className="w-4 h-4 text-emerald-400" />
+                     </div>
+                     <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm p-4 w-full">
+                        <div className="w-full h-2 bg-white/20 rounded-full mb-3" />
+                        <div className="w-2/3 h-2 bg-white/10 rounded-full" />
+                     </div>
+                  </div>
+                  <div className="flex items-start gap-3 w-[80%] self-end flex-row-reverse">
+                     <div className="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center shrink-0 border border-stone-700">
+                       <div className="w-4 h-4 rounded-full bg-stone-500" />
+                     </div>
+                     <div className="bg-[#D27D50]/20 border border-[#D27D50]/30 rounded-2xl rounded-tr-sm p-4 w-full">
+                        <div className="w-3/4 h-2 bg-[#D27D50]/60 rounded-full" />
+                     </div>
+                  </div>
+               </div>
+            </motion.div>
+
+            {/* Card 5: AI Copywriter */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+              className="bg-[#120A0C] border border-rose-500/20 rounded-[2.5rem] p-8 md:p-12 flex flex-col relative overflow-hidden group hover:border-rose-500/40 transition-colors shadow-[0_8px_30px_rgba(244,63,94,0.05)] min-h-[480px]"
+            >
+               <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/20 rounded-full blur-[80px] -z-10 group-hover:bg-rose-600/30 transition-colors" />
+               
+               <span className="inline-block px-4 py-1.5 rounded-full bg-rose-500/20 text-rose-400 text-[10px] font-bold uppercase tracking-widest w-fit mb-6 border border-rose-500/20">Copywriting</span>
+               
+               <h3 className="text-3xl font-bold text-white mb-4">AI Copywriter</h3>
+               <p className="text-stone-400 text-base mb-8 max-w-sm">Never stare at a blank page again. Generate high-converting captions, threads, and ad copy tailored precisely to your brand voice.</p>
+               
+               <div className="mt-auto relative w-full h-56 rounded-t-2xl bg-black/40 border border-white/10 border-b-0 overflow-hidden flex flex-col p-6 group-hover:-translate-y-2 transition-transform duration-500">
+                  <div className="w-full h-10 bg-white/5 border border-white/10 flex items-center gap-2 mb-4 rounded-t-xl px-4">
+                     <div className="w-2.5 h-2.5 rounded-full bg-stone-600" />
+                     <div className="w-2.5 h-2.5 rounded-full bg-stone-600" />
+                     <div className="w-2.5 h-2.5 rounded-full bg-stone-600" />
+                  </div>
+                  <div className="space-y-4 px-4 pt-2">
+                     <div className="w-[90%] h-3 bg-rose-500/40 rounded-full" />
+                     <div className="w-[80%] h-3 bg-white/20 rounded-full" />
+                     <div className="w-[85%] h-3 bg-white/20 rounded-full" />
+                     <div className="w-[60%] h-3 bg-white/20 rounded-full relative overflow-hidden">
+                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent w-1/2 animate-[marquee_2s_linear_infinite]" />
+                     </div>
+                  </div>
+               </div>
+            </motion.div>
+          </div>
+        </section>
+
         {/* Showcase Video Section */}
         <section className="container mx-auto px-4 py-20 max-w-6xl relative">
           {/* Ambient Glow behind the video container */}
