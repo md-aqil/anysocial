@@ -463,7 +463,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   /**
    * Merges a final video with a primary audio track (e.g., voiceover) and burns subtitles.
    */
-  static async mergeAudioVideo(videoPath: string, audioUrl?: string | null, subtitlePath?: string, signal?: AbortSignal, hookText?: string, duration?: number): Promise<{ outputPath: string, tempFiles: string[] }> {
+  static async mergeAudioVideo(videoPath: string, audioUrl?: string | null, subtitlePath?: string, signal?: AbortSignal, hookText?: string, duration?: number, llmDetails?: string): Promise<{ outputPath: string, tempFiles: string[] }> {
     const tempFiles: string[] = [];
     let audioPath: string | null = null;
     if (audioUrl) {
@@ -488,6 +488,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           const escapedHook = hookText.replace(/'/g, "'\\''");
           // position it dynamically at the upper center
           filters.push(`drawtext=text='${escapedHook}':fontfile='${fontPath}':fontcolor=white:fontsize=32:bordercolor=black:borderw=3:shadowcolor=black@0.6:shadowx=2:shadowy=2:x=(w-text_w)/2:y=120`);
+        }
+
+        // LLM Details Watermark (render at the bottom)
+        if (llmDetails) {
+          const fontPath = path.join(process.cwd(), 'src', 'assets', 'fonts', 'Poppins-Bold.ttf');
+          const escapedDetails = llmDetails.replace(/'/g, "'\\''").replace(/:/g, '\\:');
+          filters.push(`drawtext=text='${escapedDetails}':fontfile='${fontPath}':fontcolor=white@0.6:fontsize=20:box=1:boxcolor=black@0.4:boxborderw=5:x=(w-text_w)/2:y=h-60`);
         }
 
         const outputOpts: string[] = [];

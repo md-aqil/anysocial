@@ -196,7 +196,9 @@ export class ReelWorker {
           }
         }
 
-        const targetDuration = Math.max(8, computedTotalDuration);
+        // Account for xfade transition overlaps shrinking the final video
+        const totalOverlap = Math.max(0, (downloadedAssetPaths.length - 1) * 0.5);
+        const targetDuration = Math.max(8, computedTotalDuration - totalOverlap);
         // Average speech rate is 2.3 words/sec. Instruct LLM to fit this exactly.
         const targetWordCount = Math.round(targetDuration * 2.3);
 
@@ -394,8 +396,8 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
 
       // 2. Phase 1: Generate Story Script (The Director)
       await updateProgress('✍️ Phase 1: Director is writing the cinematic script...');
-      const durationStr = 'exactly 60-second';
-      const wordCount = '180 to 220 words';
+      const durationStr = 'organic';
+      const wordCountGoal = 'as many words as naturally needed to tell a great story (roughly 30 to 90 seconds of spoken audio)';
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
@@ -427,7 +429,7 @@ STORYTELLING STRUCTURE:
 4. ENDING: End with a lingering thought or simple call to action.
  
 PACING & RULES:
-- The script MUST be exactly ${wordCount} words to fit the video timing.
+- The script should be organically paced. Use ${wordCountGoal}. Do not artificially pad or trim the story.
 - ${languagePrompt}
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
  
@@ -443,7 +445,7 @@ Output ONLY valid JSON:
       let characterContext = '';
       let locationContext = '';
       let visuals: any[] = [];
-      const numKeywords = 12;
+      let numKeywords = 12;
 
       try {
         const aiResultText = await aiOrchestrator.generateContent(storyPrompt);
@@ -489,18 +491,23 @@ Output ONLY valid JSON:
         console.warn("[Art Director] Failed to parse memory core, proceeding with empty context.");
       }
 
+      // Dynamically calculate the number of shots required for organic pacing (1 shot ~every 15 words)
+      const scriptWordCount = script.split(/\s+/).length;
+      numKeywords = Math.max(4, Math.ceil(scriptWordCount / 15));
+
       // Phase 3: Shot Planning (Cinematographer)
-      await updateProgress('🎥 Phase 3: Cinematographer is planning the Shot List...');
+      await updateProgress(`🎥 Phase 3: Cinematographer is planning the Shot List (${numKeywords} shots)...`);
       try {
-         const cinePrompt = `You are an elite Cinematographer. Break down this script into exactly ${numKeywords} cinematic shots.
+         const cinePrompt = `You are an elite Cinematographer. Break down this organic script into an appropriately paced sequence of exactly ${numKeywords} cinematic shots.
 Script: "${script}"
 Characters: ${characterContext}
 Locations: ${locationContext}
 
 CRITICAL MEDIA RULE: 
-- You MUST dynamically decide the best "media_type" for each shot based purely on the story and scene context.
-- Use "stock_video" for general B-roll, landscapes, nature, cityscapes, abstract concepts, or establishing shots.
-- Use "ai_image" ONLY when a highly specific character, face, or impossible scene is required that cannot be found in stock footage.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
+- You MUST dynamically decide the best "media_type" for each shot based purely on the story and scene context. You should use a rich mix of all 3 types across the reel.
+- Use "stock_video" for dynamic B-roll, nature, cityscapes, establishing shots, and general movement.
+- Use "stock_photo" for historical photos, real-world objects, or crisp high-quality static scenery.
+- Use "ai_image" ONLY when a highly specific character, face, or impossible sci-fi/fantasy scene is required that cannot be found in stock media.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
 
 CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
 
@@ -509,8 +516,8 @@ Output ONLY valid JSON:
   "visuals": [
     { 
       "keyword": "detailed description of the exact visual frame, explicitly naming characters and environment.", 
-      "search_query": "simple 2-3 word search query if using stock_video (e.g. 'mumbai traffic')",
-      "media_type": "MUST BE EITHER 'ai_image' OR 'stock_video'", 
+      "search_query": "simple 2-3 word search query if using stock_video or stock_photo (e.g. 'mumbai traffic')",
+      "media_type": "MUST BE EITHER 'ai_image', 'stock_video', OR 'stock_photo'", 
       "camera_movement": "zoom_in",
       "lighting": "High contrast rim lighting"
     }
@@ -646,7 +653,10 @@ Output ONLY valid JSON:
       const abortController = new AbortController();
 
       const actualShotsCount = imageUrls.length || 1;
-      const imageDuration = Math.ceil(actualDuration / actualShotsCount);
+      // Compensate for the 0.5s xfade overlap between clips so the final video doesn't get shrunk below the audio duration
+      const transitionOverlap = 0.5;
+      const totalOverlap = Math.max(0, (actualShotsCount - 1) * transitionOverlap);
+      const imageDuration = Math.ceil((actualDuration + totalOverlap) / actualShotsCount);
       const { clipPaths, tempFiles: composerTempFiles } = await VideoComposerService.createVideoClips(imageUrls, imageDuration, 'vertical', abortController.signal, cameraMovements);
       if (clipPaths) tempFilesToCleanup.push(...clipPaths);
       if (composerTempFiles) tempFilesToCleanup.push(...composerTempFiles);
@@ -682,7 +692,8 @@ Output ONLY valid JSON:
         const subtitlePath = await VideoComposerService.generateSubtitlesFile(script, actualDuration, wordTimings);
         if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
 
-        const { outputPath: videoWithAudio, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, subtitlePath, abortController.signal);
+        const llmDetails = "Script: Gemini 2.5 | Audio: Google TTS | Visuals: FLUX 1.0 & Pexels";
+        const { outputPath: videoWithAudio, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, subtitlePath, abortController.signal, undefined, undefined, llmDetails);
         if (videoWithAudio) tempFilesToCleanup.push(videoWithAudio);
         if (mergeTempFiles) tempFilesToCleanup.push(...mergeTempFiles);
         
