@@ -657,10 +657,6 @@ Output ONLY valid JSON:
         while (attempts < maxAttempts) {
             attempts++;
             try {
-              const engineeredPrompt = buildSceneImagePrompt({
-                shotIndex: currentShotIndex,
-                totalShots,
-                seriesTopic: series.niche || series.customPrompt || series.name,
               // Phase 4: Prompt Engineering
               const engineeredPrompt = `A breathtaking, vertical 9:16 portrait masterpiece of: ${keyword}. Story & Scene Matching: This image MUST perfectly depict the exact action and story described. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion of the scene. Lighting: ${lighting}, cinematic and atmospheric. Camera: Shot on 50mm lens, highly detailed, photorealistic, 8k resolution, ${series.artStyle} style. CRITICAL QUALITY RULES: The image MUST have perfect human anatomy, beautiful symmetrical faces, no distortion, no extra limbs, no weird hands, and absolutely NO text, NO watermarks, and NO borders.`;
               
