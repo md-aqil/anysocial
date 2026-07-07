@@ -507,8 +507,8 @@ Locations: ${locationContext}
 
 CRITICAL MEDIA RULE: 
 - You MUST think smartly and dynamically decide the best "media_type" for each shot based purely on the story and scene context.
-- Use "ai_image" when the scene requires specific characters, expressive faces, highly stylized aesthetics, or unique actions that are hard to find in generic stock footage.
-- Use "stock_video" or "stock_photo" ONLY for generic establishing shots, nature, standard cityscapes, or simple B-roll where realistic footage is best.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
+- Use "ai_image" for ALL static images, including characters, expressive faces, and highly stylized aesthetics. DO NOT use stock photos.
+- Use "stock_video" ONLY when dynamic motion is needed for generic establishing shots, nature, cityscapes, or simple realistic B-roll.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
 
 CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
 
@@ -517,8 +517,8 @@ Output ONLY valid JSON:
   "visuals": [
     { 
       "keyword": "detailed description of the exact visual frame, explicitly naming characters and environment.", 
-      "search_query": "simple 2-3 word search query if using stock_video or stock_photo (e.g. 'mumbai traffic')",
-      "media_type": "MUST BE EITHER 'ai_image', 'stock_video', OR 'stock_photo'", 
+      "search_query": "simple 2-3 word search query if using stock_video (e.g. 'mumbai traffic')",
+      "media_type": "MUST BE EITHER 'ai_image' OR 'stock_video'", 
       "camera_movement": "zoom_in",
       "lighting": "High contrast rim lighting"
     }

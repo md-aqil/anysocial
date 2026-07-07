@@ -568,17 +568,7 @@ export default function ReelsDashboard() {
                             </div>
                             <div className="p-4 flex-1 flex flex-col">
 
-                              {reel.script && (
-                                <details className="group mb-4">
-                                  <summary className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-violet-600 hover:text-violet-700 select-none list-none">
-                                    <FileText className="h-3.5 w-3.5" />
-                                    View Generated Script
-                                  </summary>
-                                  <div className="mt-2 text-xs text-stone-600 italic max-h-32 overflow-y-auto pr-2 custom-scrollbar p-2.5 bg-stone-50 rounded-lg border border-stone-100">
-                                    "{reel.script}"
-                                  </div>
-                                </details>
-                              )}
+
 
                               {/* Generation Details Button */}
                               {reel.metadata && (
@@ -915,6 +905,21 @@ export default function ReelsDashboard() {
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-stone-50/30">
               <div className="space-y-6">
                 
+                {/* Generated Script */}
+                {selectedMetadataReel.script && (
+                  <div>
+                    <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Generated Script
+                    </h4>
+                    <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
+                      <p className="text-sm italic text-stone-600 leading-relaxed whitespace-pre-wrap">
+                        "{selectedMetadataReel.script}"
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Global Engines */}
                 {(selectedMetadataReel.metadata as any).llmDetails && (
                   <div>
