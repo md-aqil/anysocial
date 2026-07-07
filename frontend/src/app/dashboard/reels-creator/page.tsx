@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckCircle2, AlertCircle, Wand2, MoreVertical, Trash2, Edit2, PauseCircle, Send } from 'lucide-react';
+import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckCircle2, AlertCircle, Wand2, MoreVertical, Trash2, Edit2, PauseCircle, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -195,6 +195,7 @@ export default function ReelsDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'series' | 'product'>('series');
+  const [selectedMetadataReel, setSelectedMetadataReel] = useState<any | null>(null);
 
   const generateMutation = useMutation({
     mutationFn: async (seriesId: string) => {
@@ -579,17 +580,16 @@ export default function ReelsDashboard() {
                                 </details>
                               )}
 
-                              {/* Display LLM Model Details */}
-                              {(reel.metadata as any)?.llmDetails && (
-                                <div className="mb-4 bg-[#F2F6F2] border border-emerald-100/50 rounded-lg p-2.5">
-                                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
-                                    <Sparkles className="w-3 h-3" />
-                                    AI Engines
-                                  </div>
-                                  <p className="text-[10px] font-mono text-stone-600 leading-tight">
-                                    {(reel.metadata as any).llmDetails}
-                                  </p>
-                                </div>
+                              {/* Generation Details Button */}
+                              {reel.metadata && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedMetadataReel(reel)}
+                                  className="mb-4 flex w-full items-center justify-center gap-1.5 bg-[#F2F6F2] hover:bg-[#E8EDE8] border border-emerald-100/50 text-emerald-700 font-semibold text-xs py-2 rounded-lg transition-colors shadow-sm"
+                                >
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                  View Generation Details
+                                </button>
                               )}
 
                               {/* Detailed Live Log for Generation */}
@@ -888,6 +888,89 @@ export default function ReelsDashboard() {
             </section>
           )}
         </>
+      )}
+
+      {/* Generation Details Modal */}
+      {selectedMetadataReel && selectedMetadataReel.metadata && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-stone-200">
+            <div className="flex items-center justify-between p-6 border-b border-stone-100 bg-stone-50/50">
+              <div className="flex items-center gap-3">
+                <div className="bg-emerald-100 p-2 rounded-xl">
+                  <Sparkles className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-stone-800">Generation Details</h3>
+                  <p className="text-xs font-medium text-stone-500">Full audit of AI models used for this Reel</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedMetadataReel(null)}
+                className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400 hover:text-stone-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-stone-50/30">
+              <div className="space-y-6">
+                
+                {/* Global Engines */}
+                {(selectedMetadataReel.metadata as any).llmDetails && (
+                  <div>
+                    <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+                      Core Engines
+                    </h4>
+                    <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
+                      <p className="text-sm font-mono text-stone-600">
+                        {(selectedMetadataReel.metadata as any).llmDetails}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Shot Breakdown */}
+                {(selectedMetadataReel.metadata as any).shots && (selectedMetadataReel.metadata as any).shots.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Shot-by-Shot Visual Generation
+                    </h4>
+                    <div className="space-y-3">
+                      {(selectedMetadataReel.metadata as any).shots.map((shot: any, idx: number) => (
+                        <div key={idx} className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">Shot {shot.shotIndex}</span>
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200 uppercase tracking-wider">
+                              {shot.model}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-semibold text-stone-400 uppercase block mb-1">Generated Prompt / Search Query</span>
+                            <p className="text-xs font-mono text-stone-700 leading-relaxed bg-stone-50 p-2.5 rounded-lg border border-stone-100">
+                              {shot.keyword}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-stone-100 bg-white flex justify-end">
+              <button
+                onClick={() => setSelectedMetadataReel(null)}
+                className="px-6 py-2.5 bg-stone-900 text-white text-sm font-bold rounded-xl hover:bg-stone-800 transition-colors"
+              >
+                Close Audit
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

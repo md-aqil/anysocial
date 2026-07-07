@@ -91,8 +91,28 @@ export default function PlaygroundPage() {
 
         <div className="bg-white rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-stone-100 flex items-center justify-center min-h-[400px]">
           {imageUrl ? (
-            <div className="relative w-full h-full group">
-              <img src={imageUrl} alt="Generated" className="w-full h-full object-contain bg-stone-900" />
+            <div className="relative w-full h-full flex flex-col group">
+              <div className="flex-1 min-h-[400px] relative bg-stone-900 rounded-t-3xl overflow-hidden">
+                <img src={imageUrl} alt="Generated" className="absolute inset-0 w-full h-full object-contain" />
+              </div>
+              <div className="bg-stone-50 p-4 border-t border-stone-100 rounded-b-3xl">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
+                      <Sparkles className="w-3 h-3" />
+                      Gemini 2.5 Flash Image Model
+                    </div>
+                    <p className="text-xs text-stone-600 font-mono line-clamp-2">Prompt: {prompt}</p>
+                  </div>
+                  <a 
+                    href={imageUrl} 
+                    download={`gemini_playground_${Date.now()}.jpg`}
+                    className="flex-shrink-0 px-4 py-2 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-xl hover:bg-stone-100 transition-colors shadow-sm"
+                  >
+                    Download
+                  </a>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-center p-8 flex flex-col items-center opacity-50">
