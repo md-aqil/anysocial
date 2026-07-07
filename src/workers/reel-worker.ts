@@ -170,8 +170,10 @@ export class ReelWorker {
     hookText?: string | null;
     language?: string;
     voiceId?: string;
+    isRecompose?: boolean;
+    regenerateShots?: number[];
   }>) {
-    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'en-US-Journey-F' } = job.data;
+    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'en-US-Journey-F', isRecompose = false, regenerateShots = [] } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
     const tempFilesToCleanup: string[] = [];
     
@@ -651,6 +653,8 @@ Output ONLY valid JSON:
       const imageUrls: string[] = [];
       const cameraMovements: string[] = [];
       let currentShotIndex = 1;
+      const totalShots = visuals.slice(0, numKeywords).length;
+      
       for (const visual of visuals.slice(0, numKeywords)) {
         await updateProgress(`🎨 Phase 4: Production & QA (Shot ${currentShotIndex}/${totalShots})...`);
         const keyword = visual.keyword;
