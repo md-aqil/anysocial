@@ -956,6 +956,11 @@ export default function ReelsDashboard() {
                             <p className="text-xs font-mono text-stone-700 leading-relaxed bg-stone-50 p-2.5 rounded-lg border border-stone-100">
                               {shot.keyword}
                             </p>
+                            {shot.imageUrl && (
+                              <div className="mt-3 relative w-full h-48 bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                                <img src={shot.imageUrl} alt={`Shot ${shot.shotIndex}`} className="w-full h-full object-contain bg-stone-900" />
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}

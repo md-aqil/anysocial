@@ -670,10 +670,16 @@ Output ONLY valid JSON:
               logger.warn({ event: 'reel_media_gen_failed', keyword, attempt: attempts, error: e.message });
               if (attempts === maxAttempts) {
                   try {
-                    // Final failsafe: fallback to stock media if AI generation repeatedly fails
-                    finalUrl = await aiOrchestrator.fetchStockImage(keyword);
-                  } catch (e) {
-                    finalUrl = await aiOrchestrator.fetchStockImage('fallback');
+                    // Fallback 1: Pollinations AI
+                    finalUrl = await aiOrchestrator.fetchPollinationsImage(keyword, reelSeed + attempts);
+                  } catch (e1) {
+                    try {
+                      // Fallback 2: Stock Image
+                      finalUrl = await aiOrchestrator.fetchStockImage(keyword);
+                    } catch (e2) {
+                      // Fallback 3: Black Image (Handled internally by fetchStockImage, but just in case)
+                      finalUrl = await aiOrchestrator.fetchStockImage('fallback');
+                    }
                   }
               }
             }
@@ -683,13 +689,24 @@ Output ONLY valid JSON:
           throw new Error(`LLM image generation returned no image for shot ${currentShotIndex}.`);
         }
         
+        // We need to copy the final image to a public folder so the UI can display it in the Generation Details
+        const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-images');
+        if (!fs.existsSync(publicDir)) {
+          fs.mkdirSync(publicDir, { recursive: true });
+        }
+        const publicFilename = `reel_shot_${reelId}_${currentShotIndex}_${Date.now()}.jpg`;
+        const publicFilePath = path.join(publicDir, publicFilename);
+        fs.copyFileSync(finalUrl, publicFilePath);
+        const publicImageUrl = `/uploads/ai-images/${publicFilename}`;
+        
         generationMetadata.shots.push({
           shotIndex: currentShotIndex,
           keyword,
           mediaType,
           attempts,
           source: 'ai_image',
-          model: 'gemini-2.5-flash-image'
+          model: 'gemini-2.5-flash-image',
+          imageUrl: publicImageUrl
         });
         
         imageUrls.push(finalUrl);

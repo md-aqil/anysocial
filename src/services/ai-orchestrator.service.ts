@@ -292,10 +292,23 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
+  async fetchPollinationsImage(prompt: string, seed: number): Promise<string> {
+    console.warn(`[Pollinations Fallback] Attempting pollinations.ai for prompt: ${prompt}`);
+    const encodedPrompt = encodeURIComponent(prompt.substring(0, 500));
+    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1920&nologo=true&seed=${seed}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Pollinations API failed");
+    const buffer = Buffer.from(await res.arrayBuffer());
+    const tempPath = path.join(os.tmpdir(), `pollinations_${Date.now()}.jpg`);
+    fs.writeFileSync(tempPath, buffer);
+    return tempPath;
+  }
+
   async fetchStockImage(query: string): Promise<string> {
     console.warn(`[Stock Failsafe] Falling back to dummy stock image for query: ${query}`);
     try {
-      const url = 'https://images.unsplash.com/photo-1531297121221-dbb71dc725f5?auto=format&fit=crop&w=1080&h=1920&q=80';
+      // Use picsum.photos which is highly reliable and does not block automated fetches
+      const url = 'https://picsum.photos/1080/1920';
       const res = await fetch(url);
       if (!res.ok) throw new Error("Download failed");
       const buffer = Buffer.from(await res.arrayBuffer());
