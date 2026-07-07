@@ -506,10 +506,9 @@ Characters: ${characterContext}
 Locations: ${locationContext}
 
 CRITICAL MEDIA RULE: 
-- You MUST dynamically decide the best "media_type" for each shot based purely on the story and scene context. You should use a rich mix of all 3 types across the reel.
-- Use "stock_video" for dynamic B-roll, nature, cityscapes, establishing shots, and general movement.
-- Use "stock_photo" for historical photos, real-world objects, or crisp high-quality static scenery.
-- Use "ai_image" ONLY when a highly specific character, face, or impossible sci-fi/fantasy scene is required that cannot be found in stock media.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
+- You MUST think smartly and dynamically decide the best "media_type" for each shot based purely on the story and scene context.
+- Use "ai_image" when the scene requires specific characters, expressive faces, highly stylized aesthetics, or unique actions that are hard to find in generic stock footage.
+- Use "stock_video" or "stock_photo" ONLY for generic establishing shots, nature, standard cityscapes, or simple B-roll where realistic footage is best.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
 
 CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
 
@@ -642,7 +641,7 @@ Output ONLY valid JSON:
           mediaType,
           attempts,
           source: (mediaType === 'stock_video' || mediaType === 'stock_photo' || attempts === maxAttempts) ? 'stock' : 'ai_image',
-          model: (mediaType === 'stock_video' || mediaType === 'stock_photo' || attempts === maxAttempts) ? 'stock-api' : 'gemini-3.1-flash-image'
+          model: (mediaType === 'stock_video' || mediaType === 'stock_photo' || attempts === maxAttempts) ? 'stock-api' : 'gemini-2.5-flash-image'
         });
         
         imageUrls.push(finalUrl);
