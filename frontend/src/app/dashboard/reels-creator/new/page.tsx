@@ -49,9 +49,9 @@ const PRESETS = [
   { id: 'mythology', title: 'Ancient Mythology', description: 'Epic tales of gods, monsters, and forgotten civilizations.' },
   { id: 'tech', title: 'Creepy Tech & AI', description: 'Rogue AI, dystopian futures, and unsettling technological advancements.' },
   { id: 'survival', title: 'Extreme Survival', description: 'Incredible stories of human endurance against impossible odds.' },
-  { 
-    id: 'fashion-edu', 
-    title: 'Indian Fashion Education', 
+  {
+    id: 'fashion-edu',
+    title: 'Indian Fashion Education',
     description: 'Beginner-friendly guide to personal style for Indian women, focusing on practical rules.',
     customNiche: "A beginner-friendly guide to personal style and self-confidence specifically for **Indian women**. The content should focus on practical fashion rules applied ONLY to Indian ethnic and fusion wear (like kurtis, lehngas, sararas, and palazzos). NO JEANS OR WESTERN WEAR. Key concepts include the **Sandwich Rule**, the **Three-Color Rule**, and the **Third Piece Rule**. **CRITICAL INSTRUCTION:** Always use **Indian-based images and models** that reflect the diversity of Indian skin tones and body shapes. The tone should be that of an encouraging 'Didi' (older sister), emphasizing that fashion is about self-expression and confidence, not just expensive clothes. Image generator must be highly consistent and strictly follow scene descriptions without hallucinating elements.",
     customPrompt: "CRITICAL SYSTEM INSTRUCTION: Ensure absolute visual consistency across all generated images. Images MUST EXACTLY match the described visual scene. DO NOT include any jeans, trousers, or western clothing. ONLY use Indian ethnic women's fashion.\n\nVisual Hook (0:00-0:03):\n*   Visual: An Indian woman looking at a closet with a mix of beautiful kurtis and traditional palazzos, looking confused.\n*   Text Overlay: \"Nothing to wear? Let’s fix that, Sis! ✨\"\n*   Audio: \"You don't need a new wardrobe to look stylish. You just need these three rules.\"\n\nPoint 1: The Sandwich Rule (Desi Version) (0:03-0:10):\n*   Visual: Transition from a mismatched outfit to a pink kurti, white palazzos, and pink jootis.\n*   Audio: \"First, the Sandwich Rule. Match your top and your footwear color, like this pink kurti and pink jooti. It creates a balanced, put-together look instantly.\"\n*   Text Overlay: Rule #1: The Sandwich Rule 🥪\n\nPoint 2: The Third Piece Rule (0:10-0:18):\n*   Visual: Showing a simple white kurti and leggings, then adding a beautifully printed dupatta or an embroidered ethnic jacket.\n*   Audio: \"Next, the Third Piece Rule. A basic top and bottom is just 'clothes.' Add a jacket, a belt, or a dupatta to turn it into an 'outfit'.\"\n*   Text Overlay: Rule #2: Add a 'Third Piece' 🧣\n\nPoint 3: The Shopping \"Rule of Three\" (0:18-0:25):\n*   Visual: A woman in a bustling Indian local market holding a trendy ethnic top but looking thoughtful.\n*   Audio: \"Stop 'revenge shopping' just because there's a sale! Before buying, ask: 'Can I style this in three different ways?' If the answer is yes, it’s a smart investment.\"\n*   Text Overlay: Rule #3: The Rule of Three 🛍️\n\nThe Confidence Closer (0:25-0:30):\n*   Visual: Close-up of a woman smiling confidently, standing with straight posture and making eye contact, wearing a stylish Anarkali.\n*   Audio: \"The best thing you can wear is your confidence. Stand tall, own your vibe, and remember—you look your best when you feel your best!\"\n*   Text Overlay: \"I AM CONFIDENT\" 💖\n\nSpecific Instructions for the AI Agent's Visuals:\n*   Imagery: Use images of women in Indian settings (e.g., college campuses, local markets, or family functions). Must be HIGHLY ACCURATE to the photo described in scene. Duration: 1 minute.\n*   Clothing Constraints: NO JEANS, NO WESTERN WEAR. Only Indian ethnic and fusion wear (kurtis, lehngas, sararas).\n*   Footwear Focus: Ensure the AI shows jootis, mojaris, or ethnic flats ONLY.\n*   Accessory Focus: Use visuals of minimalist jewelry like simple golden/silver chains, jhumkas, and bangles.\n*   Wardrobe Staples: Feature elegant kurtis, matching leggings, and vibrant dupattas as the \"must-have\" basics for the Indian wardrobe."
@@ -60,24 +60,24 @@ const PRESETS = [
 
 const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
   'English': [
-    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS',   type: 'Male',   description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
-    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS', type: 'Male',   description: 'Deep, resonant and authoritative. Cinematic narrator.' },
-    { id: 'Fenrir', name: 'Fenrir — Gemini 3.1 TTS', type: 'Male',   description: 'Gruff and dramatic. Great for intense storytelling.' },
-    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS',  type: 'Female', description: 'Expressive and engaging. Warm storyteller voice.' },
-    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS',   type: 'Female', description: 'Calm and soothing. Perfect for mystery & suspense.' },
-    { id: 'Leda',   name: 'Leda — Gemini 3.1 TTS',   type: 'Female', description: 'Clear and confident. Great for educational reels.' },
+    { id: 'Puck', name: 'Puck — Gemini 3.1 TTS', type: 'Male', description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS', type: 'Male', description: 'Deep, resonant and authoritative. Cinematic narrator.' },
+    { id: 'Fenrir', name: 'Fenrir — Gemini 3.1 TTS', type: 'Male', description: 'Gruff and dramatic. Great for intense storytelling.' },
+    { id: 'Aoede', name: 'Aoede — Gemini 3.1 TTS', type: 'Female', description: 'Expressive and engaging. Warm storyteller voice.' },
+    { id: 'Kore', name: 'Kore — Gemini 3.1 TTS', type: 'Female', description: 'Calm and soothing. Perfect for mystery & suspense.' },
+    { id: 'Leda', name: 'Leda — Gemini 3.1 TTS', type: 'Female', description: 'Clear and confident. Great for educational reels.' },
   ],
   'Hindi': [
-    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS (Hindi)',   type: 'Male',   description: 'Energetic and upbeat Hindi voice.' },
-    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Hindi)', type: 'Male',   description: 'Deep and authoritative Hindi voice.' },
-    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS (Hindi)',  type: 'Female', description: 'Expressive and engaging Hindi narrator.' },
-    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS (Hindi)',   type: 'Female', description: 'Calm soothing Hindi storyteller.' },
+    { id: 'Puck', name: 'Puck — Gemini 3.1 TTS (Hindi)', type: 'Male', description: 'Energetic and upbeat Hindi voice.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Hindi)', type: 'Male', description: 'Deep and authoritative Hindi voice.' },
+    { id: 'Aoede', name: 'Aoede — Gemini 3.1 TTS (Hindi)', type: 'Female', description: 'Expressive and engaging Hindi narrator.' },
+    { id: 'Kore', name: 'Kore — Gemini 3.1 TTS (Hindi)', type: 'Female', description: 'Calm soothing Hindi storyteller.' },
   ],
   'Spanish': [
-    { id: 'Puck',   name: 'Puck — Gemini 3.1 TTS (Spanish)',   type: 'Male',   description: 'Energetic Spanish voice.' },
-    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Spanish)', type: 'Male',   description: 'Deep Spanish narrator.' },
-    { id: 'Aoede',  name: 'Aoede — Gemini 3.1 TTS (Spanish)',  type: 'Female', description: 'Expressive Spanish female voice.' },
-    { id: 'Kore',   name: 'Kore — Gemini 3.1 TTS (Spanish)',   type: 'Female', description: 'Calm Spanish storyteller.' },
+    { id: 'Puck', name: 'Puck — Gemini 3.1 TTS (Spanish)', type: 'Male', description: 'Energetic Spanish voice.' },
+    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Spanish)', type: 'Male', description: 'Deep Spanish narrator.' },
+    { id: 'Aoede', name: 'Aoede — Gemini 3.1 TTS (Spanish)', type: 'Female', description: 'Expressive Spanish female voice.' },
+    { id: 'Kore', name: 'Kore — Gemini 3.1 TTS (Spanish)', type: 'Female', description: 'Calm Spanish storyteller.' },
   ]
 };
 
@@ -106,7 +106,7 @@ export default function ReelCreatorPage() {
   const router = useRouter();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const steps: WizardStep[] = ['niche', 'dynamics', 'voice', 'style', 'details'];
-  
+
   const currentStep = steps[currentStepIndex];
 
   // Fetch social accounts
@@ -120,19 +120,19 @@ export default function ReelCreatorPage() {
   const [selectedPreset, setSelectedPreset] = useState('scary');
   const [customNiche, setCustomNiche] = useState('');
   const [customScript, setCustomScript] = useState('');
-  
+
   const [language, setLanguage] = useState('English');
   const [voiceId, setVoiceId] = useState('en-US-Journey-F');
   const [targetRegion, setTargetRegion] = useState('Global');
-  
 
-  
+
+
   const [artStyle, setArtStyle] = useState('cinematic');
-  
+
   const [hookType, setHookType] = useState('The Mystery');
   const [tone, setTone] = useState('Cinematic & Mysterious');
   const [storyStructure, setStoryStructure] = useState('The 3-Act Mini Story');
-  
+
   const [seriesName, setSeriesName] = useState('');
   const [customPrompt, setCustomPrompt] = useState('');
   const duration = '1m'; // Hardcoded standard duration for Reels/TikTok
@@ -143,8 +143,8 @@ export default function ReelCreatorPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleChannel = (accountId: string) => {
-    setSelectedChannels(prev => 
-      prev.includes(accountId) 
+    setSelectedChannels(prev =>
+      prev.includes(accountId)
         ? prev.filter(id => id !== accountId)
         : [...prev, accountId]
     );
@@ -189,7 +189,7 @@ export default function ReelCreatorPage() {
         timezoneOffset: new Date().getTimezoneOffset(),
         targetRegion,
       };
-      
+
       const res = await fetch(`/api/reels`, {
         method: 'POST',
         headers: {
@@ -203,7 +203,7 @@ export default function ReelCreatorPage() {
         const errorData = await res.json().catch(() => null);
         throw new Error(errorData?.details || errorData?.error || 'Failed to create reel series');
       }
-      
+
       router.push('/dashboard/reels-creator');
     } catch (error: any) {
       console.error(error);
@@ -218,8 +218,8 @@ export default function ReelCreatorPage() {
       {/* Progress Bar */}
       <div className="flex items-center gap-2 mb-10 max-w-xl">
         {steps.map((step, idx) => (
-          <div 
-            key={step} 
+          <div
+            key={step}
             className={cn(
               "h-2 flex-1 rounded-full transition-colors",
               idx <= currentStepIndex ? "bg-violet-600" : "bg-stone-200"
@@ -237,15 +237,15 @@ export default function ReelCreatorPage() {
               <span className="px-3 py-1 bg-violet-100 text-violet-700 text-sm font-medium rounded-full">{`Step ${currentStepIndex + 1} of ${steps.length}`}</span>
             </div>
             <p className="text-stone-500 mb-6">Select a preset or describe your own niche</p>
-            
+
             <div className="flex gap-6 border-b border-stone-200 mb-6">
-              <button 
+              <button
                 className={cn("pb-3 font-medium transition-colors border-b-2", nicheType === 'preset' ? "border-violet-600 text-violet-700" : "border-transparent text-stone-500 hover:text-stone-700")}
                 onClick={() => setNicheType('preset')}
               >
                 Presets
               </button>
-              <button 
+              <button
                 className={cn("pb-3 font-medium transition-colors border-b-2", nicheType === 'custom' ? "border-violet-600 text-violet-700" : "border-transparent text-stone-500 hover:text-stone-700")}
                 onClick={() => setNicheType('custom')}
               >
@@ -256,7 +256,7 @@ export default function ReelCreatorPage() {
             {nicheType === 'preset' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {PRESETS.map(preset => (
-                  <div 
+                  <div
                     key={preset.id}
                     onClick={() => setSelectedPreset(preset.id)}
                     className={cn(
@@ -276,7 +276,7 @@ export default function ReelCreatorPage() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-2">Describe your topic</label>
-                  <Textarea 
+                  <Textarea
                     value={customNiche}
                     onChange={(e) => setCustomNiche(e.target.value)}
                     placeholder="Storytelling format. True historical horror stories..."
@@ -285,7 +285,7 @@ export default function ReelCreatorPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-2">Example script (Optional)</label>
-                  <Textarea 
+                  <Textarea
                     value={customScript}
                     onChange={(e) => setCustomScript(e.target.value)}
                     placeholder="Write an example script here to set the tone..."
@@ -305,13 +305,13 @@ export default function ReelCreatorPage() {
               <span className="px-3 py-1 bg-violet-100 text-violet-700 text-sm font-medium rounded-full">{`Step ${currentStepIndex + 1} of ${steps.length}`}</span>
             </div>
             <p className="text-stone-500 mb-6">Select the psychological triggers and pacing for your script.</p>
-            
+
             <div className="space-y-8">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-3">The Hook (First 3 seconds)</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {['The "Secret" Reveal', 'The Mystery / Curiosity', 'The Contrarian', 'Direct Question'].map(hook => (
-                    <div 
+                    <div
                       key={hook}
                       onClick={() => setHookType(hook)}
                       className={cn(
@@ -330,7 +330,7 @@ export default function ReelCreatorPage() {
                 <label className="block text-sm font-medium text-stone-700 mb-3">Pacing & Tone</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {['High-Energy & Aggressive', 'Cinematic & Mysterious', 'Casual & Conversational', 'Humorous & Sarcastic'].map(t => (
-                    <div 
+                    <div
                       key={t}
                       onClick={() => setTone(t)}
                       className={cn(
@@ -349,7 +349,7 @@ export default function ReelCreatorPage() {
                 <label className="block text-sm font-medium text-stone-700 mb-3">Story Structure</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {['The 3-Act Mini Story', 'Problem-Agitate-Solve (PAS)', 'Listicle / Top 3', "The Hero's Journey"].map(structure => (
-                    <div 
+                    <div
                       key={structure}
                       onClick={() => setStoryStructure(structure)}
                       className={cn(
@@ -374,7 +374,7 @@ export default function ReelCreatorPage() {
               <h2 className="text-2xl font-bold text-stone-900">Language & Voice</h2>
               <span className="px-3 py-1 bg-violet-100 text-violet-700 text-sm font-medium rounded-full">{`Step ${currentStepIndex + 1} of ${steps.length}`}</span>
             </div>
-            
+
             <div className="space-y-8">
               {/* Language Selection Grid */}
               <div>
@@ -393,7 +393,7 @@ export default function ReelCreatorPage() {
                     { id: 'Arabic', label: 'Arabic', flag: '🇸🇦' },
                     { id: 'Hindi', label: 'Hindi', flag: '🇮🇳' },
                   ].map(lang => (
-                    <div 
+                    <div
                       key={lang.id}
                       onClick={() => {
                         setLanguage(lang.id);
@@ -402,8 +402,8 @@ export default function ReelCreatorPage() {
                       }}
                       className={cn(
                         "px-4 py-3 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-center gap-3 select-none",
-                        language === lang.id 
-                          ? "border-violet-600 bg-violet-50 text-violet-900 font-semibold shadow-[0_0_0_2px_rgba(124,58,237,0.1)]" 
+                        language === lang.id
+                          ? "border-violet-600 bg-violet-50 text-violet-900 font-semibold shadow-[0_0_0_2px_rgba(124,58,237,0.1)]"
                           : "border-stone-200 bg-white text-stone-600 hover:border-violet-300 hover:bg-stone-50"
                       )}
                     >
@@ -431,13 +431,13 @@ export default function ReelCreatorPage() {
                     { id: 'Latin American', label: 'Latin American', icon: '🇧🇷' },
                     { id: 'North American', label: 'North American', icon: '🇺🇸' },
                   ].map(region => (
-                    <div 
+                    <div
                       key={region.id}
                       onClick={() => setTargetRegion(region.id)}
                       className={cn(
                         "p-4 flex flex-col items-center justify-center text-center rounded-xl border-2 cursor-pointer transition-all duration-200 select-none",
-                        targetRegion === region.id 
-                          ? "border-violet-600 bg-violet-50 text-violet-900 shadow-[0_0_0_2px_rgba(124,58,237,0.1)]" 
+                        targetRegion === region.id
+                          ? "border-violet-600 bg-violet-50 text-violet-900 shadow-[0_0_0_2px_rgba(124,58,237,0.1)]"
                           : "border-stone-200 bg-white hover:border-violet-300 hover:bg-stone-50 text-stone-600"
                       )}
                     >
@@ -455,13 +455,13 @@ export default function ReelCreatorPage() {
                   {(() => {
                     const availableVoices = VOICES_BY_LANGUAGE[language] || DEFAULT_VOICE_FALLBACK;
                     return availableVoices.map(voice => (
-                      <div 
+                      <div
                         key={voice.id}
                         onClick={() => setVoiceId(voice.id)}
                         className={cn(
                           "p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-center gap-4 select-none",
-                          voiceId === voice.id 
-                            ? "border-violet-600 bg-violet-50 text-violet-900 shadow-[0_0_0_2px_rgba(124,58,237,0.1)]" 
+                          voiceId === voice.id
+                            ? "border-violet-600 bg-violet-50 text-violet-900 shadow-[0_0_0_2px_rgba(124,58,237,0.1)]"
                             : "border-stone-200 bg-white hover:border-violet-300 hover:bg-stone-50"
                         )}
                       >
@@ -484,11 +484,11 @@ export default function ReelCreatorPage() {
                           </div>
                         </div>
                         {voice.id !== 'default-voice' && (
-                          <button 
+                          <button
                             className={cn(
                               "h-10 w-10 flex items-center justify-center rounded-full transition-colors flex-shrink-0",
-                              voiceId === voice.id 
-                                ? "bg-violet-600 text-white hover:bg-violet-700 shadow-md shadow-violet-600/20" 
+                              voiceId === voice.id
+                                ? "bg-violet-600 text-white hover:bg-violet-700 shadow-md shadow-violet-600/20"
                                 : "bg-stone-100 text-stone-600 hover:bg-violet-100 hover:text-violet-700"
                             )}
                             onClick={(e) => {
@@ -512,7 +512,7 @@ export default function ReelCreatorPage() {
         {/* Step 4: Art Style */}
         {currentStep === 'style' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-             <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-8">
               <h2 className="text-2xl font-bold text-stone-900">Art Style</h2>
               <span className="px-3 py-1 bg-violet-100 text-violet-700 text-sm font-medium rounded-full">{`Step ${currentStepIndex + 1} of ${steps.length}`}</span>
             </div>
@@ -520,7 +520,7 @@ export default function ReelCreatorPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {STYLES.map(style => (
-                <div 
+                <div
                   key={style.id}
                   onClick={() => setArtStyle(style.id)}
                   className="cursor-pointer group relative"
@@ -549,7 +549,7 @@ export default function ReelCreatorPage() {
         {/* Step 5: Details */}
         {currentStep === 'details' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-             <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-8">
               <h2 className="text-2xl font-bold text-stone-900">Series Details</h2>
               <span className="px-3 py-1 bg-violet-100 text-violet-700 text-sm font-medium rounded-full">{`Step ${currentStepIndex + 1} of ${steps.length}`}</span>
             </div>
@@ -558,9 +558,9 @@ export default function ReelCreatorPage() {
             <div className="space-y-6 max-w-lg">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">Series Name</label>
-                <Input 
-                  value={seriesName} 
-                  onChange={(e) => setSeriesName(e.target.value)} 
+                <Input
+                  value={seriesName}
+                  onChange={(e) => setSeriesName(e.target.value)}
                   placeholder="e.g. Spooky Sundays"
                 />
               </div>
@@ -612,20 +612,20 @@ export default function ReelCreatorPage() {
                 <div className="animate-in fade-in duration-300">
                   <label className="block text-sm font-medium text-stone-700 mb-2">Schedule</label>
                   <p className="text-stone-500 text-sm mb-3">Set which days and times you want videos to be published.</p>
-                  
+
                   <div className="flex flex-wrap gap-2 mb-4">
                     {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
                       <button
                         key={day}
                         onClick={() => {
-                          setScheduleDays(prev => 
+                          setScheduleDays(prev =>
                             prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
                           )
                         }}
                         className={cn(
                           "px-3 py-1.5 text-xs font-semibold rounded-md border transition-all",
-                          scheduleDays.includes(day) 
-                            ? "bg-violet-600 text-white border-violet-600" 
+                          scheduleDays.includes(day)
+                            ? "bg-violet-600 text-white border-violet-600"
                             : "bg-white text-stone-600 border-stone-200 hover:border-violet-300"
                         )}
                       >
@@ -650,22 +650,22 @@ export default function ReelCreatorPage() {
 
         {/* Footer Actions */}
         <div className="mt-auto pt-8 flex items-center justify-between border-t border-stone-100">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleBack}
             className={currentStepIndex === 0 ? "invisible" : ""}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-          
-          <Button 
+
+          <Button
             onClick={handleNext}
             disabled={isSubmitting}
             className="bg-violet-600 hover:bg-violet-700 text-white min-w-[120px]"
           >
             {isSubmitting ? (
-              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="h-5 w-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
             ) : currentStepIndex === steps.length - 1 ? (
               'Create Series'
             ) : (
