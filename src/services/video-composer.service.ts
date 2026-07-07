@@ -569,8 +569,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         .complexFilter([
           // Downmix BGM volume to make voiceover clearly audible
           '[1:a]volume=0.25[bgm]',
-          // Mix background audio with voiceover. Finish when infinite bgm is cut by -t duration
-          '[0:a][bgm]amix=inputs=2:duration=longest:dropout_transition=2[out]'
+          // Mix background audio with voiceover. Finish when the voiceover (first input) ends.
+          '[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=2[out]'
         ])
         .map('[out]')
         .audioCodec('libmp3lame')

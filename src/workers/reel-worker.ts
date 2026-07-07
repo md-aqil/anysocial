@@ -126,6 +126,8 @@ export class ReelWorker {
     const tempFilesToCleanup: string[] = [];
     
     const generationMetadata: any = {
+      llmDetails: "Script: Gemini 2.5 | Audio: Google TTS | Visuals: Gemini Flash Image & Pexels",
+      startedAt: Date.now(),
       model_llm: 'gemini-2.5-flash',
       model_image: 'gemini-3.1-flash-image',
       model_voice: voiceId || 'en-US-Journey-F',
@@ -661,7 +663,7 @@ Output ONLY valid JSON:
       if (clipPaths) tempFilesToCleanup.push(...clipPaths);
       if (composerTempFiles) tempFilesToCleanup.push(...composerTempFiles);
 
-      const { outputPath: concatVideoPath, tempFiles: concatTempFiles } = await VideoComposerService.concatVideos(clipPaths, abortController.signal);
+      const { outputPath: concatVideoPath, tempFiles: concatTempFiles } = await VideoComposerService.concatVideos(clipPaths, abortController.signal, imageDuration);
       if (concatVideoPath) tempFilesToCleanup.push(concatVideoPath);
       if (concatTempFiles) tempFilesToCleanup.push(...concatTempFiles);
 
@@ -692,8 +694,7 @@ Output ONLY valid JSON:
         const subtitlePath = await VideoComposerService.generateSubtitlesFile(script, actualDuration, wordTimings);
         if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
 
-        const llmDetails = "Script: Gemini 2.5 | Audio: Google TTS | Visuals: FLUX 1.0 & Pexels";
-        const { outputPath: videoWithAudio, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, subtitlePath, abortController.signal, undefined, undefined, llmDetails);
+        const { outputPath: videoWithAudio, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, subtitlePath, abortController.signal);
         if (videoWithAudio) tempFilesToCleanup.push(videoWithAudio);
         if (mergeTempFiles) tempFilesToCleanup.push(...mergeTempFiles);
         

@@ -579,6 +579,19 @@ export default function ReelsDashboard() {
                                 </details>
                               )}
 
+                              {/* Display LLM Model Details */}
+                              {(reel.metadata as any)?.llmDetails && (
+                                <div className="mb-4 bg-[#F2F6F2] border border-emerald-100/50 rounded-lg p-2.5">
+                                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
+                                    <Sparkles className="w-3 h-3" />
+                                    AI Engines
+                                  </div>
+                                  <p className="text-[10px] font-mono text-stone-600 leading-tight">
+                                    {(reel.metadata as any).llmDetails}
+                                  </p>
+                                </div>
+                              )}
+
                               {/* Detailed Live Log for Generation */}
                               {reel.status === 'GENERATING' && reel.statusMessage && (
                                 <div className="mb-4 bg-stone-900 border border-stone-800 rounded-lg p-3 shadow-inner">

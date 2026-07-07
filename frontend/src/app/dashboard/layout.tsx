@@ -33,6 +33,7 @@ const navigation = [
   { name: 'Reel Creator', href: '/dashboard/reels-creator', icon: Star },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'Feed Curation', href: '/dashboard/curation', icon: List },
+  { name: 'Image Playground', href: '/dashboard/playground', icon: Grid2X2, adminOnly: true, superAdminOnly: true },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
 
@@ -68,7 +69,11 @@ export default function DashboardLayout({
                 </Button>
               </div>
               <nav className="space-y-1">
-                {navigation.filter(item => !item.adminOnly || user?.role === 'super_admin' || user?.role === 'admin').map((item) => {
+                {navigation.filter(item => {
+                  if (item.superAdminOnly && user?.role !== 'super_admin') return false;
+                  if (item.adminOnly && !['super_admin', 'admin'].includes(user?.role || '')) return false;
+                  return true;
+                }).map((item) => {
                   const isActive = pathname === item.href;
                   return (
                     <Link
@@ -106,7 +111,11 @@ export default function DashboardLayout({
             <Brand />
           </div>
           <nav className="flex-1 space-y-2 px-3 py-6">
-            {navigation.filter(item => !item.adminOnly || user?.role === 'super_admin' || user?.role === 'admin').map((item) => {
+            {navigation.filter(item => {
+                  if (item.superAdminOnly && user?.role !== 'super_admin') return false;
+                  if (item.adminOnly && !['super_admin', 'admin'].includes(user?.role || '')) return false;
+                  return true;
+                }).map((item) => {
               const isActive = pathname === item.href || (item.href === '/dashboard/posts' && pathname === '/dashboard/drafts');
               return (
                 <Link

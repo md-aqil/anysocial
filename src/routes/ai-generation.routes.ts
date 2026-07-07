@@ -52,4 +52,44 @@ router.post('/chat', jwtAuth, upload.single('media'), async (req: Request, res: 
   }
 });
 
+/**
+ * POST /api/ai/generate-image
+ * Generates an image using the configured AI model (Gemini).
+ */
+router.post('/generate-image', jwtAuth, async (req: Request, res: Response) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+    
+    // Call generateImage without allowing fallbacks so we strictly test the AI
+    const tempImagePath = await aiOrchestrator.generateImage(prompt, 0, false);
+    
+    // Move to public uploads folder
+    const fs = require('fs');
+    const path = require('path');
+    const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-images');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    const publicFilename = `ai_image_${Date.now()}.jpg`;
+    const publicFilePath = path.join(publicDir, publicFilename);
+    
+    fs.copyFileSync(tempImagePath, publicFilePath);
+    
+    // Try to cleanup the temp file
+    try {
+      fs.unlinkSync(tempImagePath);
+    } catch (e) {
+      // ignore
+    }
+    
+    const imageUrl = `/uploads/ai-images/${publicFilename}`;
+    res.json({ url: imageUrl });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export const aiGenerationRoutes = router;
