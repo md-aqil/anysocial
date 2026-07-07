@@ -610,7 +610,7 @@ Output ONLY valid JSON:
                 break; // Skip QA for stock
               } else {
                 // Phase 4: Prompt Engineering
-                const engineeredPrompt = `A high-quality, vertical 9:16 portrait orientation image of: ${keyword}. Lighting: ${lighting}. Shot on 50mm lens, highly detailed, photorealistic, 8k resolution, cinematic lighting, ${series.artStyle} style. CRITICAL: The image MUST have perfect human anatomy, beautiful symmetrical faces, no distortion, no extra limbs, no weird hands, and absolutely NO text or watermarks.`;
+                const engineeredPrompt = `A breathtaking, vertical 9:16 portrait masterpiece of: ${keyword}. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion of the scene. Lighting: ${lighting}, cinematic and atmospheric. Camera: Shot on 50mm lens, highly detailed, photorealistic, 8k resolution, ${series.artStyle} style. CRITICAL QUALITY RULES: The image MUST have perfect human anatomy, beautiful symmetrical faces, no distortion, no extra limbs, no weird hands, and absolutely NO text, NO watermarks, and NO borders.`;
                 
                 finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts, false);
                 await new Promise(r => setTimeout(r, 1000));
@@ -627,7 +627,8 @@ Output ONLY valid JSON:
               logger.warn({ event: 'reel_media_gen_failed', keyword, attempt: attempts, error: e.message });
               if (attempts === maxAttempts) {
                   try {
-                    finalUrl = await aiOrchestrator.fetchStockImage(keyword);
+                    // Final failsafe: heavily simplified prompt without strict QA
+                    finalUrl = await aiOrchestrator.generateImage(`A simple, beautiful vertical 9:16 portrait of: ${keyword.substring(0, 50)}. High quality, ${series.artStyle} style.`, reelSeed, true);
                   } catch (e) {
                     finalUrl = await aiOrchestrator.generateImage("beautiful vertical scene", reelSeed, true);
                   }
