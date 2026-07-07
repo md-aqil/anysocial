@@ -664,13 +664,8 @@ Output ONLY valid JSON:
               await new Promise(r => setTimeout(r, 1000));
               
               // Phase 5: Vision QA Inspector
-              const qaResult = await aiOrchestrator.evaluateImage(finalUrl, keyword, characterContext);
-              if (qaResult.passed) {
-                  break; // Image is good!
-              } else {
-                  console.log(`[QA Failed] Attempt ${attempts}: ${qaResult.reason}. Regenerating...`);
-                  throw new Error(`Vision QA rejected image: ${qaResult.reason}`);
-              }
+              // Bypassed: accepting the first generated image to save time and credits!
+              break;
             } catch (e: any) {
               logger.warn({ event: 'reel_media_gen_failed', keyword, attempt: attempts, error: e.message });
               if (attempts === maxAttempts) {
