@@ -532,60 +532,161 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  // 3. Lyria 3 Pro - Music Generation (Mock/Placeholder for Vertex Preview)
-  async generateMusic(prompt: string): Promise<string> {
-    // In production, this would call the Vertex AI Lyria endpoint once GA
-    console.log(`Generating music via Lyria 3 Pro with prompt: ${prompt}`);
-    
-    const bgmLibrary: Record<string, string[]> = {
-      'suspense': [
-        'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3'
-      ],
-      'acoustic': [
-        'https://raw.githubusercontent.com/mdn/webaudio-examples/main/multi-track/bassguitar.mp3'
-      ],
-      'lofi': [
-        'https://raw.githubusercontent.com/mdn/webaudio-examples/main/multi-track/clav.mp3'
-      ],
-      'cinematic': [
-        'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-basics/outfoxing.mp3'
-      ]
+  private findAudioPart(value: any): { mimeType: string; data?: string; uri?: string } | null {
+    if (!value || typeof value !== 'object') return null;
+
+    const mimeType = value.mimeType || value.mime_type || value.inlineData?.mimeType || value.inline_data?.mime_type;
+    const data = value.data || value.bytesBase64Encoded || value.inlineData?.data || value.inline_data?.data;
+    const uri = value.uri || value.fileUri || value.file_uri;
+
+    if (typeof mimeType === 'string' && mimeType.startsWith('audio/')) {
+      return { mimeType, data, uri };
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const found = this.findAudioPart(item);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    for (const nested of Object.values(value)) {
+      const found = this.findAudioPart(nested);
+      if (found) return found;
+    }
+
+    return null;
+  }
+
+  private getAudioExtension(mimeType: string): string {
+    const lowerMime = mimeType.toLowerCase();
+    if (lowerMime.includes('mpeg') || lowerMime.includes('mp3')) return 'mp3';
+    if (lowerMime.includes('wav') || lowerMime.includes('l16') || lowerMime.includes('pcm')) return 'wav';
+    if (lowerMime.includes('ogg')) return 'ogg';
+    if (lowerMime.includes('aac')) return 'aac';
+    return 'mp3';
+  }
+
+  private wrapPcmAsWav(rawBuffer: Buffer, mimeType: string): Buffer {
+    const rateMatch = mimeType.match(/rate=(\d+)/i);
+    const chanMatch = mimeType.match(/channels=(\d+)/i);
+    const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
+    const numChannels = chanMatch ? parseInt(chanMatch[1]) : 1;
+    const bitsPerSample = 16;
+    const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+    const blockAlign = numChannels * (bitsPerSample / 8);
+    const dataSize = rawBuffer.length;
+    const header = Buffer.alloc(44);
+    header.write('RIFF', 0);
+    header.writeUInt32LE(36 + dataSize, 4);
+    header.write('WAVE', 8);
+    header.write('fmt ', 12);
+    header.writeUInt32LE(16, 16);
+    header.writeUInt16LE(1, 20);
+    header.writeUInt16LE(numChannels, 22);
+    header.writeUInt32LE(sampleRate, 24);
+    header.writeUInt32LE(byteRate, 28);
+    header.writeUInt16LE(blockAlign, 32);
+    header.writeUInt16LE(bitsPerSample, 34);
+    header.write('data', 36);
+    header.writeUInt32LE(dataSize, 40);
+    return Buffer.concat([header, rawBuffer]);
+  }
+
+  // 3. Lyria - Music Generation via Vertex AI interactions API
+  async generateMusic(prompt: string, imageInputs: Array<{ path?: string; uri?: string; mimeType?: string; data?: string }> = []): Promise<string> {
+    console.log(`Generating music via Lyria with prompt: ${prompt}`);
+
+    const projectId = process.env.VERTEX_AI_PROJECT_ID;
+    if (!projectId) {
+      throw new Error("Vertex AI is not configured for Lyria music generation.");
+    }
+
+    const auth = new GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/cloud-platform']
+    });
+    const client = await auth.getClient();
+    const accessToken = await client.getAccessToken();
+
+    const modelId = process.env.VERTEX_AI_LYRIA_MODEL || 'lyria-3-clip-preview';
+    const endpoint = `https://aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/global/interactions`;
+    const input: any[] = [
+      {
+        type: 'text',
+        text: prompt
+      }
+    ];
+
+    for (const imageInput of imageInputs) {
+      if (imageInput.path && fs.existsSync(imageInput.path)) {
+        const mimeType = imageInput.mimeType || (imageInput.path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+        input.push({
+          type: 'image',
+          mime_type: mimeType,
+          data: fs.readFileSync(imageInput.path).toString('base64')
+        });
+      } else if (imageInput.uri) {
+        input.push({
+          type: 'image',
+          mime_type: imageInput.mimeType || 'image/jpeg',
+          uri: imageInput.uri
+        });
+      } else if (imageInput.data) {
+        input.push({
+          type: 'image',
+          mime_type: imageInput.mimeType || 'image/jpeg',
+          data: imageInput.data
+        });
+      }
+    }
+
+    const requestBody = {
+      model: modelId,
+      input
     };
 
-    let selectedCategory = 'cinematic';
-    const lowerPrompt = prompt.toLowerCase();
-    
-    if (lowerPrompt.includes('suspense') || lowerPrompt.includes('dark') || lowerPrompt.includes('mystery')) {
-      selectedCategory = 'suspense';
-    } else if (lowerPrompt.includes('acoustic') || lowerPrompt.includes('uplifting') || lowerPrompt.includes('light')) {
-      selectedCategory = 'acoustic';
-    } else if (lowerPrompt.includes('lofi') || lowerPrompt.includes('chill') || lowerPrompt.includes('relax')) {
-      selectedCategory = 'lofi';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Lyria API Error ${response.status}: ${errorText.substring(0, 1000)}`);
     }
 
-    const categoryTracks = bgmLibrary[selectedCategory];
-    const index = prompt.length % categoryTracks.length;
-    const bgmUrl = categoryTracks[index];
-
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const tempPath = path.join(os.tmpdir(), `lyria_${Date.now()}.mp3`);
-    
-    try {
-      const response = await fetch(bgmUrl);
-      if (!response.ok) throw new Error(`Failed to fetch BGM: ${response.status}`);
-      const buffer = await response.arrayBuffer();
-      fs.writeFileSync(tempPath, Buffer.from(buffer));
-      return tempPath;
-    } catch (e) {
-      console.error("Failed to fetch custom BGM, falling back to viper.mp3", e);
-      const fallbackUrl = 'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3';
-      const response = await fetch(fallbackUrl);
-      const buffer = await response.arrayBuffer();
-      fs.writeFileSync(tempPath, Buffer.from(buffer));
-      return tempPath;
+    const result: any = await response.json();
+    const audioPart = this.findAudioPart(result);
+    if (!audioPart) {
+      throw new Error(`Lyria returned no audio data. Response preview: ${JSON.stringify(result).substring(0, 1000)}`);
     }
+
+    let audioBuffer: Buffer;
+    if (audioPart.data) {
+      const cleanBase64 = audioPart.data.replace(/^data:audio\/[\w+.-]+;base64,/, '');
+      audioBuffer = Buffer.from(cleanBase64, 'base64');
+    } else if (audioPart.uri && /^https?:\/\//.test(audioPart.uri)) {
+      const audioResponse = await fetch(audioPart.uri);
+      if (!audioResponse.ok) {
+        throw new Error(`Failed to download Lyria audio URI: ${audioResponse.status}`);
+      }
+      audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+    } else {
+      throw new Error(`Lyria audio response did not include inline data or downloadable URI.`);
+    }
+
+    const extension = this.getAudioExtension(audioPart.mimeType);
+    const outputBuffer = audioPart.mimeType.toLowerCase().includes('l16') || audioPart.mimeType.toLowerCase().includes('pcm')
+      ? this.wrapPcmAsWav(audioBuffer, audioPart.mimeType)
+      : audioBuffer;
+    const tempPath = path.join(os.tmpdir(), `lyria_${Date.now()}.${extension}`);
+    fs.writeFileSync(tempPath, outputBuffer);
+    return tempPath;
   }
 
   // 4. Vision QA Inspector

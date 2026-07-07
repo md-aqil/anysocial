@@ -318,7 +318,11 @@ export class ReelWorker {
                 }
               } catch {}
             }
-            bgmPath = await aiOrchestrator.generateMusic(musicVibePrompt);
+            const musicReferenceImage = downloadedAssetPaths.find(p => !/\.(mp4|webm|mov)$/i.test(p));
+            bgmPath = await aiOrchestrator.generateMusic(
+              musicVibePrompt,
+              musicReferenceImage ? [{ path: musicReferenceImage }] : []
+            );
             if (bgmPath) tempFilesToCleanup.push(bgmPath);
           }
 
@@ -374,6 +378,7 @@ export class ReelWorker {
           finalVideoPath = videoWithAudio;
         } catch (audioError: any) {
           logger.error({ event: "reel_bgm_failed", reelId, error: audioError.message });
+          throw new Error(`Product reel audio/music generation failed: ${audioError.message}`);
         }
 
 
@@ -736,7 +741,10 @@ Output ONLY valid JSON:
         const fallbackPrompt = (series.musicId && musicPromptMap[series.musicId]) || musicPromptMap['cinematic-ambient'];
         const finalMusicPrompt = aiMusicPrompt || fallbackPrompt;
         
-        const bgmPath = await aiOrchestrator.generateMusic(finalMusicPrompt);
+        const bgmPath = await aiOrchestrator.generateMusic(
+          finalMusicPrompt,
+          imageUrls[0] ? [{ path: imageUrls[0] }] : []
+        );
         if (bgmPath) tempFilesToCleanup.push(bgmPath);
 
         const { outputPath: mixedAudioPath, tempFiles: bgmTempFiles } = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, actualDuration, abortController.signal);
