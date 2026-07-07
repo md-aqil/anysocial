@@ -303,9 +303,11 @@ Make sure the output is a valid JSON object.`;
       fs.writeFileSync(tempPath, buffer);
       return tempPath;
     } catch (e) {
-      // Absolute worst case failsafe: generate a solid color image block
+      // Absolute worst case failsafe: generate a solid color valid JPG block
       const tempPath = path.join(os.tmpdir(), `fail_${Date.now()}.jpg`);
-      fs.writeFileSync(tempPath, '');
+      // 1x1 pixel black JPG
+      const dummyJpgBase64 = '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+      fs.writeFileSync(tempPath, Buffer.from(dummyJpgBase64, 'base64'));
       return tempPath;
     }
   }

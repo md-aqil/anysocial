@@ -651,7 +651,7 @@ Output ONLY valid JSON:
         const lighting = visual.lighting || 'cinematic';
         
         let attempts = 0;
-        const maxAttempts = 3;
+        const maxAttempts = 1; // Try only once to save time and credits
         let finalUrl = '';
         
         while (attempts < maxAttempts) {
@@ -673,7 +673,7 @@ Output ONLY valid JSON:
                     // Final failsafe: fallback to stock media if AI generation repeatedly fails
                     finalUrl = await aiOrchestrator.fetchStockImage(keyword);
                   } catch (e) {
-                    finalUrl = await aiOrchestrator.generateImage(`Original LLM-generated vertical 9:16 reel frame. Scene: ${keyword.substring(0, 300)}. Style: ${series.artStyle}. No text, no logo, no watermark, clean anatomy.`, reelSeed);
+                    finalUrl = await aiOrchestrator.fetchStockImage('fallback');
                   }
               }
             }
