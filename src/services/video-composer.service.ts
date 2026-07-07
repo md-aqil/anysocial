@@ -326,20 +326,42 @@ export class VideoComposerService {
    * Generates a premium animated Advanced SubStation Alpha (.ass) subtitle file.
    * Utilizes the custom Poppins font with dynamic karaoke timing tags for highlighting words as they are spoken.
    */
-  static async generateSubtitlesFile(script: string, durationInSeconds: number): Promise<string> {
+  static async generateSubtitlesFile(script: string, durationInSeconds: number, wordTimings?: Array<{ word: string, startTime: number, endTime: number }>): Promise<string> {
     const assPath = path.join(os.tmpdir(), `subs_${Date.now()}.ass`);
     
-    // Transliterate to Roman script first, then clean
-    let romanScript = this.transliterateHindiToRoman(script);
-    
-    // Clean script: Keep alphanumeric, spaces, and basic punctuation
-    const cleanScript = romanScript.replace(/[^\w\s.,!?'"’-]/g, '');
-    const words = cleanScript.split(/\s+/).filter(w => w.length > 0);
-    
-    if (words.length === 0) {
-      fs.writeFileSync(assPath, '');
-      return assPath;
-    }
+    // Snappy TikTok/Reels style: Group words into blocks of 3 words per line
+    const wordsPerLine = 3;
+    const lines: { text: string[], duration: number, wordsCs: number[] }[] = [];
+
+    if (wordTimings && wordTimings.length > 0) {
+      // 🚀 AI-DRIVEN PRECISE TIMING MODE (Perfect Sync)
+      for (let i = 0; i < wordTimings.length; i += wordsPerLine) {
+        const lineTimings = wordTimings.slice(i, i + wordsPerLine);
+        const lineStartTime = lineTimings[0].startTime;
+        const lineEndTime = lineTimings[lineTimings.length - 1].endTime;
+        const lineDuration = lineEndTime - lineStartTime;
+        
+        const lineWords: string[] = [];
+        const wordsCs: number[] = [];
+        
+        for (const wt of lineTimings) {
+          lineWords.push(wt.word);
+          const wordDurCs = Math.round((wt.endTime - wt.startTime) * 100);
+          wordsCs.push(Math.max(wordDurCs, 1)); // At least 1cs
+        }
+        
+        lines.push({ text: lineWords, duration: lineDuration, wordsCs });
+      }
+    } else {
+      // ⚠️ FALLBACK MATH-BASED HEURISTIC MODE
+      let romanScript = this.transliterateHindiToRoman(script);
+      const cleanScript = romanScript.replace(/[^\w\s.,!?'"’-]/g, '');
+      const words = cleanScript.split(/\s+/).filter(w => w.length > 0);
+      
+      if (words.length === 0) {
+        fs.writeFileSync(assPath, '');
+        return assPath;
+      }
 
     // First pass to assign relative weights based on word length and punctuation
     const wordWeights = words.map(w => {
@@ -357,20 +379,20 @@ export class VideoComposerService {
     const wordsPerLine = 3;
     const lines: { text: string[], duration: number, wordsCs: number[] }[] = [];
     
-    for (let i = 0; i < words.length; i += wordsPerLine) {
-      const lineWords = words.slice(i, i + wordsPerLine);
-      const lineWeights = wordWeights.slice(i, i + wordsPerLine);
-      let lineDuration = 0;
-      const wordsCs: number[] = [];
-      
-      for (let j = 0; j < lineWords.length; j++) {
-        // Base duration on weighted character count (accounts for TTS pauses)
-        const wordDur = lineWeights[j] * durationPerWeight;
-        lineDuration += wordDur;
-        wordsCs.push(Math.round(wordDur * 100)); // centiseconds for karaoke
+      for (let i = 0; i < words.length; i += wordsPerLine) {
+        const lineWords = words.slice(i, i + wordsPerLine);
+        const lineWeights = wordWeights.slice(i, i + wordsPerLine);
+        let lineDuration = 0;
+        const wordsCs: number[] = [];
+        
+        for (let j = 0; j < lineWords.length; j++) {
+          const wordDur = lineWeights[j] * durationPerWeight;
+          lineDuration += wordDur;
+          wordsCs.push(Math.round(wordDur * 100)); // centiseconds for karaoke
+        }
+        
+        lines.push({ text: lineWords, duration: lineDuration, wordsCs });
       }
-      
-      lines.push({ text: lineWords, duration: lineDuration, wordsCs });
     }
 
     const formatTime = (timeInSeconds: number) => {

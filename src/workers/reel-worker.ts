@@ -283,12 +283,17 @@ export class ReelWorker {
           
           let subtitlePath: string | undefined = undefined;
           if (activeEnableVoice && scriptText && scriptText.length > 0 && ttsPath) {
-            await updateProgress("💬 Burning animated subtitles into final video...");
+            await updateProgress("💬 Transcribing audio for perfect subtitle timing...");
             let actualAudioDuration = targetDuration;
+            let wordTimings: Array<{word: string, startTime: number, endTime: number}> = [];
             try {
               actualAudioDuration = await VideoComposerService.getMediaDuration(ttsPath);
+              const langCode = (req.body.language && req.body.language.includes('Hindi')) ? 'hi-IN' : 'en-US';
+              wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, langCode);
             } catch(e) {}
-            subtitlePath = await VideoComposerService.generateSubtitlesFile(scriptText, actualAudioDuration);
+            
+            await updateProgress("💬 Burning animated subtitles into final video...");
+            subtitlePath = await VideoComposerService.generateSubtitlesFile(scriptText, actualAudioDuration, wordTimings);
             if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
           } else if (activeEnableVoice && scriptText && scriptText.length > 0) {
             // Fallback if voiceover wasn't generated but text exists
@@ -502,7 +507,7 @@ Output ONLY valid JSON:
     { 
       "keyword": "detailed description of the exact visual frame, explicitly naming characters and environment.", 
       "search_query": "simple 2-3 word search query if using stock_video (e.g. 'mumbai traffic')",
-      "media_type": "ai_image", 
+      "media_type": "MUST BE EITHER 'ai_image' OR 'stock_video'", 
       "camera_movement": "zoom_in",
       "lighting": "High contrast rim lighting"
     }
@@ -511,6 +516,21 @@ Output ONLY valid JSON:
          const cineResText = await aiOrchestrator.generateContent(cinePrompt);
          const cineParsed = JSON.parse(cineResText.replace(/```json\n?|```/g, '').trim());
          visuals = cineParsed.visuals || [];
+         
+         // 🛡️ GUARANTEE 50/50 MIX (AI sometimes ignores the prompt and outputs all ai_image)
+         let stockCount = visuals.filter((v: any) => v.media_type === 'stock_video').length;
+         const targetStockCount = Math.floor(visuals.length / 2);
+         
+         if (stockCount < targetStockCount) {
+             console.log(`[Cinematographer] AI ignored the stock rule (Generated ${stockCount} stock). Forcing 50/50 mix...`);
+             for (let i = 0; i < visuals.length; i++) {
+                 // Force every odd-indexed shot to be stock video if we are under quota
+                 if (i % 2 !== 0 && visuals[i].media_type !== 'stock_video' && stockCount < targetStockCount) {
+                     visuals[i].media_type = 'stock_video';
+                     stockCount++;
+                 }
+             }
+         }
       } catch (e) {
          console.error("[Cinematographer] Failed, falling back to basic shots.");
          throw new Error("Cinematographer planning failed.");
@@ -527,6 +547,7 @@ Output ONLY valid JSON:
       
       let ttsPath: string;
       let actualDuration = 60;
+      let wordTimings: Array<{word: string, startTime: number, endTime: number}> = [];
       
       try {
         ttsPath = await aiOrchestrator.generateVoiceover(scriptTts, series.voiceId || 'en-US-Journey-F', series.language || 'English');
@@ -538,6 +559,10 @@ Output ONLY valid JSON:
           actualDuration = await VideoComposerService.getMediaDuration(ttsPath);
           // Do not pad actualDuration here; exact timing is required for accurate subtitle sync
           logger.info({ event: 'reel_audio_duration', reelId, actualDuration });
+          
+          await updateProgress('💬 Transcribing audio for perfect subtitle timing...');
+          const langCode = (series.language && series.language.includes('Hindi')) ? 'hi-IN' : 'en-US';
+          wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, langCode);
         } catch (durationErr: any) {
           // ffprobe can't read the file — estimate from word count (avg 2.5 words/sec)
           logger.warn({ event: 'reel_ffprobe_fallback', reelId, error: durationErr.message });
@@ -661,7 +686,7 @@ Output ONLY valid JSON:
         if (bgmTempFiles) tempFilesToCleanup.push(...bgmTempFiles);
         
         await updateProgress('💬 Burning animated subtitles into final video...');
-        const subtitlePath = await VideoComposerService.generateSubtitlesFile(script, actualDuration);
+        const subtitlePath = await VideoComposerService.generateSubtitlesFile(script, actualDuration, wordTimings);
         if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
 
         const { outputPath: videoWithAudio, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, subtitlePath, abortController.signal);
