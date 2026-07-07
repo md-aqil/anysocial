@@ -321,11 +321,15 @@ export class ReelWorker {
               } catch {}
             }
             const musicReferenceImage = downloadedAssetPaths.find(p => !/\.(mp4|webm|mov)$/i.test(p));
-            bgmPath = await aiOrchestrator.generateMusic(
-              musicVibePrompt,
-              musicReferenceImage ? [{ path: musicReferenceImage }] : []
-            );
-            if (bgmPath) tempFilesToCleanup.push(bgmPath);
+            try {
+              bgmPath = await aiOrchestrator.generateMusic(
+                musicVibePrompt,
+                musicReferenceImage ? [{ path: musicReferenceImage }] : []
+              );
+              if (bgmPath) tempFilesToCleanup.push(bgmPath);
+            } catch (musicErr: any) {
+              logger.warn({ event: 'reel_bgm_generation_failed', reelId, error: musicErr.message });
+            }
           }
 
           let mixedAudioPath: string | null = null;
@@ -781,15 +785,26 @@ Output ONLY valid JSON:
         const fallbackPrompt = (series.musicId && musicPromptMap[series.musicId]) || musicPromptMap['cinematic-ambient'];
         const finalMusicPrompt = aiMusicPrompt || fallbackPrompt;
         
-        const bgmPath = await aiOrchestrator.generateMusic(
-          finalMusicPrompt,
-          imageUrls[0] ? [{ path: imageUrls[0] }] : []
-        );
-        if (bgmPath) tempFilesToCleanup.push(bgmPath);
+        let bgmPath = '';
+        try {
+          bgmPath = await aiOrchestrator.generateMusic(
+            finalMusicPrompt,
+            imageUrls[0] ? [{ path: imageUrls[0] }] : []
+          );
+          if (bgmPath) tempFilesToCleanup.push(bgmPath);
+        } catch (musicErr: any) {
+          logger.warn({ event: 'reel_bgm_generation_failed', reelId, error: musicErr.message });
+        }
 
-        const { outputPath: mixedAudioPath, tempFiles: bgmTempFiles } = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, actualDuration, abortController.signal);
-        if (mixedAudioPath) tempFilesToCleanup.push(mixedAudioPath);
-        if (bgmTempFiles) tempFilesToCleanup.push(...bgmTempFiles);
+        let mixedAudioPath = ttsPath;
+        let bgmTempFiles: string[] = [];
+        if (bgmPath) {
+          const mixResult = await VideoComposerService.addBackgroundMusic(ttsPath, bgmPath, actualDuration, abortController.signal);
+          mixedAudioPath = mixResult.outputPath;
+          bgmTempFiles = mixResult.tempFiles;
+        }
+        if (mixedAudioPath !== ttsPath && mixedAudioPath) tempFilesToCleanup.push(mixedAudioPath);
+        if (bgmTempFiles && bgmTempFiles.length > 0) tempFilesToCleanup.push(...bgmTempFiles);
         
         await updateProgress('💬 Burning animated subtitles into final video...');
         const subtitlePath = await VideoComposerService.generateSubtitlesFile(script, actualDuration, wordTimings);
