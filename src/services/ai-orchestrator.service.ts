@@ -305,11 +305,27 @@ Make sure the output is a valid JSON object.`;
   }
 
   async fetchStockImage(query: string): Promise<string> {
-    console.warn(`[Stock Failsafe] Falling back to dummy stock image for query: ${query}`);
+    console.warn(`[Stock Failsafe] Fetching stock image for query: ${query}`);
     try {
-      // Use picsum.photos which is highly reliable and does not block automated fetches
-      const url = 'https://picsum.photos/1080/1920';
-      const res = await fetch(url);
+      let imageUrl = 'https://picsum.photos/1080/1920'; // default dummy
+      
+      if (process.env.PEXELS_API_KEY && query !== 'fallback') {
+         const searchUrl = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query.substring(0, 30))}&orientation=portrait&per_page=1`;
+         const pexelsRes = await fetch(searchUrl, { headers: { 'Authorization': process.env.PEXELS_API_KEY } });
+         if (pexelsRes.ok) {
+            const data: any = await pexelsRes.json();
+            if (data.photos && data.photos.length > 0) imageUrl = data.photos[0].src.portrait || data.photos[0].src.large;
+         }
+      } else if (process.env.PIXABAY_API_KEY && query !== 'fallback') {
+         const searchUrl = `https://pixabay.com/api/?key=${process.env.PIXABAY_API_KEY}&q=${encodeURIComponent(query.substring(0, 30))}&orientation=vertical&per_page=3`;
+         const pixabayRes = await fetch(searchUrl);
+         if (pixabayRes.ok) {
+            const data: any = await pixabayRes.json();
+            if (data.hits && data.hits.length > 0) imageUrl = data.hits[0].largeImageURL;
+         }
+      }
+
+      const res = await fetch(imageUrl);
       if (!res.ok) throw new Error("Download failed");
       const buffer = Buffer.from(await res.arrayBuffer());
       const tempPath = path.join(os.tmpdir(), `stock_${Date.now()}.jpg`);
