@@ -398,13 +398,13 @@ export default function ReelsDashboard() {
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500 hover:text-stone-900">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-colors">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuContent align="end" className="w-52 p-2 rounded-2xl border border-stone-100 shadow-xl bg-white/95 backdrop-blur-xl">
                               <DropdownMenuItem
-                                className="gap-2 cursor-pointer"
+                                className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-stone-700 hover:bg-stone-100/80 focus:bg-stone-100/80 transition-colors"
                                 onClick={() => {
                                   const readyReels = series.reels?.filter((r: any) => r.status === 'READY');
                                   if (readyReels && readyReels.length > 0) {
@@ -414,24 +414,24 @@ export default function ReelsDashboard() {
                                   }
                                 }}
                               >
-                                <Play className="h-4 w-4" /> Play Latest Reel
+                                <Play className="h-4 w-4 text-emerald-600" /> Play Latest Reel
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                className="gap-2 cursor-pointer"
+                                className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-stone-700 hover:bg-stone-100/80 focus:bg-stone-100/80 transition-colors"
                                 onClick={() => router.push(`/dashboard/reels-creator/edit/${series.id}`)}
                               >
-                                <Edit2 className="h-4 w-4" /> Edit Series
+                                <Edit2 className="h-4 w-4 text-violet-600" /> Edit Series
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
+                              <DropdownMenuSeparator className="my-1" />
                               <DropdownMenuItem
-                                className="gap-2 cursor-pointer text-amber-600 focus:text-amber-700 focus:bg-amber-50"
+                                className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-amber-700 hover:bg-amber-50 focus:bg-amber-50 transition-colors"
                                 onClick={() => toggleActiveMutation.mutate(series.id)}
                                 disabled={toggleActiveMutation.isPending}
                               >
                                 <PauseCircle className="h-4 w-4" /> {series.isActive ? 'Stop Auto Posting' : 'Resume Auto Posting'}
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                className="gap-2 cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
+                                className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-red-600 hover:bg-red-50 focus:bg-red-50 transition-colors"
                                 onClick={() => deleteMutation.mutate(series.id)}
                                 disabled={deleteMutation.isPending}
                               >
