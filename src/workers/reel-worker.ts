@@ -288,7 +288,7 @@ export class ReelWorker {
             let wordTimings: Array<{word: string, startTime: number, endTime: number}> = [];
             try {
               actualAudioDuration = await VideoComposerService.getMediaDuration(ttsPath);
-              const langCode = (req.body.language && req.body.language.includes('Hindi')) ? 'hi-IN' : 'en-US';
+              const langCode = (language && language.includes('Hindi')) ? 'hi-IN' : 'en-US';
               wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, langCode);
             } catch(e) {}
             
