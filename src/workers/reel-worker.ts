@@ -501,6 +501,7 @@ Output ONLY valid JSON:
   "visuals": [
     { 
       "keyword": "detailed description of the exact visual frame, explicitly naming characters and environment.", 
+      "search_query": "simple 2-3 word search query if using stock_video (e.g. 'mumbai traffic')",
       "media_type": "ai_image", 
       "camera_movement": "zoom_in",
       "lighting": "High contrast rim lighting"
@@ -535,7 +536,7 @@ Output ONLY valid JSON:
         
         try {
           actualDuration = await VideoComposerService.getMediaDuration(ttsPath);
-          actualDuration = Math.ceil(actualDuration) + 1;
+          // Do not pad actualDuration here; exact timing is required for accurate subtitle sync
           logger.info({ event: 'reel_audio_duration', reelId, actualDuration });
         } catch (durationErr: any) {
           // ffprobe can't read the file — estimate from word count (avg 2.5 words/sec)
@@ -571,15 +572,16 @@ Output ONLY valid JSON:
         let attempts = 0;
         const maxAttempts = 3;
         let finalUrl = '';
+        const searchQuery = visual.search_query || keyword;
         
         while (attempts < maxAttempts) {
             attempts++;
             try {
               if (mediaType === 'stock_video') {
-                finalUrl = await aiOrchestrator.getBestStockVideo(keyword);
+                finalUrl = await aiOrchestrator.getBestStockVideo(searchQuery);
                 break; // Skip QA for stock
               } else if (mediaType === 'stock_photo') {
-                finalUrl = await aiOrchestrator.getBestStockImage(keyword);
+                finalUrl = await aiOrchestrator.getBestStockImage(searchQuery);
                 break; // Skip QA for stock
               } else {
                 // Phase 4: Prompt Engineering
