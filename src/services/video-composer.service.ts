@@ -331,7 +331,7 @@ export class VideoComposerService {
     
     // Snappy TikTok/Reels style: Group words into blocks of 3 words per line
     const wordsPerLine = 3;
-    const lines: { text: string[], duration: number, wordsCs: number[] }[] = [];
+    const lines: { text: string[], duration: number, wordsCs: number[], startTime?: number }[] = [];
 
     if (wordTimings && wordTimings.length > 0) {
       // 🚀 AI-DRIVEN PRECISE TIMING MODE (Perfect Sync)
@@ -350,7 +350,7 @@ export class VideoComposerService {
           wordsCs.push(Math.max(wordDurCs, 1)); // At least 1cs
         }
         
-        lines.push({ text: lineWords, duration: lineDuration, wordsCs });
+        lines.push({ text: lineWords, duration: lineDuration, wordsCs, startTime: lineStartTime });
       }
     } else {
       // ⚠️ FALLBACK MATH-BASED HEURISTIC MODE
@@ -424,8 +424,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      const startTime = currentTime;
-      const endTime = currentTime + line.duration;
+      const startTime = line.startTime !== undefined ? line.startTime : currentTime;
+      const endTime = startTime + line.duration;
       currentTime = endTime;
       
       const startStr = formatTime(startTime);

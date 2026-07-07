@@ -610,7 +610,7 @@ Output ONLY valid JSON:
                 break; // Skip QA for stock
               } else {
                 // Phase 4: Prompt Engineering
-                const engineeredPrompt = `(${keyword}) in (${lighting}) shot on 50mm lens, photorealistic, 8k, ${series.artStyle} style, identical consistency --no ugly, deformed`;
+                const engineeredPrompt = `A high-quality, vertical 9:16 portrait orientation image of: ${keyword}. Lighting: ${lighting}. Shot on 50mm lens, highly detailed, photorealistic, 8k resolution, cinematic lighting, ${series.artStyle} style. CRITICAL: The image MUST have perfect human anatomy, beautiful symmetrical faces, no distortion, no extra limbs, no weird hands, and absolutely NO text or watermarks.`;
                 
                 finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts, false);
                 await new Promise(r => setTimeout(r, 1000));

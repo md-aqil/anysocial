@@ -881,11 +881,11 @@ ${shotContext}
 CHARACTER BIBLE:
 ${characterContext}
 
-Your job is to ensure the image matches the context perfectly and contains no AI deformities.
+Your job is to ensure the image matches the context perfectly and contains NO AI deformities.
 Respond with a strict JSON object containing:
-1. "passed": boolean (true if the image is acceptable for a cinematic reel, false if it has major issues like deformed hands, wrong gender, drastically wrong lighting, or ignores the character description).
+1. "passed": boolean (MUST BE FALSE if the image has ANY anatomical distortion, deformed hands/fingers, extra limbs, asymmetrical eyes, weird text/watermarks, or drastically wrong lighting. Only true if it looks flawlessly photorealistic and matches the characters).
 2. "score": number between 0 and 100.
-3. "reason": A short string explaining your decision.
+3. "reason": A short string explaining your decision, highlighting any detected distortions.
 
 Output ONLY valid JSON.`;
 
