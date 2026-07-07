@@ -71,12 +71,12 @@ async function downloadToTemp(url: string, fileName: string): Promise<string> {
     
     if (!isAudio) {
       try {
-        console.log(`[Download Resiliency Fallback] Dynamically generating backdrop for ${fileName} via Google -> NVIDIA -> Pixabay...`);
+        console.log(`[Download Resiliency Fallback] Dynamically generating LLM backdrop for ${fileName}...`);
         const { AiOrchestratorService } = await import('./ai-orchestrator.service.js');
         const aiOrchestrator = new AiOrchestratorService();
         
         // Use a generic cinematic landscape/portrait descriptor
-        const generatedPath = await aiOrchestrator.fetchStockImage("beautiful cinematic vertical background wallpaper");
+        const generatedPath = await aiOrchestrator.generateImage("beautiful cinematic vertical background wallpaper, vertical 9:16, no text, no watermark", Math.floor(Math.random() * 1000000));
         if (fs.existsSync(generatedPath)) {
           fs.copyFileSync(generatedPath, tempPath);
           return tempPath;
@@ -86,12 +86,14 @@ async function downloadToTemp(url: string, fileName: string): Promise<string> {
       }
     }
 
-    const fallbackUrl = isAudio
-      ? 'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3'
-      : 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop'; // fallback URL as safety check only
+    if (!isAudio) {
+      console.error(`[Download Resiliency Critical] LLM backdrop generation failed. Creating zero-byte emergency file.`);
+      fs.writeFileSync(tempPath, Buffer.alloc(0));
+      return tempPath;
+    }
 
     try {
-      const response = await fetch(fallbackUrl, { signal: AbortSignal.timeout(10000) });
+      const response = await fetch('https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3', { signal: AbortSignal.timeout(10000) });
       if (!response.ok) throw new Error(`Backup server returned ${response.status}`);
       const fileStream = fs.createWriteStream(tempPath);
       // @ts-ignore

@@ -66,8 +66,8 @@ router.post('/generate-image', jwtAuth, async (req: Request, res: Response) => {
       return;
     }
     
-    // Call generateImage without allowing fallbacks so we strictly test the AI
-    const tempImagePath = await aiOrchestrator.generateImage(prompt, 0, false);
+    // generateImage is LLM-only and intentionally has no stock fallback.
+    const tempImagePath = await aiOrchestrator.generateImage(prompt, 0);
     
     // Move to public uploads folder
     const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-images');

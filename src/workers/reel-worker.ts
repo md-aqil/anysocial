@@ -58,9 +58,9 @@ async function downloadToTemp(url: string, fileName: string, strict: boolean = f
     
     if (!isAudio) {
       try {
-        console.log(`[Worker Download Resiliency Fallback] Dynamically generating backdrop for ${fileName} via Google -> NVIDIA -> Pixabay...`);
+        console.log(`[Worker Download Resiliency Fallback] Dynamically generating LLM backdrop for ${fileName}...`);
         const { aiOrchestrator } = await import('../services/ai-orchestrator.service.js');
-        const generatedPath = await aiOrchestrator.fetchStockImage("beautiful cinematic vertical background wallpaper");
+        const generatedPath = await aiOrchestrator.generateImage("beautiful cinematic vertical background wallpaper, vertical 9:16, no text, no watermark", Math.floor(Math.random() * 1000000));
         if (fs.existsSync(generatedPath)) {
           fs.copyFileSync(generatedPath, tempPath);
           return tempPath;
@@ -70,12 +70,14 @@ async function downloadToTemp(url: string, fileName: string, strict: boolean = f
       }
     }
 
-    const fallbackUrl = isAudio
-      ? 'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3'
-      : 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=400&h=720&fit=crop'; // fallback URL as safety check only
+    if (!isAudio) {
+      console.error(`[Worker Download Resiliency Critical] LLM backdrop generation failed. Creating empty placeholder.`);
+      fs.writeFileSync(tempPath, Buffer.alloc(0));
+      return tempPath;
+    }
 
     try {
-      const response = await fetch(fallbackUrl, { signal: AbortSignal.timeout(10000) });
+      const response = await fetch('https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3', { signal: AbortSignal.timeout(10000) });
       if (!response.ok) throw new Error(`Backup server returned ${response.status}`);
       const fileStream = fs.createWriteStream(tempPath);
       // @ts-ignore
@@ -87,6 +89,54 @@ async function downloadToTemp(url: string, fileName: string, strict: boolean = f
       return tempPath;
     }
   }
+}
+
+function buildSceneImagePrompt(params: {
+  shotIndex: number;
+  totalShots: number;
+  seriesTopic: string;
+  script: string;
+  keyword: string;
+  artStyle: string;
+  lighting: string;
+  characterContext: string;
+  locationContext: string;
+  targetRegion?: string | null;
+}) {
+  const regionLine = params.targetRegion && params.targetRegion !== 'Global'
+    ? `Regional authenticity: ${params.targetRegion}. Use culturally accurate people, places, wardrobe, architecture, objects, and atmosphere for this region.`
+    : 'Regional authenticity: globally natural and specific to the described scene.';
+
+  return `Create one original LLM-generated image for a vertical social reel.
+
+Format:
+- Vertical 9:16 portrait frame.
+- Full-bleed composition with safe space around the center for subtitles.
+- No text, no captions, no logos, no watermarks, no borders.
+
+Series context:
+- Topic: ${params.seriesTopic}
+- Shot ${params.shotIndex} of ${params.totalShots}.
+- Script excerpt/context: ${params.script.substring(0, 1200)}
+
+Scene to render:
+${params.keyword}
+
+Continuity bible:
+- Characters: ${params.characterContext || 'No named characters; infer realistic subjects from the scene.'}
+- Locations: ${params.locationContext || 'Infer a specific, cinematic location from the scene.'}
+- ${regionLine}
+
+Style direction:
+- Art style: ${params.artStyle}.
+- Lighting: ${params.lighting}.
+- Mood must match the exact emotional beat of the scene, not a generic stock-photo look.
+- Cinematic framing, expressive subject, clear foreground/midground/background depth, coherent anatomy, realistic hands, symmetrical face details when people appear.
+- High detail, sharp focus on the subject, natural colors unless the selected art style requires stylization.
+
+Negative constraints:
+- Do not add readable text.
+- Do not add UI, poster typography, fake subtitles, watermarks, brand marks, malformed faces, extra fingers, extra limbs, warped eyes, duplicated people, or distorted objects.`;
 }
 
 export class ReelWorker {
@@ -126,10 +176,10 @@ export class ReelWorker {
     const tempFilesToCleanup: string[] = [];
     
     const generationMetadata: any = {
-      llmDetails: "Script: Gemini 2.5 | Audio: Google TTS | Visuals: Gemini Flash Image & Pexels",
+      llmDetails: "Script: Gemini 2.5 | Audio: Google TTS | Visuals: Gemini Flash Image",
       startedAt: Date.now(),
       model_llm: 'gemini-2.5-flash',
-      model_image: 'gemini-3.1-flash-image',
+      model_image: 'gemini-2.5-flash-image',
       model_voice: voiceId || 'en-US-Journey-F',
       shots: []
     };
@@ -506,9 +556,9 @@ Characters: ${characterContext}
 Locations: ${locationContext}
 
 CRITICAL MEDIA RULE: 
-- You MUST think smartly and dynamically decide the best "media_type" for each shot based purely on the story and scene context.
-- Use "ai_image" for ALL static images, including characters, expressive faces, and highly stylized aesthetics. DO NOT use stock photos.
-- Use "stock_video" ONLY when dynamic motion is needed for generic establishing shots, nature, cityscapes, or simple realistic B-roll.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
+- Every shot MUST use "ai_image". Do not choose stock photos, stock videos, search APIs, archival footage, or generic B-roll.
+- Each keyword must describe a specific generated frame, not a search query.
+- Include the subject, action, environment, emotional tone, camera framing, and visual details needed for an image model to render the scene.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly include "${series.targetRegion}" and mention ${series.targetRegion} demographics, places, clothing, objects, and architecture where relevant in EVERY keyword description.` : ''}
 
 CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
 
@@ -517,8 +567,7 @@ Output ONLY valid JSON:
   "visuals": [
     { 
       "keyword": "detailed description of the exact visual frame, explicitly naming characters and environment.", 
-      "search_query": "simple 2-3 word search query if using stock_video (e.g. 'mumbai traffic')",
-      "media_type": "MUST BE EITHER 'ai_image' OR 'stock_video'", 
+      "media_type": "ai_image", 
       "camera_movement": "zoom_in",
       "lighting": "High contrast rim lighting"
     }
@@ -590,50 +639,54 @@ Output ONLY valid JSON:
       for (const visual of visuals.slice(0, numKeywords)) {
         await updateProgress(`🎨 Phase 4: Production & QA (Shot ${currentShotIndex}/${totalShots})...`);
         const keyword = visual.keyword;
-        const mediaType = visual.media_type || 'ai_image';
+        const mediaType = 'ai_image';
         const intendedMovement = visual.camera_movement || 'zoom_in';
         const lighting = visual.lighting || 'cinematic';
         
         let attempts = 0;
         const maxAttempts = 3;
         let finalUrl = '';
-        const searchQuery = visual.search_query || keyword;
         
         while (attempts < maxAttempts) {
             attempts++;
             try {
-              if (mediaType === 'stock_video') {
-                finalUrl = await aiOrchestrator.getBestStockVideo(searchQuery);
-                break; // Skip QA for stock
-              } else if (mediaType === 'stock_photo') {
-                finalUrl = await aiOrchestrator.getBestStockImage(searchQuery);
-                break; // Skip QA for stock
+              const engineeredPrompt = buildSceneImagePrompt({
+                shotIndex: currentShotIndex,
+                totalShots,
+                seriesTopic: series.niche || series.customPrompt || series.name,
+                script,
+                keyword,
+                artStyle: series.artStyle,
+                lighting,
+                characterContext,
+                locationContext,
+                targetRegion: series.targetRegion
+              });
+              
+              finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts);
+              await new Promise(r => setTimeout(r, 1000));
+              
+              // Phase 5: Vision QA Inspector
+              const qaResult = await aiOrchestrator.evaluateImage(finalUrl, keyword, characterContext);
+              if (qaResult.passed) {
+                  break; // Image is good!
               } else {
-                // Phase 4: Prompt Engineering
-                const engineeredPrompt = `A breathtaking, vertical 9:16 portrait masterpiece of: ${keyword}. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion of the scene. Lighting: ${lighting}, cinematic and atmospheric. Camera: Shot on 50mm lens, highly detailed, photorealistic, 8k resolution, ${series.artStyle} style. CRITICAL QUALITY RULES: The image MUST have perfect human anatomy, beautiful symmetrical faces, no distortion, no extra limbs, no weird hands, and absolutely NO text, NO watermarks, and NO borders.`;
-                
-                finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts, false);
-                await new Promise(r => setTimeout(r, 1000));
-                
-                // Phase 5: Vision QA Inspector
-                const qaResult = await aiOrchestrator.evaluateImage(finalUrl, keyword, characterContext);
-                if (qaResult.passed) {
-                    break; // Image is good!
-                } else {
-                    console.log(`[QA Failed] Attempt ${attempts}: ${qaResult.reason}. Regenerating...`);
-                }
+                  console.log(`[QA Failed] Attempt ${attempts}: ${qaResult.reason}. Regenerating...`);
               }
             } catch (e: any) {
               logger.warn({ event: 'reel_media_gen_failed', keyword, attempt: attempts, error: e.message });
               if (attempts === maxAttempts) {
                   try {
-                    // Final failsafe: heavily simplified prompt without strict QA
-                    finalUrl = await aiOrchestrator.generateImage(`A simple, beautiful vertical 9:16 portrait of: ${keyword.substring(0, 50)}. High quality, ${series.artStyle} style.`, reelSeed, true);
-                  } catch (e) {
-                    finalUrl = await aiOrchestrator.generateImage("beautiful vertical scene", reelSeed, true);
+                    finalUrl = await aiOrchestrator.generateImage(`Original LLM-generated vertical 9:16 reel frame. Scene: ${keyword.substring(0, 300)}. Style: ${series.artStyle}. No text, no logo, no watermark, clean anatomy.`, reelSeed);
+                  } catch (fallbackError: any) {
+                    throw new Error(`LLM image generation failed for shot ${currentShotIndex}: ${fallbackError.message}`);
                   }
               }
             }
+        }
+
+        if (!finalUrl) {
+          throw new Error(`LLM image generation returned no image for shot ${currentShotIndex}.`);
         }
         
         generationMetadata.shots.push({
@@ -641,8 +694,8 @@ Output ONLY valid JSON:
           keyword,
           mediaType,
           attempts,
-          source: (mediaType === 'stock_video' || mediaType === 'stock_photo' || attempts === maxAttempts) ? 'stock' : 'ai_image',
-          model: (mediaType === 'stock_video' || mediaType === 'stock_photo' || attempts === maxAttempts) ? 'stock-api' : 'gemini-2.5-flash-image'
+          source: 'ai_image',
+          model: 'gemini-2.5-flash-image'
         });
         
         imageUrls.push(finalUrl);
