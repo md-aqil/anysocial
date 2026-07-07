@@ -60,7 +60,8 @@ router.post('/generate-image', jwtAuth, async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
     if (!prompt) {
-      return res.status(400).json({ error: 'Prompt is required' });
+      res.status(400).json({ error: 'Prompt is required' });
+      return;
     }
     
     // Call generateImage without allowing fallbacks so we strictly test the AI

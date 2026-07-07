@@ -266,7 +266,7 @@ Make sure the output is a valid JSON object.`;
         throw new Error(`REST API Error ${response.status}: ${errorText}`);
       }
 
-      const result = await response.json();
+      const result: any = await response.json();
       
       // Parse response matching the structure returned by the cURL payload
       let base64Data = null;
