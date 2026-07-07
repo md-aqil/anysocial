@@ -380,10 +380,7 @@ export class VideoComposerService {
     const totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
     const durationPerWeight = durationInSeconds / totalWeight;
 
-    // Snappy TikTok/Reels style: Group words into blocks of 3 words per line
-    const wordsPerLine = 3;
-    const lines: { text: string[], duration: number, wordsCs: number[] }[] = [];
-    
+    // The lines array and wordsPerLine are already declared in the outer scope, so we just use them.
       for (let i = 0; i < words.length; i += wordsPerLine) {
         const lineWords = words.slice(i, i + wordsPerLine);
         const lineWeights = wordWeights.slice(i, i + wordsPerLine);
