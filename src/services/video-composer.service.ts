@@ -345,7 +345,9 @@ export class VideoComposerService {
         const wordsCs: number[] = [];
         
         for (const wt of lineTimings) {
-          lineWords.push(wt.word);
+          // Fix: Translate Devanagari back to Roman for the Poppins font to avoid blank boxes
+          const romanWord = this.transliterateHindiToRoman(wt.word);
+          lineWords.push(romanWord);
           const wordDurCs = Math.round((wt.endTime - wt.startTime) * 100);
           wordsCs.push(Math.max(wordDurCs, 1)); // At least 1cs
         }

@@ -229,60 +229,10 @@ Make sure the output is a valid JSON object.`;
     }
 
     try {
-      // Use raw REST API for Imagen 3 since it requires the :predict endpoint
-      const auth = new GoogleAuth({ scopes: 'https://www.googleapis.com/auth/cloud-platform' });
-      const client = await auth.getClient();
-      const accessToken = (await client.getAccessToken()).token;
-      
-      const projectId = process.env.VERTEX_AI_PROJECT_ID;
-      
-      // Update to Gemini 3.1 Flash Image endpoint (global)
-      const endpoint = `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/global/publishers/google/models/gemini-3.1-flash-image:generateContent`;
-      
-      const requestPayload = {
-        contents: {
-          role: "user",
-          parts: {
-            text: prompt
-          }
-        },
-        generation_config: {
-          response_modalities: ["TEXT", "IMAGE"]
-        }
-      };
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestPayload),
-        signal: AbortSignal.timeout(30000)
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Gemini 3.1 Flash Image API Error: ${res.status} ${errText}`);
-      }
-
-      const data = (await res.json()) as any;
-      // Extract base64 image from Gemini response structure
-      let base64Image = '';
-      if (data.candidates && data.candidates[0]?.content?.parts) {
-        const imagePart = data.candidates[0].content.parts.find((p: any) => p.inlineData);
-        if (imagePart) {
-          base64Image = imagePart.inlineData.data;
-        }
-      }
-      
-      if (!base64Image) throw new Error("Gemini generation failed: No image returned in response");
-
-      const tempPath = path.join(os.tmpdir(), `imagen_${Date.now()}_${uniqueId}.jpg`);
-      fs.writeFileSync(tempPath, Buffer.from(base64Image, 'base64'));
-      return tempPath;
+      // 🚀 Switch to FLUX (via Pollinations) as the primary generator for flawless anatomy and vertical portraits
+      return await this.fetchPollinationsImage(prompt);
     } catch (e: any) {
-      console.error("[Imagen 3 API Error]:", e.message || e);
+      console.error("[FLUX Image Generation Error]:", e.message || e);
       if (!allowStockFallback) throw e;
 
       try {
@@ -322,7 +272,8 @@ Make sure the output is a valid JSON object.`;
     console.log(`[Pollinations] Generating AI image for '${cleanKeyword}'...`);
     
     // Pollinations generates images instantly based on URL
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanKeyword)}`;
+    // Enforce 9:16 vertical resolution, remove logo, and strictly use the FLUX model
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanKeyword)}?width=720&height=1280&nologo=true&model=flux`;
     
     const imageResponse = await fetch(imageUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
     if (!imageResponse.ok) {
