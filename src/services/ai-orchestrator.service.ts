@@ -234,20 +234,19 @@ Make sure the output is a valid JSON object.`;
       const accessToken = (await client.getAccessToken()).token;
       
       const projectId = process.env.VERTEX_AI_PROJECT_ID;
-      const location = process.env.VERTEX_AI_LOCATION || 'us-central1';
-      const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-3.0-generate-001:predict`;
+      
+      // Update to Gemini 3.1 Flash Image endpoint (global)
+      const endpoint = `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/global/publishers/google/models/gemini-3.1-flash-image:generateContent`;
       
       const requestPayload = {
-        instances: [{ prompt }],
-        parameters: {
-          aspectRatio: "9:16",
-          sampleCount: 1,
-          seed: seed || Math.floor(Math.random() * 1000000),
-          negativePrompt: "male, man, men, boy, boys, cross-dressing, wrong gender, western clothing, ugly, deformed, cartoon, illustration, low quality, unnatural, mutated",
-          outputOptions: {
-            mimeType: "image/jpeg",
-            compressionQuality: 95
+        contents: {
+          role: "user",
+          parts: {
+            text: prompt
           }
+        },
+        generation_config: {
+          response_modalities: ["TEXT", "IMAGE"]
         }
       };
 
@@ -263,12 +262,20 @@ Make sure the output is a valid JSON object.`;
 
       if (!res.ok) {
         const errText = await res.text();
-        throw new Error(`Imagen 3 API Error: ${res.status} ${errText}`);
+        throw new Error(`Gemini 3.1 Flash Image API Error: ${res.status} ${errText}`);
       }
 
       const data = (await res.json()) as any;
-      const base64Image = data.predictions?.[0]?.bytesBase64Encoded;
-      if (!base64Image) throw new Error("Imagen generation failed: No image returned");
+      // Extract base64 image from Gemini response structure
+      let base64Image = '';
+      if (data.candidates && data.candidates[0]?.content?.parts) {
+        const imagePart = data.candidates[0].content.parts.find((p: any) => p.inlineData);
+        if (imagePart) {
+          base64Image = imagePart.inlineData.data;
+        }
+      }
+      
+      if (!base64Image) throw new Error("Gemini generation failed: No image returned in response");
 
       const tempPath = path.join(os.tmpdir(), `imagen_${Date.now()}_${uniqueId}.jpg`);
       fs.writeFileSync(tempPath, Buffer.from(base64Image, 'base64'));
