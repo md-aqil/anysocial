@@ -376,34 +376,82 @@ export default function ReelCreatorPage() {
             </div>
             
             <div className="space-y-8">
+              {/* Language Selection Grid */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">Language</label>
-                <select 
-                  className="w-full h-11 px-3 border border-stone-200 rounded-lg outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
-                  value={language}
-                  onChange={(e) => {
-                    setLanguage(e.target.value);
-                    const voices = VOICES_BY_LANGUAGE[e.target.value] || DEFAULT_VOICE_FALLBACK;
-                    setVoiceId(voices[0].id);
-                  }}
-                >
-                  <option value="English">🇬🇧 English</option>
-                  <option value="Spanish">🇪🇸 Spanish</option>
-                  <option value="French">🇫🇷 French</option>
-                  <option value="German">🇩🇪 German</option>
-                  <option value="Italian">🇮🇹 Italian</option>
-                  <option value="Portuguese">🇵🇹 Portuguese</option>
-                  <option value="Japanese">🇯🇵 Japanese</option>
-                  <option value="Korean">🇰🇷 Korean</option>
-                  <option value="Chinese">🇨🇳 Chinese</option>
-                  <option value="Arabic">🇸🇦 Arabic</option>
-                  <option value="Hindi">🇮🇳 Hindi</option>
-                </select>
+                <label className="block text-sm font-medium text-stone-900 mb-4">1. Select Language</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {[
+                    { id: 'English', label: 'English', flag: '🇬🇧' },
+                    { id: 'Spanish', label: 'Spanish', flag: '🇪🇸' },
+                    { id: 'French', label: 'French', flag: '🇫🇷' },
+                    { id: 'German', label: 'German', flag: '🇩🇪' },
+                    { id: 'Italian', label: 'Italian', flag: '🇮🇹' },
+                    { id: 'Portuguese', label: 'Portuguese', flag: '🇵🇹' },
+                    { id: 'Japanese', label: 'Japanese', flag: '🇯🇵' },
+                    { id: 'Korean', label: 'Korean', flag: '🇰🇷' },
+                    { id: 'Chinese', label: 'Chinese', flag: '🇨🇳' },
+                    { id: 'Arabic', label: 'Arabic', flag: '🇸🇦' },
+                    { id: 'Hindi', label: 'Hindi', flag: '🇮🇳' },
+                  ].map(lang => (
+                    <div 
+                      key={lang.id}
+                      onClick={() => {
+                        setLanguage(lang.id);
+                        const voices = VOICES_BY_LANGUAGE[lang.id] || DEFAULT_VOICE_FALLBACK;
+                        setVoiceId(voices[0].id);
+                      }}
+                      className={cn(
+                        "px-4 py-3 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-center gap-3 select-none",
+                        language === lang.id 
+                          ? "border-violet-600 bg-violet-50 text-violet-900 font-semibold shadow-[0_0_0_2px_rgba(124,58,237,0.1)]" 
+                          : "border-stone-200 bg-white text-stone-600 hover:border-violet-300 hover:bg-stone-50"
+                      )}
+                    >
+                      <span className="text-xl">{lang.flag}</span>
+                      <span>{lang.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-4">Voice Style</label>
-                <div className="space-y-3">
+              {/* Target Region Grid */}
+              <div className="pt-6 border-t border-stone-100">
+                <div>
+                  <label className="block text-sm font-medium text-stone-900 mb-1">2. Target Region / Cultural Context</label>
+                  <p className="text-stone-500 text-sm mb-4">Ensures AI characters, locations, and stock footage match a specific demographic.</p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { id: 'Global', label: 'Global / Western', icon: '🌍' },
+                    { id: 'Indian', label: 'Indian / South Asian', icon: '🇮🇳' },
+                    { id: 'East Asian', label: 'East Asian', icon: '🇯🇵' },
+                    { id: 'Middle Eastern', label: 'Middle Eastern', icon: '🇦🇪' },
+                    { id: 'European', label: 'European', icon: '🇪🇺' },
+                    { id: 'African', label: 'African', icon: '🌍' },
+                    { id: 'Latin American', label: 'Latin American', icon: '🇧🇷' },
+                    { id: 'North American', label: 'North American', icon: '🇺🇸' },
+                  ].map(region => (
+                    <div 
+                      key={region.id}
+                      onClick={() => setTargetRegion(region.id)}
+                      className={cn(
+                        "p-4 flex flex-col items-center justify-center text-center rounded-xl border-2 cursor-pointer transition-all duration-200 select-none",
+                        targetRegion === region.id 
+                          ? "border-violet-600 bg-violet-50 text-violet-900 shadow-[0_0_0_2px_rgba(124,58,237,0.1)]" 
+                          : "border-stone-200 bg-white hover:border-violet-300 hover:bg-stone-50 text-stone-600"
+                      )}
+                    >
+                      <span className="text-3xl mb-2 transform transition-transform group-hover:scale-110">{region.icon}</span>
+                      <span className="text-xs font-semibold leading-tight">{region.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Voice Style Grid */}
+              <div className="pt-6 border-t border-stone-100">
+                <label className="block text-sm font-medium text-stone-900 mb-4">3. Select Narrator Voice</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {(() => {
                     const availableVoices = VOICES_BY_LANGUAGE[language] || DEFAULT_VOICE_FALLBACK;
                     return availableVoices.map(voice => (
@@ -411,27 +459,43 @@ export default function ReelCreatorPage() {
                         key={voice.id}
                         onClick={() => setVoiceId(voice.id)}
                         className={cn(
-                          "p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-violet-300 flex items-center gap-4",
-                          voiceId === voice.id ? "border-violet-600 bg-violet-50/50" : "border-stone-200 bg-white"
+                          "p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-center gap-4 select-none",
+                          voiceId === voice.id 
+                            ? "border-violet-600 bg-violet-50 text-violet-900 shadow-[0_0_0_2px_rgba(124,58,237,0.1)]" 
+                            : "border-stone-200 bg-white hover:border-violet-300 hover:bg-stone-50"
                         )}
                       >
                         <div className="flex-1 flex items-center gap-3">
                           <div className={cn(
-                            "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors",
                             voiceId === voice.id ? "border-violet-600" : "border-stone-300"
                           )}>
-                            {voiceId === voice.id && <div className="w-2.5 h-2.5 bg-violet-600 rounded-full" />}
+                            {voiceId === voice.id && <div className="w-2.5 h-2.5 bg-violet-600 rounded-full animate-in zoom-in duration-200" />}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-stone-900">{voice.name}</span>
-                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[11px] font-bold rounded-full uppercase tracking-wider">{voice.type}</span>
+                              <span className="font-bold text-stone-900">{voice.name}</span>
+                              <span className="px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full uppercase tracking-wider">{voice.type}</span>
                             </div>
-                            <p className="text-stone-500 text-sm mt-0.5">{voice.description}</p>
+                            <p className={cn(
+                              "text-sm mt-0.5 transition-colors",
+                              voiceId === voice.id ? "text-violet-700/80" : "text-stone-500"
+                            )}>{voice.description}</p>
                           </div>
                         </div>
                         {voice.id !== 'default-voice' && (
-                          <button className="h-10 w-10 flex items-center justify-center rounded-full bg-stone-100 hover:bg-violet-100 hover:text-violet-700 transition-colors text-stone-600">
+                          <button 
+                            className={cn(
+                              "h-10 w-10 flex items-center justify-center rounded-full transition-colors flex-shrink-0",
+                              voiceId === voice.id 
+                                ? "bg-violet-600 text-white hover:bg-violet-700 shadow-md shadow-violet-600/20" 
+                                : "bg-stone-100 text-stone-600 hover:bg-violet-100 hover:text-violet-700"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Play preview logic here if applicable
+                            }}
+                          >
                             <Play className="h-4 w-4 ml-1" fill="currentColor" />
                           </button>
                         )}
@@ -439,25 +503,6 @@ export default function ReelCreatorPage() {
                     ));
                   })()}
                 </div>
-              </div>
-
-              <div className="mt-8">
-                <label className="block text-sm font-medium text-stone-700 mb-2">Target Region / Cultural Context</label>
-                <p className="text-stone-500 text-sm mb-4">Ensures AI characters, locations, and stock footage match a specific demographic.</p>
-                <select 
-                  className="w-full h-11 px-3 border border-stone-200 rounded-lg outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
-                  value={targetRegion}
-                  onChange={(e) => setTargetRegion(e.target.value)}
-                >
-                  <option value="Global">🌍 Global / Western (Default)</option>
-                  <option value="Indian">🇮🇳 Indian / South Asian</option>
-                  <option value="East Asian">🇯🇵 East Asian</option>
-                  <option value="Middle Eastern">🇦🇪 Middle Eastern</option>
-                  <option value="European">🇪🇺 European</option>
-                  <option value="African">🌍 African</option>
-                  <option value="Latin American">🇧🇷 Latin American</option>
-                  <option value="North American">🇺🇸 North American</option>
-                </select>
               </div>
             </div>
           </div>
