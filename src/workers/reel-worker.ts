@@ -288,8 +288,11 @@ export class ReelWorker {
             let wordTimings: Array<{word: string, startTime: number, endTime: number}> = [];
             try {
               actualAudioDuration = await VideoComposerService.getMediaDuration(ttsPath);
-              const langCode = (language && language.includes('Hindi')) ? 'hi-IN' : 'en-US';
-              wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, langCode);
+              if (language && language.includes('Hindi')) {
+                  wordTimings = [];
+              } else {
+                  wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'en-US');
+              }
             } catch(e) {}
             
             await updateProgress("💬 Burning animated subtitles into final video...");
@@ -495,9 +498,9 @@ Characters: ${characterContext}
 Locations: ${locationContext}
 
 CRITICAL MEDIA RULE: 
-- You MUST alternate and mix between "ai_image" and "stock_video". 
-- At least half of the shots MUST be "stock_video" (for B-roll, landscapes, reactions, objects, cityscapes, abstract).
-- Only use "ai_image" when a highly specific character, face, or impossible scene is required.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
+- You MUST dynamically decide the best "media_type" for each shot based purely on the story and scene context.
+- Use "stock_video" for general B-roll, landscapes, nature, cityscapes, abstract concepts, or establishing shots.
+- Use "ai_image" ONLY when a highly specific character, face, or impossible scene is required that cannot be found in stock footage.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
 
 CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
 
@@ -516,21 +519,6 @@ Output ONLY valid JSON:
          const cineResText = await aiOrchestrator.generateContent(cinePrompt);
          const cineParsed = JSON.parse(cineResText.replace(/```json\n?|```/g, '').trim());
          visuals = cineParsed.visuals || [];
-         
-         // 🛡️ GUARANTEE 50/50 MIX (AI sometimes ignores the prompt and outputs all ai_image)
-         let stockCount = visuals.filter((v: any) => v.media_type === 'stock_video').length;
-         const targetStockCount = Math.floor(visuals.length / 2);
-         
-         if (stockCount < targetStockCount) {
-             console.log(`[Cinematographer] AI ignored the stock rule (Generated ${stockCount} stock). Forcing 50/50 mix...`);
-             for (let i = 0; i < visuals.length; i++) {
-                 // Force every odd-indexed shot to be stock video if we are under quota
-                 if (i % 2 !== 0 && visuals[i].media_type !== 'stock_video' && stockCount < targetStockCount) {
-                     visuals[i].media_type = 'stock_video';
-                     stockCount++;
-                 }
-             }
-         }
       } catch (e) {
          console.error("[Cinematographer] Failed, falling back to basic shots.");
          throw new Error("Cinematographer planning failed.");
@@ -560,9 +548,13 @@ Output ONLY valid JSON:
           // Do not pad actualDuration here; exact timing is required for accurate subtitle sync
           logger.info({ event: 'reel_audio_duration', reelId, actualDuration });
           
-          await updateProgress('💬 Transcribing audio for perfect subtitle timing...');
-          const langCode = (series.language && series.language.includes('Hindi')) ? 'hi-IN' : 'en-US';
-          wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, langCode);
+          if (series.language && series.language.includes('Hindi')) {
+              console.log("[Subtitle Engine] Hindi detected. Skipping AI transcription to allow English translation fallback.");
+              wordTimings = []; // Forces fallback to math heuristics using the English script
+          } else {
+              await updateProgress('💬 Transcribing audio for perfect subtitle timing...');
+              wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'en-US');
+          }
         } catch (durationErr: any) {
           // ffprobe can't read the file — estimate from word count (avg 2.5 words/sec)
           logger.warn({ event: 'reel_ffprobe_fallback', reelId, error: durationErr.message });
@@ -653,7 +645,8 @@ Output ONLY valid JSON:
       logger.info({ event: 'reel_composing_video', reelId });
       const abortController = new AbortController();
 
-      const imageDuration = Math.ceil(actualDuration / numKeywords);
+      const actualShotsCount = imageUrls.length || 1;
+      const imageDuration = Math.ceil(actualDuration / actualShotsCount);
       const { clipPaths, tempFiles: composerTempFiles } = await VideoComposerService.createVideoClips(imageUrls, imageDuration, 'vertical', abortController.signal, cameraMovements);
       if (clipPaths) tempFilesToCleanup.push(...clipPaths);
       if (composerTempFiles) tempFilesToCleanup.push(...composerTempFiles);

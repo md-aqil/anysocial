@@ -776,18 +776,35 @@ Make sure the output is a valid JSON object.`;
     // In production, this would call the Vertex AI Lyria endpoint once GA
     console.log(`Generating music via Lyria 3 Pro with prompt: ${prompt}`);
     
-    // List of reliable, public-domain cinematic/classical background tracks from Wikimedia Commons
-    const bgmList = [
-      'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-basics/outfoxing.mp3',
-      'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3',
-      'https://raw.githubusercontent.com/mdn/webaudio-examples/main/voice-change-o-matic/audio/concert-crowd.mp3',
-      'https://raw.githubusercontent.com/mdn/webaudio-examples/main/multi-track/bassguitar.mp3',
-      'https://raw.githubusercontent.com/mdn/webaudio-examples/main/multi-track/clav.mp3'
-    ];
+    const bgmLibrary: Record<string, string[]> = {
+      'suspense': [
+        'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3'
+      ],
+      'acoustic': [
+        'https://raw.githubusercontent.com/mdn/webaudio-examples/main/multi-track/bassguitar.mp3'
+      ],
+      'lofi': [
+        'https://raw.githubusercontent.com/mdn/webaudio-examples/main/multi-track/clav.mp3'
+      ],
+      'cinematic': [
+        'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-basics/outfoxing.mp3'
+      ]
+    };
 
-    // Pick a track deterministically based on the prompt length so the same prompt gets the same music
-    const index = prompt.length % bgmList.length;
-    const bgmUrl = bgmList[index];
+    let selectedCategory = 'cinematic';
+    const lowerPrompt = prompt.toLowerCase();
+    
+    if (lowerPrompt.includes('suspense') || lowerPrompt.includes('dark') || lowerPrompt.includes('mystery')) {
+      selectedCategory = 'suspense';
+    } else if (lowerPrompt.includes('acoustic') || lowerPrompt.includes('uplifting') || lowerPrompt.includes('light')) {
+      selectedCategory = 'acoustic';
+    } else if (lowerPrompt.includes('lofi') || lowerPrompt.includes('chill') || lowerPrompt.includes('relax')) {
+      selectedCategory = 'lofi';
+    }
+
+    const categoryTracks = bgmLibrary[selectedCategory];
+    const index = prompt.length % categoryTracks.length;
+    const bgmUrl = categoryTracks[index];
 
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 2000));

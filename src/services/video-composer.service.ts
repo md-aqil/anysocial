@@ -254,6 +254,8 @@ export class VideoComposerService {
       let lastOutput = '[0:v]';
       let accumulatedDuration = 0;
 
+      const transitions = ['zoomin', 'fade', 'pixelize', 'slideleft', 'slideright', 'smoothup', 'circleopen', 'dissolve'];
+
       for (let i = 0; i < videoPaths.length - 1; i++) {
         const nextInput = `[${i + 1}:v]`;
         const outputLabel = `[v_trans_${i}]`;
@@ -263,8 +265,9 @@ export class VideoComposerService {
         
         // Exact offset mathematical formula to trigger transition at clip boundary
         const offset = accumulatedDuration - (i + 1) * transitionDuration;
+        const randomTransition = transitions[Math.floor(Math.random() * transitions.length)];
         
-        filterString += `${lastOutput}${nextInput}xfade=transition=zoomin:duration=${transitionDuration}:offset=${offset}${outputLabel};`;
+        filterString += `${lastOutput}${nextInput}xfade=transition=${randomTransition}:duration=${transitionDuration}:offset=${offset}${outputLabel};`;
         lastOutput = outputLabel;
       }
 
