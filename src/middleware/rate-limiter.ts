@@ -8,12 +8,12 @@ interface RateLimitConfig {
 
 const defaultConfig: RateLimitConfig = {
   windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: process.env.NODE_ENV === 'development' ? 1000 : 100
+  maxRequests: 100000 // Greatly increased for local testing behind Cloudflare tunnel
 };
 
 const oauthConfig: RateLimitConfig = {
   windowMs: 5 * 60 * 1000, // 5 minutes
-  maxRequests: 100
+  maxRequests: 100000 // Greatly increased for local testing behind Cloudflare tunnel
 };
 
 export function createRateLimiter(config: RateLimitConfig = defaultConfig) {
