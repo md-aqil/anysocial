@@ -124,6 +124,13 @@ export class ReelWorker {
     const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'en-US-Journey-F' } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
     const tempFilesToCleanup: string[] = [];
+    
+    const generationMetadata: any = {
+      model_llm: 'gemini-2.5-flash',
+      model_image: 'gemini-3.1-flash-image',
+      model_voice: voiceId || 'en-US-Journey-F',
+      shots: []
+    };
 
     try {
       // 1. Update status to GENERATING
@@ -330,6 +337,7 @@ export class ReelWorker {
           data: { 
             status: 'READY', 
             videoUrl, 
+            metadata: generationMetadata,
             script: scriptText,
             thumbnail: thumbnailDestUrl 
           },
@@ -475,8 +483,9 @@ Characters: ${characterContext}
 Locations: ${locationContext}
 
 CRITICAL MEDIA RULE: 
-- Use "ai_image" if the scene requires specific characters/fashion.
-- Use "stock_video" if the scene is generic b-roll, a landscape, or cityscape.
+- You MUST alternate and mix between "ai_image" and "stock_video". 
+- At least half of the shots MUST be "stock_video" (for B-roll, landscapes, reactions, objects, cityscapes, abstract).
+- Only use "ai_image" when a highly specific character, face, or impossible scene is required.
 
 CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
 
@@ -591,6 +600,16 @@ Output ONLY valid JSON:
               }
             }
         }
+        
+        generationMetadata.shots.push({
+          shotIndex: currentShotIndex,
+          keyword,
+          mediaType,
+          attempts,
+          source: (mediaType === 'stock_video' || mediaType === 'stock_photo' || attempts === maxAttempts) ? 'stock' : 'ai_image',
+          model: (mediaType === 'stock_video' || mediaType === 'stock_photo' || attempts === maxAttempts) ? 'stock-api' : 'gemini-3.1-flash-image'
+        });
+        
         imageUrls.push(finalUrl);
         cameraMovements.push(intendedMovement);
         currentShotIndex++;
@@ -660,7 +679,7 @@ Output ONLY valid JSON:
       // 6. Update reel to READY
       const reel = await prisma.reel.update({
         where: { id: reelId },
-        data: { status: 'READY', videoUrl },
+        data: { status: 'READY', videoUrl, metadata: generationMetadata },
       });
 
       // 7. Auto-create a Post for social publishing if channels were selected
@@ -738,6 +757,7 @@ Output ONLY valid JSON:
               where: { id: reelId },
               data: {
                 status: newReelStatus,
+                metadata: generationMetadata,
                 postId: scheduleResult.postId,
                 statusMessage: isSafeFuture 
                   ? `Scheduled to post on ${scheduledTime.toISOString()}` 
@@ -753,6 +773,7 @@ Output ONLY valid JSON:
               where: { id: reelId },
               data: {
                 status: 'READY',
+                metadata: generationMetadata,
                 statusMessage: 'No connected accounts matched the selected channels.'
               }
             });

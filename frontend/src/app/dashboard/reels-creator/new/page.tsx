@@ -86,20 +86,20 @@ const DEFAULT_VOICE_FALLBACK = [
 ];
 
 const STYLES = [
-  { id: 'cinematic', title: 'Cinematic 3D', image: '/uploads/styles/cinematic.jpg' },
-  { id: 'watercolor', title: 'Watercolor', image: '/uploads/styles/watercolor.jpg' },
-  { id: 'digital-art', title: 'Digital Illustration', image: '/uploads/styles/digital-art.jpg' },
-  { id: 'hyper-realistic', title: 'Hyper-realistic', image: '/uploads/styles/hyper-realistic.jpg' },
-  { id: 'anime', title: 'Anime Style', image: '/uploads/styles/anime.jpg' },
-  { id: 'fantasy', title: 'Dark Fantasy', image: '/uploads/styles/fantasy.jpg' },
-  { id: 'cyberpunk', title: 'Cyberpunk', image: '/uploads/styles/cyberpunk.jpg' },
-  { id: 'pixel-art', title: 'Pixel Art', image: '/uploads/styles/pixel-art.jpg' },
-  { id: 'vintage-vhs', title: 'Vintage VHS', image: '/uploads/styles/vintage-vhs.jpg' },
-  { id: 'claymation', title: 'Claymation', image: '/uploads/styles/claymation.jpg' },
-  { id: 'oil-painting', title: 'Classic Oil Painting', image: '/uploads/styles/oil-painting.jpg' },
-  { id: 'pop-art', title: 'Pop Art Comic', image: '/uploads/styles/pop-art.jpg' },
-  { id: 'origami', title: 'Paper Origami', image: '/uploads/styles/origami.jpg' },
-  { id: 'gothic', title: 'Gothic Noir', image: '/uploads/styles/gothic.jpg' },
+  { id: 'cinematic', title: 'Cinematic 3D', image: '/assets/styles/cinematic.jpg' },
+  { id: 'watercolor', title: 'Watercolor', image: '/assets/styles/watercolor.jpg' },
+  { id: 'digital-art', title: 'Digital Illustration', image: '/assets/styles/digital-art.jpg' },
+  { id: 'hyper-realistic', title: 'Hyper-realistic', image: '/assets/styles/hyper-realistic.jpg' },
+  { id: 'anime', title: 'Anime Style', image: '/assets/styles/anime.jpg' },
+  { id: 'fantasy', title: 'Dark Fantasy', image: '/assets/styles/fantasy.jpg' },
+  { id: 'cyberpunk', title: 'Cyberpunk', image: '/assets/styles/cyberpunk.jpg' },
+  { id: 'pixel-art', title: 'Pixel Art', image: '/assets/styles/pixel-art.jpg' },
+  { id: 'vintage-vhs', title: 'Vintage VHS', image: '/assets/styles/vintage-vhs.jpg' },
+  { id: 'claymation', title: 'Claymation', image: '/assets/styles/claymation.jpg' },
+  { id: 'oil-painting', title: 'Classic Oil Painting', image: '/assets/styles/oil-painting.jpg' },
+  { id: 'pop-art', title: 'Pop Art Comic', image: '/assets/styles/pop-art.jpg' },
+  { id: 'origami', title: 'Paper Origami', image: '/assets/styles/origami.jpg' },
+  { id: 'gothic', title: 'Gothic Noir', image: '/assets/styles/gothic.jpg' },
 ];
 
 export default function ReelCreatorPage() {

@@ -341,9 +341,17 @@ export class VideoComposerService {
       return assPath;
     }
 
-    // Improve Syncing: Character-based timing instead of uniform timing
-    const totalChars = words.reduce((sum, word) => sum + word.length, 0);
-    const durationPerChar = durationInSeconds / totalChars;
+    // First pass to assign relative weights based on word length and punctuation
+    const wordWeights = words.map(w => {
+      let weight = w.length;
+      if (w.endsWith(',') || w.endsWith(';')) weight += 3;
+      if (w.endsWith('.') || w.endsWith('!') || w.endsWith('?')) weight += 6;
+      // Base minimum weight so short words (like "a", "I") still get some time
+      return Math.max(weight, 2); 
+    });
+    
+    const totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
+    const durationPerWeight = durationInSeconds / totalWeight;
 
     // Snappy TikTok/Reels style: Group words into blocks of 3 words per line
     const wordsPerLine = 3;
@@ -351,12 +359,13 @@ export class VideoComposerService {
     
     for (let i = 0; i < words.length; i += wordsPerLine) {
       const lineWords = words.slice(i, i + wordsPerLine);
+      const lineWeights = wordWeights.slice(i, i + wordsPerLine);
       let lineDuration = 0;
       const wordsCs: number[] = [];
       
-      for (const word of lineWords) {
-        // Base duration on character count for much more accurate TTS sync
-        const wordDur = word.length * durationPerChar;
+      for (let j = 0; j < lineWords.length; j++) {
+        // Base duration on weighted character count (accounts for TTS pauses)
+        const wordDur = lineWeights[j] * durationPerWeight;
         lineDuration += wordDur;
         wordsCs.push(Math.round(wordDur * 100)); // centiseconds for karaoke
       }

@@ -331,6 +331,7 @@ model Reel {
   postId         String?
   post           Post?       @relation(fields: [postId], references: [id], onDelete: SetNull)
   assets         ProductReelAsset[]
+  metadata       Json?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
