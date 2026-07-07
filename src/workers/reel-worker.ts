@@ -393,8 +393,11 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       if (series.language === 'Hindi') {
         languagePrompt = `Language: Hindi. CRITICAL: You MUST write the script twice. First, "script_tts" MUST be written exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. Second, "script" MUST be written in Roman (Hinglish/English characters), which will be used for on-screen subtitles. The TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words, exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable. Both scripts must say exactly the same thing.`;
       }
-      
-      const storyPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}
+      const regionStoryRule = series.targetRegion && series.targetRegion !== 'Global' 
+        ? `\nCRITICAL REGIONAL CONTEXT: Set the cultural context, character names, foods, locations, and references strictly to ${series.targetRegion} origin.` 
+        : '';
+        
+      const storyPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}${regionStoryRule}
  
 CRITICAL AUDIENCE & VOCABULARY RULE: 
 The script and tone MUST be engaging, edgy, and highly relatable for teenagers (Gen Z audience). Do not talk to them like a child. Use punchy, dynamic, modern vocabulary that holds a teen's attention. Keep it fast-paced, suspenseful, and captivating.
@@ -455,7 +458,11 @@ Output ONLY valid JSON:
       // Phase 2: Memory Extraction (Art Director)
       await updateProgress('🧠 Phase 2: Art Director is parsing Memory Core...');
       try {
-        const memoryPrompt = `Analyze the following script and extract the main characters and locations.
+        const regionMemoryRule = series.targetRegion && series.targetRegion !== 'Global'
+          ? `\nCRITICAL: Ensure all extracted/generated characters explicitly have physical traits and demographics matching ${series.targetRegion} origin in their descriptions.`
+          : '';
+          
+        const memoryPrompt = `Analyze the following script and extract the main characters and locations.${regionMemoryRule}
 Script: "${script}"
 Output ONLY valid JSON:
 {
@@ -485,7 +492,7 @@ Locations: ${locationContext}
 CRITICAL MEDIA RULE: 
 - You MUST alternate and mix between "ai_image" and "stock_video". 
 - At least half of the shots MUST be "stock_video" (for B-roll, landscapes, reactions, objects, cityscapes, abstract).
-- Only use "ai_image" when a highly specific character, face, or impossible scene is required.
+- Only use "ai_image" when a highly specific character, face, or impossible scene is required.${series.targetRegion && series.targetRegion !== 'Global' ? `\n- CRITICAL REGION RULE: You MUST explicitly append "in ${series.targetRegion}" and mention ${series.targetRegion} demographics to EVERY SINGLE keyword description so the visual generator outputs ${series.targetRegion} specific content.` : ''}
 
 CAMERA MOVEMENTS: Choose exactly one per shot: 'zoom_in', 'zoom_out', 'pan_right', 'pan_left', 'pan_up', 'pan_down', 'static'. Use varied movements.
 

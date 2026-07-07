@@ -55,6 +55,7 @@ const createReelSeriesSchema = z.object({
   createNow: z.boolean().optional().default(false),
   socialChannels: z.array(z.string()).optional().default([]),
   timezoneOffset: z.number().optional(),
+  targetRegion: z.string().optional().default("Global"),
 });
 
 /**
@@ -84,6 +85,7 @@ router.post('/', requireAuth, async (req: any, res: any) => {
         scheduleTime: validatedData.publishTime || null,
         timezoneOffset: validatedData.timezoneOffset !== undefined ? validatedData.timezoneOffset : null,
         socialChannels: JSON.stringify(validatedData.socialChannels),
+        targetRegion: validatedData.targetRegion,
       },
     });
 

@@ -123,6 +123,7 @@ export default function ReelCreatorPage() {
   
   const [language, setLanguage] = useState('English');
   const [voiceId, setVoiceId] = useState('en-US-Journey-F');
+  const [targetRegion, setTargetRegion] = useState('Global');
   
 
   
@@ -186,6 +187,7 @@ export default function ReelCreatorPage() {
         createNow,
         socialChannels: selectedChannels,
         timezoneOffset: new Date().getTimezoneOffset(),
+        targetRegion,
       };
       
       const res = await fetch(`/api/reels`, {
@@ -437,6 +439,25 @@ export default function ReelCreatorPage() {
                     ));
                   })()}
                 </div>
+              </div>
+
+              <div className="mt-8">
+                <label className="block text-sm font-medium text-stone-700 mb-2">Target Region / Cultural Context</label>
+                <p className="text-stone-500 text-sm mb-4">Ensures AI characters, locations, and stock footage match a specific demographic.</p>
+                <select 
+                  className="w-full h-11 px-3 border border-stone-200 rounded-lg outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                  value={targetRegion}
+                  onChange={(e) => setTargetRegion(e.target.value)}
+                >
+                  <option value="Global">🌍 Global / Western (Default)</option>
+                  <option value="Indian">🇮🇳 Indian / South Asian</option>
+                  <option value="East Asian">🇯🇵 East Asian</option>
+                  <option value="Middle Eastern">🇦🇪 Middle Eastern</option>
+                  <option value="European">🇪🇺 European</option>
+                  <option value="African">🌍 African</option>
+                  <option value="Latin American">🇧🇷 Latin American</option>
+                  <option value="North American">🇺🇸 North American</option>
+                </select>
               </div>
             </div>
           </div>

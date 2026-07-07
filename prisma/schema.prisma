@@ -299,6 +299,7 @@ model ReelSeries {
   scheduleTime   String?  @map("schedule_time") // HH:mm format
   timezoneOffset Int?     @map("timezone_offset")
   socialChannels String   @default("[]") @map("social_channels") // JSON array of account IDs
+  targetRegion   String   @default("Global") @map("target_region")
   createdAt      DateTime @default(now())
   updatedAt    DateTime @updatedAt
   reels        Reel[]
