@@ -645,7 +645,7 @@ Make sure the output is a valid JSON object.`;
 
   // 3. Lyria - Music Generation via Vertex AI interactions API
   async generateMusic(prompt: string, imageInputs: Array<{ path?: string; uri?: string; mimeType?: string; data?: string }> = []): Promise<string> {
-    console.log(`Generating music via Lyria with prompt: ${prompt}`);
+    console.log(`Generating music via Lyria 2 with prompt: ${prompt}`);
 
     const projectId = process.env.VERTEX_AI_PROJECT_ID;
     if (!projectId) {
@@ -658,41 +658,17 @@ Make sure the output is a valid JSON object.`;
     const client = await auth.getClient();
     const accessToken = await client.getAccessToken();
 
-    const modelId = process.env.VERTEX_AI_LYRIA_MODEL || 'lyria-3-clip-preview';
-    const endpoint = `https://aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/global/interactions`;
-    const input: any[] = [
-      {
-        type: 'text',
-        text: prompt
-      }
-    ];
-
-    for (const imageInput of imageInputs) {
-      if (imageInput.path && fs.existsSync(imageInput.path)) {
-        const mimeType = imageInput.mimeType || (imageInput.path.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
-        input.push({
-          type: 'image',
-          mime_type: mimeType,
-          data: fs.readFileSync(imageInput.path).toString('base64')
-        });
-      } else if (imageInput.uri) {
-        input.push({
-          type: 'image',
-          mime_type: imageInput.mimeType || 'image/jpeg',
-          uri: imageInput.uri
-        });
-      } else if (imageInput.data) {
-        input.push({
-          type: 'image',
-          mime_type: imageInput.mimeType || 'image/jpeg',
-          data: imageInput.data
-        });
-      }
-    }
-
+    const location = process.env.VERTEX_AI_LOCATION || 'us-central1';
+    const publisherEndpoint = 'publishers/google/models/lyria-002';
+    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/${publisherEndpoint}:predict`;
+    
     const requestBody = {
-      model: modelId,
-      input
+      instances: [
+        { prompt: prompt }
+      ],
+      parameters: {
+        sample_count: 1
+      }
     };
 
     const response = await fetch(endpoint, {
@@ -710,31 +686,20 @@ Make sure the output is a valid JSON object.`;
     }
 
     const result: any = await response.json();
-    const audioPart = this.findAudioPart(result);
-    if (!audioPart) {
+    const predictions = result.predictions;
+    if (!predictions || predictions.length === 0) {
       throw new Error(`Lyria returned no audio data. Response preview: ${JSON.stringify(result).substring(0, 1000)}`);
     }
 
-    let audioBuffer: Buffer;
-    if (audioPart.data) {
-      const cleanBase64 = audioPart.data.replace(/^data:audio\/[\w+.-]+;base64,/, '');
-      audioBuffer = Buffer.from(cleanBase64, 'base64');
-    } else if (audioPart.uri && /^https?:\/\//.test(audioPart.uri)) {
-      const audioResponse = await fetch(audioPart.uri);
-      if (!audioResponse.ok) {
-        throw new Error(`Failed to download Lyria audio URI: ${audioResponse.status}`);
-      }
-      audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
-    } else {
-      throw new Error(`Lyria audio response did not include inline data or downloadable URI.`);
+    const audioPart = predictions[0];
+    const bytesBase64 = audioPart.bytesBase64Encoded;
+    if (!bytesBase64) {
+      throw new Error(`Lyria response did not contain bytesBase64Encoded.`);
     }
 
-    const extension = this.getAudioExtension(audioPart.mimeType);
-    const outputBuffer = audioPart.mimeType.toLowerCase().includes('l16') || audioPart.mimeType.toLowerCase().includes('pcm')
-      ? this.wrapPcmAsWav(audioBuffer, audioPart.mimeType)
-      : audioBuffer;
-    const tempPath = path.join(os.tmpdir(), `lyria_${Date.now()}.${extension}`);
-    fs.writeFileSync(tempPath, outputBuffer);
+    const audioBuffer = Buffer.from(bytesBase64, 'base64');
+    const tempPath = path.join(os.tmpdir(), `lyria_${Date.now()}.wav`);
+    fs.writeFileSync(tempPath, audioBuffer);
     return tempPath;
   }
 
