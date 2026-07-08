@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.js';
+import { jwtAuth as authenticate } from '../middleware/jwt-auth.js';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
 import { logger } from '../logger/pino.js';
 import multer from 'multer';
