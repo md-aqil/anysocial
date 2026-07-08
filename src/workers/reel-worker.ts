@@ -353,7 +353,7 @@ export class ReelWorker {
             try {
               actualAudioDuration = await VideoComposerService.getMediaDuration(ttsPath);
               if (language && language.includes('Hindi')) {
-                  wordTimings = [];
+                  wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'hi-IN');
               } else {
                   wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'en-US');
               }
@@ -707,8 +707,8 @@ Output ONLY valid JSON:
           logger.info({ event: 'reel_audio_duration', reelId, actualDuration });
           
           if (series.language && series.language.includes('Hindi')) {
-              console.log("[Subtitle Engine] Hindi detected. Skipping AI transcription to allow English translation fallback.");
-              wordTimings = []; // Forces fallback to math heuristics using the English script
+              await updateProgress('💬 Transcribing Hindi audio for perfect subtitle timing...');
+              wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'hi-IN');
           } else {
               await updateProgress('💬 Transcribing audio for perfect subtitle timing...');
               wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'en-US');
