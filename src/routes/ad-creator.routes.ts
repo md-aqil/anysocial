@@ -81,9 +81,21 @@ router.post('/directions', authenticate, upload.fields([{ name: 'image', maxCoun
   }
 });
 
-router.post('/generate', authenticate, async (req: any, res: any) => {
+router.post('/generate', authenticate, upload.single('image'), async (req: any, res: any) => {
   try {
-    const { productName, direction, platform } = req.body;
+    let { productName, direction, platform } = req.body;
+    
+    // Parse direction since it comes from FormData as a string
+    if (typeof direction === 'string') {
+      direction = JSON.parse(direction);
+    }
+    
+    let referenceImageBase64 = null;
+    let mimeType = null;
+    if (req.file) {
+      referenceImageBase64 = req.file.buffer.toString('base64');
+      mimeType = req.file.mimetype;
+    }
 
     const briefPrompt = `You are a world-class advertising copywriter and art director. Create a full creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
     
@@ -97,6 +109,7 @@ router.post('/generate', authenticate, async (req: any, res: any) => {
     }
     
     CRITICAL: The imagePrompt must be a massive descriptive text block designed for a high-end image generator. It MUST describe the full ad composition, setting, product position, background, color mood, and atmosphere. Include terms like 'commercial photography, advertising campaign, campaign-ready'.
+    IMPORTANT: We are passing the original product image. Instruct the image generator in the imagePrompt to use the reference image EXACTLY, and explicitly state that the product/dress/model MUST remain 100% identical and unaltered.
     `;
 
     const briefText = await aiOrchestrator.generateContent(briefPrompt);
@@ -117,7 +130,7 @@ router.post('/generate', authenticate, async (req: any, res: any) => {
       }
     });
 
-    const tempImageUrl = await aiOrchestrator.generateImage(imagePayload, Math.floor(Math.random() * 1000000));
+    const tempImageUrl = await aiOrchestrator.generateImage(imagePayload, Math.floor(Math.random() * 1000000), referenceImageBase64, mimeType);
     
     // Move the temp file to the public uploads directory
     const fileName = `ad_creative_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;

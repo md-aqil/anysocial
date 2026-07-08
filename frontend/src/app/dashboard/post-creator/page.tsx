@@ -162,17 +162,20 @@ export default function PostCreatorPage() {
     setError(null);
 
     try {
+      const formData = new FormData();
+      formData.append('productName', productName);
+      formData.append('direction', JSON.stringify(selectedDirection));
+      formData.append('platform', platform);
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+
       const res = await fetch('/api/ad-creator/generate', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          productName,
-          direction: selectedDirection,
-          platform
-        })
+        body: formData
       });
 
       if (!res.ok) {

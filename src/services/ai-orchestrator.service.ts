@@ -227,7 +227,7 @@ Make sure the output is a valid JSON object.`;
   }
 
   // 1. Gemini image generation. Reel visuals must come from the LLM image model only.
-  async generateImage(prompt: string, seed: number = 0): Promise<string> {
+  async generateImage(prompt: string, seed: number = 0, referenceImageBase64?: string | null, referenceMimeType?: string | null): Promise<string> {
     const uniqueId = Math.random().toString(36).substring(7);
     
     if (!process.env.VERTEX_AI_PROJECT_ID) {
@@ -248,10 +248,20 @@ Make sure the output is a valid JSON object.`;
       const modelId = 'gemini-2.5-flash-image';
       const url = `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
 
+      const requestParts: any[] = [{ text: prompt }];
+      if (referenceImageBase64 && referenceMimeType) {
+        requestParts.push({
+          inlineData: {
+            mimeType: referenceMimeType,
+            data: referenceImageBase64
+          }
+        });
+      }
+
       const requestBody = {
         contents: {
           role: "user",
-          parts: { text: prompt }
+          parts: requestParts
         },
         generation_config: {
           response_modalities: ["TEXT", "IMAGE"]
