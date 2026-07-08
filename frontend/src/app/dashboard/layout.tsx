@@ -21,6 +21,7 @@ import {
   Users,
   X,
   List,
+  Wand2,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -31,6 +32,7 @@ const navigation = [
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Reel Creator', href: '/dashboard/reels-creator', icon: Star },
+  { name: 'Ad/Post Creator', href: '/dashboard/post-creator', icon: Wand2 },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'Feed Curation', href: '/dashboard/curation', icon: List },
   { name: 'Image Playground', href: '/dashboard/playground', icon: Grid2X2, adminOnly: true, superAdminOnly: true },

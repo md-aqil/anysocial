@@ -13,6 +13,7 @@ import { jwtAuth } from '../middleware/jwt-auth.js';
 import { aiGenerationRoutes } from './ai-generation.routes.js';
 import { reelsRoutes } from './reels.routes.js';
 import { curationRoutes } from './curation.routes.js';
+import adCreatorRoutes from './ad-creator.routes.js';
 
 const router = Router();
 
@@ -84,5 +85,8 @@ router.get('/api/public/reels', async (req, res) => {
 
 // Curation routes
 router.use('/api/curation', curationRoutes);
+
+// Ad Creator routes
+router.use('/api/ad-creator', jwtAuth, adCreatorRoutes);
 
 export const routes = router;
