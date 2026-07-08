@@ -526,8 +526,8 @@ Output ONLY valid JSON:
           const rawContent = aiResultText.replace(/```json\n?|```/g, '').trim();
           const parsed = JSON.parse(rawContent);
           if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
-          script = parsed.script;
-          scriptTts = parsed.script_tts || parsed.script;
+          script = typeof parsed.script === 'string' ? parsed.script : JSON.stringify(parsed.script);
+          scriptTts = parsed.script_tts ? (typeof parsed.script_tts === 'string' ? parsed.script_tts : JSON.stringify(parsed.script_tts)) : script;
           (series as any).aiMusicPrompt = parsed.audio_prompt;
         } catch (e: any) {
           logger.error({ event: 'reel_ai_script_failed', reelId, error: e.message });

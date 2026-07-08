@@ -38,7 +38,7 @@ const PRESET_PROMPTS = [
 export default function PlaygroundPage() {
   const { user } = useAuthStore();
   const [prompt, setPrompt] = useState(PRESET_PROMPTS[0].value);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [images, setImages] = useState<{url: string, prompt: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +54,6 @@ export default function PlaygroundPage() {
     if (!prompt.trim()) return;
     setLoading(true);
     setError(null);
-    setImageUrl(null);
 
     try {
       const response = await fetch('/api/ai/generate-image', {
@@ -72,7 +71,7 @@ export default function PlaygroundPage() {
       }
 
       const data = await response.json();
-      setImageUrl(data.url);
+      setImages(prev => [{ url: data.url, prompt }, ...prev]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -132,35 +131,39 @@ export default function PlaygroundPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-stone-100 flex items-center justify-center min-h-[400px]">
-          {imageUrl ? (
-            <div className="relative w-full h-full flex flex-col group">
-              <div className="flex-1 min-h-[400px] relative bg-stone-900 rounded-t-3xl overflow-hidden">
-                <img src={imageUrl} alt="Generated" className="absolute inset-0 w-full h-full object-contain" />
-              </div>
-              <div className="bg-stone-50 p-4 border-t border-stone-100 rounded-b-3xl">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
-                      <Sparkles className="w-3 h-3" />
-                      Gemini 2.5 Flash Image Model
+        <div className="flex flex-col gap-6">
+          {images.length > 0 ? (
+            images.map((img, idx) => (
+              <div key={idx} className="bg-white rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-stone-100 flex flex-col group">
+                <div className="relative w-full min-h-[400px] bg-stone-900 rounded-t-3xl overflow-hidden">
+                  <img src={img.url} alt={`Generated ${idx}`} className="absolute inset-0 w-full h-full object-contain" />
+                </div>
+                <div className="bg-stone-50 p-4 border-t border-stone-100 rounded-b-3xl">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
+                        <Sparkles className="w-3 h-3" />
+                        Gemini 2.5 Flash Image Model
+                      </div>
+                      <p className="text-xs text-stone-600 font-mono line-clamp-2">Prompt: {img.prompt}</p>
                     </div>
-                    <p className="text-xs text-stone-600 font-mono line-clamp-2">Prompt: {prompt}</p>
+                    <a 
+                      href={img.url} 
+                      download={`gemini_playground_${Date.now()}_${idx}.jpg`}
+                      className="flex-shrink-0 px-4 py-2 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-xl hover:bg-stone-100 transition-colors shadow-sm"
+                    >
+                      Download
+                    </a>
                   </div>
-                  <a 
-                    href={imageUrl} 
-                    download={`gemini_playground_${Date.now()}.jpg`}
-                    className="flex-shrink-0 px-4 py-2 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-xl hover:bg-stone-100 transition-colors shadow-sm"
-                  >
-                    Download
-                  </a>
                 </div>
               </div>
-            </div>
+            ))
           ) : (
-            <div className="text-center p-8 flex flex-col items-center opacity-50">
-              <ImageIcon className="w-16 h-16 text-stone-300 mb-4" />
-              <p className="text-stone-400 font-semibold">Generated image will appear here</p>
+            <div className="bg-white rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-stone-100 flex items-center justify-center min-h-[400px]">
+              <div className="text-center p-8 flex flex-col items-center opacity-50">
+                <ImageIcon className="w-16 h-16 text-stone-300 mb-4" />
+                <p className="text-stone-400 font-semibold">Generated images will appear here</p>
+              </div>
             </div>
           )}
         </div>
