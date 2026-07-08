@@ -9,7 +9,7 @@ import path from 'path';
 const router = Router();
 
 const upload = multer({
-  dest: path.join(process.cwd(), 'scratch', 'uploads', 'temp'),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
@@ -51,7 +51,7 @@ router.post('/directions', authenticate, upload.single('image'), async (req: any
       ]
     }`;
 
-    const imageData = fs.readFileSync(file.path).toString('base64');
+    const imageData = file.buffer.toString('base64');
     const mimeType = file.mimetype;
 
     const resultText = await aiOrchestrator.generateContent(prompt, [{
@@ -61,8 +61,6 @@ router.post('/directions', authenticate, upload.single('image'), async (req: any
 
     const cleanedText = resultText.replace(/```json\n?|```/g, '').trim();
     const parsed = JSON.parse(cleanedText);
-
-    fs.unlinkSync(file.path);
 
     res.json(parsed);
   } catch (error: any) {
