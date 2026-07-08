@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
-import { aiOrchestrator } from '../services/ai-orchestrator.service';
-import { logger } from '../utils/logger';
+import { authenticate } from '../middleware/auth.js';
+import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
+import { logger } from '../logger/pino.js';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
