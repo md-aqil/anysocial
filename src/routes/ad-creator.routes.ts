@@ -117,8 +117,18 @@ router.post('/generate', authenticate, async (req: any, res: any) => {
       }
     });
 
-    const imageUrl = await aiOrchestrator.generateImage(imagePayload, Math.floor(Math.random() * 1000000));
-
+    const tempImageUrl = await aiOrchestrator.generateImage(imagePayload, Math.floor(Math.random() * 1000000));
+    
+    // Move the temp file to the public uploads directory
+    const fileName = `ad_creative_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
+    const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-images');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    const publicPath = path.join(publicDir, fileName);
+    fs.copyFileSync(tempImageUrl, publicPath);
+    
+    const imageUrl = `/uploads/ai-images/${fileName}`;
     const adCreative = await prisma.adCreative.create({
       data: {
         userId: req.userId,
