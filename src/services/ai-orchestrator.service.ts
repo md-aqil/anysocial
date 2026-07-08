@@ -141,7 +141,7 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  async generateContent(prompt: string): Promise<string> {
+  async generateContent(prompt: string, mediaParts?: { data: string, mimeType: string }[]): Promise<string> {
     try {
       if (!this.vertexAI) {
         throw new Error("Vertex AI is not configured.");
@@ -150,8 +150,20 @@ Make sure the output is a valid JSON object.`;
       const modelName = process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash';
       const model = this.vertexAI.getGenerativeModel({ model: modelName });
       
+      const parts: any[] = [{ text: prompt }];
+      if (mediaParts && mediaParts.length > 0) {
+        for (const mp of mediaParts) {
+          parts.push({
+            inlineData: {
+              data: mp.data,
+              mimeType: mp.mimeType
+            }
+          });
+        }
+      }
+
       const request = {
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: [{ role: 'user', parts }],
         generationConfig: {
           temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
           maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
