@@ -169,25 +169,21 @@ Make sure the output is a valid JSON object.`;
           }
         }
         
-        const res = await fetch(endpoint, {
+        const res = await client.request({
+          url: endpoint,
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          headers: { 'Content-Type': 'application/json' },
+          data: {
             contents: [{ role: 'user', parts }],
             generationConfig: {
               temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
               maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
               responseMimeType: "application/json"
             }
-          })
+          }
         });
 
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`GenAI API ${res.status}: ${errText.substring(0, 200)}`);
-        }
-
-        const data = await res.json() as any;
+        const data = res.data as any;
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
         console.log(`[Gemini] ✅ Script generated via ${modelName} (${text.length} chars)`);
         return text;
@@ -227,6 +223,7 @@ Make sure the output is a valid JSON object.`;
       return text;
     } catch (err: any) {
       console.error("[Gemini Text Error]:", err.message);
+      if (err.cause) console.error("Cause:", err.cause);
       throw err;
     }
   }
@@ -438,10 +435,11 @@ Make sure the output is a valid JSON object.`;
       if (language.includes('Hindi')) languageCode = 'hi-IN';
       else if (language.includes('Spanish')) languageCode = 'es-ES';
       
-      const res = await fetch(endpoint, {
+      const res = await client.request({
+        url: endpoint,
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        headers: { 'Content-Type': 'application/json' },
+        data: {
           contents: [{ role: 'user', parts: [{ text }] }],
           generationConfig: {
             responseModalities: ['AUDIO'],
@@ -454,15 +452,10 @@ Make sure the output is a valid JSON object.`;
               }
             }
           }
-        })
+        }
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`TTS API ${res.status}: ${errText.substring(0, 200)}`);
-      }
-
-      const data = await res.json() as any;
+      const data = res.data as any;
       const audioBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (!audioBase64) throw new Error("TTS generated no audio.");
 
