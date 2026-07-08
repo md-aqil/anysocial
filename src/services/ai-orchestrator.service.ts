@@ -141,8 +141,55 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  async generateContent(prompt: string, mediaParts?: { data: string, mimeType: string }[]): Promise<string> {
+  async generateContent(prompt: string, mediaParts?: { data: string, mimeType: string }[], useAdvancedModel: boolean = true): Promise<string> {
     try {
+      if (useAdvancedModel) {
+        const { GoogleAuth } = await import('google-auth-library');
+        const auth = new GoogleAuth({
+          scopes: ['https://www.googleapis.com/auth/cloud-platform']
+        });
+        const client = await auth.getClient();
+        const token = (await client.getAccessToken()).token;
+        
+        const modelName = process.env.VERTEX_AI_MODEL || 'gemini-3.1-pro-preview';
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+        
+        const parts: any[] = [{ text: prompt }];
+        if (mediaParts && mediaParts.length > 0) {
+          for (const mp of mediaParts) {
+            parts.push({
+              inlineData: {
+                data: mp.data,
+                mimeType: mp.mimeType
+              }
+            });
+          }
+        }
+        
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            generationConfig: {
+              temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
+              maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
+              responseMimeType: "application/json"
+            }
+          })
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`GenAI API ${res.status}: ${errText.substring(0, 200)}`);
+        }
+
+        const data = await res.json() as any;
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        console.log(`[Gemini] ✅ Script generated via ${modelName} (${text.length} chars)`);
+        return text;
+      }
+
       if (!this.vertexAI) {
         throw new Error("Vertex AI is not configured.");
       }
@@ -364,7 +411,63 @@ Make sure the output is a valid JSON object.`;
   }
 
   // 2. Voice Synthesis Engine (Google Cloud TTS)
-  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US'): Promise<string> {
+  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = true): Promise<string> {
+    if (useAdvancedModel) {
+      const { GoogleAuth } = await import('google-auth-library');
+      const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+      const client = await auth.getClient();
+      const token = (await client.getAccessToken()).token;
+      
+      let geminiVoice = 'Aoede';
+      if (voiceName === 'Charon') geminiVoice = 'Charon';
+      else if (voiceName === 'Puck') geminiVoice = 'Puck';
+      else if (voiceName === 'Kore') geminiVoice = 'Kore';
+      else if (voiceName === 'Fenrir') geminiVoice = 'Fenrir';
+      else if (voiceName === 'Leda') geminiVoice = 'Leda';
+      
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent`;
+      let languageCode = 'en-US';
+      if (language.includes('Hindi')) languageCode = 'hi-IN';
+      else if (language.includes('Spanish')) languageCode = 'es-ES';
+      
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { 
+                  voiceName: geminiVoice,
+                  languageCode: languageCode
+                }
+              }
+            }
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`TTS API ${res.status}: ${errText.substring(0, 200)}`);
+      }
+
+      const data = await res.json() as any;
+      const audioBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!audioBase64) throw new Error("TTS generated no audio.");
+
+      const uniqueId = Math.random().toString(36).substring(7);
+      const os = await import('os');
+      const path = await import('path');
+      const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
+      
+      const fs = await import('fs');
+      fs.writeFileSync(tempPath, Buffer.from(audioBase64, 'base64'));
+      return tempPath;
+    }
+
     const textToSpeech = await import('@google-cloud/text-to-speech');
     const client = new textToSpeech.TextToSpeechClient();
     

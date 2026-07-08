@@ -269,7 +269,7 @@ export class ReelWorker {
         let ttsPath: string | null = null;
         if (activeEnableVoice && scriptText && scriptText.length > 0) {
           await updateProgress('🗣️ Synthesizing premium brand voiceover...');
-          ttsPath = await aiOrchestrator.generateVoiceover(scriptText, voiceId, language);
+          ttsPath = await aiOrchestrator.generateVoiceover(scriptText, voiceId, language, reelWithDetails.type === 'PRODUCT');
           tempFilesToCleanup.push(ttsPath);
         }
 

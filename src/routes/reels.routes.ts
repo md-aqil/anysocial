@@ -379,7 +379,7 @@ Output your response strictly as a valid JSON object with NO extra text:
   "hook": "THE BOLD HOOK TEXT"
 }`;
 
-    const resultText = await aiOrchestrator.generateContent(copywritingPrompt);
+    const resultText = await aiOrchestrator.generateContent(copywritingPrompt, undefined, true);
     const rawContent = resultText.replace(/```json\n?|```/g, '').trim();
     const parsed = JSON.parse(rawContent);
 
