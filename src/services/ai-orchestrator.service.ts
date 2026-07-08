@@ -154,39 +154,48 @@ Make sure the output is a valid JSON object.`;
         const client = await auth.getClient();
         const token = (await client.getAccessToken()).token;
         
-        const modelName = process.env.VERTEX_AI_MODEL || 'gemini-3.1-pro-preview';
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-        
-        const parts: any[] = [{ text: prompt }];
-        if (mediaParts && mediaParts.length > 0) {
-          for (const mp of mediaParts) {
-            parts.push({
-              inlineData: {
-                data: mp.data,
-                mimeType: mp.mimeType
-              }
-            });
-          }
-        }
-        
-        const res = await client.request({
-          url: endpoint,
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          data: {
-            contents: [{ role: 'user', parts }],
-            generationConfig: {
-              temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
-              maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
-              responseMimeType: "application/json"
+        const executeScriptGen = async (overrideModel?: string) => {
+          const modelName = overrideModel || process.env.VERTEX_AI_MODEL || 'gemini-3.1-pro-preview';
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+          
+          const parts: any[] = [{ text: prompt }];
+          if (mediaParts && mediaParts.length > 0) {
+            for (const mp of mediaParts) {
+              parts.push({
+                inlineData: {
+                  data: mp.data,
+                  mimeType: mp.mimeType
+                }
+              });
             }
           }
-        });
+          
+          const res = await client.request({
+            url: endpoint,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: {
+              contents: [{ role: 'user', parts }],
+              generationConfig: {
+                temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
+                maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
+                responseMimeType: "application/json"
+              }
+            }
+          });
 
-        const data = res.data as any;
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log(`[Gemini] ✅ Script generated via ${modelName} (${text.length} chars)`);
-        return text;
+          const data = res.data as any;
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          console.log(`[Gemini] ✅ Script generated via ${modelName} (${text.length} chars)`);
+          return text;
+        };
+
+        try {
+          return await executeScriptGen();
+        } catch (e: any) {
+          console.warn("[Gemini 3.1 Pro Script Failed] High demand or error. Falling back to 2.5 Pro...", e.message);
+          return await executeScriptGen('gemini-2.5-pro');
+        }
       }
 
       if (!this.vertexAI) {
@@ -430,71 +439,82 @@ Make sure the output is a valid JSON object.`;
       else if (voiceName === 'Fenrir') geminiVoice = 'Fenrir';
       else if (voiceName === 'Leda') geminiVoice = 'Leda';
       
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent`;
       let languageCode = 'en-US';
       if (language.includes('Hindi')) languageCode = 'hi-IN';
       else if (language.includes('Spanish')) languageCode = 'es-ES';
-      
-      const res = await client.request({
-        url: endpoint,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: {
-          contents: [{ role: 'user', parts: [{ text }] }],
-          generationConfig: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { 
-                  voiceName: geminiVoice
+
+      const executeVoiceGen = async (overrideModel?: string) => {
+        const modelName = overrideModel || 'gemini-3.1-flash-tts-preview';
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+        
+        const res = await client.request({
+          url: endpoint,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          data: {
+            contents: [{ role: 'user', parts: [{ text }] }],
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { 
+                    voiceName: geminiVoice
+                  }
                 }
               }
             }
           }
-        }
-      });
+        });
 
-      const data = res.data as any;
-      const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-      if (!inlineData || !inlineData.data) throw new Error("TTS generated no audio.");
+        const data = res.data as any;
+        const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+        if (!inlineData || !inlineData.data) throw new Error("TTS generated no audio.");
 
-      const rawBuffer = Buffer.from(inlineData.data, 'base64');
-      const mimeType = inlineData.mimeType || 'audio/l16; rate=24000; channels=1';
-      
-      const rateMatch = mimeType.match(/rate=(\d+)/i);
-      const chanMatch = mimeType.match(/channels=(\d+)/i);
-      const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
-      const numChannels = chanMatch ? parseInt(chanMatch[1]) : 1;
-      const bitsPerSample = 16;
-      const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
-      const blockAlign = numChannels * (bitsPerSample / 8);
-      const dataSize = rawBuffer.length;
-      
-      const header = Buffer.alloc(44);
-      header.write('RIFF', 0);
-      header.writeUInt32LE(36 + dataSize, 4);
-      header.write('WAVE', 8);
-      header.write('fmt ', 12);
-      header.writeUInt32LE(16, 16);
-      header.writeUInt16LE(1, 20);
-      header.writeUInt16LE(numChannels, 22);
-      header.writeUInt32LE(sampleRate, 24);
-      header.writeUInt32LE(byteRate, 28);
-      header.writeUInt16LE(blockAlign, 32);
-      header.writeUInt16LE(bitsPerSample, 34);
-      header.write('data', 36);
-      header.writeUInt32LE(dataSize, 40);
-      
-      const wavBuffer = Buffer.concat([header, rawBuffer]);
+        const rawBuffer = Buffer.from(inlineData.data, 'base64');
+        const mimeType = inlineData.mimeType || 'audio/l16; rate=24000; channels=1';
+        
+        const rateMatch = mimeType.match(/rate=(\d+)/i);
+        const chanMatch = mimeType.match(/channels=(\d+)/i);
+        const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
+        const numChannels = chanMatch ? parseInt(chanMatch[1]) : 1;
+        const bitsPerSample = 16;
+        const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+        const blockAlign = numChannels * (bitsPerSample / 8);
+        const dataSize = rawBuffer.length;
+        
+        const header = Buffer.alloc(44);
+        header.write('RIFF', 0);
+        header.writeUInt32LE(36 + dataSize, 4);
+        header.write('WAVE', 8);
+        header.write('fmt ', 12);
+        header.writeUInt32LE(16, 16);
+        header.writeUInt16LE(1, 20);
+        header.writeUInt16LE(numChannels, 22);
+        header.writeUInt32LE(sampleRate, 24);
+        header.writeUInt32LE(byteRate, 28);
+        header.writeUInt16LE(blockAlign, 32);
+        header.writeUInt16LE(bitsPerSample, 34);
+        header.write('data', 36);
+        header.writeUInt32LE(dataSize, 40);
+        
+        const wavBuffer = Buffer.concat([header, rawBuffer]);
 
-      const uniqueId = Math.random().toString(36).substring(7);
-      const os = await import('os');
-      const path = await import('path');
-      const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
-      
-      const fs = await import('fs');
-      fs.writeFileSync(tempPath, wavBuffer);
-      return tempPath;
+        const uniqueId = Math.random().toString(36).substring(7);
+        const os = await import('os');
+        const path = await import('path');
+        const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
+        
+        const fs = await import('fs');
+        fs.writeFileSync(tempPath, wavBuffer);
+        return tempPath;
+      };
+
+      try {
+        return await executeVoiceGen();
+      } catch (e: any) {
+        console.warn("[Gemini 3.1 TTS Failed] High demand or error. Falling back to Gemini 2.5 Pro TTS...", e.message);
+        return await executeVoiceGen('gemini-2.5-pro-tts');
+      }
     }
 
     const textToSpeech = await import('@google-cloud/text-to-speech');
