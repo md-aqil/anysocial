@@ -97,18 +97,24 @@ router.post('/generate', authenticate, upload.single('image'), async (req: any, 
       mimeType = req.file.mimetype;
     }
 
-    const briefPrompt = `You are a world-class advertising copywriter and art director. Create a full creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
+    const briefPrompt = `You are a world-class advertising creative assistant and art director. Create a full creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
     
     Output exactly in this JSON format (no markdown blocks, just raw JSON):
     {
-      "tagline": "...",
-      "copy": "...",
-      "sceneSetup": "...",
-      "lighting": "...",
-      "imagePrompt": "A highly-detailed, hyper-realistic ad visual for a product..."
+      "campaignConcept": "One sentence describing the creative idea",
+      "tagline": "Memorable headline (2-6 words)",
+      "supportingCopy": "One descriptive line about the product benefit",
+      "callToAction": "Action phrase like 'Shop Now'",
+      "visualSceneSetup": "Detailed description of the photography/visual setup, lighting, and mood",
+      "brandIntegration": "Logo placement, color overlays, typography style",
+      "layoutAndEffects": "Product placement, negative space, special effects like glow/motion blur",
+      "creativeRationale": "Explain which professional creative standards were applied and why",
+      "imagePrompt": "A highly-detailed, hyper-realistic ad visual..."
     }
     
-    CRITICAL: The imagePrompt must be a massive descriptive text block designed for a high-end image generator. It MUST describe the full ad composition, setting, product position, background, color mood, and atmosphere. Include terms like 'commercial photography, advertising campaign, campaign-ready'.
+    CRITICAL INSTRUCTION FOR IMAGE PROMPT:
+    The imagePrompt MUST describe a COMPLETE, PROFESSIONALLY DESIGNED ADVERTISEMENT, not just a product photo. 
+    It MUST explicitly command the image generator to render the typography (Tagline and CTA) beautifully integrated into the layout, utilizing negative space.
     IMPORTANT: We are passing the original product image. Instruct the image generator in the imagePrompt to use the reference image EXACTLY, and explicitly state that the product/dress/model MUST remain 100% identical and unaltered.
     `;
 

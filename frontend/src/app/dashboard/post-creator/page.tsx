@@ -399,21 +399,38 @@ export default function PostCreatorPage() {
               
               <div className="space-y-6">
                 <div>
+                  <h4 className="text-xs font-bold text-[#D27D50] uppercase tracking-wider mb-2">Campaign Concept</h4>
+                  <p className="text-stone-700 font-medium whitespace-pre-wrap">{resultBrief.campaignConcept}</p>
+                </div>
+                
+                <div>
                   <h4 className="text-xs font-bold text-[#D27D50] uppercase tracking-wider mb-2">Tagline</h4>
                   <p className="text-2xl font-black text-stone-900 leading-tight">"{resultBrief.tagline}"</p>
                 </div>
                 
-                <div>
-                  <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Copywriting</h4>
-                  <p className="text-stone-700 font-medium whitespace-pre-wrap">{resultBrief.copy}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Supporting Copy</h4>
+                    <p className="text-stone-700 font-medium whitespace-pre-wrap">{resultBrief.supportingCopy}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Call to Action</h4>
+                    <p className="text-stone-700 font-medium whitespace-pre-wrap">{resultBrief.callToAction}</p>
+                  </div>
                 </div>
 
                 <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                  <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Scene Setup</h4>
-                  <p className="text-sm text-stone-600 mb-4">{resultBrief.sceneSetup}</p>
+                  <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Visual Scene Setup</h4>
+                  <p className="text-sm text-stone-600 mb-4">{resultBrief.visualSceneSetup}</p>
                   
-                  <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Lighting & Mood</h4>
-                  <p className="text-sm text-stone-600">{resultBrief.lighting}</p>
+                  <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Layout & Brand Integration</h4>
+                  <p className="text-sm text-stone-600 mb-2"><span className="font-bold">Layout & Effects:</span> {resultBrief.layoutAndEffects}</p>
+                  <p className="text-sm text-stone-600"><span className="font-bold">Brand Integration:</span> {resultBrief.brandIntegration}</p>
+                </div>
+                
+                <div>
+                  <h4 className="text-xs font-bold text-[#D27D50] uppercase tracking-wider mb-2">Creative Rationale</h4>
+                  <p className="text-sm text-stone-600 italic">{resultBrief.creativeRationale}</p>
                 </div>
 
                 <div>
