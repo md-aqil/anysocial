@@ -708,12 +708,19 @@ export default function AIProductReelPage() {
               <div className="relative z-10 flex flex-col items-center gap-8">
 
                 {isGenerating ? (
-                  <div className="bg-black/40 border border-white/10 rounded-[1.5rem] p-6 w-full shadow-inner space-y-4 backdrop-blur-md">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-8 h-8 border-[3px] border-violet-500 border-t-transparent animate-spin rounded-full shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
-                      <span className="text-[15px] font-black text-white tracking-tight">Processing Reel...</span>
+                  <div className="bg-black/60 border border-white/10 rounded-[1.5rem] p-8 w-full shadow-[inset_0_0_40px_rgba(139,92,246,0.1)] space-y-5 backdrop-blur-xl relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+                    <div className="flex flex-col items-center gap-5 relative z-10">
+                      <div className="relative flex items-center justify-center">
+                        <div className="w-14 h-14 border-[4px] border-violet-900/50 rounded-full absolute" />
+                        <div className="w-14 h-14 border-[4px] border-violet-500 border-t-fuchsia-400 animate-spin rounded-full shadow-[0_0_25px_rgba(139,92,246,0.8)]" />
+                        <Sparkles className="w-5 h-5 text-fuchsia-200 absolute animate-pulse" />
+                      </div>
+                      <div className="text-center space-y-1.5">
+                        <span className="text-[17px] font-black bg-clip-text text-transparent bg-gradient-to-r from-violet-100 to-fuchsia-100 tracking-tight block drop-shadow-md">Synthesizing Masterpiece</span>
+                        <p className="text-[10px] font-bold text-violet-300/80 uppercase tracking-[0.25em] animate-pulse">{statusMessage || 'Initializing...'}</p>
+                      </div>
                     </div>
-                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{statusMessage}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-4 w-full">
