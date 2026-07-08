@@ -558,10 +558,24 @@ Output ONLY valid JSON:
           };
 
           const extractVoiceoverText = (fullScript: string): string => {
-            const voiceLines = fullScript.split('\n')
-              .filter(line => line.includes('🎙️'))
-              .map(line => line.replace(/.*🎙️/, '').trim());
-            return voiceLines.length > 0 ? voiceLines.join(' ') : fullScript;
+            // Primary extraction: Look for known voiceover markers
+            const regex = /(?:🎙️|🎙|🎤|Voiceover:|Audio:)\s*(.*?)(?=\n*Scene|\n*📹|$)/gis;
+            const matches = [...fullScript.matchAll(regex)];
+            if (matches.length > 0) {
+              return matches.map(m => m[1].trim()).join(' ');
+            }
+            
+            // Fallback: Aggressively strip out structural instructions
+            const cleaned = fullScript.split('\n')
+              .map(line => line.trim())
+              .filter(line => !line.toLowerCase().startsWith('scene'))
+              .filter(line => !line.toLowerCase().startsWith('duration'))
+              .filter(line => !line.includes('📹') && !line.toLowerCase().startsWith('camera') && !line.toLowerCase().startsWith('visual'))
+              .filter(line => !line.includes('📝') && !line.toLowerCase().startsWith('text') && !line.toLowerCase().startsWith('graphic'))
+              .join(' ')
+              .trim();
+              
+            return cleaned || fullScript;
           };
 
           if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
