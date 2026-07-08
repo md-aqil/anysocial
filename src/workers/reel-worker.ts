@@ -594,9 +594,9 @@ Output ONLY valid JSON:
           console.warn("[Art Director] Failed to parse memory core, proceeding with empty context.");
         }
 
-        // Dynamically calculate the number of shots for fast, engaging pacing (1 shot ~every 8 words)
+        // Dynamically calculate the number of shots (1 shot ~every 10 words, capped at 15 to prevent excessive generation)
         const scriptWordCount = script.split(/\s+/).length;
-        numKeywords = Math.max(6, Math.ceil(scriptWordCount / 8));
+        numKeywords = Math.min(15, Math.max(6, Math.ceil(scriptWordCount / 10)));
 
         // Phase 3: Shot Planning (Cinematographer)
         await updateProgress(`🎥 Phase 3: Cinematographer is planning the Shot List (${numKeywords} shots)...`);
