@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, XCircle, PenSquare } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, XCircle, PenSquare, Maximize2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export default function PostCreatorPage() {
@@ -213,10 +213,14 @@ export default function PostCreatorPage() {
 
           const data = await res.json();
           generatedResults.push({ brief: data.brief, imageUrl: data.imageUrl, direction });
+          // Update the UI progressively
+          setResults([...generatedResults]);
+          
+          if (generatedResults.length === 1) {
+            setStep(3); // Move to results view as soon as first ad is ready
+          }
       }
       
-      setResults(generatedResults);
-      setStep(3);
       fetchHistory();
     } catch (err: any) {
       setError(err.message);
@@ -423,10 +427,10 @@ export default function PostCreatorPage() {
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-black text-stone-800 flex items-center gap-3 tracking-tight">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
-              Campaigns Generated
+              {loading ? <Loader2 className="w-10 h-10 text-[#D27D50] animate-spin" /> : <CheckCircle2 className="w-10 h-10 text-emerald-500" />}
+              {loading ? `Generating ${results.length} of ${selectedDirections.length}...` : 'Campaigns Generated'}
             </h2>
-            <Button variant="outline" onClick={handleClearForm} className="font-bold rounded-xl h-12 px-6">Start New Campaign</Button>
+            <Button variant="outline" onClick={handleClearForm} disabled={loading} className="font-bold rounded-xl h-12 px-6">Start New Campaign</Button>
           </div>
 
           <div className="space-y-16">
@@ -533,9 +537,14 @@ export default function PostCreatorPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {history.map((ad: any) => (
               <div key={ad.id} className="bg-white rounded-3xl overflow-hidden border border-stone-100 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col">
-                <div className="h-56 w-full bg-stone-100 relative overflow-hidden">
-                  <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                <div className="h-56 w-full bg-stone-100 relative overflow-hidden group/img">
+                  <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
+                    <a href={ad.imageUrl} target="_blank" rel="noopener noreferrer" className="bg-white/90 text-stone-800 hover:bg-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transform translate-y-4 group-hover/img:translate-y-0 transition-all duration-300 shadow-xl">
+                      <Maximize2 className="w-4 h-4" /> View Full Photo
+                    </a>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
                   <div className="absolute bottom-4 left-4 right-4">
                     <span className="inline-block px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg text-white text-[10px] font-bold uppercase tracking-wider mb-2">
                       {ad.platform}

@@ -1,10 +1,10 @@
-
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
 import { jwtAuth } from '../middleware/jwt-auth.js';
+import { prisma } from '../db/prisma.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -87,7 +87,38 @@ router.post('/generate-image', jwtAuth, async (req: Request, res: Response) => {
     }
     
     const imageUrl = `/uploads/ai-images/${publicFilename}`;
+    
+    // Save to history
+    const userId = (req as any).userId;
+    if (userId) {
+      await prisma.playgroundImage.create({
+        data: {
+          userId,
+          prompt,
+          imageUrl
+        }
+      });
+    }
+    
     res.json({ url: imageUrl });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/ai/playground-history
+ * Fetch image playground history for the authenticated user.
+ */
+router.get('/playground-history', jwtAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const history = await prisma.playgroundImage.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    });
+    res.json(history);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

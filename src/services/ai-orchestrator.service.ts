@@ -194,7 +194,12 @@ Make sure the output is a valid JSON object.`;
           return await executeScriptGen();
         } catch (e: any) {
           console.warn("[Gemini 3.1 Pro Script Failed] High demand or error. Falling back to 2.5 Pro...", e.message);
-          return await executeScriptGen('gemini-2.5-pro');
+          try {
+            return await executeScriptGen('gemini-2.5-pro');
+          } catch (e2: any) {
+            console.warn("[Gemini 2.5 Pro Fallback Failed] Project denied access or API down. Falling back to standard Vertex AI...", e2.message);
+            // Fall through to the standard Vertex AI implementation below
+          }
         }
       }
 
@@ -304,7 +309,23 @@ Make sure the output is a valid JSON object.`;
       const modelId = 'gemini-2.5-flash-image';
       const url = `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
 
-      const requestParts: any[] = [{ text: prompt }];
+      let finalPromptText = prompt;
+      try {
+        const parsed = JSON.parse(prompt);
+        if (parsed.prompt) {
+          finalPromptText = parsed.prompt;
+          if (parsed.negative_prompt) {
+             finalPromptText += `\n\nAvoid: ${parsed.negative_prompt}`;
+          }
+          if (parsed.api_parameters?.aspect_ratio) {
+             finalPromptText += `\n\nAspect Ratio: ${parsed.api_parameters.aspect_ratio}`;
+          }
+        }
+      } catch(e) {
+        // Not JSON, use as is
+      }
+
+      const requestParts: any[] = [{ text: finalPromptText }];
       if (referenceImageBase64 && referenceMimeType) {
         requestParts.push({
           inlineData: {
@@ -365,8 +386,13 @@ Make sure the output is a valid JSON object.`;
       fs.writeFileSync(tempPath, Buffer.from(base64Data, 'base64'));
       return tempPath;
     } catch (e: any) {
-      console.error("[Gemini Image Generation Error]:", e.message || e);
-      throw e;
+      console.warn("[Gemini Image Generation Error] Falling back to Pollinations:", e.message || e);
+      try {
+        return await this.fetchPollinationsImage(prompt, seed);
+      } catch (fallbackErr: any) {
+        console.warn("[Pollinations Fallback Error] Falling back to Stock Image:", fallbackErr.message);
+        return await this.fetchStockImage(prompt);
+      }
     }
   }
 

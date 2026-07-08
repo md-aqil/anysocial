@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Image as ImageIcon, Loader2 } from 'lucide-react';
@@ -28,7 +28,7 @@ const PRESET_PROMPTS = [
     label: 'Nature Macro',
     value: JSON.stringify({
       prompt: "A highly-detailed, hyper-realistic macro shot of a rare orchid. 100mm macro lens, f/2.8, ISO 400. Dew-covered velvety petals with subsurface scattering. Subtle browning edges on leaves showing natural wear. Natural dappled sunlight filtering through a dark green canopy. Unfiltered sensor grain.",
-      negative_prompt: "stylized illustration, vibrant oversaturation, artificial lighting, plastic plants, smooth unnatural textures, depth flattening",
+      negative_prompt: "illustration, painting, cartoon, cgi, 3d, artificial lighting",
       api_parameters: { resolution: "1K", output_format: "jpg", aspect_ratio: "1:1" },
       settings: { style: "nature documentary", lighting: "natural dappled sunlight", depth_of_field: "extreme shallow depth of field", quality: "microscopic organic details" }
     }, null, 2)
@@ -41,6 +41,27 @@ export default function PlaygroundPage() {
   const [images, setImages] = useState<{url: string, prompt: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user && user.role === 'super_admin') {
+      fetchHistory();
+    }
+  }, [user]);
+
+  const fetchHistory = async () => {
+    try {
+      const response = await fetch('/api/ai/playground-history', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const formatted = data.map((item: any) => ({ url: item.imageUrl, prompt: item.prompt }));
+        setImages(formatted);
+      }
+    } catch (e) {
+      console.error('Failed to fetch history', e);
+    }
+  };
 
   if (!user || user.role !== 'super_admin') {
     return (

@@ -82,6 +82,7 @@ model User {
   reelSeries       ReelSeries[]
   reels            Reel[]
   curatedPosts     CuratedPost[]
+  playgroundImages PlaygroundImage[]
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
 
@@ -436,4 +437,16 @@ model AdCreative {
 
   @@index([userId])
   @@map("ad_creatives")
+}
+
+model PlaygroundImage {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt      String
+  imageUrl    String
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@map("playground_images")
 }
