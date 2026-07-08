@@ -709,9 +709,23 @@ Output ONLY valid JSON:
                 attemptsUsed = attempts;
                 try {
                   // Phase 4: Prompt Engineering
+                  const isStylized = /anime|cartoon|3d|render|illustration|watercolor|graphic|vector|painting|comic/i.test(series.artStyle || '');
+                  
+                  const promptPrefix = isStylized 
+                    ? `A high-quality, professional 9:16 ${series.artStyle || 'stylized'} artwork of:`
+                    : `A highly-detailed, hyper-realistic vertical 9:16 portrait of:`;
+                  
+                  const cameraSettings = isStylized
+                    ? `Style: ${series.artStyle || 'Stylized'} artwork, rich colors, masterful composition, high-end rendering.`
+                    : `Camera: 50mm lens, f/1.8, ISO 200, highly detailed, unretouched, ${series.artStyle || 'Cinematic'} style. Do not beautify or alter facial features.`;
+                    
+                  const negPrompt = isStylized
+                    ? "text, watermarks, borders, poorly drawn, distorted, low resolution, bad quality, photorealistic, ugly"
+                    : "anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, text, watermarks, borders, distortion, extra limbs, weird hands, poorly drawn faces";
+
                   const engineeredPrompt = JSON.stringify({
-                    prompt: `A highly-detailed, hyper-realistic vertical 9:16 portrait of: ${keyword}. Story & Scene Matching: This image MUST perfectly depict the exact action and story described. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion. Lighting: ${lighting}. Camera: 50mm lens, f/1.8, ISO 200, highly detailed, unretouched, ${series.artStyle} style. Do not beautify or alter facial features.`,
-                    negative_prompt: "anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, text, watermarks, borders, distortion, extra limbs, weird hands, poorly drawn faces",
+                    prompt: `${promptPrefix} ${keyword}. Story & Scene Matching: This image MUST perfectly depict the exact action and story described. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion. Lighting: ${lighting}. ${cameraSettings}`,
+                    negative_prompt: negPrompt,
                     api_parameters: {
                       resolution: "1K",
                       output_format: "jpg",
@@ -721,8 +735,8 @@ Output ONLY valid JSON:
                       resolution: "1K",
                       style: series.artStyle,
                       lighting: lighting || "cinematic",
-                      depth_of_field: "shallow depth of field",
-                      quality: "high detail, unretouched skin"
+                      depth_of_field: isStylized ? "vibrant rendering" : "shallow depth of field",
+                      quality: "high detail"
                     }
                   });
                   

@@ -258,9 +258,9 @@ export default function PostCreatorPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <div className="bg-white rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-stone-100 flex flex-col group">
-              <div className="relative w-full h-[600px] bg-stone-900 rounded-t-3xl overflow-hidden flex items-center justify-center">
+              <div className="relative w-full aspect-[4/5] max-h-[500px] bg-stone-900 overflow-hidden flex items-center justify-center p-4">
                 {resultImageUrl ? (
-                  <img src={resultImageUrl} alt="Generated Ad" className="absolute inset-0 w-full h-full object-contain" />
+                  <img src={resultImageUrl} alt="Generated Ad" className="w-full h-full object-contain drop-shadow-2xl rounded-lg" />
                 ) : (
                   <p className="text-stone-500">Image Failed</p>
                 )}
