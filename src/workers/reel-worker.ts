@@ -525,9 +525,29 @@ Output ONLY valid JSON:
           const aiResultText = await aiOrchestrator.generateContent(storyPrompt);
           const rawContent = aiResultText.replace(/```json\n?|```/g, '').trim();
           const parsed = JSON.parse(rawContent);
+          const extractScriptText = (val: any): string => {
+            if (typeof val === 'string') return val;
+            if (Array.isArray(val)) {
+              return val.map(v => {
+                if (typeof v === 'string') return v;
+                if (typeof v === 'object' && v !== null) {
+                  const key = Object.keys(v).find(k => /text|narration|speech|audio|voice|dialogue|script|caption/i.test(k));
+                  if (key) return String(v[key]);
+                }
+                return '';
+              }).filter(Boolean).join(' ');
+            }
+            if (typeof val === 'object' && val !== null) {
+               const key = Object.keys(val).find(k => /text|narration|speech|audio|voice|dialogue|script|caption/i.test(k));
+               if (key) return String(val[key]);
+               return JSON.stringify(val);
+            }
+            return String(val);
+          };
+
           if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
-          script = typeof parsed.script === 'string' ? parsed.script : JSON.stringify(parsed.script);
-          scriptTts = parsed.script_tts ? (typeof parsed.script_tts === 'string' ? parsed.script_tts : JSON.stringify(parsed.script_tts)) : script;
+          script = extractScriptText(parsed.script);
+          scriptTts = parsed.script_tts ? extractScriptText(parsed.script_tts) : script;
           (series as any).aiMusicPrompt = parsed.audio_prompt;
         } catch (e: any) {
           logger.error({ event: 'reel_ai_script_failed', reelId, error: e.message });
