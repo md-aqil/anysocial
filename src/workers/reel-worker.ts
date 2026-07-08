@@ -523,10 +523,20 @@ Output ONLY valid JSON:
         scriptTts = script;
       } else {
         try {
-          const aiResultText = await aiOrchestrator.generateContent(storyPrompt);
-          const match = aiResultText.match(/\{[\s\S]*\}/);
-          const rawContent = match ? match[0] : aiResultText.replace(/```json\n?|```/g, '').trim();
-          const parsed = JSON.parse(rawContent);
+          let parsed: any;
+          let aiResultText = '';
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              aiResultText = await aiOrchestrator.generateContent(storyPrompt);
+              const match = aiResultText.match(/\{[\s\S]*\}/);
+              const rawContent = match ? match[0] : aiResultText.replace(/```json\n?|```/g, '').trim();
+              parsed = JSON.parse(rawContent);
+              break;
+            } catch (e: any) {
+              if (attempt === 2) throw new Error(`Script JSON parse failed after 3 attempts: ${e.message}`);
+              console.warn(`[Scriptwriter Retry ${attempt + 1}] Malformed JSON, retrying...`);
+            }
+          }
           const extractScriptText = (val: any): string => {
             if (typeof val === 'string') return val;
             if (Array.isArray(val)) {
@@ -583,10 +593,19 @@ Output ONLY valid JSON:
     "characters": [{ "name": "...", "physical": "...", "wardrobe": "..." }],
     "locations": [{ "name": "...", "architecture": "...", "lighting": "..." }]
   }`;
-          const memoryResText = await aiOrchestrator.generateContent(memoryPrompt);
-          const memMatch = memoryResText.match(/\{[\s\S]*\}/);
-          const memRaw = memMatch ? memMatch[0] : memoryResText.replace(/```json\n?|```/g, '').trim();
-          const memParsed = JSON.parse(memRaw);
+          let memParsed: any;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              const memoryResText = await aiOrchestrator.generateContent(memoryPrompt);
+              const memMatch = memoryResText.match(/\{[\s\S]*\}/);
+              const memRaw = memMatch ? memMatch[0] : memoryResText.replace(/```json\n?|```/g, '').trim();
+              memParsed = JSON.parse(memRaw);
+              break;
+            } catch (e: any) {
+              if (attempt === 2) throw e;
+              console.warn(`[Memory Core Retry ${attempt + 1}] Malformed JSON, retrying...`);
+            }
+          }
           characterContext = JSON.stringify(memParsed.characters || []);
           locationContext = JSON.stringify(memParsed.locations || []);
           
@@ -629,10 +648,19 @@ Output ONLY valid JSON:
       }
     ]
   }`;
-           const cineResText = await aiOrchestrator.generateContent(cinePrompt);
-           const cineMatch = cineResText.match(/\{[\s\S]*\}/);
-           const cineRaw = cineMatch ? cineMatch[0] : cineResText.replace(/```json\n?|```/g, '').trim();
-           const cineParsed = JSON.parse(cineRaw);
+           let cineParsed: any;
+           for (let attempt = 0; attempt < 3; attempt++) {
+             try {
+               const cineResText = await aiOrchestrator.generateContent(cinePrompt);
+               const cineMatch = cineResText.match(/\{[\s\S]*\}/);
+               const cineRaw = cineMatch ? cineMatch[0] : cineResText.replace(/```json\n?|```/g, '').trim();
+               cineParsed = JSON.parse(cineRaw);
+               break;
+             } catch (e: any) {
+               if (attempt === 2) throw e;
+               console.warn(`[Cinematographer Retry ${attempt + 1}] Malformed JSON, retrying...`);
+             }
+           }
            visuals = cineParsed.visuals || [];
         } catch (e) {
            console.error("[Cinematographer] Failed, falling back to basic shots.");
