@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -33,6 +33,32 @@ export default function PostCreatorPage() {
   // Result State
   const [resultBrief, setResultBrief] = useState<any>(null);
   const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
+
+  // History State
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch('/api/ad-creator/history', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -120,6 +146,7 @@ export default function PostCreatorPage() {
       setResultBrief(data.brief);
       setResultImageUrl(data.imageUrl);
       setStep(3);
+      fetchHistory();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -340,6 +367,50 @@ export default function PostCreatorPage() {
           </div>
         </div>
       )}
+
+      {/* History Section */}
+      <div className="mt-16">
+        <h2 className="text-2xl font-black text-stone-800 mb-6 flex items-center gap-2">
+          <Sparkles className="w-6 h-6 text-[#D27D50]" />
+          Past Generations
+        </h2>
+        
+        {loadingHistory ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="w-8 h-8 text-stone-300 animate-spin" />
+          </div>
+        ) : history.length === 0 ? (
+          <div className="text-center p-12 bg-white rounded-3xl border border-stone-100">
+            <ImageIcon className="w-12 h-12 text-stone-200 mx-auto mb-4" />
+            <p className="text-stone-500 font-medium">No past generations found.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {history.map((ad: any) => (
+              <div key={ad.id} className="bg-white rounded-3xl overflow-hidden border border-stone-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-shadow">
+                <div className="h-48 w-full bg-stone-100 relative">
+                  <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <span className="inline-block px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg text-white text-[10px] font-bold uppercase tracking-wider mb-1">
+                      {ad.platform}
+                    </span>
+                    <h3 className="text-white font-bold leading-tight truncate">{ad.productName}</h3>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#D27D50]">{ad.direction}</span>
+                    <span className="text-xs text-stone-400">{new Date(ad.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-sm font-medium text-stone-800 line-clamp-2 mb-2">"{ad.brief.tagline}"</p>
+                  <p className="text-xs text-stone-500 line-clamp-2">{ad.brief.copy}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { jwtAuth as authenticate } from '../middleware/jwt-auth.js';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
 import { logger } from '../logger/pino.js';
+import { prisma } from '../db/prisma.js';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -118,12 +119,38 @@ router.post('/generate', authenticate, async (req: any, res: any) => {
 
     const imageUrl = await aiOrchestrator.generateImage(imagePayload, Math.floor(Math.random() * 1000000));
 
+    const adCreative = await prisma.adCreative.create({
+      data: {
+        userId: req.user.id,
+        productName,
+        platform,
+        direction: direction.title,
+        brief: briefParsed,
+        imageUrl
+      }
+    });
+
     res.json({
+      id: adCreative.id,
       brief: briefParsed,
       imageUrl
     });
   } catch (error: any) {
     logger.error('Ad generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/history', authenticate, async (req: any, res: any) => {
+  try {
+    const history = await prisma.adCreative.findMany({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    });
+    res.json(history);
+  } catch (error: any) {
+    logger.error('Ad history fetch error:', error);
     res.status(500).json({ error: error.message });
   }
 });
