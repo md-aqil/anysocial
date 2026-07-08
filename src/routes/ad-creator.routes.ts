@@ -121,7 +121,7 @@ router.post('/generate', authenticate, async (req: any, res: any) => {
 
     const adCreative = await prisma.adCreative.create({
       data: {
-        userId: req.user.id,
+        userId: req.userId,
         productName,
         platform,
         direction: direction.title,
@@ -144,7 +144,7 @@ router.post('/generate', authenticate, async (req: any, res: any) => {
 router.get('/history', authenticate, async (req: any, res: any) => {
   try {
     const history = await prisma.adCreative.findMany({
-      where: { userId: req.user.id },
+      where: { userId: req.userId },
       orderBy: { createdAt: 'desc' },
       take: 50
     });
