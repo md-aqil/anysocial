@@ -127,7 +127,7 @@ export default function ReelCreatorPage() {
 
 
 
-  const [artStyle, setArtStyle] = useState('cinematic');
+  const [artStyle, setArtStyle] = useState('hyper-realistic');
 
   const [hookType, setHookType] = useState('The Mystery');
   const [tone, setTone] = useState('Cinematic & Mysterious');
@@ -518,7 +518,7 @@ export default function ReelCreatorPage() {
             </div>
             <p className="text-stone-500 mb-6">Choose the visual style for your video</p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
               {STYLES.map(style => (
                 <div
                   key={style.id}
