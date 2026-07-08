@@ -353,7 +353,7 @@ export class ReelWorker {
             try {
               actualAudioDuration = await VideoComposerService.getMediaDuration(ttsPath);
               if (language && language.includes('Hindi')) {
-                  wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'hi-IN');
+                  wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'en-IN');
               } else {
                   wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'en-US');
               }
@@ -464,7 +464,7 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
-        languagePrompt = `Language: Hindi. CRITICAL: Write the script using a natural, conversational mix of Devanagari script for native Hindi words and English (Latin) script for industry terms, numbers, brands, or common English phrases (e.g. "Smart Investors ऐसे मौके कभी नहीं छोड़ते"). Do NOT translate common English terminology into complex Hindi words, keep them in English script.`;
+        languagePrompt = `Language: Hinglish (Hindi spoken, but written entirely in Roman/English alphabet). CRITICAL: Write the ENTIRE script in Hinglish using the English (Latin) alphabet. DO NOT use ANY Devanagari characters. Ensure core English words (e.g., 'auction', 'whatsapp', 'smart', 'investor') retain their proper English spelling. (e.g., write "Smart Investors aise mauke kabhi nahi chhodte").`;
       }
       const regionStoryRule = series.targetRegion && series.targetRegion !== 'Global' 
         ? `\nCRITICAL REGIONAL CONTEXT: Set the cultural context, character names, foods, locations, and references strictly to ${series.targetRegion} origin.` 
@@ -708,7 +708,7 @@ Output ONLY valid JSON:
           
           if (series.language && series.language.includes('Hindi')) {
               await updateProgress('💬 Transcribing Hindi audio for perfect subtitle timing...');
-              wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'hi-IN');
+              wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'en-IN');
           } else {
               await updateProgress('💬 Transcribing audio for perfect subtitle timing...');
               wordTimings = await aiOrchestrator.transcribeAudio(ttsPath, 'en-US');
