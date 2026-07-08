@@ -688,7 +688,22 @@ Output ONLY valid JSON:
                 attemptsUsed = attempts;
                 try {
                   // Phase 4: Prompt Engineering
-                  const engineeredPrompt = `A breathtaking, vertical 9:16 portrait masterpiece of: ${keyword}. Story & Scene Matching: This image MUST perfectly depict the exact action and story described. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion of the scene. Lighting: ${lighting}, cinematic and atmospheric. Camera: Shot on 50mm lens, highly detailed, photorealistic, 8k resolution, ${series.artStyle} style. CRITICAL QUALITY RULES: The image MUST have perfect human anatomy, beautiful symmetrical faces, no distortion, no extra limbs, no weird hands, and absolutely NO text, NO watermarks, and NO borders.`;
+                  const engineeredPrompt = JSON.stringify({
+                    prompt: `A highly-detailed, hyper-realistic vertical 9:16 portrait of: ${keyword}. Story & Scene Matching: This image MUST perfectly depict the exact action and story described. Emotion & Atmosphere: Intensely expressive, capturing the exact mood and raw emotion. Lighting: ${lighting}. Camera: 50mm lens, f/1.8, ISO 200, highly detailed, unretouched, ${series.artStyle} style. Do not beautify or alter facial features.`,
+                    negative_prompt: "anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, text, watermarks, borders, distortion, extra limbs, weird hands, poorly drawn faces",
+                    api_parameters: {
+                      resolution: "1K",
+                      output_format: "jpg",
+                      aspect_ratio: "9:16"
+                    },
+                    settings: {
+                      resolution: "1K",
+                      style: series.artStyle,
+                      lighting: lighting || "cinematic",
+                      depth_of_field: "shallow depth of field",
+                      quality: "high detail, unretouched skin"
+                    }
+                  });
                   
                   finalUrl = await aiOrchestrator.generateImage(engineeredPrompt, reelSeed + attempts);
                   await new Promise(r => setTimeout(r, 1000));

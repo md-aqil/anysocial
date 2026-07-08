@@ -5,9 +5,39 @@ import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Image as ImageIcon, Loader2 } from 'lucide-react';
 
+const PRESET_PROMPTS = [
+  {
+    label: 'Candid Portrait',
+    value: JSON.stringify({
+      prompt: "A highly-detailed, hyper-realistic candid portrait. 85mm lens, f/1.8, ISO 200. The subject has visible pores, mild redness, subtle freckles, and unretouched skin texture. Direct on-camera flash creating sharp highlights on the skin and a slightly shadowed background. Do not beautify or alter facial features.",
+      negative_prompt: "anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, editorial fashion proportions",
+      api_parameters: { resolution: "1K", output_format: "jpg", aspect_ratio: "4:5" },
+      settings: { style: "documentary realism", lighting: "direct on-camera flash", depth_of_field: "shallow depth of field", quality: "high detail, unretouched skin" }
+    }, null, 2)
+  },
+  {
+    label: 'Premium Product',
+    value: JSON.stringify({
+      prompt: "A highly-detailed, hyper-realistic product shot of a sleek espresso machine. 100mm macro lens, f/4, ISO 100. Brushed aluminum texture with micro-scratches on the anodized finish. Volumetric lighting from a single softbox creating sharp specular highlights. Clean sans-serif typography overlaid perfectly legible. No CGI or 3D rendering.",
+      negative_prompt: "CGI, 3D render, cartoon, illustration, flat lighting, over-smoothed textures, plastic looking materials",
+      api_parameters: { resolution: "1K", output_format: "jpg", aspect_ratio: "16:9" },
+      settings: { style: "commercial realism", lighting: "dramatic studio softbox", depth_of_field: "deep focus on product", quality: "hyper-textured materials" }
+    }, null, 2)
+  },
+  {
+    label: 'Nature Macro',
+    value: JSON.stringify({
+      prompt: "A highly-detailed, hyper-realistic macro shot of a rare orchid. 100mm macro lens, f/2.8, ISO 400. Dew-covered velvety petals with subsurface scattering. Subtle browning edges on leaves showing natural wear. Natural dappled sunlight filtering through a dark green canopy. Unfiltered sensor grain.",
+      negative_prompt: "stylized illustration, vibrant oversaturation, artificial lighting, plastic plants, smooth unnatural textures, depth flattening",
+      api_parameters: { resolution: "1K", output_format: "jpg", aspect_ratio: "1:1" },
+      settings: { style: "nature documentary", lighting: "natural dappled sunlight", depth_of_field: "extreme shallow depth of field", quality: "microscopic organic details" }
+    }, null, 2)
+  }
+];
+
 export default function PlaygroundPage() {
   const { user } = useAuthStore();
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(PRESET_PROMPTS[0].value);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +92,20 @@ export default function PlaygroundPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6">
           <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-stone-100">
-            <label className="block text-sm font-bold text-stone-700 mb-2">Image Prompt</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-bold text-stone-700">Image Prompt</label>
+              <div className="flex gap-2">
+                {PRESET_PROMPTS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    onClick={() => setPrompt(preset.value)}
+                    className="text-[10px] font-bold px-2 py-1 rounded-md bg-stone-100 text-stone-600 hover:bg-stone-200 uppercase tracking-widest transition-colors"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <textarea
               className="w-full bg-stone-50 border border-stone-200 rounded-2xl p-4 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-all min-h-[160px] resize-none"
               placeholder="e.g. A penguin driving a taxi in New York City"
