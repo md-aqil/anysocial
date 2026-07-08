@@ -464,7 +464,7 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
-        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script in the Devanagari script (हिंदी लिपि). DO NOT write in Hinglish (Latin alphabet). Use natural conversational Hindi, but the text itself must be strictly in Devanagari characters so the text-to-speech engine can pronounce it perfectly.`;
+        languagePrompt = `Language: Hindi. CRITICAL: Write the script using a natural, conversational mix of Devanagari script for native Hindi words and English (Latin) script for industry terms, numbers, brands, or common English phrases (e.g. "Smart Investors ऐसे मौके कभी नहीं छोड़ते"). Do NOT translate common English terminology into complex Hindi words, keep them in English script.`;
       }
       const regionStoryRule = series.targetRegion && series.targetRegion !== 'Global' 
         ? `\nCRITICAL REGIONAL CONTEXT: Set the cultural context, character names, foods, locations, and references strictly to ${series.targetRegion} origin.` 
