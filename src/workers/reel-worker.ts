@@ -524,7 +524,8 @@ Output ONLY valid JSON:
       } else {
         try {
           const aiResultText = await aiOrchestrator.generateContent(storyPrompt);
-          const rawContent = aiResultText.replace(/```json\n?|```/g, '').trim();
+          const match = aiResultText.match(/\{[\s\S]*\}/);
+          const rawContent = match ? match[0] : aiResultText.replace(/```json\n?|```/g, '').trim();
           const parsed = JSON.parse(rawContent);
           const extractScriptText = (val: any): string => {
             if (typeof val === 'string') return val;
@@ -583,7 +584,9 @@ Output ONLY valid JSON:
     "locations": [{ "name": "...", "architecture": "...", "lighting": "..." }]
   }`;
           const memoryResText = await aiOrchestrator.generateContent(memoryPrompt);
-          const memParsed = JSON.parse(memoryResText.replace(/```json\n?|```/g, '').trim());
+          const memMatch = memoryResText.match(/\{[\s\S]*\}/);
+          const memRaw = memMatch ? memMatch[0] : memoryResText.replace(/```json\n?|```/g, '').trim();
+          const memParsed = JSON.parse(memRaw);
           characterContext = JSON.stringify(memParsed.characters || []);
           locationContext = JSON.stringify(memParsed.locations || []);
           
@@ -627,7 +630,9 @@ Output ONLY valid JSON:
     ]
   }`;
            const cineResText = await aiOrchestrator.generateContent(cinePrompt);
-           const cineParsed = JSON.parse(cineResText.replace(/```json\n?|```/g, '').trim());
+           const cineMatch = cineResText.match(/\{[\s\S]*\}/);
+           const cineRaw = cineMatch ? cineMatch[0] : cineResText.replace(/```json\n?|```/g, '').trim();
+           const cineParsed = JSON.parse(cineRaw);
            visuals = cineParsed.visuals || [];
         } catch (e) {
            console.error("[Cinematographer] Failed, falling back to basic shots.");
