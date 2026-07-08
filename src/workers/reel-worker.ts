@@ -912,7 +912,7 @@ Output ONLY valid JSON:
         if (bgmTempFiles && bgmTempFiles.length > 0) tempFilesToCleanup.push(...bgmTempFiles);
         
         await updateProgress('💬 Burning animated subtitles into final video...');
-        const subtitlePath = await VideoComposerService.generateSubtitlesFile(script, actualDuration, wordTimings);
+        const subtitlePath = await VideoComposerService.generateSubtitlesFile(scriptTts, actualDuration, wordTimings);
         if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
 
         const { outputPath: videoWithAudio, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(concatVideoPath, mixedAudioPath, subtitlePath, abortController.signal);
