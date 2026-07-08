@@ -381,6 +381,9 @@ Make sure the output is a valid JSON object.`;
 
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent`;
 
+        let languageCode = 'en-US';
+        if (language.includes('Hindi')) languageCode = 'hi-IN';
+
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -390,7 +393,10 @@ Make sure the output is a valid JSON object.`;
               responseModalities: ['AUDIO'],
               speechConfig: {
                 voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: geminiVoice }
+                  prebuiltVoiceConfig: { 
+                    voiceName: geminiVoice,
+                    languageCode: languageCode
+                  }
                 }
               }
             }
