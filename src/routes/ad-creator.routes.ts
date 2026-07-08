@@ -9,7 +9,7 @@ import path from 'path';
 const router = Router();
 
 const upload = multer({
-  dest: path.join(process.cwd(), 'uploads', 'temp'),
+  dest: path.join(process.cwd(), 'scratch', 'uploads', 'temp'),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
