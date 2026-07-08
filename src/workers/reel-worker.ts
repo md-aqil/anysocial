@@ -470,10 +470,12 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
         ? `\nCRITICAL REGIONAL CONTEXT: Set the cultural context, character names, foods, locations, and references strictly to ${series.targetRegion} origin.` 
         : '';
         
-      const storyPrompt = `You are a TikTok/Reels storyteller. Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}${regionStoryRule}
+      const storyPrompt = `You are an elite short-form video scriptwriter (TikTok/Reels/Shorts). Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}${regionStoryRule}
  
-CRITICAL AUDIENCE & VOCABULARY RULE: 
-The script and tone MUST be engaging, edgy, and highly relatable for teenagers (Gen Z audience). Do not talk to them like a child. Use punchy, dynamic, modern vocabulary that holds a teen's attention. Keep it fast-paced, suspenseful, and captivating.
+CRITICAL TONE & ADAPTABILITY RULE: 
+Analyze the topic carefully and adapt your tone to perfectly match it:
+- If the topic is real estate, a product, or a business (e.g. "Bank auction shop in Gurugram"), act as a world-class ad copywriter. Write a premium, high-converting cinematic ad script that creates intense FOMO and highlights the massive opportunity. DO NOT just list dry facts or prices. Wrap it in an emotional narrative.
+- If the topic is a mystery, history, or storytelling, act as a suspenseful storyteller. Make it edgy, captivating, and relatable, building up to a massive twist.
  
 KOKORO TTS OPTIMIZATION RULES (CRITICAL):
 1. NO HASHTAGS OR EMOJIS: Do not use any emojis, hashtags, or special characters like @, $, %.
@@ -485,11 +487,11 @@ KOKORO TTS OPTIMIZATION RULES (CRITICAL):
    - Example: "He opened the door, and suddenly... there was nothing inside."
 4. SHORT SENTENCES: Break long ideas into very short sentences. Kokoro sounds most natural and emotional when reading short, punchy statements.
  
-STORYTELLING STRUCTURE:
-1. HOOK (0-3s): Start with a very simple, surprising question or statement.
-2. STORY/FACTS: Explain the core topic using the simplest words possible. Make it sound like you are telling a campfire story to a friend.
-3. THE TWIST/PEAK: The most mind-blowing or interesting part of the story.
-4. ENDING: End with a lingering thought or simple call to action.
+STORYTELLING STRUCTURE (Adapt based on topic):
+1. HOOK (0-3s): Start with a massive, pattern-interrupting statement or question (e.g., "The biggest real estate secret in Gurugram..." or "This is the scariest place on Earth...").
+2. THE BUILD-UP: Explain the core topic or opportunity using highly visual, engaging language. 
+3. THE CLIMAX/OFFER: The most mind-blowing fact, twist, or the massive value of the opportunity.
+4. ENDING: A strong lingering thought or a powerful Call to Action.
  
 PACING & RULES:
 - The script must be compact and tightly paced. Use ${wordCountGoal}.
