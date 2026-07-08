@@ -21,11 +21,11 @@ router.post('/directions', authenticate, upload.fields([{ name: 'image', maxCoun
     const file = files['image']?.[0];
     const referenceFile = files['referenceImage']?.[0];
 
-    if (!file) {
-      return res.status(400).json({ error: 'Product image is required.' });
+    if (!productName || !description) {
+      return res.status(400).json({ error: 'Product name and description are required.' });
     }
 
-    const prompt = `Analyze this product image${referenceFile ? ' and the provided reference image' : ''} and the provided details. Then propose exactly 5 distinct ad creative directions following the World-Class Ads framework.
+    const prompt = `Analyze the provided details${file ? ' and the attached product image' : ''}${referenceFile ? ' and reference image' : ''}. Then propose exactly 5 distinct ad creative directions following the World-Class Ads framework.
     
     Details:
     - Product: ${productName}
@@ -54,13 +54,14 @@ router.post('/directions', authenticate, upload.fields([{ name: 'image', maxCoun
       ]
     }`;
 
-    const imageData = file.buffer.toString('base64');
-    const mimeType = file.mimetype;
+    const mediaParts = [];
     
-    const mediaParts = [{
-      data: imageData,
-      mimeType: mimeType
-    }];
+    if (file) {
+      mediaParts.push({
+        data: file.buffer.toString('base64'),
+        mimeType: file.mimetype
+      });
+    }
 
     if (referenceFile) {
       mediaParts.push({
@@ -115,7 +116,7 @@ router.post('/generate', authenticate, upload.single('image'), async (req: any, 
     CRITICAL INSTRUCTION FOR IMAGE PROMPT:
     The imagePrompt MUST describe a COMPLETE, PROFESSIONALLY DESIGNED ADVERTISEMENT, not just a product photo. 
     It MUST explicitly command the image generator to render the typography (Tagline and CTA) beautifully integrated into the layout, utilizing negative space.
-    IMPORTANT: We are passing the original product image. Instruct the image generator in the imagePrompt to use the reference image EXACTLY, and explicitly state that the product/dress/model MUST remain 100% identical and unaltered.
+    ${req.file ? 'IMPORTANT: We are passing the original product image. Instruct the image generator in the imagePrompt to use the reference image EXACTLY, and explicitly state that the product/dress/model MUST remain 100% identical and unaltered.' : ''}
     `;
 
     const briefText = await aiOrchestrator.generateContent(briefPrompt);

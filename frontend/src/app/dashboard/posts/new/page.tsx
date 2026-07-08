@@ -459,6 +459,32 @@ export default function NewPostPage() {
     if (igType) localStorage.setItem('lastIgPostType', igType);
   }, [igType]);
 
+  useEffect(() => {
+    const composeData = localStorage.getItem('composeAdData');
+    if (composeData) {
+      try {
+        const parsed = JSON.parse(composeData);
+        if (parsed.content) {
+          setValue('content', parsed.content);
+        }
+        if (parsed.mediaUrls && parsed.mediaUrls.length > 0) {
+          // Fetch the first image and convert it to a File object
+          fetch(parsed.mediaUrls[0])
+            .then(res => res.blob())
+            .then(blob => {
+              const file = new File([blob], 'ad-creative.jpg', { type: blob.type });
+              setMediaFiles(prev => [...prev, file]);
+            })
+            .catch(err => console.error("Failed to load ad image:", err));
+        }
+        // Clear it so it doesn't persist forever
+        localStorage.removeItem('composeAdData');
+      } catch (e) {
+        console.error("Failed to parse composeAdData", e);
+      }
+    }
+  }, [setValue]);
+
   const handlePlatformToggle = (platformId: string) => {
     togglePlatform(platformId);
   };
