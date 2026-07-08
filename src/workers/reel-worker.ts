@@ -464,7 +464,7 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
-        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the script twice. First, "script_tts" MUST be written exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. Second, "script" MUST be written in Roman (Hinglish/English characters), which will be used for on-screen subtitles. The TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words, exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable. Both scripts must say exactly the same thing.`;
+        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script in the Devanagari script (हिंदी लिपि). DO NOT write in Hinglish (Latin alphabet). Use natural conversational Hindi, but the text itself must be strictly in Devanagari characters so the text-to-speech engine can pronounce it perfectly.`;
       }
       const regionStoryRule = series.targetRegion && series.targetRegion !== 'Global' 
         ? `\nCRITICAL REGIONAL CONTEXT: Set the cultural context, character names, foods, locations, and references strictly to ${series.targetRegion} origin.` 
@@ -493,7 +493,7 @@ STORYTELLING STRUCTURE:
  
 PACING & RULES:
 - The script must be compact and tightly paced. Use ${wordCountGoal}.
-- Keep the story small enough to visualize in fewer than ten clips. Prefer one clear hook, two to four story beats, one twist, and one ending.
+- Keep the story highly visual and fast-paced, generating enough distinct scenes to visualize in up to fifteen clips. Prefer one clear hook, several story beats, one twist, and one ending.
 - Do not artificially pad the script with extra background, repeated suspense lines, or multiple unrelated facts.
 - ${languagePrompt}
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
@@ -501,8 +501,7 @@ PACING & RULES:
 Output ONLY valid JSON: 
 {
   "script": "...", 
-  "script_tts": "...", 
-  "audio_prompt": "Describe the perfect cinematic background music to match the emotional tone and pacing of this story in detail. Example: 'Deep, atmospheric cinematic ambient synth pads with a slow, emotional buildup.'"
+  "audio_prompt": "Describe the perfect cinematic background music to match the emotional tone and pacing of this story."
 }`;
 
       let script = customScriptText || '';
@@ -510,7 +509,7 @@ Output ONLY valid JSON:
       let characterContext = '';
       let locationContext = '';
       let visuals: any[] = [];
-      let numKeywords = 9;
+      let numKeywords = 15;
 
       if (isRecompose && reelWithDetails.metadata) {
         // Re-composition bypasses AI story generation and shot planning
@@ -547,7 +546,7 @@ Output ONLY valid JSON:
 
           if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
           script = extractScriptText(parsed.script);
-          scriptTts = parsed.script_tts ? extractScriptText(parsed.script_tts) : script;
+          scriptTts = script;
           (series as any).aiMusicPrompt = parsed.audio_prompt;
         } catch (e: any) {
           logger.error({ event: 'reel_ai_script_failed', reelId, error: e.message });
@@ -586,9 +585,9 @@ Output ONLY valid JSON:
           console.warn("[Art Director] Failed to parse memory core, proceeding with empty context.");
         }
 
-        // Dynamically calculate shots for compact story pacing, capped below 10 clips.
+        // Dynamically calculate shots for fast story pacing, capped at 15 clips.
         const scriptWordCount = script.split(/\s+/).length;
-        numKeywords = Math.min(9, Math.max(4, Math.ceil(scriptWordCount / 18)));
+        numKeywords = Math.min(15, Math.max(6, Math.ceil(scriptWordCount / 8)));
 
         // Phase 3: Shot Planning (Cinematographer)
         await updateProgress(`🎥 Phase 3: Cinematographer is planning the Shot List (${numKeywords} shots)...`);

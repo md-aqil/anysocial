@@ -363,179 +363,27 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  // 2. Voice Synthesis Engine (Gemini Multimodal / Kokoro / Google Cloud)
+  // 2. Voice Synthesis Engine (Google Cloud TTS)
   async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US'): Promise<string> {
-    const uniqueId = Math.random().toString(36).substring(7);
-    const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
-
-    // 1. ATTEMPT GEMINI 3.1 FLASH TTS (Direct REST API - proven to work)
-    if (process.env.VERTEX_AI_PROJECT_ID) {
-      try {
-        console.log(`[TTS] Attempting Gemini 3.1 Flash TTS via REST API...`);
-
-        // Map UI voice names to Gemini native voices
-        const geminiVoiceMap: Record<string, string> = {
-          'Puck': 'Puck', 'Charon': 'Charon', 'Aoede': 'Aoede',
-          'Kore': 'Kore', 'Fenrir': 'Fenrir', 'Leda': 'Leda',
-        };
-        const geminiVoice = geminiVoiceMap[voiceName] || 'Puck';
-
-        const auth = new GoogleAuth({
-          scopes: [
-            'https://www.googleapis.com/auth/cloud-platform',
-            'https://www.googleapis.com/auth/generative-language'
-          ]
-        });
-        const client = await auth.getClient();
-        const token = (await client.getAccessToken()).token;
-
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent`;
-
-        let languageCode = 'en-US';
-        if (language.includes('Hindi')) languageCode = 'hi-IN';
-
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: text }] }],
-            generationConfig: {
-              responseModalities: ['AUDIO'],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: { 
-                    voiceName: geminiVoice,
-                    languageCode: languageCode
-                  }
-                }
-              }
-            }
-          })
-        });
-
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`Gemini TTS REST Error ${res.status}: ${errText.substring(0, 200)}`);
-        }
-
-        const data = await res.json() as any;
-        const audioPart = data.candidates?.[0]?.content?.parts?.find(
-          (p: any) => p.inlineData && p.inlineData.mimeType?.startsWith('audio')
-        );
-
-        if (audioPart?.inlineData?.data) {
-          const mimeType = audioPart.inlineData.mimeType || '';
-          const rawBuffer = Buffer.from(audioPart.inlineData.data, 'base64');
-          console.log(`[TTS] Gemini returned: ${mimeType}, ${rawBuffer.length} bytes`);
-
-          let outputPath = tempPath;
-
-          if (mimeType.includes('L16') || mimeType.toLowerCase().includes('l16') || mimeType.includes('pcm') || mimeType.includes('raw')) {
-            // Parse actual parameters from mimeType string e.g. "audio/l16; rate=24000; channels=1"
-            const rateMatch = mimeType.match(/rate=(\d+)/i);
-            const chanMatch = mimeType.match(/channels=(\d+)/i);
-            const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
-            const numChannels = chanMatch ? parseInt(chanMatch[1]) : 1;
-            const bitsPerSample = 16;
-            const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
-            const blockAlign = numChannels * (bitsPerSample / 8);
-            const dataSize = rawBuffer.length;
-            const header = Buffer.alloc(44);
-            header.write('RIFF', 0);
-            header.writeUInt32LE(36 + dataSize, 4);
-            header.write('WAVE', 8);
-            header.write('fmt ', 12);
-            header.writeUInt32LE(16, 16);
-            header.writeUInt16LE(1, 20);           // PCM = 1
-            header.writeUInt16LE(numChannels, 22);
-            header.writeUInt32LE(sampleRate, 24);
-            header.writeUInt32LE(byteRate, 28);
-            header.writeUInt16LE(blockAlign, 32);
-            header.writeUInt16LE(bitsPerSample, 34);
-            header.write('data', 36);
-            header.writeUInt32LE(dataSize, 40);
-            fs.writeFileSync(outputPath, Buffer.concat([header, rawBuffer]));
-            console.log(`[TTS] PCM→WAV: ${sampleRate}Hz, ${numChannels}ch, ${rawBuffer.length} bytes`);
-          } else if (mimeType.includes('mp3') || mimeType.includes('mpeg')) {
-            outputPath = tempPath.replace('.wav', '.mp3');
-            fs.writeFileSync(outputPath, rawBuffer);
-          } else if (mimeType.includes('ogg') || mimeType.includes('opus')) {
-            outputPath = tempPath.replace('.wav', '.ogg');
-            fs.writeFileSync(outputPath, rawBuffer);
-          } else {
-            fs.writeFileSync(outputPath, rawBuffer);
-          }
-
-          console.log(`[TTS] ✅ Gemini 3.1 Flash TTS success → ${outputPath}`);
-          return outputPath;
-        } else {
-          throw new Error('No audio data in Gemini TTS response');
-        }
-      } catch (e: any) {
-        console.error(`[TTS] Gemini 3.1 Flash TTS Failed: ${e.message}`);
-      }
-    }
-
-    // 2. ATTEMPT KOKORO-FASTAPI (LOCAL DOCKER)
-    try {
-      // Map voices to Kokoro profiles.
-      let profileId = "am_michael"; // Standard male
-      if (voiceName === 'Charon') profileId = "am_echo"; // Deep male
-      else if (voiceName === 'Aoede' || voiceName === 'Kore') profileId = "af_bella"; // Female
-      
-      // Override for Hindi explicitly
-      if (language.includes('Hindi')) {
-        profileId = (voiceName === 'Aoede' || voiceName === 'Kore') ? "hf_alpha" : "hm_omega";
-      }
-
-      console.log(`[TTS] Attempting to use Kokoro TTS (port 8880) with profile ${profileId}...`);
-      
-      const KOKORO_HOST = process.env.KOKORO_HOST || 'http://localhost:8880';
-      const response = await fetch(`${KOKORO_HOST}/v1/audio/speech`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: "kokoro",
-          input: text,
-          voice: profileId,
-          response_format: "wav",
-          speed: 1.0
-        })
-      });
-
-      if (response.ok) {
-        const buffer = await response.arrayBuffer();
-        fs.writeFileSync(tempPath, Buffer.from(buffer));
-        console.log(`[TTS] Kokoro generation successful!`);
-        return tempPath;
-      } else {
-        console.warn(`[TTS] Kokoro returned ${response.status}. Falling back to Google Cloud...`);
-      }
-    } catch (e: any) {
-      console.warn(`[TTS] Kokoro Docker not running or failed (${e.message}). Falling back to Google Cloud...`);
-    }
-
-    // 2. FALLBACK TO GOOGLE CLOUD TTS
     const textToSpeech = await import('@google-cloud/text-to-speech');
     const client = new textToSpeech.TextToSpeechClient();
     
-    // Properly map frontend language strings to BCP-47 and appropriate premium voices
     let bcp47Language = 'en-US';
     let actualVoiceName = 'en-US-Journey-D';
 
     if (language.includes('Hindi')) {
       bcp47Language = 'hi-IN';
-      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'hi-IN-Neural2-A'; // Female
-      else actualVoiceName = 'hi-IN-Neural2-C'; // Male
+      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'hi-IN-Neural2-A';
+      else actualVoiceName = 'hi-IN-Neural2-C';
     } else if (language.includes('Spanish')) {
       bcp47Language = 'es-ES';
-      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'es-ES-Journey-O'; // Female
-      else actualVoiceName = 'es-ES-Journey-D'; // Male
+      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'es-ES-Journey-O';
+      else actualVoiceName = 'es-ES-Journey-D';
     } else {
       bcp47Language = 'en-US';
-      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'en-US-Journey-O'; // Female
-      else if (voiceName === 'Charon') actualVoiceName = 'en-US-Journey-F'; // Deep Male
-      else actualVoiceName = 'en-US-Journey-D'; // Standard Male
+      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'en-US-Journey-O';
+      else if (voiceName === 'Charon') actualVoiceName = 'en-US-Journey-F';
+      else actualVoiceName = 'en-US-Journey-D';
     }
 
     const request = {
@@ -549,26 +397,28 @@ Make sure the output is a valid JSON object.`;
 
     try {
       const [response] = await client.synthesizeSpeech(request);
+      const uniqueId = Math.random().toString(36).substring(7);
+      const os = await import('os');
+      const path = await import('path');
+      const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
+      
+      const fs = await import('fs');
       fs.writeFileSync(tempPath, response.audioContent as Uint8Array, 'binary');
       return tempPath;
     } catch (e: any) {
       console.error("[Google Cloud TTS Error]:", e.message || e);
-      // Fallback to dummy voiceover if credentials fail on the live server
-      console.log("Using fallback voiceover due to TTS error.");
-      const bgmUrl = 'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3';
-      const res = await fetch(bgmUrl);
-      const buffer = await res.arrayBuffer();
-      fs.writeFileSync(tempPath, Buffer.from(buffer));
-      return tempPath;
+      throw new Error(`TTS Failed: ${e.message}`);
     }
   }
 
-  /**
+    /**
    * Transcribes audio and returns exact word-level timestamps using Google Cloud Speech-to-Text.
    */
   async transcribeAudio(audioPath: string, languageCode: string = 'en-US'): Promise<Array<{ word: string, startTime: number, endTime: number }>> {
     console.log(`[Transcription] Transcribing ${audioPath} in ${languageCode}...`);
-    const client = new speech.SpeechClient();
+    const speech = await import('@google-cloud/speech');
+    const client = new speech.v1.SpeechClient();
+    const fs = await import('fs');
     const audioBytes = fs.readFileSync(audioPath).toString('base64');
 
     const request = {
@@ -609,69 +459,7 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  private findAudioPart(value: any): { mimeType: string; data?: string; uri?: string } | null {
-    if (!value || typeof value !== 'object') return null;
-
-    const mimeType = value.mimeType || value.mime_type || value.inlineData?.mimeType || value.inline_data?.mime_type;
-    const data = value.data || value.bytesBase64Encoded || value.inlineData?.data || value.inline_data?.data;
-    const uri = value.uri || value.fileUri || value.file_uri;
-
-    if (typeof mimeType === 'string' && mimeType.startsWith('audio/')) {
-      return { mimeType, data, uri };
-    }
-
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        const found = this.findAudioPart(item);
-        if (found) return found;
-      }
-      return null;
-    }
-
-    for (const nested of Object.values(value)) {
-      const found = this.findAudioPart(nested);
-      if (found) return found;
-    }
-
-    return null;
-  }
-
-  private getAudioExtension(mimeType: string): string {
-    const lowerMime = mimeType.toLowerCase();
-    if (lowerMime.includes('mpeg') || lowerMime.includes('mp3')) return 'mp3';
-    if (lowerMime.includes('wav') || lowerMime.includes('l16') || lowerMime.includes('pcm')) return 'wav';
-    if (lowerMime.includes('ogg')) return 'ogg';
-    if (lowerMime.includes('aac')) return 'aac';
-    return 'mp3';
-  }
-
-  private wrapPcmAsWav(rawBuffer: Buffer, mimeType: string): Buffer {
-    const rateMatch = mimeType.match(/rate=(\d+)/i);
-    const chanMatch = mimeType.match(/channels=(\d+)/i);
-    const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
-    const numChannels = chanMatch ? parseInt(chanMatch[1]) : 1;
-    const bitsPerSample = 16;
-    const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
-    const blockAlign = numChannels * (bitsPerSample / 8);
-    const dataSize = rawBuffer.length;
-    const header = Buffer.alloc(44);
-    header.write('RIFF', 0);
-    header.writeUInt32LE(36 + dataSize, 4);
-    header.write('WAVE', 8);
-    header.write('fmt ', 12);
-    header.writeUInt32LE(16, 16);
-    header.writeUInt16LE(1, 20);
-    header.writeUInt16LE(numChannels, 22);
-    header.writeUInt32LE(sampleRate, 24);
-    header.writeUInt32LE(byteRate, 28);
-    header.writeUInt16LE(blockAlign, 32);
-    header.writeUInt16LE(bitsPerSample, 34);
-    header.write('data', 36);
-    header.writeUInt32LE(dataSize, 40);
-    return Buffer.concat([header, rawBuffer]);
-  }
-
-  // 3. Lyria - Music Generation via Vertex AI interactions API
+// 3. Lyria - Music Generation via Vertex AI interactions API
   async generateMusic(prompt: string, imageInputs: Array<{ path?: string; uri?: string; mimeType?: string; data?: string }> = []): Promise<string> {
     console.log(`Generating music via Lyria 2 with prompt: ${prompt}`);
 
