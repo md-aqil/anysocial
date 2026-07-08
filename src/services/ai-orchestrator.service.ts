@@ -146,7 +146,10 @@ Make sure the output is a valid JSON object.`;
       if (useAdvancedModel) {
         const { GoogleAuth } = await import('google-auth-library');
         const auth = new GoogleAuth({
-          scopes: ['https://www.googleapis.com/auth/cloud-platform']
+          scopes: [
+            'https://www.googleapis.com/auth/cloud-platform',
+            'https://www.googleapis.com/auth/generative-language'
+          ]
         });
         const client = await auth.getClient();
         const token = (await client.getAccessToken()).token;
@@ -414,7 +417,12 @@ Make sure the output is a valid JSON object.`;
   async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = true): Promise<string> {
     if (useAdvancedModel) {
       const { GoogleAuth } = await import('google-auth-library');
-      const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+      const auth = new GoogleAuth({
+        scopes: [
+          'https://www.googleapis.com/auth/cloud-platform',
+          'https://www.googleapis.com/auth/generative-language'
+        ]
+      });
       const client = await auth.getClient();
       const token = (await client.getAccessToken()).token;
       
