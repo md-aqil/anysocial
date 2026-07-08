@@ -446,8 +446,7 @@ Make sure the output is a valid JSON object.`;
             speechConfig: {
               voiceConfig: {
                 prebuiltVoiceConfig: { 
-                  voiceName: geminiVoice,
-                  languageCode: languageCode
+                  voiceName: geminiVoice
                 }
               }
             }
