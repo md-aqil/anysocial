@@ -546,9 +546,16 @@ Output ONLY valid JSON:
             return String(val);
           };
 
+          const extractVoiceoverText = (fullScript: string): string => {
+            const voiceLines = fullScript.split('\n')
+              .filter(line => line.includes('🎙️'))
+              .map(line => line.replace(/.*🎙️/, '').trim());
+            return voiceLines.length > 0 ? voiceLines.join(' ') : fullScript;
+          };
+
           if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
           script = extractScriptText(parsed.script);
-          scriptTts = script;
+          scriptTts = extractVoiceoverText(script);
           (series as any).aiMusicPrompt = parsed.audio_prompt;
         } catch (e: any) {
           logger.error({ event: 'reel_ai_script_failed', reelId, error: e.message });
@@ -587,9 +594,9 @@ Output ONLY valid JSON:
           console.warn("[Art Director] Failed to parse memory core, proceeding with empty context.");
         }
 
-        // Dynamically calculate shots for fast story pacing, capped at 15 clips.
+        // Dynamically calculate the number of shots for fast, engaging pacing (1 shot ~every 8 words)
         const scriptWordCount = script.split(/\s+/).length;
-        numKeywords = Math.min(15, Math.max(6, Math.ceil(scriptWordCount / 8)));
+        numKeywords = Math.max(6, Math.ceil(scriptWordCount / 8));
 
         // Phase 3: Shot Planning (Cinematographer)
         await updateProgress(`🎥 Phase 3: Cinematographer is planning the Shot List (${numKeywords} shots)...`);
