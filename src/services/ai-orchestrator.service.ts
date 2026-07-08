@@ -455,8 +455,37 @@ Make sure the output is a valid JSON object.`;
       });
 
       const data = res.data as any;
-      const audioBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (!audioBase64) throw new Error("TTS generated no audio.");
+      const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+      if (!inlineData || !inlineData.data) throw new Error("TTS generated no audio.");
+
+      const rawBuffer = Buffer.from(inlineData.data, 'base64');
+      const mimeType = inlineData.mimeType || 'audio/l16; rate=24000; channels=1';
+      
+      const rateMatch = mimeType.match(/rate=(\d+)/i);
+      const chanMatch = mimeType.match(/channels=(\d+)/i);
+      const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
+      const numChannels = chanMatch ? parseInt(chanMatch[1]) : 1;
+      const bitsPerSample = 16;
+      const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+      const blockAlign = numChannels * (bitsPerSample / 8);
+      const dataSize = rawBuffer.length;
+      
+      const header = Buffer.alloc(44);
+      header.write('RIFF', 0);
+      header.writeUInt32LE(36 + dataSize, 4);
+      header.write('WAVE', 8);
+      header.write('fmt ', 12);
+      header.writeUInt32LE(16, 16);
+      header.writeUInt16LE(1, 20);
+      header.writeUInt16LE(numChannels, 22);
+      header.writeUInt32LE(sampleRate, 24);
+      header.writeUInt32LE(byteRate, 28);
+      header.writeUInt16LE(blockAlign, 32);
+      header.writeUInt16LE(bitsPerSample, 34);
+      header.write('data', 36);
+      header.writeUInt32LE(dataSize, 40);
+      
+      const wavBuffer = Buffer.concat([header, rawBuffer]);
 
       const uniqueId = Math.random().toString(36).substring(7);
       const os = await import('os');
@@ -464,7 +493,7 @@ Make sure the output is a valid JSON object.`;
       const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
       
       const fs = await import('fs');
-      fs.writeFileSync(tempPath, Buffer.from(audioBase64, 'base64'));
+      fs.writeFileSync(tempPath, wavBuffer);
       return tempPath;
     }
 
