@@ -11,6 +11,8 @@ export default function PostCreatorPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Form State
+  const [magicLink, setMagicLink] = useState('');
+  const [scraping, setScraping] = useState(false);
   const [productName, setProductName] = useState('');
   const [description, setDescription] = useState('');
   const [usp, setUsp] = useState('');
@@ -57,6 +59,42 @@ export default function PostCreatorPage() {
       console.error(err);
     } finally {
       setLoadingHistory(false);
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!magicLink) return;
+    setScraping(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: magicLink })
+      });
+      
+      if (!res.ok) throw new Error('Failed to extract data from link');
+      
+      const data = await res.json();
+      
+      if (data.title) setProductName(data.title);
+      if (data.description) setDescription(data.description);
+      
+      if (data.images && data.images.length > 0) {
+        try {
+          const imgRes = await fetch(data.images[0]);
+          const blob = await imgRes.blob();
+          const file = new File([blob], 'scraped-image.jpg', { type: blob.type });
+          setImageFile(file);
+          setImagePreview(URL.createObjectURL(file));
+        } catch (e) {
+          console.error('Failed to load image from URL', e);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setScraping(false);
     }
   };
 
@@ -177,6 +215,23 @@ export default function PostCreatorPage() {
         <div className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-stone-100 grid grid-cols-1 lg:grid-cols-2 gap-10">
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-stone-800 border-b border-stone-100 pb-4">1. Images (Product & Reference)</h2>
+            
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 mb-2">
+              <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Magic Link Import</label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={magicLink} 
+                  onChange={e => setMagicLink(e.target.value)} 
+                  className="flex-1 bg-white border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50]" 
+                  placeholder="Paste product URL (Shopify, Amazon, etc.) to auto-fill..." 
+                />
+                <Button onClick={handleMagicLink} disabled={scraping || !magicLink} className="bg-[#D27D50] hover:bg-[#b86d45] text-white rounded-xl px-6">
+                  {scraping ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Import'}
+                </Button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div 
                 onClick={() => fileInputRef.current?.click()}
