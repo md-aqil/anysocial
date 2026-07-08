@@ -22,6 +22,10 @@ export default function PostCreatorPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [referenceFile, setReferenceFile] = useState<File | null>(null);
+  const [referencePreview, setReferencePreview] = useState<string | null>(null);
+  const refInputRef = useRef<HTMLInputElement>(null);
+
   // Directions State
   const [directions, setDirections] = useState<any[]>([]);
   const [selectedDirection, setSelectedDirection] = useState<any | null>(null);
@@ -38,6 +42,14 @@ export default function PostCreatorPage() {
     }
   };
 
+  const handleReferenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setReferenceFile(file);
+      setReferencePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleGenerateDirections = async () => {
     if (!imageFile || !productName) return;
     setLoading(true);
@@ -46,6 +58,9 @@ export default function PostCreatorPage() {
     try {
       const formData = new FormData();
       formData.append('image', imageFile);
+      if (referenceFile) {
+        formData.append('referenceImage', referenceFile);
+      }
       formData.append('productName', productName);
       formData.append('description', description);
       formData.append('usp', usp);
@@ -134,23 +149,41 @@ export default function PostCreatorPage() {
       {step === 1 && (
         <div className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-stone-100 grid grid-cols-1 lg:grid-cols-2 gap-10">
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-stone-800 border-b border-stone-100 pb-4">1. Product Image (Required)</h2>
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-stone-200 rounded-3xl p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-stone-50 hover:border-[#D27D50] transition-colors relative min-h-[300px]"
-            >
-              <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
-              {imagePreview ? (
-                <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover rounded-3xl" />
-              ) : (
-                <>
-                  <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mb-4">
-                    <Upload className="w-8 h-8 text-stone-400" />
-                  </div>
-                  <p className="font-bold text-stone-600">Upload Product Image</p>
-                  <p className="text-sm text-stone-400 mt-2 text-center">This anchors the visual direction for the AI.</p>
-                </>
-              )}
+            <h2 className="text-xl font-bold text-stone-800 border-b border-stone-100 pb-4">1. Images (Product & Reference)</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-stone-200 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-stone-50 hover:border-[#D27D50] transition-colors relative min-h-[200px]"
+              >
+                <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover rounded-3xl" />
+                ) : (
+                  <>
+                    <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mb-3">
+                      <Upload className="w-6 h-6 text-stone-400" />
+                    </div>
+                    <p className="font-bold text-sm text-stone-600 text-center">Product Image<br/><span className="text-red-500">*Required</span></p>
+                  </>
+                )}
+              </div>
+
+              <div 
+                onClick={() => refInputRef.current?.click()}
+                className="border-2 border-dashed border-stone-200 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-stone-50 hover:border-[#D27D50] transition-colors relative min-h-[200px]"
+              >
+                <input type="file" ref={refInputRef} onChange={handleReferenceChange} className="hidden" accept="image/*" />
+                {referencePreview ? (
+                  <img src={referencePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover rounded-3xl" />
+                ) : (
+                  <>
+                    <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mb-3">
+                      <ImageIcon className="w-6 h-6 text-stone-400" />
+                    </div>
+                    <p className="font-bold text-sm text-stone-600 text-center">Reference Image<br/><span className="text-stone-400 font-normal">Optional</span></p>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 

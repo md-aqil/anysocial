@@ -13,16 +13,18 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-router.post('/directions', authenticate, upload.single('image'), async (req: any, res: any) => {
+router.post('/directions', authenticate, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'referenceImage', maxCount: 1 }]), async (req: any, res: any) => {
   try {
     const { productName, description, usp, personality, audience, platform, mood } = req.body;
-    const file = req.file;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const file = files['image']?.[0];
+    const referenceFile = files['referenceImage']?.[0];
 
     if (!file) {
       return res.status(400).json({ error: 'Product image is required.' });
     }
 
-    const prompt = `Analyze this product image and the provided details. Then propose exactly 5 distinct ad creative directions following the World-Class Ads framework.
+    const prompt = `Analyze this product image${referenceFile ? ' and the provided reference image' : ''} and the provided details. Then propose exactly 5 distinct ad creative directions following the World-Class Ads framework.
     
     Details:
     - Product: ${productName}
@@ -53,11 +55,20 @@ router.post('/directions', authenticate, upload.single('image'), async (req: any
 
     const imageData = file.buffer.toString('base64');
     const mimeType = file.mimetype;
-
-    const resultText = await aiOrchestrator.generateContent(prompt, [{
+    
+    const mediaParts = [{
       data: imageData,
       mimeType: mimeType
-    }]);
+    }];
+
+    if (referenceFile) {
+      mediaParts.push({
+        data: referenceFile.buffer.toString('base64'),
+        mimeType: referenceFile.mimetype
+      });
+    }
+
+    const resultText = await aiOrchestrator.generateContent(prompt, mediaParts);
 
     const cleanedText = resultText.replace(/```json\n?|```/g, '').trim();
     const parsed = JSON.parse(cleanedText);
