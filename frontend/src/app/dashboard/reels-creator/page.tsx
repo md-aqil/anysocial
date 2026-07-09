@@ -199,6 +199,7 @@ export default function ReelsDashboard() {
   const [editedScript, setEditedScript] = useState("");
   const [editedVoiceModel, setEditedVoiceModel] = useState("");
   const [shotsToRegenerate, setShotsToRegenerate] = useState<number[]>([]);
+  const [expandedSeries, setExpandedSeries] = useState<Record<string, boolean>>({});
 
   const handleViewDetails = (reel: any) => {
     setSelectedMetadataReel(reel);
@@ -571,9 +572,10 @@ export default function ReelsDashboard() {
                         No reels generated yet for this series.
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {series.reels?.map((reel: any) => (
-                          <div key={reel.id} className="border border-stone-100 rounded-xl bg-white overflow-hidden flex flex-col shadow-sm">
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {(expandedSeries[series.id] ? series.reels : series.reels?.slice(0, 5))?.map((reel: any) => (
+                            <div key={reel.id} className="border border-stone-100 rounded-xl bg-white overflow-hidden flex flex-col shadow-sm">
                             <div className="w-full h-24 relative bg-stone-100 border-b border-stone-100 group">
                               <img
                                 src={STYLES.find(s => s.id === series.artStyle)?.image || '/assets/styles/cinematic.jpg'}

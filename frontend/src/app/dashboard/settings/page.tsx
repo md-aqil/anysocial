@@ -202,44 +202,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* VOICE MODELS */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-stone-100">
-          <h2 className="text-xl font-bold text-stone-800 mb-6 flex items-center">
-            <Mic className="w-6 h-6 mr-2 text-amber-500" /> Voice Synthesis (TTS)
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-2">Primary Model</label>
-              <select 
-                value={config.voice.primary} 
-                onChange={e => setConfig({ ...config, voice: { ...config.voice, primary: e.target.value }})}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm font-medium"
-              >
-                {VOICE_MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-2">Secondary (Fallback 1)</label>
-              <select 
-                value={config.voice.secondary} 
-                onChange={e => setConfig({ ...config, voice: { ...config.voice, secondary: e.target.value }})}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm font-medium"
-              >
-                {VOICE_MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-2">Tertiary (Fallback 2)</label>
-              <select 
-                value={config.voice.tertiary} 
-                onChange={e => setConfig({ ...config, voice: { ...config.voice, tertiary: e.target.value }})}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm font-medium"
-              >
-                {VOICE_MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
+
 
       </div>
     </div>
