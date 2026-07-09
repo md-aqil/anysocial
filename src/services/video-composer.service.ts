@@ -350,7 +350,7 @@ export class VideoComposerService {
         const wordsCs: number[] = [];
         
         for (const wt of lineTimings) {
-          lineWords.push(wt.word);
+          lineWords.push(VideoComposerService.transliterateHindiToRoman(wt.word));
           const wordDurCs = Math.round((wt.endTime - wt.startTime) * 100);
           wordsCs.push(Math.max(wordDurCs, 1)); // At least 1cs
         }
@@ -359,7 +359,7 @@ export class VideoComposerService {
       }
     } else {
       // ⚠️ FALLBACK MATH-BASED HEURISTIC MODE
-      const cleanScript = script.replace(/[^\w\s.,!?'"’\-अ-ह०-९]/g, '');
+      const cleanScript = VideoComposerService.transliterateHindiToRoman(script).replace(/[^\w\s.,!?'"’\-अ-ह०-९]/g, '');
       const words = cleanScript.split(/\s+/).filter(w => w.length > 0);
       
       if (words.length === 0) {
