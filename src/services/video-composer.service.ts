@@ -363,8 +363,7 @@ export class VideoComposerService {
       const words = cleanScript.split(/\s+/).filter(w => w.length > 0);
       
       if (words.length === 0) {
-        fs.writeFileSync(assPath, '');
-        return assPath;
+        return '';
       }
 
     // First pass to assign relative weights based on word length and punctuation
