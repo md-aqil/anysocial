@@ -1,15 +1,14 @@
-import textToSpeech from '@google-cloud/text-to-speech';
-import fs from 'fs';
+import { aiOrchestrator } from './dist/services/ai-orchestrator.service.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
-async function test() {
-  const client = new textToSpeech.TextToSpeechClient();
-  const request = {
-    input: { text: 'Hello world' },
-    voice: { languageCode: 'en-US', name: 'en-US-Journey-D' },
-    audioConfig: { audioEncoding: 'LINEAR16' },
-  };
-  const [response] = await client.synthesizeSpeech(request);
-  fs.writeFileSync('test.wav', response.audioContent, 'binary');
-  console.log("Success! Saved test.wav");
+async function run() {
+  console.log("Testing AI Voiceover (Kore)...");
+  try {
+    const result = await aiOrchestrator.generateVoiceover("Hello, this is a test of the Kore voice on the live system.", "Kore", "en-US", false);
+    console.log("Success! Output file:", result);
+  } catch (e) {
+    console.error("Test failed:", e);
+  }
 }
-test().catch(console.error);
+run();
