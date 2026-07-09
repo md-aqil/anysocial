@@ -358,24 +358,37 @@ router.post("/write-script", requireAuth, async (req: any, res: any) => {
       languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. However, the TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (transliterated into Devanagari, e.g., 'टाइम', 'फीलिंग', 'सस्पेंस'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable.`;
     }
 
-    const copywritingPrompt = `You are a world-class viral ad copywriter for short-form TikTok, Reels, and YouTube Shorts. 
+    const copywritingPrompt = `You are a world-class viral ad copywriter and video director for short-form TikTok, Reels, and YouTube Shorts. 
 We are creating a high-retention video ad. 
 
-Product context: "${prompt || 'Check out our amazing new product!'}"
+Product/Offer Details: "${prompt || 'Check out our amazing new product!'}"
 Key Selling Points (what makes it hit): "${whatMakesItHit || 'Premium quality, sleek design, and satisfying user experience.'}"
 Vibe / Tone of ad: "${vibe || 'High-energy, direct, and captivating'}"
 
 CRITICAL INSTRUCTION FOR SCRIPT QUALITY:
-DO NOT just read out a robotic list of features or prices (e.g., "Shop in Gurugram. 500 sq ft. 1 Crore."). 
-Instead, wrap the facts in a highly engaging, emotional, and cinematic narrative. Use storytelling techniques like a massive hook, painting a picture of the lifestyle/opportunity, and creating intense FOMO. Make it sound like a premium, top-tier influencer script.
+You MUST avoid writing a boring, robotic list of features (e.g., "Clear Title. Ready to Build. High Rental Yield. Wide Road. Auction Date: [Date]."). 
+Instead, weave the facts into a highly engaging, emotional, and cinematic narrative. Create intense FOMO, use storytelling, and make it sound like a premium, top-tier influencer speaking directly to the viewer.
+
+CRITICAL FORMATTING RULES:
+You MUST structure your response EXACTLY like a video script with scenes, durations, visual descriptions, on-screen text, and voiceover. 
+${languagePrompt} The total voiceover should take about ${duration || 15} seconds to speak at a fast pace.
+
+Use this EXACT format for EVERY scene:
+
+Scene [Number]
+Duration: [X]s
+
+📹 [Visual description of the shot]
+📝 [On-screen text, if any]
+🎙️ [Voiceover text to be spoken in the specified language]
 
 Your task:
-1. ${languagePrompt} Write a highly compelling viral ad script of EXACTLY ${targetWordCount} words (this is critical to match the speaking pace of a ${duration || 15}-second video). Do NOT use any emojis, hashtags, or special characters. Spell out all numbers as words. Make it punchy, emotional, and rhythmic.
-2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the hook phase (e.g. "Secret Revealed...", "Must-Have Tech!", "Luxury Discovered..."). CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
+1. Write the highly compelling, cinematic viral ad script using the strict Scene format above. Spell out all numbers as words in the voiceover so TTS reads them correctly. Do NOT use any emojis or hashtags in the voiceover (🎙️).
+2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the first scene (e.g. "Secret Revealed...", "Must-Have Tech!"). CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
 
 Output your response strictly as a valid JSON object with NO extra text:
 {
-  "script": "the full voiceover script...",
+  "script": "the full scene-by-scene script...",
   "hook": "THE BOLD HOOK TEXT"
 }`;
 
