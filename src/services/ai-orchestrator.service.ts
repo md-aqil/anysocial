@@ -465,8 +465,7 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  // 2. Voice Synthesis Engine (Google Cloud TTS)
-  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false): Promise<string> {
+  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false, strictPlaygroundMode: boolean = false): Promise<string> {
     if (!text || text.trim().length === 0) {
       throw new Error("Voiceover script is empty. Please ensure your script contains text or uses the 🎙️ emoji for voiceover lines.");
     }
@@ -566,10 +565,13 @@ Make sure the output is a valid JSON object.`;
         return await executeVoiceGen(settings.voice.tertiary.includes('gemini') ? settings.voice.tertiary : 'gemini-2.5-flash');
       } catch (e: any) {
         console.warn("[Gemini 2.5 Flash TTS Failed] High demand or error. Falling back...", e.message);
+        if (strictPlaygroundMode) throw new Error(`[Playground Mode] Gemini TTS failed: ${e.message}`);
+        
         try {
           return await executeVoiceGen('gemini-2.5-pro');
         } catch (e2: any) {
           console.warn("[Gemini TTS Failed] Falling back to standard Google Cloud TTS...", e2.message);
+          if (strictPlaygroundMode) throw new Error(`[Playground Mode] Gemini TTS failed completely: ${e2.message}`);
           // fall through to standard Google Cloud TTS
         }
       }

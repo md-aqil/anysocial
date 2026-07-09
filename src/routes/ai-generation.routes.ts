@@ -136,7 +136,7 @@ router.post('/generate-voice', jwtAuth, async (req: Request, res: Response) => {
       return;
     }
     
-    const tempAudioPath = await aiOrchestrator.generateVoiceover(text, voiceName, language, useAdvancedModel);
+    const tempAudioPath = await aiOrchestrator.generateVoiceover(text, voiceName, language, useAdvancedModel, true);
     
     // Move to public uploads folder
     const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-audio');
