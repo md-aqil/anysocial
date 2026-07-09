@@ -536,10 +536,15 @@ Make sure the output is a valid JSON object.`;
       };
 
       try {
-        return await executeVoiceGen();
+        return await executeVoiceGen('gemini-2.5-flash');
       } catch (e: any) {
-        console.warn("[Gemini 3.1 TTS Failed] High demand or error. Falling back to Gemini 2.5 Pro TTS...", e.message);
-        return await executeVoiceGen('gemini-2.5-pro-tts');
+        console.warn("[Gemini 2.5 Flash TTS Failed] High demand or error. Falling back...", e.message);
+        try {
+          return await executeVoiceGen('gemini-2.5-pro');
+        } catch (e2: any) {
+          console.warn("[Gemini TTS Failed] Falling back to standard Google Cloud TTS...", e2.message);
+          // fall through to standard Google Cloud TTS
+        }
       }
     }
 

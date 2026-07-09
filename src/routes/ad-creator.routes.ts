@@ -116,6 +116,7 @@ router.post('/generate', authenticate, upload.single('image'), async (req: any, 
     CRITICAL INSTRUCTION FOR IMAGE PROMPT:
     The imagePrompt MUST describe a COMPLETE, PROFESSIONALLY DESIGNED ADVERTISEMENT, not just a product photo. 
     It MUST explicitly command the image generator to render the typography (Tagline and CTA) beautifully integrated into the layout, utilizing negative space.
+    CRITICAL: The image generator MUST NOT include any fake logos, watermarks, brand icons, or signatures.
     ${req.file ? 'IMPORTANT: We are passing the original product image. Instruct the image generator in the imagePrompt to use the reference image EXACTLY, and explicitly state that the product/dress/model MUST remain 100% identical and unaltered.' : ''}
     `;
 
@@ -125,7 +126,7 @@ router.post('/generate', authenticate, upload.single('image'), async (req: any, 
 
     const imagePayload = JSON.stringify({
       prompt: briefParsed.imagePrompt,
-      negative_prompt: "anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, text, watermarks, borders, distortion, extra limbs, weird hands, poorly drawn faces",
+      negative_prompt: "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces",
       api_parameters: {
         resolution: "1K",
         output_format: "jpg",
