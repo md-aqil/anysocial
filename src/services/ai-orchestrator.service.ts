@@ -621,7 +621,7 @@ Make sure the output is a valid JSON object.`;
       
       const fs = await import('fs');
       fs.writeFileSync(tempPath, response.audioContent as Uint8Array, 'binary');
-      return tempPath;
+      return { audioPath: tempPath, engineUsed: 'google-cloud-tts', voiceUsed: actualVoiceName };
     } catch (e: any) {
       console.error("[Google Cloud TTS Error]:", e.message || e);
       throw new Error(`TTS Failed: ${e.message}`);
