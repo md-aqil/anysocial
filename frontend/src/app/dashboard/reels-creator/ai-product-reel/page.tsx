@@ -151,9 +151,11 @@ export default function AIProductReelPage() {
       setScriptText(data.script || '');
       setHookText(data.hook || '');
       setStatusMessage("Script generated successfully! Review and edit it below.");
+      return true;
     } catch (error: any) {
       console.error(error);
       alert(`Failed to write script: ${error.message}`);
+      return false;
     } finally {
       setIsWritingScript(false);
     }
@@ -163,7 +165,13 @@ export default function AIProductReelPage() {
     setIsGenerating(true);
     setStatusMessage("Uploading and preparing assets...");
     try {
-      const uploadedUrls = await Promise.all(files.map(uploadFile));
+      const uploadedUrls = await Promise.all(files.map(async (file, index) => {
+        if (file.size === 0 && file.name.startsWith('scraped-image-')) {
+          return previewUrls[index];
+        }
+        return await uploadFile(file);
+      }));
+      
       const assets = uploadedUrls.map((url, index) => ({
         url,
         type: files[index].type.startsWith('video') ? 'VIDEO' : 'IMAGE',
@@ -762,9 +770,11 @@ export default function AIProductReelPage() {
 
           {currentStep === 2 && scriptMode === 'ai' ? (
             <Button
-              onClick={() => {
-                handleGenerateScript();
-                setScriptMode('manual');
+              onClick={async () => {
+                const success = await handleGenerateScript();
+                if (success) {
+                  setScriptMode('manual');
+                }
               }}
               disabled={isWritingScript || !prompt}
               className="rounded-[1rem] h-12 px-8 font-black text-white bg-violet-600 hover:bg-violet-700 shadow-[0_8px_20px_rgba(139,92,246,0.25)] gap-2 transition-all hover:scale-105 active:scale-95 text-xs uppercase tracking-widest"

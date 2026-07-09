@@ -385,27 +385,41 @@ Your task:
 1. Write the highly compelling, cinematic viral ad script using the strict Scene format above. Spell out all numbers as words in the voiceover so TTS reads them correctly. Do NOT use any emojis or hashtags in the voiceover (🎙️).
 2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the first scene (e.g. "Secret Revealed...", "Must-Have Tech!"). CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
 
-Output your response strictly as a valid JSON object with NO extra text:
-{
-  "script": "the full scene-by-scene script...",
-  "hook": "THE BOLD HOOK TEXT"
-}`;
+Output your response strictly as a valid JSON object matching the provided schema.`;
 
-    const resultText = await aiOrchestrator.generateContent(copywritingPrompt, undefined, true);
-    const rawContent = resultText.replace(/```json\n?|```/g, '').trim();
+    const responseSchema = {
+      type: "OBJECT",
+      properties: {
+        script: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              duration: { type: "STRING" },
+              visual: { type: "STRING" },
+              on_screen_text: { type: "STRING" },
+              voiceover: { type: "STRING" }
+            },
+            required: ["duration", "visual", "on_screen_text", "voiceover"]
+          }
+        },
+        hook: { type: "STRING" }
+      },
+      required: ["script", "hook"]
+    };
+
+    const resultText = await aiOrchestrator.generateContent(copywritingPrompt, undefined, true, responseSchema);
+    const rawContent = resultText.match(/\{[\s\S]*\}/) ? resultText.match(/\{[\s\S]*\}/)![0] : resultText.replace(/```json\n?|```/g, '').trim();
     const parsed = JSON.parse(rawContent);
 
     let finalScriptStr = '';
-    if (typeof parsed.script === 'string') {
-      finalScriptStr = parsed.script;
-    } else if (Array.isArray(parsed.script)) {
+    if (Array.isArray(parsed.script)) {
       finalScriptStr = parsed.script.map((scene: any, i: number) => {
-        if (typeof scene === 'string') return scene;
         let s = `Scene ${i + 1}\n`;
-        if (scene.duration) s += `Duration: ${scene.duration}\n`;
-        if (scene.visual || scene.camera) s += `📹 ${scene.visual || scene.camera}\n`;
-        if (scene.text || scene.hook || scene.graphic) s += `📝 ${scene.text || scene.hook || scene.graphic}\n`;
-        if (scene.voiceover || scene.narration || scene.audio || scene.speech) s += `🎙️ ${scene.voiceover || scene.narration || scene.audio || scene.speech}\n`;
+        s += `Duration: ${scene.duration || '3s'}\n\n`;
+        s += `📹 ${scene.visual || ''}\n`;
+        s += `📝 ${scene.on_screen_text || ''}\n`;
+        s += `🎙️ ${scene.voiceover || ''}`;
         return s;
       }).join('\n\n');
     } else if (typeof parsed.script === 'object' && parsed.script !== null) {
