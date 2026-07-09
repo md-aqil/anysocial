@@ -977,10 +977,15 @@ export default function ReelsDashboard() {
                       <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
                       Core Engines
                     </h4>
-                    <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
+                    <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex flex-col gap-2">
                       <p className="text-sm font-mono text-stone-600">
                         {(selectedMetadataReel.metadata as any).llmDetails}
                       </p>
+                      {(selectedMetadataReel.metadata as any).model_voice && (
+                        <p className="text-sm font-mono font-bold text-violet-700">
+                          Voice Model: {(selectedMetadataReel.metadata as any).model_voice}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}

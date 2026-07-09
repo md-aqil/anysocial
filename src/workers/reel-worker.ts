@@ -178,7 +178,7 @@ export class ReelWorker {
     const tempFilesToCleanup: string[] = [];
     
     const generationMetadata: any = {
-      llmDetails: `Script: Gemini 2.5 | Audio: Google TTS (${voiceId || 'en-US-Journey-F'}) | Visuals: Gemini Flash Image`,
+      llmDetails: "Script: Gemini 2.5 | Audio: Google TTS | Visuals: Gemini Flash Image",
       startedAt: Date.now(),
       model_llm: 'gemini-2.5-flash',
       model_image: 'gemini-2.5-flash-image',
