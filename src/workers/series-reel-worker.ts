@@ -467,7 +467,9 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
-        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि). 
+        languagePrompt = `Language: Hindi. 
+CRITICAL: The 🎙️ Voiceover MUST be exclusively in Devanagari script (हिंदी लिपि). 
+CRITICAL: The 📝 On-screen text MUST be in Roman script (English or Hinglish, e.g. "Crazy Deal!" or "Hyderabad Me Warehouse"). It must be short, punchy (max 3-4 words), and MUST NOT just repeat what is being said in the voiceover.
 EXTREME BAN: DO NOT write an advertisement. DO NOT regurgitate or copy-paste the input text. You MUST write a BRAND NEW conversational story from scratch. DO NOT use phrases like "WhatsApp/Call Now", "Save & Share", "Follow for more", "Smart Investor", "40% OFF". DO NOT use symbols like @ or |. 
 GOOD EXAMPLE (DO THIS):
 Scene 1
