@@ -19,13 +19,6 @@ const IMAGE_MODELS = [
   { id: 'stock', name: 'Stock Photos (Pexels/Unsplash)' }
 ];
 
-const VOICE_MODELS = [
-  { id: 'google-cloud-standard', name: 'Google Cloud TTS (Journey / Chirp3-HD)' },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Generative Audio)' },
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Generative Audio)' },
-  { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 TTS (Preview)' }
-];
-
 export default function SettingsPage() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
@@ -34,8 +27,7 @@ export default function SettingsPage() {
   
   const [config, setConfig] = useState({
     text: { primary: 'gemini-2.5-flash', secondary: 'gemini-1.5-pro', tertiary: 'gemini-2.5-pro' },
-    image: { primary: 'gemini-2.5-flash', secondary: 'pollinations', tertiary: 'stock' },
-    voice: { primary: 'google-cloud-standard', secondary: 'gemini-2.5-flash', tertiary: 'gemini-2.5-pro' }
+    image: { primary: 'gemini-2.5-flash', secondary: 'pollinations', tertiary: 'stock' }
   });
 
   useEffect(() => {

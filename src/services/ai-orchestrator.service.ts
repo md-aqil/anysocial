@@ -469,13 +469,10 @@ Make sure the output is a valid JSON object.`;
     if (!text || text.trim().length === 0) {
       throw new Error("Voiceover script is empty. Please ensure your script contains text or uses the 🎙️ emoji for voiceover lines.");
     }
-    const settings = await this.getAiSettings();
     const isGeminiVoice = ['Aoede', 'Charon', 'Puck', 'Kore', 'Fenrir', 'Leda'].includes(voiceName);
     
-    // In playground mode, strictly respect the requested model engine, completely ignoring global settings
-    const useGemini = strictPlaygroundMode 
-      ? useAdvancedModel 
-      : (useAdvancedModel || settings.voice.primary.includes('gemini') || isGeminiVoice);
+    // In playground mode, strictly respect the requested model engine
+    const useGemini = strictPlaygroundMode ? useAdvancedModel : (useAdvancedModel || isGeminiVoice);
     
     if (useGemini) {
       const { GoogleAuth } = await import('google-auth-library');
@@ -500,7 +497,7 @@ Make sure the output is a valid JSON object.`;
       else if (language.includes('Spanish')) languageCode = 'es-ES';
 
       const executeVoiceGen = async (overrideModel?: string) => {
-        const modelName = overrideModel || (settings.voice.primary.includes('gemini') ? settings.voice.primary : 'gemini-2.5-flash');
+        const modelName = overrideModel || 'gemini-2.5-flash';
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
         
         const res = await client.request({
@@ -566,7 +563,7 @@ Make sure the output is a valid JSON object.`;
       };
 
       try {
-        return await executeVoiceGen(settings.voice.tertiary.includes('gemini') ? settings.voice.tertiary : 'gemini-2.5-flash');
+        return await executeVoiceGen('gemini-2.5-flash');
       } catch (e: any) {
         console.warn("[Gemini 2.5 Flash TTS Failed] High demand or error. Falling back...", e.message);
         if (strictPlaygroundMode) throw new Error(`[Playground Mode] Gemini TTS failed: ${e.message}`);
