@@ -472,20 +472,12 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
         
       const storyPrompt = `You are an elite short-form video scriptwriter (TikTok/Reels/Shorts). Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}${regionStoryRule}
  
-CRITICAL TONE & FORMAT RULE (ABSOLUTELY NO BULLET POINTS): 
-Analyze the topic carefully and adapt your tone to perfectly match it:
-- If the topic is real estate, a product, or a business, act as a world-class ad copywriter. Write a premium, high-converting cinematic ad script. YOU MUST write it as a smooth, continuous, spoken-word narrative. DO NOT write a robotic property listing. DO NOT use bullet points, short fragmented facts, or a list of amenities. Wrap the entire pitch in a seamless, emotional, and conversational story.
-- If the topic is a mystery, history, or storytelling, act as a suspenseful storyteller. Make it edgy, captivating, and relatable, building up to a massive twist.
- 
-KOKORO TTS OPTIMIZATION RULES (CRITICAL):
-1. NO HASHTAGS OR EMOJIS: Do not use any emojis, hashtags, or special characters like @, $, %.
-2. SPELL OUT NUMBERS: Always write numbers as words (e.g., write "one hundred" instead of "100").
-3. ADVANCED INTONATION & STRESS: To make the storytelling incredibly dynamic, you must rely exclusively on PUNCTUATION.
-   - To adjust intonation, actively use punctuation: ;:,.!?—…"()“”
-   - Use ellipses (...) when you want a dramatic, suspenseful pause.
-   - DO NOT use markdown brackets or parentheses like [word](+1). The TTS engine will read them out loud by mistake.
-   - Example: "He opened the door, and suddenly... there was nothing inside."
-4. SHORT SENTENCES: Break long ideas into very short sentences. Kokoro sounds most natural and emotional when reading short, punchy statements.
+CRITICAL TONE & TTS FORMAT RULES (STRICTLY ENFORCED): 
+1. NO ROBOTIC LISTINGS: NEVER write a list of features or fragmented facts separated by pipes or slashes (e.g., "3 BHK | 1800 Sq Ft | Clear Title"). You MUST weave all details into a natural, conversational, spoken-word story (e.g., "Imagine stepping into a massive eighteen hundred square foot luxury apartment...").
+2. SPELL OUT ALL NUMBERS & CURRENCIES: Do NOT use symbols like ₹, $, %, or digits like 3, 1800. Write them as spoken words (e.g., "three B H K", "eighteen hundred", "fifteen crore rupees"). The TTS engine will crash on symbols.
+3. NO EMOJIS OR BRACKETS IN VOICEOVER: The voiceover (🎙️) MUST NOT contain any emojis, hashtags, or bracketed placeholders like "[Your Number]". Write it exactly as a human voice actor would read it from a teleprompter.
+4. TONE ADAPTATION: If real estate/product, write a high-converting, emotional narrative (not a dry listing). If mystery/history, write a suspenseful story.
+5. ADVANCED INTONATION: Use punctuation (;:,.!?—…) for dramatic pauses. Break long ideas into very short sentences.
  
 STORYTELLING STRUCTURE (Adapt based on topic):
 1. HOOK (0-3s): Start with a massive, pattern-interrupting statement or question (e.g., "The biggest real estate secret in Gurugram..." or "This is the scariest place on Earth...").
