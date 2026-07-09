@@ -20,7 +20,7 @@ const IMAGE_MODELS = [
 ];
 
 const VOICE_MODELS = [
-  { id: 'google-cloud-standard', name: 'Google Cloud TTS (Standard/Journey)' },
+  { id: 'google-cloud-standard', name: 'Google Cloud TTS (Journey / Chirp3-HD)' },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Generative Audio)' },
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Generative Audio)' },
   { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 TTS (Preview)' }
