@@ -577,11 +577,13 @@ Make sure the output is a valid JSON object.`;
 
     if (language.includes('Hindi')) {
       bcp47Language = 'hi-IN';
-      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'hi-IN-Neural2-A';
-      else actualVoiceName = 'hi-IN-Neural2-C';
+      if (voiceName === 'Aoede' || voiceName === 'Kore' || voiceName.endsWith('-F') || voiceName.endsWith('-O')) actualVoiceName = 'hi-IN-Chirp3-HD-Aoede';
+      else if (voiceName === 'Charon' || voiceName === 'Fenrir' || voiceName.endsWith('-D') || voiceName.endsWith('-J')) actualVoiceName = 'hi-IN-Chirp3-HD-Charon';
+      else if (voiceName === 'Puck' || voiceName === 'Leda') actualVoiceName = 'hi-IN-Chirp3-HD-Puck';
+      else actualVoiceName = 'hi-IN-Chirp3-HD-Aoede'; // Default to female Chirp3
     } else if (language.includes('Spanish')) {
       bcp47Language = 'es-ES';
-      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'es-ES-Journey-O';
+      if (voiceName === 'Aoede' || voiceName === 'Kore' || voiceName.endsWith('-O') || voiceName.endsWith('-F')) actualVoiceName = 'es-ES-Journey-O';
       else actualVoiceName = 'es-ES-Journey-D';
     } else {
       bcp47Language = 'en-US';
