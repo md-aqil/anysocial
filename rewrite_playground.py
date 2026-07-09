@@ -1,4 +1,10 @@
-'use client';
+import re
+
+with open("frontend/src/app/dashboard/playground/page.tsx", "r") as f:
+    content = f.read()
+
+# I will just write the entire new content since it's a full refactor to add Tabs
+new_content = """'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
@@ -276,3 +282,7 @@ export default function PlaygroundPage() {
     </div>
   );
 }
+"""
+
+with open("frontend/src/app/dashboard/playground/page.tsx", "w") as f:
+    f.write(new_content)

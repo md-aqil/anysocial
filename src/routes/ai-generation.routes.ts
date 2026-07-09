@@ -124,4 +124,39 @@ router.get('/playground-history', jwtAuth, async (req: Request, res: Response) =
   }
 });
 
+/**
+ * POST /api/ai/generate-voice
+ * Generates a voiceover using the configured AI model (Gemini or Google TTS).
+ */
+router.post('/generate-voice', jwtAuth, async (req: Request, res: Response) => {
+  try {
+    const { text, voiceName = 'Aoede', language = 'en-US', useAdvancedModel = true } = req.body;
+    if (!text) {
+      res.status(400).json({ error: 'Text is required' });
+      return;
+    }
+    
+    const tempAudioPath = await aiOrchestrator.generateVoiceover(text, voiceName, language, useAdvancedModel);
+    
+    // Move to public uploads folder
+    const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-audio');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    const publicFilename = `ai_audio_${Date.now()}.wav`;
+    const publicFilePath = path.join(publicDir, publicFilename);
+    
+    fs.copyFileSync(tempAudioPath, publicFilePath);
+    
+    try {
+      fs.unlinkSync(tempAudioPath);
+    } catch (e) {}
+    
+    const audioUrl = `/uploads/ai-audio/${publicFilename}`;
+    res.json({ url: audioUrl });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export const aiGenerationRoutes = router;
