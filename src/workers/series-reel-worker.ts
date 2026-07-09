@@ -481,7 +481,10 @@ Translate all facts into a highly conversational, authentic spoken-word story li
         ? `\nCRITICAL REGIONAL CONTEXT: Set the cultural context, character names, foods, locations, and references strictly to ${series.targetRegion} origin.` 
         : '';
         
-      const storyPrompt = `You are an elite short-form video scriptwriter (TikTok/Reels/Shorts). Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}${regionStoryRule}
+      const storyPrompt = `You are a casual, authentic storyteller and vlogger (NOT a marketer or salesman).
+I am going to give you a raw list of facts, bullet points, or ad copy. 
+Your task is to completely DISCARD the original formatting, and translate those facts into a highly engaging, organic, spoken-word ${durationStr} story for TikTok/Shorts.
+Raw Input Data: "${series.niche || series.customPrompt}".${pastReelsPrompt}${regionStoryRule}
  
 CRITICAL TONE & TTS FORMAT RULES (STRICTLY ENFORCED): 
 1. NO ROBOTIC LISTINGS: NEVER write a list of features or fragmented facts separated by pipes or slashes (e.g., "3 BHK | 1800 Sq Ft | Clear Title"). You MUST weave all details into a natural, conversational, spoken-word story (e.g., "Imagine stepping into a massive eighteen hundred square foot luxury apartment...").
