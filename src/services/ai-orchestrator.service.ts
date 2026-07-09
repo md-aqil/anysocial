@@ -753,6 +753,7 @@ Respond with a strict JSON object containing:
 
 Output ONLY valid JSON.`;
 
+      const settings = await this.getAiSettings();
       const model = this.vertexAI.getGenerativeModel({ model: settings.text.primary });
       const mediaPart = {
         inlineData: {
