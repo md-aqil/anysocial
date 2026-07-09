@@ -31,7 +31,7 @@ export class AiOrchestratorService {
     return {
       text: { primary: 'gemini-2.5-flash', secondary: 'gemini-1.5-pro', tertiary: 'gemini-2.5-pro' },
       image: { primary: 'gemini-2.5-flash', secondary: 'pollinations', tertiary: 'stock' },
-      voice: { primary: 'gemini-2.5-flash', secondary: 'gemini-2.5-pro', tertiary: 'gemini-2.5-flash' }
+      voice: { primary: 'google-cloud-standard', secondary: 'gemini-2.5-flash', tertiary: 'gemini-2.5-pro' }
     };
   }
 
@@ -465,56 +465,102 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  async generateVoiceover(text: string, voiceName: string = 'Aoede', language: string = 'en-US', useAdvancedModel: boolean = false): Promise<string> {
+  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false): Promise<string> {
     if (!text || text.trim().length === 0) {
       throw new Error("Voiceover script is empty. Please ensure your script contains text or uses the 🎙️ emoji for voiceover lines.");
     }
-
-    const textToSpeech = await import('@google-cloud/text-to-speech');
-    const client = new textToSpeech.TextToSpeechClient();
     
-    let bcp47Language = 'en-US';
-    let actualVoiceName = 'en-US-Journey-O'; // Default to female Journey
-
-    if (language.includes('Hindi')) {
-      bcp47Language = 'hi-IN';
-      if (['Aoede', 'Kore', 'Leda'].includes(voiceName) || voiceName.endsWith('-F') || voiceName.endsWith('-O')) actualVoiceName = 'hi-IN-Chirp3-HD-Aoede';
-      else if (['Charon', 'Fenrir'].includes(voiceName) || voiceName.endsWith('-D') || voiceName.endsWith('-J')) actualVoiceName = 'hi-IN-Chirp3-HD-Charon';
-      else if (voiceName === 'Puck') actualVoiceName = 'hi-IN-Chirp3-HD-Puck';
-      else actualVoiceName = 'hi-IN-Chirp3-HD-Aoede'; // Default to female Chirp3
-    } else if (language.includes('Spanish')) {
-      bcp47Language = 'es-ES';
-      if (voiceName === 'Aoede' || voiceName === 'Kore' || voiceName.endsWith('-O') || voiceName.endsWith('-F')) actualVoiceName = 'es-ES-Journey-O';
-      else actualVoiceName = 'es-ES-Journey-D';
-    } else {
-      bcp47Language = 'en-US';
-      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'en-US-Journey-O';
-      else if (voiceName === 'Charon' || voiceName === 'Fenrir') actualVoiceName = 'en-US-Journey-F';
-      else actualVoiceName = 'en-US-Journey-D'; // Standard Male (Puck)
+    const { GoogleAuth } = await import('google-auth-library');
+    const auth = new GoogleAuth({
+      scopes: [
+        'https://www.googleapis.com/auth/cloud-platform',
+        'https://www.googleapis.com/auth/generative-language'
+      ]
+    });
+    const client = await auth.getClient();
+    
+    let geminiVoice = 'Aoede';
+    if (['Charon', 'Puck', 'Fenrir'].includes(voiceName) || voiceName.endsWith('-D') || voiceName.endsWith('-J')) {
+      geminiVoice = voiceName === 'Puck' ? 'Puck' : voiceName === 'Fenrir' ? 'Fenrir' : 'Charon';
+    } else if (['Kore', 'Leda'].includes(voiceName) || voiceName.endsWith('-O') || voiceName.endsWith('-F')) {
+      geminiVoice = voiceName === 'Kore' ? 'Kore' : voiceName === 'Leda' ? 'Leda' : 'Aoede';
     }
+    
+    const executeVoiceGen = async (modelName: string) => {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+      
+      const res = await client.request({
+        url: endpoint,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          contents: [{ role: 'user', parts: [{ text }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { 
+                  voiceName: geminiVoice
+                }
+              }
+            }
+          }
+        }
+      });
 
-    const request = {
-      input: { text: text },
-      voice: { languageCode: bcp47Language, name: actualVoiceName },
-      audioConfig: { 
-        audioEncoding: 'LINEAR16' as const,
-        sampleRateHertz: 24000
-      },
-    };
+      const data = res.data as any;
+      const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+      if (!inlineData || !inlineData.data) throw new Error("TTS generated no audio.");
 
-    try {
-      const [response] = await client.synthesizeSpeech(request);
+      const rawBuffer = Buffer.from(inlineData.data, 'base64');
+      const mimeType = inlineData.mimeType || 'audio/l16; rate=24000; channels=1';
+      
+      const rateMatch = mimeType.match(/rate=(\d+)/i);
+      const chanMatch = mimeType.match(/channels=(\d+)/i);
+      const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
+      const numChannels = chanMatch ? parseInt(chanMatch[1]) : 1;
+      const bitsPerSample = 16;
+      const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+      const blockAlign = numChannels * (bitsPerSample / 8);
+      const dataSize = rawBuffer.length;
+      
+      const header = Buffer.alloc(44);
+      header.write('RIFF', 0);
+      header.writeUInt32LE(36 + dataSize, 4);
+      header.write('WAVE', 8);
+      header.write('fmt ', 12);
+      header.writeUInt32LE(16, 16);
+      header.writeUInt16LE(1, 20);
+      header.writeUInt16LE(numChannels, 22);
+      header.writeUInt32LE(sampleRate, 24);
+      header.writeUInt32LE(byteRate, 28);
+      header.writeUInt16LE(blockAlign, 32);
+      header.writeUInt16LE(bitsPerSample, 34);
+      header.write('data', 36);
+      header.writeUInt32LE(dataSize, 40);
+      
+      const wavBuffer = Buffer.concat([header, rawBuffer]);
+
       const uniqueId = Math.random().toString(36).substring(7);
       const os = await import('os');
       const path = await import('path');
       const tempPath = path.join(os.tmpdir(), `voiceover_${Date.now()}_${uniqueId}.wav`);
       
       const fs = await import('fs');
-      fs.writeFileSync(tempPath, response.audioContent as Uint8Array, 'binary');
+      fs.writeFileSync(tempPath, wavBuffer);
       return tempPath;
+    };
+
+    try {
+      return await executeVoiceGen('gemini-2.5-flash');
     } catch (e: any) {
-      console.error("[Google Cloud TTS Error]:", e.message || e);
-      throw new Error(`TTS Failed: ${e.message}`);
+      console.warn("[Gemini 2.5 Flash TTS Failed] High demand or error. Falling back...", e.message);
+      try {
+        return await executeVoiceGen('gemini-2.5-pro');
+      } catch (e2: any) {
+        console.error("[Gemini TTS Failed completely]", e2.message);
+        throw new Error(`TTS Failed: ${e2.message}`);
+      }
     }
   }
 
