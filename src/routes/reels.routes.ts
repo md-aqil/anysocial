@@ -357,20 +357,37 @@ router.post("/write-script", requireAuth, async (req: any, res: any) => {
       languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. However, the TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (transliterated into Devanagari, e.g., 'टाइम', 'फीलिंग', 'सस्पेंस'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable.`;
     }
 
-    const copywritingPrompt = `You are a world-class viral ad copywriter for short-form TikTok, Reels, and YouTube Shorts. 
+    const copywritingPrompt = `You are a world-class viral ad copywriter and video director for short-form TikTok, Reels, and YouTube Shorts. 
 We are creating a high-retention video ad. 
 
-Product context: "${prompt || 'Check out our amazing new product!'}"
+Product/Offer Details: "${prompt || 'Check out our amazing new product!'}"
 Key Selling Points (what makes it hit): "${whatMakesItHit || 'Premium quality, sleek design, and satisfying user experience.'}"
 Vibe / Tone of ad: "${vibe || 'High-energy, direct, and captivating'}"
 
+CRITICAL INSTRUCTION FOR SCRIPT QUALITY:
+You MUST avoid writing a boring, robotic list of features (e.g., "Clear Title. Ready to Build. High Rental Yield. Wide Road. Auction Date: [Date]."). 
+Instead, weave the facts into a highly engaging, emotional, and cinematic narrative. Create intense FOMO, use storytelling, and make it sound like a premium, top-tier influencer speaking directly to the viewer.
+
+CRITICAL FORMATTING RULES:
+You MUST structure your response EXACTLY like a video script with scenes, durations, visual descriptions, on-screen text, and voiceover. 
+${languagePrompt} The total voiceover should take about ${duration || 15} seconds to speak at a fast pace.
+
+Use this EXACT format for EVERY scene:
+
+Scene [Number]
+Duration: [X]s
+
+📹 [Visual description of the shot]
+📝 [On-screen text, if any]
+🎙️ [Voiceover text to be spoken in the specified language]
+
 Your task:
-1. ${languagePrompt} Write a highly compelling viral ad script of EXACTLY ${targetWordCount} words (this is critical to match the speaking pace of a ${duration || 15}-second video). Do NOT use any emojis, hashtags, or special characters. Spell out all numbers as words. Make it punchy and rhythmic.
-2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the hook phase (e.g. "Secret Revealed...", "Must-Have Tech!", "Luxury Discovered..."). CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
+1. Write the highly compelling, cinematic viral ad script using the strict Scene format above. Spell out all numbers as words in the voiceover so TTS reads them correctly. Do NOT use any emojis or hashtags in the voiceover (🎙️).
+2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the first scene (e.g. "Secret Revealed...", "Must-Have Tech!"). CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
 
 Output your response strictly as a valid JSON object with NO extra text:
 {
-  "script": "the full voiceover script...",
+  "script": "the full scene-by-scene script...",
   "hook": "THE BOLD HOOK TEXT"
 }`;
 
@@ -378,9 +395,26 @@ Output your response strictly as a valid JSON object with NO extra text:
     const rawContent = resultText.replace(/```json\n?|```/g, '').trim();
     const parsed = JSON.parse(rawContent);
 
+    let finalScriptStr = '';
+    if (typeof parsed.script === 'string') {
+      finalScriptStr = parsed.script;
+    } else if (Array.isArray(parsed.script)) {
+      finalScriptStr = parsed.script.map((scene: any, i: number) => {
+        if (typeof scene === 'string') return scene;
+        let s = `Scene ${i + 1}\n`;
+        if (scene.duration) s += `Duration: ${scene.duration}\n`;
+        if (scene.visual || scene.camera) s += `📹 ${scene.visual || scene.camera}\n`;
+        if (scene.text || scene.hook || scene.graphic) s += `📝 ${scene.text || scene.hook || scene.graphic}\n`;
+        if (scene.voiceover || scene.narration || scene.audio || scene.speech) s += `🎙️ ${scene.voiceover || scene.narration || scene.audio || scene.speech}\n`;
+        return s;
+      }).join('\n\n');
+    } else if (typeof parsed.script === 'object' && parsed.script !== null) {
+      finalScriptStr = JSON.stringify(parsed.script, null, 2);
+    }
+
     res.status(200).json({
       success: true,
-      script: parsed.script,
+      script: finalScriptStr || parsed.script,
       hook: parsed.hook,
     });
   } catch (error: any) {
