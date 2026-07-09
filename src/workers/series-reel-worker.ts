@@ -491,15 +491,15 @@ Duration: 3s
 Translate all facts into a highly conversational, authentic spoken-word story like a real human YouTuber.`;
       if (series.language === 'Hindi') {
         languagePrompt = `Language: Hindi. 
-CRITICAL: The 🎙️ Voiceover MUST be exclusively in Devanagari script (हिंदी लिपि). 
-CRITICAL: The 📝 On-screen text MUST be in Roman script (English or Hinglish, e.g. "Crazy Deal!" or "Hyderabad Me Warehouse"). It must be short, punchy (max 3-4 words), and MUST NOT just repeat what is being said in the voiceover.
+CRITICAL: The 🎙️ Voiceover and 📝 On-screen text MUST be entirely in the Roman alphabet (e.g. Hinglish, using English letters) so that on-screen subtitles display correctly without breaking. DO NOT use native Devanagari script (हिंदी लिपि).
+CRITICAL: The 📝 On-screen text must be short, punchy (max 3-4 words), and MUST NOT just repeat what is being said in the voiceover.
 EXTREME BAN: DO NOT write an advertisement. DO NOT regurgitate or copy-paste the input text. You MUST write a BRAND NEW conversational story from scratch. DO NOT use phrases like "WhatsApp/Call Now", "Save & Share", "Follow for more", "Smart Investor", "40% OFF". DO NOT use symbols like @ or |. 
 GOOD EXAMPLE (DO THIS):
 Scene 1
 Duration: 3s
 📹 Cinematic wide shot of an empty plot in Jaipur.
 📝 Plot in Jaipur
-🎙️ दोस्तों, मुझे जयपुर में एक ऐसी प्रॉपर्टी मिली है जिस पर यकीन करना मुश्किल है। जगतपुरा में एक शानदार प्लॉट है...
+🎙️ Doston, mujhe Jaipur mein ek aisi property mili hai jis par yakeen karna mushkil hai. Jagatpura mein ek shandaar plot hai...
 Translate all facts into a highly conversational, authentic spoken-word story like a real human YouTuber.`;
       }
       const regionStoryRule = series.targetRegion && series.targetRegion !== 'Global' 
