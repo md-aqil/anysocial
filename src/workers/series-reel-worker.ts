@@ -518,19 +518,18 @@ PACING & RULES:
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
 
 FORMATTING RULES (CRITICAL):
-You MUST format the "script" field EXACTLY like this for every scene. Do not deviate from this format. The "script" field MUST be a SINGLE GIANT STRING, NOT an array of objects. Use the exact emojis (📹, 📝, 🎙️) as shown:
-
-Scene 1
-Duration: 3s
-
-📹 [Visual description of the shot]
-📝 [On-screen text, if any]
-🎙️ [Voiceover text to be spoken]
- 
-Output ONLY valid JSON: 
+You MUST output the "script" field as a strict JSON ARRAY of Scene objects. Do NOT output a single string. Do not use emojis in the JSON keys.
+Example structure:
 {
-  "script": "SINGLE CONTINUOUS STRING CONTAINING ALL SCENES", 
-  "audio_prompt": "Describe the perfect cinematic background music to match the emotional tone and pacing of this story."
+  "script": [
+    {
+      "duration": "3s",
+      "visual": "Cinematic wide shot of an empty plot in Jaipur.",
+      "on_screen_text": "Plot in Jaipur",
+      "voiceover": "दोस्तों, मुझे जयपुर में एक ऐसी प्रॉपर्टी मिली है जिस पर यकीन करना मुश्किल है..."
+    }
+  ],
+  "audio_prompt": "Describe the perfect cinematic background music..."
 }`;
 
       let script = customScriptText || '';
@@ -567,23 +566,21 @@ Output ONLY valid JSON:
           const extractScriptText = (val: any): string => {
             if (typeof val === 'string') return val;
             if (Array.isArray(val)) {
-              return val.map(v => {
+              return val.map((v, i) => {
                 if (typeof v === 'string') return v;
                 if (typeof v === 'object' && v !== null) {
-                  const key = Object.keys(v).find(k => /text|narration|speech|audio|voice|dialogue|script|caption|hindi|spoken/i.test(k));
-                  if (key) return `🎙️ ${String(v[key])}`;
+                  const duration = v.duration || '3s';
+                  const visual = v.visual || v.camera || v.shot || '';
+                  const text = v.on_screen_text || v.graphic || v.text || '';
+                  const voice = v.voiceover || v.audio || v.narration || v.speech || v.hindi || v.dialogue || '';
                   
-                  // Reconstruct with emojis so extractVoiceoverText can parse it
-                  const values = Object.values(v);
-                  return `📹 ${values[0] || ''}\n📝 ${values[1] || ''}\n🎙️ ${values[values.length - 1] || ''}`;
+                  return `Scene ${i + 1}\nDuration: ${duration}\n\n📹 ${visual}\n📝 ${text}\n🎙️ ${voice}`;
                 }
                 return '';
               }).filter(Boolean).join('\n\n');
             }
             if (typeof val === 'object' && val !== null) {
-               const key = Object.keys(val).find(k => /text|narration|speech|audio|voice|dialogue|script|caption/i.test(k));
-               if (key) return String(val[key]);
-               return Object.values(val).map(str => String(str)).join(' ');
+               return `📹 ${val.visual || ''}\n📝 ${val.on_screen_text || ''}\n🎙️ ${val.voiceover || ''}`;
             }
             return String(val);
           };
