@@ -250,23 +250,17 @@ export class ReelWorker {
           }
         }
 
-        // Account for xfade transition overlaps shrinking the final video
-        const totalOverlap = Math.max(0, (downloadedAssetPaths.length - 1) * 0.5);
-        const targetDuration = Math.max(8, computedTotalDuration - totalOverlap);
-        // Average speech rate is 2.3 words/sec. Instruct LLM to fit this exactly.
-        const targetWordCount = Math.round(targetDuration * 2.3);
-
         await updateProgress(`🤖 Preparing AI Product Reel copy...`);
         let scriptText = customScriptText !== undefined && customScriptText !== null ? customScriptText.trim() : '';
         let hookText = customHookText !== undefined && customHookText !== null ? customHookText.trim() : '';
 
-        // If script is not provided, disable voice narration functionality
         let activeEnableVoice = enableVoice;
         if (!scriptText || scriptText.length === 0) {
           activeEnableVoice = false;
         }
 
         let ttsPath: string | null = null;
+        let ttsDuration = 0;
         if (activeEnableVoice && scriptText && scriptText.length > 0) {
           await updateProgress('🗣️ Synthesizing premium brand voiceover...');
           const ttsResult = await aiOrchestrator.generateVoiceover(scriptText, voiceId, language, false);
@@ -274,10 +268,27 @@ export class ReelWorker {
           generationMetadata.llmDetails = `Script: Gemini 2.5 | Audio: ${ttsResult.engineUsed} | Visuals: Gemini Flash Image`;
           generationMetadata.model_voice = ttsResult.voiceUsed;
           tempFilesToCleanup.push(ttsPath);
+          try {
+            ttsDuration = await VideoComposerService.getMediaDuration(ttsPath);
+          } catch (e) {
+            console.error("Failed to get TTS duration, estimating:", e);
+            ttsDuration = Math.ceil(scriptText.split(/\s+/).length / 2.3);
+          }
+        }
+
+        const totalOverlap = Math.max(0, (downloadedAssetPaths.length - 1) * 0.5);
+        
+        // Dynamically scale clip durations to perfectly match voiceover
+        if (ttsDuration > 0 && clipDurations.length > 0) {
+           const targetTotal = ttsDuration + totalOverlap + 1.0; // Add 1s padding
+           const currentTotal = clipDurations.reduce((a, b) => a + b, 0);
+           const scaleFactor = targetTotal / currentTotal;
+           for (let i = 0; i < clipDurations.length; i++) {
+             clipDurations[i] = clipDurations[i] * scaleFactor;
+           }
         }
 
         await updateProgress('🎬 Assembling your cinematic masterpiece...');
-        // Clip duration is dynamically based on asset type
         const { clipPaths, tempFiles: composerTempFiles } = await VideoComposerService.createVideoClips(
           downloadedAssetPaths, 
           clipDurations, 

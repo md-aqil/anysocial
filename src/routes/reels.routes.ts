@@ -374,13 +374,14 @@ ${languagePrompt} The total voiceover should take about ${duration || 15} second
 
 Example JSON structure:
 {
-  "script": "अरे गाइस, ये देखो! कॉफ़ी नोयर ब्लैक एंड बेज ड्रेस। पोलो नेक, ब्लैक-बेज कॉम्बिनेशन, एकदम टाइमलेस! कैजुअल आउटिंग हो या सेमी-फॉर्मल ऑकेजन, ये हर जगह है बिल्कुल परफेक्ट।",
+  "script": "Arey guys, ye dekho! Coffee Noir black and beige dress. Polo neck, black-beige combination, ekdum timeless! Casual outing ho ya semi-formal occasion, ye har jagah hai bilkul perfect.",
   "hook": "SECRET REVEALED"
 }
 
 Your task:
 1. Write the highly compelling viral ad voiceover script. Spell out all numbers as words so TTS reads them correctly. Do NOT include any visual descriptions, camera angles, or emojis. Write PURE SPOKEN TEXT.
 2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the first few seconds. CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
+3. If the requested language is NOT English (e.g. Hindi), you MUST write the script entirely in the Roman alphabet (e.g. Hinglish for Hindi, using English letters) so that on-screen subtitles display correctly. Do not use native scripts like Devanagari.
 
 Output your response strictly as a valid JSON object matching the provided schema.`;
 
