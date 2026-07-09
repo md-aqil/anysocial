@@ -465,7 +465,16 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       const durationStr = 'compact short-form';
       const wordCountGoal = 'sixty to one hundred ten words total, roughly twenty five to forty five seconds of spoken audio';
       
-      let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
+      let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.
+CRITICAL: The 📝 On-screen text MUST be short, punchy (max 3-4 words), and MUST NOT just repeat what is being said in the voiceover.
+EXTREME BAN: DO NOT write an advertisement. DO NOT regurgitate or copy-paste the input text. You MUST write a BRAND NEW conversational story from scratch.
+GOOD EXAMPLE (DO THIS):
+Scene 1
+Duration: 3s
+📹 Cinematic wide shot of an empty plot in Jaipur.
+📝 Plot in Jaipur
+🎙️ Guys, I just found a property in Jaipur that is almost impossible to believe. There's an incredible plot in Jagatpura...
+Translate all facts into a highly conversational, authentic spoken-word story like a real human YouTuber.`;
       if (series.language === 'Hindi') {
         languagePrompt = `Language: Hindi. 
 CRITICAL: The 🎙️ Voiceover MUST be exclusively in Devanagari script (हिंदी लिपि). 
