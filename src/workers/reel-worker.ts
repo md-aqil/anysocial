@@ -568,11 +568,18 @@ Output ONLY valid JSON:
           };
 
           const extractVoiceoverText = (fullScript: string): string => {
+            if (!fullScript) return '';
             // Primary extraction: Look for known voiceover markers
             const regex = /(?:🎙️|🎙|🎤|Voiceover:|Audio:)\s*(.*?)(?=\n*Scene|\n*📹|$)/gis;
             const matches = [...fullScript.matchAll(regex)];
+            let extracted = '';
             if (matches.length > 0) {
-              return matches.map(m => m[1].trim()).join(' ');
+              extracted = matches.map(m => m[1].trim()).join(' ').trim();
+            }
+            
+            if (extracted.length > 0) {
+              // Strip out any accidental 📝 or other markers that got caught
+              return extracted.replace(/📝.*?(\n|$)/g, '').trim();
             }
             
             // Fallback: Aggressively strip out structural instructions
@@ -585,12 +592,17 @@ Output ONLY valid JSON:
               .join(' ')
               .trim();
               
-            return cleaned || fullScript;
+            return cleaned || fullScript.trim();
           };
 
           if (!parsed.script) throw new Error('AI output did not contain a "script" field.');
           script = extractScriptText(parsed.script);
           scriptTts = extractVoiceoverText(script);
+          
+          if (!scriptTts || scriptTts.trim() === '') {
+            throw new Error('AI failed to generate spoken dialogue (voiceover) in the script. The generated script was empty. Please try regenerating.');
+          }
+          
           (series as any).aiMusicPrompt = parsed.audio_prompt;
         } catch (e: any) {
           logger.error({ event: 'reel_ai_script_failed', reelId, error: e.message });
