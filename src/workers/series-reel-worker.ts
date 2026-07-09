@@ -469,8 +469,12 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       if (series.language === 'Hindi') {
         languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि). 
 EXTREME BAN: DO NOT write an advertisement. DO NOT regurgitate or copy-paste the input text. You MUST write a BRAND NEW conversational story from scratch. DO NOT use phrases like "WhatsApp/Call Now", "Save & Share", "Follow for more", "Smart Investor", "40% OFF". DO NOT use symbols like @ or |. 
-BAD EXAMPLE (DO NOT DO THIS): "जयपुर में प्लॉट @ साठ लाख? बैंक ऑक्शन! प्राइम लोकेशन... WhatsApp / Call सेव | शेयर | फॉलो"
-GOOD EXAMPLE (DO THIS): "दोस्तों, मुझे जयपुर में एक ऐसी प्रॉपर्टी मिली है जिस पर यकीन करना मुश्किल है। जगतपुरा में एक शानदार प्लॉट है..."
+GOOD EXAMPLE (DO THIS):
+Scene 1
+Duration: 3s
+📹 Cinematic wide shot of an empty plot in Jaipur.
+📝 Plot in Jaipur
+🎙️ दोस्तों, मुझे जयपुर में एक ऐसी प्रॉपर्टी मिली है जिस पर यकीन करना मुश्किल है। जगतपुरा में एक शानदार प्लॉट है...
 Translate all facts into a highly conversational, authentic spoken-word story like a real human YouTuber.`;
       }
       const regionStoryRule = series.targetRegion && series.targetRegion !== 'Global' 
@@ -554,14 +558,15 @@ Output ONLY valid JSON:
                 if (typeof v === 'object' && v !== null) {
                   const key = Object.keys(v).find(k => /text|narration|speech|audio|voice|dialogue|script|caption/i.test(k));
                   if (key) return String(v[key]);
+                  return Object.values(v).map(str => String(str)).join(' ');
                 }
                 return '';
-              }).filter(Boolean).join(' ');
+              }).filter(Boolean).join('\n\n');
             }
             if (typeof val === 'object' && val !== null) {
                const key = Object.keys(val).find(k => /text|narration|speech|audio|voice|dialogue|script|caption/i.test(k));
                if (key) return String(val[key]);
-               return JSON.stringify(val);
+               return Object.values(val).map(str => String(str)).join(' ');
             }
             return String(val);
           };
