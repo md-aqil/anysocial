@@ -369,20 +369,24 @@ You MUST avoid writing a boring, robotic list of features (e.g., "Clear Title. R
 Instead, weave the facts into a highly engaging, emotional, and cinematic narrative. Create intense FOMO, use storytelling, and make it sound like a premium, top-tier influencer speaking directly to the viewer.
 
 CRITICAL FORMATTING RULES:
-You MUST structure your response EXACTLY like a video script with scenes, durations, visual descriptions, on-screen text, and voiceover. 
+You MUST structure your response EXACTLY as a JSON array of scene objects. 
 ${languagePrompt} The total voiceover should take about ${duration || 15} seconds to speak at a fast pace.
 
-Use this EXACT format for EVERY scene:
-
-Scene [Number]
-Duration: [X]s
-
-📹 [Visual description of the shot]
-📝 [On-screen text, if any]
-🎙️ [Voiceover text to be spoken in the specified language]
+Example JSON structure:
+{
+  "script": [
+    {
+      "duration": "3s",
+      "visual": "Cinematic wide shot of the product.",
+      "on_screen_text": "Secret Revealed...",
+      "voiceover": "अरे गाइस, ये देखो! कॉफ़ी नोयर ब्लैक एंड बेज ड्रेस।"
+    }
+  ],
+  "hook": "SECRET REVEALED"
+}
 
 Your task:
-1. Write the highly compelling, cinematic viral ad script using the strict Scene format above. Spell out all numbers as words in the voiceover so TTS reads them correctly. Do NOT use any emojis or hashtags in the voiceover (🎙️).
+1. Write the highly compelling, cinematic viral ad script using the strict JSON format above. Spell out all numbers as words in the voiceover so TTS reads them correctly. Do NOT use any emojis or hashtags in the voiceover (🎙️).
 2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the first scene (e.g. "Secret Revealed...", "Must-Have Tech!"). CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
 
 Output your response strictly as a valid JSON object matching the provided schema.`;
