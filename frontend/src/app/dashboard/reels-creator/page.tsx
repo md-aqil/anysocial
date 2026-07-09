@@ -764,6 +764,19 @@ export default function ReelsDashboard() {
                           </div>
                         ))}
                       </div>
+                      {series.reels && series.reels.length > 5 && (
+                        <div className="flex justify-center mt-2">
+                          <button
+                            onClick={() => setExpandedSeries(prev => ({ ...prev, [series.id]: !prev[series.id] }))}
+                            className="text-xs font-bold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 px-4 py-2 rounded-full transition-colors"
+                          >
+                            {expandedSeries[series.id] 
+                              ? 'Hide older reels' 
+                              : `View ${series.reels.length - 5} more generated reels...`}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     )}
                   </div>
                 </div>
