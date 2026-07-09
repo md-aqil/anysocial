@@ -509,7 +509,7 @@ PACING & RULES:
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
 
 FORMATTING RULES (CRITICAL):
-You MUST format the "script" field EXACTLY like this for every scene. Do not deviate from this format. Use the exact emojis (📹, 📝, 🎙️) as shown:
+You MUST format the "script" field EXACTLY like this for every scene. Do not deviate from this format. The "script" field MUST be a SINGLE GIANT STRING, NOT an array of objects. Use the exact emojis (📹, 📝, 🎙️) as shown:
 
 Scene 1
 Duration: 3s
@@ -520,7 +520,7 @@ Duration: 3s
  
 Output ONLY valid JSON: 
 {
-  "script": "...", 
+  "script": "SINGLE CONTINUOUS STRING CONTAINING ALL SCENES", 
   "audio_prompt": "Describe the perfect cinematic background music to match the emotional tone and pacing of this story."
 }`;
 
@@ -561,9 +561,12 @@ Output ONLY valid JSON:
               return val.map(v => {
                 if (typeof v === 'string') return v;
                 if (typeof v === 'object' && v !== null) {
-                  const key = Object.keys(v).find(k => /text|narration|speech|audio|voice|dialogue|script|caption/i.test(k));
-                  if (key) return String(v[key]);
-                  return Object.values(v).map(str => String(str)).join(' ');
+                  const key = Object.keys(v).find(k => /text|narration|speech|audio|voice|dialogue|script|caption|hindi|spoken/i.test(k));
+                  if (key) return `🎙️ ${String(v[key])}`;
+                  
+                  // Reconstruct with emojis so extractVoiceoverText can parse it
+                  const values = Object.values(v);
+                  return `📹 ${values[0] || ''}\n📝 ${values[1] || ''}\n🎙️ ${values[values.length - 1] || ''}`;
                 }
                 return '';
               }).filter(Boolean).join('\n\n');
