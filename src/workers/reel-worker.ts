@@ -269,7 +269,7 @@ export class ReelWorker {
         let ttsPath: string | null = null;
         if (activeEnableVoice && scriptText && scriptText.length > 0) {
           await updateProgress('🗣️ Synthesizing premium brand voiceover...');
-          ttsPath = await aiOrchestrator.generateVoiceover(scriptText, voiceId, language, reelWithDetails.type === 'PRODUCT');
+          ttsPath = await aiOrchestrator.generateVoiceover(scriptText, voiceId, language, false);
           tempFilesToCleanup.push(ttsPath);
         }
 
@@ -472,9 +472,9 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
         
       const storyPrompt = `You are an elite short-form video scriptwriter (TikTok/Reels/Shorts). Your task is to write a highly engaging ${durationStr} script about: "${series.niche || series.customPrompt}".${pastReelsPrompt}${regionStoryRule}
  
-CRITICAL TONE & ADAPTABILITY RULE: 
+CRITICAL TONE & FORMAT RULE (ABSOLUTELY NO BULLET POINTS): 
 Analyze the topic carefully and adapt your tone to perfectly match it:
-- If the topic is real estate, a product, or a business (e.g. "Bank auction shop in Gurugram"), act as a world-class ad copywriter. Write a premium, high-converting cinematic ad script that creates intense FOMO and highlights the massive opportunity. DO NOT just list dry facts or prices. Wrap it in an emotional narrative.
+- If the topic is real estate, a product, or a business, act as a world-class ad copywriter. Write a premium, high-converting cinematic ad script. YOU MUST write it as a smooth, continuous, spoken-word narrative. DO NOT write a robotic property listing. DO NOT use bullet points, short fragmented facts, or a list of amenities. Wrap the entire pitch in a seamless, emotional, and conversational story.
 - If the topic is a mystery, history, or storytelling, act as a suspenseful storyteller. Make it edgy, captivating, and relatable, building up to a massive twist.
  
 KOKORO TTS OPTIMIZATION RULES (CRITICAL):

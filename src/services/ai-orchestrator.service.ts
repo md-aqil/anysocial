@@ -446,7 +446,7 @@ Make sure the output is a valid JSON object.`;
   }
 
   // 2. Voice Synthesis Engine (Google Cloud TTS)
-  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = true): Promise<string> {
+  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false): Promise<string> {
     if (useAdvancedModel) {
       const { GoogleAuth } = await import('google-auth-library');
       const auth = new GoogleAuth({
