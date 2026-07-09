@@ -471,7 +471,11 @@ Make sure the output is a valid JSON object.`;
     }
     const settings = await this.getAiSettings();
     const isGeminiVoice = ['Aoede', 'Charon', 'Puck', 'Kore', 'Fenrir', 'Leda'].includes(voiceName);
-    const useGemini = useAdvancedModel || settings.voice.primary.includes('gemini') || isGeminiVoice;
+    
+    // In playground mode, strictly respect the requested model engine, completely ignoring global settings
+    const useGemini = strictPlaygroundMode 
+      ? useAdvancedModel 
+      : (useAdvancedModel || settings.voice.primary.includes('gemini') || isGeminiVoice);
     
     if (useGemini) {
       const { GoogleAuth } = await import('google-auth-library');
