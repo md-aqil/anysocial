@@ -593,9 +593,11 @@ Make sure the output is a valid JSON object.`;
       else actualVoiceName = 'es-ES-Journey-D';
     } else {
       bcp47Language = 'en-US';
-      if (voiceName === 'Aoede' || voiceName === 'Kore') actualVoiceName = 'en-US-Journey-O';
-      else if (voiceName === 'Charon') actualVoiceName = 'en-US-Journey-F';
-      else actualVoiceName = 'en-US-Journey-D';
+      if (voiceName === 'Aoede' || voiceName.endsWith('-O')) actualVoiceName = 'en-US-Journey-O'; // Female 1
+      else if (voiceName === 'Kore' || voiceName === 'Leda' || voiceName.endsWith('-F')) actualVoiceName = 'en-US-Journey-F'; // Female 2
+      else if (voiceName === 'Charon' || voiceName.endsWith('-J')) actualVoiceName = 'en-US-Journey-D'; // Male 1
+      else if (voiceName === 'Fenrir' || voiceName === 'Puck') actualVoiceName = 'en-US-Journey-D'; // Male 1 (Journey only has D, F, O)
+      else actualVoiceName = 'en-US-Journey-O';
     }
 
     const request = {
