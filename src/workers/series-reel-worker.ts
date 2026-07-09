@@ -287,6 +287,9 @@ export class ReelWorker {
              clipDurations[i] = clipDurations[i] * scaleFactor;
            }
         }
+        
+        const finalComputedTotal = clipDurations.reduce((a, b) => a + b, 0);
+        const targetDuration = Math.max(8, finalComputedTotal - totalOverlap);
 
         await updateProgress('🎬 Assembling your cinematic masterpiece...');
         const { clipPaths, tempFiles: composerTempFiles } = await VideoComposerService.createVideoClips(
