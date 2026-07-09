@@ -269,7 +269,10 @@ export class ReelWorker {
         let ttsPath: string | null = null;
         if (activeEnableVoice && scriptText && scriptText.length > 0) {
           await updateProgress('🗣️ Synthesizing premium brand voiceover...');
-          ttsPath = await aiOrchestrator.generateVoiceover(scriptText, voiceId, language, false);
+          const ttsResult = await aiOrchestrator.generateVoiceover(scriptText, voiceId, language, false);
+          ttsPath = ttsResult.audioPath;
+          generationMetadata.llmDetails = `Script: Gemini 2.5 | Audio: ${ttsResult.engineUsed} | Visuals: Gemini Flash Image`;
+          generationMetadata.model_voice = ttsResult.voiceUsed;
           tempFilesToCleanup.push(ttsPath);
         }
 
@@ -464,7 +467,7 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
-        languagePrompt = `Language: Hinglish (Hindi spoken, but written entirely in Roman/English alphabet). CRITICAL: Write the ENTIRE script in Hinglish using the English (Latin) alphabet. DO NOT use ANY Devanagari characters. Ensure core English words (e.g., 'auction', 'whatsapp', 'smart', 'investor') retain their proper English spelling. (e.g., write "Smart Investors aise mauke kabhi nahi chhodte").`;
+        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. However, the TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (transliterated into Devanagari, e.g., 'टाइम', 'फीलिंग', 'सस्पेंस'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable. DO NOT output a list of English features. Translate everything into spoken conversational Hindi.`;
       }
       const regionStoryRule = series.targetRegion && series.targetRegion !== 'Global' 
         ? `\nCRITICAL REGIONAL CONTEXT: Set the cultural context, character names, foods, locations, and references strictly to ${series.targetRegion} origin.` 
@@ -476,14 +479,14 @@ CRITICAL TONE & TTS FORMAT RULES (STRICTLY ENFORCED):
 1. NO ROBOTIC LISTINGS: NEVER write a list of features or fragmented facts separated by pipes or slashes (e.g., "3 BHK | 1800 Sq Ft | Clear Title"). You MUST weave all details into a natural, conversational, spoken-word story (e.g., "Imagine stepping into a massive eighteen hundred square foot luxury apartment...").
 2. SPELL OUT ALL NUMBERS & CURRENCIES: Do NOT use symbols like ₹, $, %, or digits like 3, 1800. Write them as spoken words (e.g., "three B H K", "eighteen hundred", "fifteen crore rupees"). The TTS engine will crash on symbols.
 3. NO EMOJIS OR BRACKETS IN VOICEOVER: The voiceover (🎙️) MUST NOT contain any emojis, hashtags, or bracketed placeholders like "[Your Number]". Write it exactly as a human voice actor would read it from a teleprompter.
-4. TONE ADAPTATION: If real estate/product, write a high-converting, emotional narrative (not a dry listing). If mystery/history, write a suspenseful story.
+4. TONE ADAPTATION: Act like a real, authentic human sharing a mind-blowing discovery with a friend on TikTok. DO NOT sound like a cheesy salesman, a TV commercial, or an AI. BAN all sales jargon like 'Smart Investment', 'Grab this opportunity', 'Don't miss out'. Talk like a normal person.
 5. ADVANCED INTONATION: Use punctuation (;:,.!?—…) for dramatic pauses. Break long ideas into very short sentences.
  
 STORYTELLING STRUCTURE (Adapt based on topic):
-1. HOOK (0-3s): Start with a massive, pattern-interrupting statement or question (e.g., "The biggest real estate secret in Gurugram..." or "This is the scariest place on Earth...").
-2. THE BUILD-UP: Explain the core topic or opportunity using highly visual, engaging language. 
+1. HOOK (0-3s): Start with a conversational, authentic hook (e.g., "I just found the craziest real estate deal in Gurugram..." or "Nobody is talking about this place..."). Do NOT sound like an ad.
+2. THE BUILD-UP: Explain the core topic or opportunity using highly visual, conversational, and relatable language. 
 3. THE CLIMAX/OFFER: The most mind-blowing fact, twist, or the massive value of the opportunity.
-4. ENDING: A strong lingering thought or a powerful Call to Action.
+4. ENDING: A strong lingering thought or a casual Call to Action (e.g. "Send this to someone who needs to see it").
  
 PACING & RULES:
 - The script must be compact and tightly paced. Use ${wordCountGoal}.
@@ -710,7 +713,10 @@ Output ONLY valid JSON:
       let wordTimings: Array<{word: string, startTime: number, endTime: number}> = [];
       
       try {
-        ttsPath = await aiOrchestrator.generateVoiceover(scriptTts, series.voiceId || 'Aoede', series.language || 'English');
+        const ttsResult = await aiOrchestrator.generateVoiceover(scriptTts, series.voiceId || 'Aoede', series.language || 'English');
+        ttsPath = ttsResult.audioPath;
+        generationMetadata.llmDetails = `Script: Gemini 2.5 | Audio: ${ttsResult.engineUsed} | Visuals: Gemini Flash Image`;
+        generationMetadata.model_voice = ttsResult.voiceUsed;
         if (ttsPath) {
           tempFilesToCleanup.push(ttsPath);
         }

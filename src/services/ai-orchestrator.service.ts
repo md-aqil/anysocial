@@ -465,7 +465,7 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false, strictPlaygroundMode: boolean = false): Promise<string> {
+  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false, strictPlaygroundMode: boolean = false): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> {
     if (!text || text.trim().length === 0) {
       throw new Error("Voiceover script is empty. Please ensure your script contains text or uses the 🎙️ emoji for voiceover lines.");
     }
@@ -496,7 +496,7 @@ Make sure the output is a valid JSON object.`;
       if (language.includes('Hindi')) languageCode = 'hi-IN';
       else if (language.includes('Spanish')) languageCode = 'es-ES';
 
-      const executeVoiceGen = async (overrideModel?: string) => {
+      const executeVoiceGen = async (overrideModel?: string): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> => {
         const modelName = overrideModel || 'gemini-2.5-flash';
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
         
@@ -559,7 +559,7 @@ Make sure the output is a valid JSON object.`;
         
         const fs = await import('fs');
         fs.writeFileSync(tempPath, wavBuffer);
-        return tempPath;
+        return { audioPath: tempPath, engineUsed: modelName, voiceUsed: geminiVoice };
       };
 
       try {

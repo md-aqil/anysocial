@@ -156,7 +156,6 @@ router.get('/series', requireAuth, async (req: any, res: any) => {
       include: {
         reels: {
           orderBy: { createdAt: 'desc' },
-          take: 5,
           include: { post: true }
         },
       },
