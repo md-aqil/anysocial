@@ -499,6 +499,16 @@ PACING & RULES:
 - Do not artificially pad the script with extra background, repeated suspense lines, or multiple unrelated facts.
 - ${languagePrompt}
 - The narration must feel intense, highly visual, rhythmic, and perfectly matched to the topic of "${series.niche || series.customPrompt}".
+
+FORMATTING RULES (CRITICAL):
+You MUST format the "script" field EXACTLY like this for every scene. Do not deviate from this format. Use the exact emojis (📹, 📝, 🎙️) as shown:
+
+Scene 1
+Duration: 3s
+
+📹 [Visual description of the shot]
+📝 [On-screen text, if any]
+🎙️ [Voiceover text to be spoken]
  
 Output ONLY valid JSON: 
 {
