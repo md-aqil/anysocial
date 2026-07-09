@@ -561,7 +561,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
    * Mixes a primary audio track (voiceover) with background music.
    */
   static async addBackgroundMusic(voiceoverPath: string, bgmPath: string, duration: number, signal?: AbortSignal): Promise<{ outputPath: string, tempFiles: string[] }> {
-    const outputPath = path.join(os.tmpdir(), `mixed_${Date.now()}.mp3`);
+    const outputPath = path.join(os.tmpdir(), `mixed_${Date.now()}.wav`);
     
     await new Promise((resolve, reject) => {
       const proc = ffmpeg()
@@ -575,14 +575,23 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           '[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=2[out]'
         ])
         .map('[out]')
-        .audioCodec('libmp3lame')
-        .audioBitrate(192)
+        .audioCodec('pcm_s16le')
         .outputOptions([`-t ${duration}`])
         .on('error', (err) => {
           if (signal?.aborted) return resolve(false);
           reject(err);
         })
-        .on('end', resolve);
+        .on('end', () => {
+          try {
+            const stats = fs.statSync(outputPath);
+            if (stats.size === 0) {
+              return reject(new Error(`addBackgroundMusic generated a 0-byte file at ${outputPath}`));
+            }
+            resolve(true);
+          } catch (e: any) {
+            reject(new Error(`addBackgroundMusic failed to verify output file: ${e.message}`));
+          }
+        });
 
       if (signal) {
         signal.addEventListener('abort', () => {
