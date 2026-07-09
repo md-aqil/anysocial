@@ -369,44 +369,25 @@ You MUST avoid writing a boring, robotic list of features (e.g., "Clear Title. R
 Instead, weave the facts into a highly engaging, emotional, and cinematic narrative. Create intense FOMO, use storytelling, and make it sound like a premium, top-tier influencer speaking directly to the viewer.
 
 CRITICAL FORMATTING RULES:
-You MUST structure your response EXACTLY as a JSON array of scene objects. 
+You MUST structure your response as a simple JSON object containing the full voiceover script and the short hook text. DO NOT use scenes, visual descriptions, or emojis.
 ${languagePrompt} The total voiceover should take about ${duration || 15} seconds to speak at a fast pace.
 
 Example JSON structure:
 {
-  "script": [
-    {
-      "duration": "3s",
-      "visual": "Cinematic wide shot of the product.",
-      "on_screen_text": "Secret Revealed...",
-      "voiceover": "अरे गाइस, ये देखो! कॉफ़ी नोयर ब्लैक एंड बेज ड्रेस।"
-    }
-  ],
+  "script": "अरे गाइस, ये देखो! कॉफ़ी नोयर ब्लैक एंड बेज ड्रेस। पोलो नेक, ब्लैक-बेज कॉम्बिनेशन, एकदम टाइमलेस! कैजुअल आउटिंग हो या सेमी-फॉर्मल ऑकेजन, ये हर जगह है बिल्कुल परफेक्ट।",
   "hook": "SECRET REVEALED"
 }
 
 Your task:
-1. Write the highly compelling, cinematic viral ad script using the strict JSON format above. Spell out all numbers as words in the voiceover so TTS reads them correctly. Do NOT use any emojis or hashtags in the voiceover (🎙️).
-2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the first scene (e.g. "Secret Revealed...", "Must-Have Tech!"). CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
+1. Write the highly compelling viral ad voiceover script. Spell out all numbers as words so TTS reads them correctly. Do NOT include any visual descriptions, camera angles, or emojis. Write PURE SPOKEN TEXT.
+2. Write a highly catchy, bold 3-5 word HOOK text to overlay on the screen during the first few seconds. CRITICAL: The HOOK text MUST ALWAYS BE IN ENGLISH, regardless of the script language.
 
 Output your response strictly as a valid JSON object matching the provided schema.`;
 
     const responseSchema = {
       type: "OBJECT",
       properties: {
-        script: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              duration: { type: "STRING" },
-              visual: { type: "STRING" },
-              on_screen_text: { type: "STRING" },
-              voiceover: { type: "STRING" }
-            },
-            required: ["duration", "visual", "on_screen_text", "voiceover"]
-          }
-        },
+        script: { type: "STRING" },
         hook: { type: "STRING" }
       },
       required: ["script", "hook"]
@@ -416,23 +397,9 @@ Output your response strictly as a valid JSON object matching the provided schem
     const rawContent = resultText.match(/\{[\s\S]*\}/) ? resultText.match(/\{[\s\S]*\}/)![0] : resultText.replace(/```json\n?|```/g, '').trim();
     const parsed = JSON.parse(rawContent);
 
-    let finalScriptStr = '';
-    if (Array.isArray(parsed.script)) {
-      finalScriptStr = parsed.script.map((scene: any, i: number) => {
-        let s = `Scene ${i + 1}\n`;
-        s += `Duration: ${scene.duration || '3s'}\n\n`;
-        s += `📹 ${scene.visual || ''}\n`;
-        s += `📝 ${scene.on_screen_text || ''}\n`;
-        s += `🎙️ ${scene.voiceover || ''}`;
-        return s;
-      }).join('\n\n');
-    } else if (typeof parsed.script === 'object' && parsed.script !== null) {
-      finalScriptStr = JSON.stringify(parsed.script, null, 2);
-    }
-
     res.status(200).json({
       success: true,
-      script: finalScriptStr || parsed.script,
+      script: parsed.script,
       hook: parsed.hook,
     });
   } catch (error: any) {
