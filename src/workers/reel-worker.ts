@@ -600,7 +600,7 @@ Output ONLY valid JSON:
           scriptTts = extractVoiceoverText(script);
           
           if (!scriptTts || scriptTts.trim() === '') {
-            throw new Error('AI failed to generate spoken dialogue (voiceover) in the script. The generated script was empty. Please try regenerating.');
+             throw new Error(`AI generated an empty voiceover. Raw script generated: ${script.substring(0, 150)}...`);
           }
           
           (series as any).aiMusicPrompt = parsed.audio_prompt;
