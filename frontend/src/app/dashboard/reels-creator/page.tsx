@@ -7,7 +7,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Plus, Video, Calendar, Clock, Play, FileText, Loader2, Sparkles, CheckCircle2, AlertCircle, Wand2, MoreVertical, Trash2, Edit2, PauseCircle, Send, X, RefreshCcw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
@@ -194,7 +194,9 @@ const getReelStatus = (reel: any) => {
 export default function ReelsDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'series' | 'product'>('series');
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab') as 'series' | 'product' | null;
+  const [activeTab, setActiveTab] = useState<'series' | 'product'>(tabParam || 'series');
   const [selectedMetadataReel, setSelectedMetadataReel] = useState<any | null>(null);
   const [editedScript, setEditedScript] = useState("");
   const [editedVoiceModel, setEditedVoiceModel] = useState("");

@@ -204,7 +204,7 @@ export default function AIProductReelPage() {
         throw new Error(errorData?.details || errorData?.error || 'Failed to generate product reel');
       }
 
-      router.push('/dashboard/reels-creator');
+      router.push('/dashboard/reels-creator?tab=product');
     } catch (error: any) {
       console.error(error);
       alert(`Failed to generate reel: ${error.message}`);
