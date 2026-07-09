@@ -1125,4 +1125,4 @@ Output ONLY valid JSON:
   }
 }
 
-export const reelWorker = new ReelWorker();
+export const seriesReelWorker = new ReelWorker();
