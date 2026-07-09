@@ -468,7 +468,10 @@ Make sure the output is a valid JSON object.`;
   // 2. Voice Synthesis Engine (Google Cloud TTS)
   async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false): Promise<string> {
     const settings = await this.getAiSettings();
-    if (useAdvancedModel) {
+    const isGeminiVoice = ['Aoede', 'Charon', 'Puck', 'Kore', 'Fenrir', 'Leda'].includes(voiceName);
+    const useGemini = useAdvancedModel || settings.voice.primary.includes('gemini') || isGeminiVoice;
+    
+    if (useGemini) {
       const { GoogleAuth } = await import('google-auth-library');
       const auth = new GoogleAuth({
         scopes: [
