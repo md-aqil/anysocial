@@ -551,9 +551,31 @@ Example structure:
         try {
           let parsed: any;
           let aiResultText = '';
+          
+          const responseSchema = {
+            type: "OBJECT",
+            properties: {
+              script: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    duration: { type: "STRING" },
+                    visual: { type: "STRING" },
+                    on_screen_text: { type: "STRING" },
+                    voiceover: { type: "STRING" }
+                  },
+                  required: ["duration", "visual", "on_screen_text", "voiceover"]
+                }
+              },
+              audio_prompt: { type: "STRING" }
+            },
+            required: ["script", "audio_prompt"]
+          };
+
           for (let attempt = 0; attempt < 3; attempt++) {
             try {
-              aiResultText = await aiOrchestrator.generateContent(storyPrompt);
+              aiResultText = await aiOrchestrator.generateContent(storyPrompt, [], true, responseSchema);
               const match = aiResultText.match(/\{[\s\S]*\}/);
               const rawContent = match ? match[0] : aiResultText.replace(/```json\n?|```/g, '').trim();
               parsed = JSON.parse(rawContent);
@@ -702,10 +724,30 @@ Example structure:
       }
     ]
   }`;
+           const cineSchema = {
+             type: "OBJECT",
+             properties: {
+               visuals: {
+                 type: "ARRAY",
+                 items: {
+                   type: "OBJECT",
+                   properties: {
+                     keyword: { type: "STRING" },
+                     media_type: { type: "STRING" },
+                     camera_movement: { type: "STRING" },
+                     lighting: { type: "STRING" }
+                   },
+                   required: ["keyword", "media_type", "camera_movement", "lighting"]
+                 }
+               }
+             },
+             required: ["visuals"]
+           };
+
            let cineParsed: any;
            for (let attempt = 0; attempt < 3; attempt++) {
              try {
-               const cineResText = await aiOrchestrator.generateContent(cinePrompt);
+               const cineResText = await aiOrchestrator.generateContent(cinePrompt, [], true, cineSchema);
                const cineMatch = cineResText.match(/\{[\s\S]*\}/);
                const cineRaw = cineMatch ? cineMatch[0] : cineResText.replace(/```json\n?|```/g, '').trim();
                cineParsed = JSON.parse(cineRaw);

@@ -158,7 +158,7 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  async generateContent(prompt: string, mediaParts?: { data: string, mimeType: string }[], useAdvancedModel: boolean = true): Promise<string> {
+  async generateContent(prompt: string, mediaParts?: { data: string, mimeType: string }[], useAdvancedModel: boolean = true, schema?: any): Promise<string> {
     try {
       const settings = await this.getAiSettings();
       if (useAdvancedModel) {
@@ -188,17 +188,23 @@ Make sure the output is a valid JSON object.`;
             }
           }
           
+          const generationConfig: any = {
+            temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
+            maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
+            responseMimeType: "application/json"
+          };
+
+          if (schema) {
+            generationConfig.responseSchema = schema;
+          }
+          
           const res = await client.request({
             url: endpoint,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: {
               contents: [{ role: 'user', parts }],
-              generationConfig: {
-                temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
-                maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
-                responseMimeType: "application/json"
-              }
+              generationConfig
             }
           });
 
