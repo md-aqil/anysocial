@@ -467,7 +467,11 @@ You MUST choose a COMPLETELY DIFFERENT, new topic, story, fact, or mystery for t
       
       let languagePrompt = `Language: ${series.language || 'English'}. Write the script ONLY in ${series.language || 'English'}.`;
       if (series.language === 'Hindi') {
-        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि) so the TTS engine pronounces it perfectly. However, the TONE and VOCABULARY should NOT be formal or pure bookish Hindi. Use a natural, everyday mix of Desi Hindi, Urdu words, and common English words (transliterated into Devanagari, e.g., 'टाइम', 'फीलिंग', 'सस्पेंस'), exactly like a modern Indian TikToker or YouTuber speaks. Make it sound highly conversational, natural, and relatable. DO NOT output a list of English features. Translate everything into spoken conversational Hindi.`;
+        languagePrompt = `Language: Hindi. CRITICAL: You MUST write the entire script exclusively in the Devanagari script (हिंदी लिपि). 
+EXTREME BAN: DO NOT write an advertisement. DO NOT use phrases like "WhatsApp/Call Now", "Save & Share", "Follow for more", "Smart Investor", "40% OFF". DO NOT use symbols like @ or |. 
+BAD EXAMPLE (DO NOT DO THIS): "जयपुर में प्लॉट @ साठ लाख? बैंक ऑक्शन! प्राइम लोकेशन... WhatsApp / Call सेव | शेयर | फॉलो"
+GOOD EXAMPLE (DO THIS): "दोस्तों, मुझे जयपुर में एक ऐसी प्रॉपर्टी मिली है जिस पर यकीन करना मुश्किल है। जगतपुरा में एक शानदार प्लॉट है..."
+Translate all facts into a highly conversational, authentic spoken-word story like a real human YouTuber.`;
       }
       const regionStoryRule = series.targetRegion && series.targetRegion !== 'Global' 
         ? `\nCRITICAL REGIONAL CONTEXT: Set the cultural context, character names, foods, locations, and references strictly to ${series.targetRegion} origin.` 
@@ -486,7 +490,7 @@ STORYTELLING STRUCTURE (Adapt based on topic):
 1. HOOK (0-3s): Start with a conversational, authentic hook (e.g., "I just found the craziest real estate deal in Gurugram..." or "Nobody is talking about this place..."). Do NOT sound like an ad.
 2. THE BUILD-UP: Explain the core topic or opportunity using highly visual, conversational, and relatable language. 
 3. THE CLIMAX/OFFER: The most mind-blowing fact, twist, or the massive value of the opportunity.
-4. ENDING: A strong lingering thought or a casual Call to Action (e.g. "Send this to someone who needs to see it").
+4. ENDING: A strong lingering thought or a casual Call to Action (e.g. "Send this to someone who needs to see it"). NEVER SAY "WhatsApp/Call Now", "Save & Share", or "Follow for more".
  
 PACING & RULES:
 - The script must be compact and tightly paced. Use ${wordCountGoal}.
@@ -647,9 +651,9 @@ Output ONLY valid JSON:
           console.warn("[Art Director] Failed to parse memory core, proceeding with empty context.");
         }
 
-        // Dynamically calculate the number of shots (1 shot ~every 10 words, capped at 15 to prevent excessive generation)
+        // Dynamically calculate the number of shots (very fast pacing: 1 shot ~every 7 words)
         const scriptWordCount = script.split(/\s+/).length;
-        numKeywords = Math.min(15, Math.max(6, Math.ceil(scriptWordCount / 10)));
+        numKeywords = Math.min(18, Math.max(7, Math.ceil(scriptWordCount / 7)));
 
         // Phase 3: Shot Planning (Cinematographer)
         await updateProgress(`🎥 Phase 3: Cinematographer is planning the Shot List (${numKeywords} shots)...`);
