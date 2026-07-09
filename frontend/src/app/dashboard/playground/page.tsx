@@ -211,7 +211,7 @@ export default function PlaygroundPage() {
                     <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
                     <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                     <option value="gemini-3.1-flash-tts-preview">Gemini 3.1 TTS Preview</option>
-                    <option value="google-cloud-standard">Google Cloud TTS (Standard)</option>
+                    <option value="google-cloud-standard">Google Cloud TTS (Journey / Chirp3-HD)</option>
                   </select>
                 </div>
                 <div>
