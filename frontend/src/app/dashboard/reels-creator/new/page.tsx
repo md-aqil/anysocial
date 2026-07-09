@@ -122,7 +122,7 @@ export default function ReelCreatorPage() {
   const [customScript, setCustomScript] = useState('');
 
   const [language, setLanguage] = useState('English');
-  const [voiceId, setVoiceId] = useState('en-US-Journey-F');
+  const [voiceId, setVoiceId] = useState('Aoede');
   const [targetRegion, setTargetRegion] = useState('Global');
 
 

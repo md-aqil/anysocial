@@ -205,7 +205,7 @@ export default function ReelsDashboard() {
     setSelectedMetadataReel(reel);
     setEditedScript(reel.script || "");
     const meta = reel.metadata as any;
-    setEditedVoiceModel(meta?.model_voice || reel.series?.voiceId || "en-US-Journey-F");
+    setEditedVoiceModel(meta?.model_voice || reel.series?.voiceId || "Aoede");
     setShotsToRegenerate([]);
   };
 

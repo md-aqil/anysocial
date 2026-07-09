@@ -423,7 +423,7 @@ const generateProductReelSchema = z.object({
   scriptText: z.string().optional().nullable(),
   hookText: z.string().optional().nullable(),
   language: z.string().optional().default('English'),
-  voiceId: z.string().optional().default('en-US-Journey-F'),
+  voiceId: z.string().optional().default('Aoede'),
 });
 
 /**

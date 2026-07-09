@@ -173,7 +173,7 @@ export class ReelWorker {
     isRecompose?: boolean;
     regenerateShots?: number[];
   }>) {
-    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'en-US-Journey-F', isRecompose = false, regenerateShots = [] } = job.data;
+    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'Aoede', isRecompose = false, regenerateShots = [] } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
     const tempFilesToCleanup: string[] = [];
     
@@ -182,7 +182,7 @@ export class ReelWorker {
       startedAt: Date.now(),
       model_llm: 'gemini-2.5-flash',
       model_image: 'gemini-2.5-flash-image',
-      model_voice: voiceId || 'en-US-Journey-F',
+      model_voice: voiceId || 'Aoede',
       shots: []
     };
 
@@ -706,7 +706,7 @@ Output ONLY valid JSON:
       let wordTimings: Array<{word: string, startTime: number, endTime: number}> = [];
       
       try {
-        ttsPath = await aiOrchestrator.generateVoiceover(scriptTts, series.voiceId || 'en-US-Journey-F', series.language || 'English');
+        ttsPath = await aiOrchestrator.generateVoiceover(scriptTts, series.voiceId || 'Aoede', series.language || 'English');
         if (ttsPath) {
           tempFilesToCleanup.push(ttsPath);
         }
@@ -1079,7 +1079,7 @@ Output ONLY valid JSON:
           statusMessage: error.message.substring(0, 150) // Save the real error for the UI
         },
       });
-      throw error;
+      return { success: false, error: error.message };
     } finally {
       // Clean up all intermediate temp files proactively
       logger.info({ event: 'reel_cleanup_started', reelId, totalFiles: tempFilesToCleanup.length });
