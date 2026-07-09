@@ -396,9 +396,26 @@ Output your response strictly as a valid JSON object with NO extra text:
     const rawContent = resultText.replace(/```json\n?|```/g, '').trim();
     const parsed = JSON.parse(rawContent);
 
+    let finalScriptStr = '';
+    if (typeof parsed.script === 'string') {
+      finalScriptStr = parsed.script;
+    } else if (Array.isArray(parsed.script)) {
+      finalScriptStr = parsed.script.map((scene: any, i: number) => {
+        if (typeof scene === 'string') return scene;
+        let s = `Scene ${i + 1}\n`;
+        if (scene.duration) s += `Duration: ${scene.duration}\n`;
+        if (scene.visual || scene.camera) s += `📹 ${scene.visual || scene.camera}\n`;
+        if (scene.text || scene.hook || scene.graphic) s += `📝 ${scene.text || scene.hook || scene.graphic}\n`;
+        if (scene.voiceover || scene.narration || scene.audio || scene.speech) s += `🎙️ ${scene.voiceover || scene.narration || scene.audio || scene.speech}\n`;
+        return s;
+      }).join('\n\n');
+    } else if (typeof parsed.script === 'object' && parsed.script !== null) {
+      finalScriptStr = JSON.stringify(parsed.script, null, 2);
+    }
+
     res.status(200).json({
       success: true,
-      script: parsed.script,
+      script: finalScriptStr || parsed.script,
       hook: parsed.hook,
     });
   } catch (error: any) {
