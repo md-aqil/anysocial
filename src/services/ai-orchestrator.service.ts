@@ -483,11 +483,11 @@ Make sure the output is a valid JSON object.`;
       const token = (await client.getAccessToken()).token;
       
       let geminiVoice = 'Aoede';
-      if (voiceName === 'Charon') geminiVoice = 'Charon';
-      else if (voiceName === 'Puck') geminiVoice = 'Puck';
-      else if (voiceName === 'Kore') geminiVoice = 'Kore';
-      else if (voiceName === 'Fenrir') geminiVoice = 'Fenrir';
-      else if (voiceName === 'Leda') geminiVoice = 'Leda';
+      if (['Charon', 'Puck', 'Fenrir'].includes(voiceName) || voiceName.endsWith('-D') || voiceName.endsWith('-J')) {
+        geminiVoice = voiceName === 'Puck' ? 'Puck' : voiceName === 'Fenrir' ? 'Fenrir' : 'Charon';
+      } else if (['Kore', 'Leda'].includes(voiceName) || voiceName.endsWith('-O') || voiceName.endsWith('-F')) {
+        geminiVoice = voiceName === 'Kore' ? 'Kore' : voiceName === 'Leda' ? 'Leda' : 'Aoede';
+      }
       
       let languageCode = 'en-US';
       if (language.includes('Hindi')) languageCode = 'hi-IN';
@@ -580,9 +580,9 @@ Make sure the output is a valid JSON object.`;
 
     if (language.includes('Hindi')) {
       bcp47Language = 'hi-IN';
-      if (voiceName === 'Aoede' || voiceName === 'Kore' || voiceName.endsWith('-F') || voiceName.endsWith('-O')) actualVoiceName = 'hi-IN-Chirp3-HD-Aoede';
-      else if (voiceName === 'Charon' || voiceName === 'Fenrir' || voiceName.endsWith('-D') || voiceName.endsWith('-J')) actualVoiceName = 'hi-IN-Chirp3-HD-Charon';
-      else if (voiceName === 'Puck' || voiceName === 'Leda') actualVoiceName = 'hi-IN-Chirp3-HD-Puck';
+      if (['Aoede', 'Kore', 'Leda'].includes(voiceName) || voiceName.endsWith('-F') || voiceName.endsWith('-O')) actualVoiceName = 'hi-IN-Chirp3-HD-Aoede';
+      else if (['Charon', 'Fenrir'].includes(voiceName) || voiceName.endsWith('-D') || voiceName.endsWith('-J')) actualVoiceName = 'hi-IN-Chirp3-HD-Charon';
+      else if (voiceName === 'Puck') actualVoiceName = 'hi-IN-Chirp3-HD-Puck';
       else actualVoiceName = 'hi-IN-Chirp3-HD-Aoede'; // Default to female Chirp3
     } else if (language.includes('Spanish')) {
       bcp47Language = 'es-ES';
