@@ -138,7 +138,7 @@ export default function DashboardLayout({
             })}
           </nav>
           <div className="border-t border-stone-50 px-3 py-5 bg-gradient-to-t from-stone-50/50 to-white">
-            <Link href="/dashboard" className="mb-4 flex min-h-[40px] items-center gap-3 px-3 text-sm font-semibold text-stone-500 hover:text-stone-800 rounded-2xl hover:bg-stone-50 transition-colors">
+            <Link href="/dashboard/settings" className="mb-4 flex min-h-[40px] items-center gap-3 px-3 text-sm font-semibold text-stone-500 hover:text-stone-800 rounded-2xl hover:bg-stone-50 transition-colors">
               <Settings className="h-4 w-4" strokeWidth={2} />
               Settings
             </Link>

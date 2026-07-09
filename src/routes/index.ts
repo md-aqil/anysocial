@@ -15,6 +15,7 @@ import { reelsRoutes } from './reels.routes.js';
 import { curationRoutes } from './curation.routes.js';
 import adCreatorRoutes from './ad-creator.routes.js';
 import scrapeRoutes from './scrape.routes.js';
+import { settingsRoutes } from './settings.routes.js';
 
 const router = Router();
 
@@ -92,5 +93,8 @@ router.use('/api/ad-creator', jwtAuth, adCreatorRoutes);
 
 // Scrape routes
 router.use('/api/scrape', scrapeRoutes);
+
+// Settings routes
+router.use('/api/settings', settingsRoutes);
 
 export const routes = router;

@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { GoogleAuth } from 'google-auth-library';
+import { prisma } from '../db/prisma.js';
 
 export class AiOrchestratorService {
   private vertexAI?: VertexAI;
@@ -20,12 +21,27 @@ export class AiOrchestratorService {
     }
   }
 
+  private async getAiSettings() {
+    try {
+      const setting = await prisma.appSetting.findUnique({ where: { key: 'ai_models' } });
+      if (setting && setting.value) return setting.value as any;
+    } catch (e) {
+      console.warn("Failed to fetch AI settings, using defaults", e);
+    }
+    return {
+      text: { primary: 'gemini-2.5-flash', secondary: 'gemini-1.5-pro', tertiary: 'gemini-2.5-pro' },
+      image: { primary: 'gemini-2.5-flash', secondary: 'pollinations', tertiary: 'stock' },
+      voice: { primary: 'google-cloud-standard', secondary: 'gemini-2.5-flash', tertiary: 'gemini-2.5-pro' }
+    };
+  }
+
   async analyzeMedia(mediaFile: any): Promise<any> {
+    const settings = await this.getAiSettings();
     if (!this.vertexAI) {
       console.warn('Vertex AI not configured, skipping media analysis');
       return { caption: "", keywords: "", tags: "" };
     }
-    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash' });
+    const model = this.vertexAI.getGenerativeModel({ model: settings.text.primary });
 
     const mediaPart = {
       inlineData: {
@@ -94,10 +110,11 @@ Make sure the output is a valid JSON object.`;
   }
 
   async adaptContent(content: string, platform: string): Promise<{ adaptedContent: string }> {
+    const settings = await this.getAiSettings();
     if (!this.vertexAI) {
       return { adaptedContent: content };
     }
-    const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash' });
+    const model = this.vertexAI.getGenerativeModel({ model: settings.text.primary });
 
     const prompt = `Adapt the following social media post for ${platform}. 
 Modify the tone, style, and length to fit the best practices for ${platform}.
@@ -143,6 +160,7 @@ Make sure the output is a valid JSON object.`;
 
   async generateContent(prompt: string, mediaParts?: { data: string, mimeType: string }[], useAdvancedModel: boolean = true): Promise<string> {
     try {
+      const settings = await this.getAiSettings();
       if (useAdvancedModel) {
         const { GoogleAuth } = await import('google-auth-library');
         const auth = new GoogleAuth({
@@ -155,7 +173,7 @@ Make sure the output is a valid JSON object.`;
         const token = (await client.getAccessToken()).token;
         
         const executeScriptGen = async (overrideModel?: string) => {
-          const modelName = overrideModel || process.env.VERTEX_AI_MODEL || 'gemini-3.1-pro-preview';
+          const modelName = overrideModel || settings.text.primary;
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
           
           const parts: any[] = [{ text: prompt }];
@@ -193,11 +211,11 @@ Make sure the output is a valid JSON object.`;
         try {
           return await executeScriptGen();
         } catch (e: any) {
-          console.warn("[Gemini 3.1 Pro Script Failed] High demand or error. Falling back to 2.5 Pro...", e.message);
+          console.warn("[Gemini Script Failed] Primary model error:", e.message);
           try {
-            return await executeScriptGen('gemini-2.5-pro');
+            return await executeScriptGen(settings.text.secondary);
           } catch (e2: any) {
-            console.warn("[Gemini 2.5 Pro Fallback Failed] Project denied access or API down. Falling back to standard Vertex AI...", e2.message);
+            console.warn("[Gemini Fallback Failed] Secondary model error:", e2.message);
             // Fall through to the standard Vertex AI implementation below
           }
         }
@@ -207,7 +225,8 @@ Make sure the output is a valid JSON object.`;
         throw new Error("Vertex AI is not configured.");
       }
 
-      const modelName = process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash';
+      const modelName = settings.text.primary;
+      console.log(`[DEBUG Vertex AI] using model: ${modelName}, settings primary: ${settings.text.primary}, env: ${process.env.VERTEX_AI_MODEL}`);
       const model = this.vertexAI.getGenerativeModel({ model: modelName });
       
       const parts: any[] = [{ text: prompt }];
@@ -244,11 +263,12 @@ Make sure the output is a valid JSON object.`;
 
   async chatContent(messages: any[], mediaFile?: any): Promise<string> {
     try {
+      const settings = await this.getAiSettings();
       if (!this.vertexAI) {
         throw new Error("Vertex AI is not configured.");
       }
 
-      const modelName = process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash';
+      const modelName = settings.text.primary;
       const model = this.vertexAI.getGenerativeModel({ model: modelName });
       
       const systemPrompt = "You are an elite social media copywriter. You help the user brainstorm, write, and refine highly engaging social media posts. Follow the user's instructions regarding tone, length, and platform constraints. Do not use markdown headers unless necessary.\n\nIMPORTANT: When you write a caption for the user, ONLY output the final postable content itself. DO NOT include conversational filler like 'Got it!' or 'Here is your caption:'. Return ONLY the raw caption text so it can be directly inserted into a text box.\n\n";
@@ -447,6 +467,7 @@ Make sure the output is a valid JSON object.`;
 
   // 2. Voice Synthesis Engine (Google Cloud TTS)
   async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false): Promise<string> {
+    const settings = await this.getAiSettings();
     if (useAdvancedModel) {
       const { GoogleAuth } = await import('google-auth-library');
       const auth = new GoogleAuth({
@@ -470,7 +491,7 @@ Make sure the output is a valid JSON object.`;
       else if (language.includes('Spanish')) languageCode = 'es-ES';
 
       const executeVoiceGen = async (overrideModel?: string) => {
-        const modelName = overrideModel || 'gemini-3.1-flash-tts-preview';
+        const modelName = overrideModel || (settings.voice.primary.includes('gemini') ? settings.voice.primary : 'gemini-2.5-flash');
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
         
         const res = await client.request({
@@ -536,7 +557,7 @@ Make sure the output is a valid JSON object.`;
       };
 
       try {
-        return await executeVoiceGen('gemini-2.5-flash');
+        return await executeVoiceGen(settings.voice.tertiary.includes('gemini') ? settings.voice.tertiary : 'gemini-2.5-flash');
       } catch (e: any) {
         console.warn("[Gemini 2.5 Flash TTS Failed] High demand or error. Falling back...", e.message);
         try {
@@ -732,7 +753,7 @@ Respond with a strict JSON object containing:
 
 Output ONLY valid JSON.`;
 
-      const model = this.vertexAI.getGenerativeModel({ model: process.env.VERTEX_AI_MODEL || 'gemini-2.5-flash' });
+      const model = this.vertexAI.getGenerativeModel({ model: settings.text.primary });
       const mediaPart = {
         inlineData: {
           data: buffer.toString('base64'),
