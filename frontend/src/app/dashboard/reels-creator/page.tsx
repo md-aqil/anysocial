@@ -764,6 +764,7 @@ export default function ReelsDashboard() {
                           </div>
                         ))}
                       </div>
+                    </div>
                     )}
                   </div>
                 </div>
