@@ -174,7 +174,9 @@ Make sure the output is a valid JSON object.`;
         
         const executeScriptGen = async (overrideModel?: string) => {
           const modelName = overrideModel || settings.text.primary;
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+          const projectId = await auth.getProjectId() || process.env.VERTEXAI_PROJECT || 'seo-genie-494023';
+          const location = process.env.VERTEXAI_LOCATION || 'us-central1';
+          const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
           
           const parts: any[] = [{ text: prompt }];
           if (mediaParts && mediaParts.length > 0) {
@@ -504,7 +506,9 @@ Make sure the output is a valid JSON object.`;
 
       const executeVoiceGen = async (overrideModel?: string): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> => {
         const modelName = overrideModel || 'gemini-2.5-flash';
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+        const projectId = await auth.getProjectId() || process.env.VERTEXAI_PROJECT || 'seo-genie-494023';
+        const location = process.env.VERTEXAI_LOCATION || 'us-central1';
+        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
         
         const res = await client.request({
           url: endpoint,
