@@ -22,6 +22,7 @@ import {
   X,
   List,
   Wand2,
+  Bot,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -35,7 +36,7 @@ const navigation = [
   { name: 'Ad/Post Creator', href: '/dashboard/post-creator', icon: Wand2 },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'Feed Curation', href: '/dashboard/curation', icon: List },
-  { name: 'Image Playground', href: '/dashboard/playground', icon: Grid2X2, adminOnly: true, superAdminOnly: true },
+  { name: 'AI Agent', href: '/dashboard/ai-agent', icon: Bot, adminOnly: true, superAdminOnly: true },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
 

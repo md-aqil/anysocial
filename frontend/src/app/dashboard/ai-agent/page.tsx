@@ -1,0 +1,315 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { useAuthStore } from '@/store/auth-store';
+import { Button } from '@/components/ui/button';
+import { Sparkles, Image as ImageIcon, Loader2, Mic, MessageSquare, Send, Bot, User, Volume2 } from 'lucide-react';
+
+type MessageType = 'text' | 'image' | 'voice';
+
+interface Message {
+  id: string;
+  role: 'user' | 'ai';
+  type: MessageType;
+  content: string;
+  url?: string;
+  metadata?: string;
+  timestamp: number;
+}
+
+export default function AIAgentPage() {
+  const { user } = useAuthStore();
+  
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [mode, setMode] = useState<MessageType>('text');
+  const [loading, setLoading] = useState(false);
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load history on mount
+  useEffect(() => {
+    if (user && user.role === 'super_admin') {
+      const saved = localStorage.getItem('ai-agent-chat-history');
+      if (saved) {
+        try {
+          setMessages(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to parse history");
+        }
+      } else {
+        // Initial greeting
+        setMessages([{
+          id: 'welcome',
+          role: 'ai',
+          type: 'text',
+          content: 'Hello! I am your AI Agent. I can chat with you, generate images, or create voiceovers. How can I help you today?',
+          timestamp: Date.now()
+        }]);
+      }
+    }
+  }, [user]);
+
+  // Save history on change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('ai-agent-chat-history', JSON.stringify(messages));
+    }
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  if (!user || user.role !== 'super_admin') {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-stone-500 font-medium">Access Denied: Superadmin only.</p>
+      </div>
+    );
+  }
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      type: mode,
+      content: input,
+      timestamp: Date.now()
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    const currentInput = input;
+    setInput('');
+    setLoading(true);
+
+    try {
+      if (mode === 'text') {
+        const response = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ messages: JSON.stringify([{ role: 'user', text: currentInput }]) })
+        });
+        if (!response.ok) throw new Error('Failed to get response');
+        const data = await response.json();
+        
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'ai',
+          type: 'text',
+          content: data.text || 'Done.',
+          timestamp: Date.now()
+        }]);
+      } 
+      else if (mode === 'image') {
+        const response = await fetch('/api/ai/generate-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ prompt: currentInput })
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed');
+        const data = await response.json();
+        
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'ai',
+          type: 'image',
+          content: 'Here is your generated image:',
+          url: data.url,
+          timestamp: Date.now()
+        }]);
+      }
+      else if (mode === 'voice') {
+        const response = await fetch('/api/ai/generate-voice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ 
+            text: currentInput, 
+            voiceName: 'Aoede', 
+            language: 'en-US', 
+            useAdvancedModel: true 
+          })
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed');
+        const data = await response.json();
+        
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'ai',
+          type: 'voice',
+          content: 'Here is your generated voiceover:',
+          url: data.url,
+          metadata: 'Gemini 2.5 Flash | Aoede | en-US',
+          timestamp: Date.now()
+        }]);
+      }
+    } catch (err: any) {
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        role: 'ai',
+        type: 'text',
+        content: `❌ Error: ${err.message}`,
+        timestamp: Date.now()
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const clearHistory = () => {
+    if (confirm('Are you sure you want to clear the chat history?')) {
+      localStorage.removeItem('ai-agent-chat-history');
+      setMessages([{
+        id: 'welcome',
+        role: 'ai',
+        type: 'text',
+        content: 'History cleared. How can I help you?',
+        timestamp: Date.now()
+      }]);
+    }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto h-[calc(100vh-80px)] flex flex-col p-4 lg:p-6">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+        <div>
+          <h1 className="text-2xl font-black text-[#2F281F] tracking-tight flex items-center gap-2">
+            <Bot className="w-8 h-8 text-[#D27D50]" /> AI Agent
+          </h1>
+          <p className="text-[#AAA39D] font-medium text-sm">Chat, generate images, and synthesize voice using Vertex AI.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={clearHistory} className="text-xs">
+          Clear History
+        </Button>
+      </div>
+
+      {/* Chat Messages Area */}
+      <div className="flex-1 bg-white rounded-3xl shadow-sm border border-stone-100 overflow-y-auto p-6 mb-4 flex flex-col gap-6">
+        {messages.map((msg) => (
+          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              
+              {/* Avatar */}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${msg.role === 'user' ? 'bg-stone-200 text-stone-600' : 'bg-[#D27D50] text-white'}`}>
+                {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+              </div>
+
+              {/* Message Bubble */}
+              <div className={`flex flex-col gap-2 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                <div className={`px-4 py-3 rounded-2xl text-sm ${
+                  msg.role === 'user' 
+                    ? 'bg-[#2F281F] text-white rounded-tr-sm' 
+                    : 'bg-stone-50 border border-stone-100 text-stone-800 rounded-tl-sm'
+                }`}>
+                  {msg.type !== 'text' && msg.role === 'user' && (
+                    <div className="text-[10px] uppercase font-bold opacity-70 mb-1 flex items-center gap-1">
+                      {msg.type === 'image' ? <ImageIcon className="w-3 h-3"/> : msg.type === 'voice' ? <Mic className="w-3 h-3"/> : <MessageSquare className="w-3 h-3" />}
+                      Generate {msg.type}
+                    </div>
+                  )}
+                  <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                </div>
+
+                {/* Media Attachments */}
+                {msg.type === 'image' && msg.url && (
+                  <div className="mt-1 rounded-2xl overflow-hidden border border-stone-100 shadow-sm max-w-sm">
+                    <img src={msg.url} alt="Generated" className="w-full h-auto object-cover" />
+                  </div>
+                )}
+                
+                {msg.type === 'voice' && msg.url && (
+                  <div className="mt-1 bg-stone-50 rounded-2xl p-4 border border-stone-100 min-w-[280px]">
+                    <div className="text-[10px] font-bold text-emerald-700 uppercase mb-2 flex items-center gap-1">
+                      <Volume2 className="w-3 h-3"/> {msg.metadata}
+                    </div>
+                    <audio src={msg.url} controls className="w-full h-10" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#D27D50] text-white flex items-center justify-center flex-shrink-0 mt-1">
+                <Bot className="w-4 h-4" />
+              </div>
+              <div className="bg-stone-50 border border-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-[#D27D50] animate-spin" />
+                <span className="text-stone-500 font-medium">Agent is thinking...</span>
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="bg-white rounded-3xl shadow-sm border border-stone-100 p-2 flex-shrink-0 flex items-end gap-2">
+        {/* Mode Selector */}
+        <div className="flex flex-col gap-1 p-2 bg-stone-50 rounded-2xl">
+          <button 
+            onClick={() => setMode('text')} 
+            className={`p-2 rounded-xl transition-colors ${mode === 'text' ? 'bg-white shadow-sm text-[#D27D50]' : 'text-stone-400 hover:text-stone-600'}`}
+            title="Chat Mode"
+          >
+            <MessageSquare className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => setMode('image')} 
+            className={`p-2 rounded-xl transition-colors ${mode === 'image' ? 'bg-white shadow-sm text-[#D27D50]' : 'text-stone-400 hover:text-stone-600'}`}
+            title="Image Mode"
+          >
+            <ImageIcon className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => setMode('voice')} 
+            className={`p-2 rounded-xl transition-colors ${mode === 'voice' ? 'bg-white shadow-sm text-[#D27D50]' : 'text-stone-400 hover:text-stone-600'}`}
+            title="Voice Mode"
+          >
+            <Mic className="w-5 h-5" />
+          </button>
+        </div>
+
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={`Ask the agent to generate ${mode}... (Shift+Enter for new line)`}
+          className="flex-1 max-h-32 min-h-[56px] resize-none bg-transparent border-0 focus:ring-0 p-4 text-stone-800 placeholder:text-stone-400"
+          rows={1}
+        />
+        
+        <div className="p-2">
+          <Button 
+            onClick={handleSend} 
+            disabled={!input.trim() || loading}
+            className="w-12 h-12 rounded-2xl bg-[#2F281F] hover:bg-black text-white p-0 flex items-center justify-center transition-transform active:scale-95"
+          >
+            <Send className="w-5 h-5 ml-1" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
