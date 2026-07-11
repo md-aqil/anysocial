@@ -45,10 +45,41 @@ router.post('/adapt-content', jwtAuth, async (req: Request, res: Response) => {
 router.post('/chat', jwtAuth, upload.single('media'), async (req: Request, res: Response) => {
   try {
     const messages = JSON.parse(req.body.messages || '[]');
+    const model = req.body.model;
     // @ts-ignore
     const mediaFile = req.file;
-    const text = await aiOrchestrator.chatContent(messages, mediaFile);
+    const text = await aiOrchestrator.chatContent(messages, mediaFile, model);
     res.json({ text });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/ai/improve-prompt
+ * Rewrites a user prompt using AI to make it better suited for the chosen generation type.
+ */
+router.post('/improve-prompt', jwtAuth, async (req: Request, res: Response) => {
+  try {
+    const { prompt, type } = req.body;
+    if (!prompt) {
+      res.status(400).json({ error: 'Prompt is required' });
+      return;
+    }
+
+    let systemPrompt = "";
+    if (type === 'image') {
+      systemPrompt = "You are an expert AI image prompt engineer. Rewrite the following user request into a highly detailed, descriptive, and visually striking prompt optimized for image generation models (like Midjourney or Gemini). Focus on lighting, art style, composition, colors, and camera angles. DO NOT add any conversational text like 'Here is your prompt'. Return ONLY the prompt text.";
+    } else if (type === 'voice') {
+      systemPrompt = "You are a professional voiceover scriptwriter. Rewrite the following user request into a highly engaging, natural-sounding, and punchy script meant to be read aloud by a voice actor. Spell out all numbers and symbols. DO NOT add conversational text or stage directions. Return ONLY the spoken text.";
+    } else {
+      systemPrompt = "You are a professional prompt engineer. Rewrite the following user request into a much clearer, more structured, and highly detailed prompt for a Large Language Model. DO NOT add conversational text. Return ONLY the improved prompt text.";
+    }
+
+    // Use generateContent directly with the system instruction included in the user prompt since chatContent adds social media system prompt
+    const enhancedPrompt = await aiOrchestrator.generateContent(`${systemPrompt}\n\nUser request to improve:\n${prompt}`);
+    
+    res.json({ text: enhancedPrompt.trim() });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -269,14 +269,14 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  async chatContent(messages: any[], mediaFile?: any): Promise<string> {
+  async chatContent(messages: any[], mediaFile?: any, overrideModel?: string): Promise<string> {
     try {
       const settings = await this.getAiSettings();
       if (!this.vertexAI) {
         throw new Error("Vertex AI is not configured.");
       }
 
-      const modelName = settings.text.primary;
+      const modelName = overrideModel || settings.text.primary;
       const model = this.vertexAI.getGenerativeModel({ model: modelName });
       
       const systemPrompt = "You are an elite social media copywriter. You help the user brainstorm, write, and refine highly engaging social media posts. Follow the user's instructions regarding tone, length, and platform constraints. Do not use markdown headers unless necessary.\n\nIMPORTANT: When you write a caption for the user, ONLY output the final postable content itself. DO NOT include conversational filler like 'Got it!' or 'Here is your caption:'. Return ONLY the raw caption text so it can be directly inserted into a text box.\n\n";

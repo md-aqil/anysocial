@@ -16,6 +16,11 @@ interface Message {
   metadata?: string;
   timestamp: number;
 }
+const VOICES_BY_LANGUAGE: Record<string, string[]> = {
+  'en-US': ['Aoede', 'Charon', 'Fenrir', 'Kore', 'Puck'],
+  'hi-IN': ['Ojas', 'Aarav', 'Ananya', 'Kavya'],
+  'es-ES': ['Isidora', 'Elena', 'Tomas']
+};
 
 export default function AIAgentPage() {
   const { user } = useAuthStore();
@@ -24,6 +29,12 @@ export default function AIAgentPage() {
   const [input, setInput] = useState('');
   const [mode, setMode] = useState<MessageType>('text');
   const [loading, setLoading] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
+
+  // Testing Overrides
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
+  const [selectedLanguage, setSelectedLanguage] = useState('en-US');
+  const [selectedVoice, setSelectedVoice] = useState('Aoede');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +105,10 @@ export default function AIAgentPage() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
-          body: JSON.stringify({ messages: JSON.stringify([{ role: 'user', text: currentInput }]) })
+          body: JSON.stringify({ 
+            messages: JSON.stringify([{ role: 'user', text: currentInput }]),
+            model: selectedModel 
+          })
         });
         if (!response.ok) throw new Error('Failed to get response');
         const data = await response.json();
@@ -137,8 +151,8 @@ export default function AIAgentPage() {
           },
           body: JSON.stringify({ 
             text: currentInput, 
-            voiceName: 'Aoede', 
-            language: 'en-US', 
+            voiceName: selectedVoice, 
+            language: selectedLanguage, 
             useAdvancedModel: true 
           })
         });
@@ -151,7 +165,7 @@ export default function AIAgentPage() {
           type: 'voice',
           content: 'Here is your generated voiceover:',
           url: data.url,
-          metadata: 'Gemini 2.5 Flash | Aoede | en-US',
+          metadata: `Voice: ${selectedVoice} | Lang: ${selectedLanguage}`,
           timestamp: Date.now()
         }]);
       }
@@ -172,6 +186,30 @@ export default function AIAgentPage() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const improvePrompt = async () => {
+    if (!input.trim() || isImproving) return;
+    setIsImproving(true);
+    try {
+      const response = await fetch('/api/ai/improve-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ prompt: input, type: mode })
+      });
+      if (!response.ok) throw new Error('Failed to improve prompt');
+      const data = await response.json();
+      if (data.text) {
+        setInput(data.text);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsImproving(false);
     }
   };
 
@@ -291,16 +329,69 @@ export default function AIAgentPage() {
           </button>
         </div>
 
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={`Ask the agent to generate ${mode}... (Shift+Enter for new line)`}
-          className="flex-1 max-h-32 min-h-[56px] resize-none bg-transparent border-0 focus:ring-0 p-4 text-stone-800 placeholder:text-stone-400"
-          rows={1}
-        />
+        <div className="flex-1 flex flex-col">
+          {/* Options Row */}
+          <div className="flex items-center gap-2 mb-2 px-2">
+            {mode === 'text' && (
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="text-xs bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-stone-600 focus:outline-none"
+              >
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+              </select>
+            )}
+
+            {mode === 'voice' && (
+              <>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => {
+                    setSelectedLanguage(e.target.value);
+                    setSelectedVoice(VOICES_BY_LANGUAGE[e.target.value][0]);
+                  }}
+                  className="text-xs bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-stone-600 focus:outline-none"
+                >
+                  {Object.keys(VOICES_BY_LANGUAGE).map(lang => (
+                    <option key={lang} value={lang}>{lang}</option>
+                  ))}
+                </select>
+                <select
+                  value={selectedVoice}
+                  onChange={(e) => setSelectedVoice(e.target.value)}
+                  className="text-xs bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-stone-600 focus:outline-none"
+                >
+                  {VOICES_BY_LANGUAGE[selectedLanguage].map(voice => (
+                    <option key={voice} value={voice}>{voice}</option>
+                  ))}
+                </select>
+              </>
+            )}
+          </div>
+          
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`Ask the agent to generate ${mode}... (Shift+Enter for new line)`}
+            className="w-full max-h-32 min-h-[56px] resize-none bg-transparent border-0 focus:ring-0 px-2 py-1 text-stone-800 placeholder:text-stone-400"
+            rows={1}
+          />
+        </div>
         
-        <div className="p-2">
+        <div className="p-2 flex flex-col gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={improvePrompt}
+            disabled={!input.trim() || isImproving || loading}
+            title="Improve Prompt with AI"
+            className="w-12 h-10 rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 p-0 flex items-center justify-center"
+          >
+            {isImproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          </Button>
           <Button 
             onClick={handleSend} 
             disabled={!input.trim() || loading}
