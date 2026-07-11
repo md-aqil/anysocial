@@ -860,6 +860,33 @@ export default function ReelsDashboard() {
                           "{reel.script || 'No script text generated'}"
                         </p>
 
+                        {/* Generation Details Button */}
+                        {reel.metadata && (
+                          <button
+                            type="button"
+                            onClick={() => handleViewDetails(reel)}
+                            className="mb-4 flex w-full items-center justify-center gap-1.5 bg-[#F2F6F2] hover:bg-[#E8EDE8] border border-emerald-100/50 text-emerald-700 font-semibold text-xs py-2 rounded-lg transition-colors shadow-sm"
+                          >
+                            <Sparkles className="h-3.5 w-3.5" />
+                            View Generation Details
+                          </button>
+                        )}
+
+                        {/* Detailed Live Log for Generation */}
+                        {reel.status === 'GENERATING' && reel.statusMessage && (
+                          <div className="mb-4 bg-stone-900 border border-stone-800 rounded-lg p-3 shadow-inner">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
+                              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Live Engine Log</span>
+                            </div>
+                            <div className="text-xs font-mono text-emerald-400 break-words leading-relaxed">
+                              <span className="text-stone-500 mr-2">$</span>
+                              {reel.statusMessage}
+                              <span className="animate-pulse inline-block w-1.5 h-3.5 bg-emerald-400 ml-1 align-middle"></span>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Error message block */}
                         {reel.status === 'FAILED' && reel.statusMessage && (
                           <div className="mb-4 text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 font-mono break-words">
