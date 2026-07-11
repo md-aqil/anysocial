@@ -4,7 +4,7 @@ async function test() {
   const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
   const client = await auth.getClient();
   const token = await client.getAccessToken();
-  const url = 'https://aiplatform.googleapis.com/v1beta1/projects/seo-genie-494023/locations/global/publishers/google/models/gemini-flash-latest:generateContent';
+  const url = 'https://aiplatform.googleapis.com/v1beta1/projects/project-bcd01169-8285-4613-a17/locations/global/publishers/google/models/gemini-flash-latest:generateContent';
   
   const res = await fetch(url, {
     method: 'POST',

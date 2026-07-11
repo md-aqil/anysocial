@@ -8,7 +8,7 @@ This document defines the strict architecture for LLM and AI services in SEO-Gen
 *   **Authentication**: All requests must use the Service Account JSON credentials via the `google-auth-library` or `gcloud` token system.
 
 ## 2. Model Configuration
-The following models are confirmed working and enabled for project `seo-genie-494023`. Do NOT change these without verifying access in the GCP Model Garden.
+The following models are confirmed working and enabled for project `project-bcd01169-8285-4613-a17`. Do NOT change these without verifying access in the GCP Model Garden.
 
 | Service | Model ID | Region |
 | :--- | :--- | :--- |

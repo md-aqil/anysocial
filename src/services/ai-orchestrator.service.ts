@@ -174,7 +174,7 @@ Make sure the output is a valid JSON object.`;
         
         const executeScriptGen = async (overrideModel?: string) => {
           const modelName = overrideModel || settings.text.primary;
-          const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'seo-genie-494023';
+          const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'project-bcd01169-8285-4613-a17';
           const location = process.env.VERTEX_AI_LOCATION || 'us-central1';
           const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
           
@@ -506,7 +506,7 @@ Make sure the output is a valid JSON object.`;
 
       const executeVoiceGen = async (overrideModel?: string): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> => {
         const modelName = overrideModel || 'gemini-2.5-flash';
-        const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'seo-genie-494023';
+        const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'project-bcd01169-8285-4613-a17';
         const location = process.env.VERTEX_AI_LOCATION || 'us-central1';
         const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
         
