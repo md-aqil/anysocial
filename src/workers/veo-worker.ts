@@ -10,8 +10,14 @@ import fs from 'fs';
 
 // Helper to poll Veo 3 operation
 async function pollVeoOperation(operationName: string, token: string): Promise<any> {
-  const cleanOperationName = operationName.replace(/\/publishers\/[^\/]+\/models\/[^\/]+/, '');
-  const url = `https://us-central1-aiplatform.googleapis.com/v1beta1/${cleanOperationName}`;
+  // Extract project, location, and UUID to route to the new OpenAPI endpoint which supports UUIDs
+  let url = `https://us-central1-aiplatform.googleapis.com/v1beta1/${operationName}`;
+  const match = operationName.match(/^projects\/([^\/]+)\/locations\/([^\/]+)\/.*operations\/([^\/]+)$/);
+  if (match) {
+    const [, projectId, location, uuid] = match;
+    url = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/endpoints/openapi/operations/${uuid}`;
+  }
+
   while (true) {
     const res = await fetch(url, {
       headers: {
