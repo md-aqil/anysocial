@@ -477,12 +477,29 @@ Make sure the output is a valid JSON object.`;
     if (!text || text.trim().length === 0) {
       throw new Error("Voiceover script is empty. Please ensure your script contains text or uses the 🎙️ emoji for voiceover lines.");
     }
-    const isGeminiVoice = ['Aoede', 'Charon', 'Puck', 'Kore', 'Fenrir', 'Leda'].includes(voiceName);
+    const isGeminiVoice = ['Aoede', 'Charon', 'Puck', 'Kore', 'Fenrir', 'Leda', 'Ojas', 'Aarav', 'Ananya', 'Kavya', 'Isidora', 'Elena', 'Tomas'].includes(voiceName);
     
-    // In playground mode, strictly respect the requested model engine
-    const useGemini = strictPlaygroundMode ? useAdvancedModel : (useAdvancedModel || isGeminiVoice);
+    let resolvedUseGemini = strictPlaygroundMode ? useAdvancedModel : (useAdvancedModel || isGeminiVoice);
+    let resolvedModelName = overrideModel || 'gemini-2.5-flash';
+
+    if (!strictPlaygroundMode) {
+      try {
+        const setting = await prisma.appSetting.findUnique({ where: { key: 'ai_models' } });
+        const config = setting?.value as any;
+        if (config?.voice?.primary) {
+          if (config.voice.primary === 'google-cloud-tts') {
+             resolvedUseGemini = false;
+          } else {
+             resolvedUseGemini = true;
+             resolvedModelName = config.voice.primary;
+          }
+        }
+      } catch (e) {
+        console.warn("Could not fetch global settings for voice model, using fallback.");
+      }
+    }
     
-    if (useGemini) {
+    if (resolvedUseGemini) {
       const { GoogleAuth } = await import('google-auth-library');
       const auth = new GoogleAuth({
         scopes: [
@@ -510,8 +527,7 @@ Make sure the output is a valid JSON object.`;
         let resData: any = null;
         
         if (modelName === 'gemini-2.5-flash-preview-tts' && aiStudioKey) {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${aiStudioKey}`;
-            const fetchRes = await fetch(endpoint, {
+            let fetchRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${aiStudioKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -519,13 +535,29 @@ Make sure the output is a valid JSON object.`;
                     generationConfig: {
                       responseModalities: ['AUDIO'],
                       speechConfig: {
-                        voiceConfig: {
-                          prebuiltVoiceConfig: { voiceName: geminiVoice }
-                        }
+                        voiceConfig: { prebuiltVoiceConfig: { voiceName: geminiVoice } }
                       }
                     }
                 })
             });
+
+            if (fetchRes.status === 429 && process.env.GEMINI_AI_STUDIO_KEY_SECONDARY) {
+                console.warn("[AI Studio TTS] Primary key hit rate limit. Trying secondary key...");
+                fetchRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_AI_STUDIO_KEY_SECONDARY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: 'user', parts: [{ text }] }],
+                        generationConfig: {
+                          responseModalities: ['AUDIO'],
+                          speechConfig: {
+                            voiceConfig: { prebuiltVoiceConfig: { voiceName: geminiVoice } }
+                          }
+                        }
+                    })
+                });
+            }
+
             if (!fetchRes.ok) throw new Error("AI Studio TTS Error: " + await fetchRes.text());
             resData = await fetchRes.json();
         } else {
@@ -597,9 +629,9 @@ Make sure the output is a valid JSON object.`;
       };
 
       try {
-        return await executeVoiceGen(overrideModel || 'gemini-2.5-flash');
+        return await executeVoiceGen(resolvedModelName);
       } catch (e: any) {
-        console.warn(`[${overrideModel || 'gemini-2.5-flash'} TTS Failed] High demand or error. Falling back...`, e.message);
+        console.warn(`[${resolvedModelName} TTS Failed] High demand or error. Falling back...`, e.message);
         if (strictPlaygroundMode) throw new Error(`[AI Agent] Gemini TTS failed: ${e.message}`);
         
         try {
