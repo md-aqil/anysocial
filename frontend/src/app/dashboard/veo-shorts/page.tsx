@@ -32,8 +32,13 @@ export default function VeoShortsCreator() {
         if (latest && (latest.status === 'PENDING' || latest.status === 'GENERATING')) {
           setReelId(latest.id);
           setStatus(latest.status);
-          setStatusMessage(latest.statusMessage || 'Resuming generation...');
-          pollStatus(latest.id);
+          setStatusMessage(latest.statusMessage || 'Processing...');
+          
+          // Poll again in 5 seconds
+          setTimeout(fetchHistory, 5000);
+        } else if (latest && latest.id === reelId) {
+           // If it finished, update the state
+           setStatus(latest.status);
         }
       }
     } catch (e) {
@@ -65,36 +70,11 @@ export default function VeoShortsCreator() {
       const data = await res.json();
       setReelId(data.data.reel.id);
       
-      // Start polling
-      pollStatus(data.data.reel.id);
-      // Immediately refresh history so the new pending item shows up in the journey list
-      fetchHistory();
+      // Start polling by refreshing history
+      setTimeout(fetchHistory, 2000);
     } catch (e: any) {
       setStatus('FAILED');
       setStatusMessage(e.message);
-    }
-  };
-
-  const pollStatus = async (id: string) => {
-    try {
-      const res = await fetch(`/api/veo/status/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      
-      setStatus(data.data.status);
-      setStatusMessage(data.data.statusMessage || 'Processing...');
-      
-      fetchHistory(); // Continuously update history to get fresh metadata for the journey UI
-      
-      if (data.data.status === 'READY' || data.data.status === 'PUBLISHED' || data.data.status === 'FAILED') {
-        // Done
-      } else {
-        setTimeout(() => pollStatus(id), 5000);
-      }
-    } catch (e: any) {
-      console.error(e);
-      setTimeout(() => pollStatus(id), 5000);
     }
   };
 
