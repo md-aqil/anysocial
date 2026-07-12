@@ -510,11 +510,13 @@ Make sure the output is a valid JSON object.`;
       const client = await auth.getClient();
       const token = (await client.getAccessToken()).token;
       
-      let geminiVoice = 'Aoede';
-      if (['Charon', 'Puck', 'Fenrir'].includes(voiceName) || voiceName.endsWith('-D') || voiceName.endsWith('-J')) {
-        geminiVoice = voiceName === 'Puck' ? 'Puck' : voiceName === 'Fenrir' ? 'Fenrir' : 'Charon';
-      } else if (['Kore', 'Leda'].includes(voiceName) || voiceName.endsWith('-O') || voiceName.endsWith('-F')) {
-        geminiVoice = voiceName === 'Kore' ? 'Kore' : voiceName === 'Leda' ? 'Leda' : 'Aoede';
+      let geminiVoice = isGeminiVoice ? voiceName : 'Aoede';
+      if (!isGeminiVoice) {
+        if (voiceName.endsWith('-D') || voiceName.endsWith('-J')) {
+          geminiVoice = 'Charon';
+        } else if (voiceName.endsWith('-O') || voiceName.endsWith('-F')) {
+          geminiVoice = 'Aoede';
+        }
       }
       
       let languageCode = 'en-US';
