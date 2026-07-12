@@ -24,7 +24,7 @@ export default function VeoShortsCreator() {
         formData.append('productImage', productImage);
       }
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/veo/generate`, {
+      const res = await fetch(`/api/veo/generate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -46,7 +46,7 @@ export default function VeoShortsCreator() {
 
   const pollStatus = async (id: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reels/status/${id}`, {
+      const res = await fetch(`/api/reels/status/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
