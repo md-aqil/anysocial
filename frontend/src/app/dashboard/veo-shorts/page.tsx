@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function VeoShortsCreator() {
@@ -11,6 +11,36 @@ export default function VeoShortsCreator() {
   const [reelId, setReelId] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [productImage, setProductImage] = useState<File | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (token) {
+      fetchHistory();
+    }
+  }, [token]);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch('/api/veo/history', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setHistory(data.data);
+        
+        // If the latest reel is still processing, automatically resume polling
+        const latest = data.data[0];
+        if (latest && (latest.status === 'PENDING' || latest.status === 'GENERATING')) {
+          setReelId(latest.id);
+          setStatus(latest.status);
+          setStatusMessage(latest.statusMessage || 'Resuming generation...');
+          pollStatus(latest.id);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch history', e);
+    }
+  };
 
   const handleGenerate = async () => {
     try {
@@ -56,8 +86,11 @@ export default function VeoShortsCreator() {
       
       if (data.data.status === 'READY' || data.data.status === 'PUBLISHED') {
         setVideoUrl(data.data.videoUrl);
+        fetchHistory(); // Refresh history when done
       } else if (data.data.status !== 'FAILED') {
         setTimeout(() => pollStatus(id), 5000);
+      } else {
+        fetchHistory();
       }
     } catch (e: any) {
       console.error(e);
@@ -156,6 +189,27 @@ export default function VeoShortsCreator() {
               <video src={videoUrl} controls className="max-h-[500px] rounded-lg shadow-2xl border border-zinc-800" />
             </div>
           )}
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 mt-8">
+          <h2 className="text-xl font-bold text-white mb-4">Recent Veo Shorts</h2>
+          <div className="space-y-4">
+            {history.map((reel) => (
+              <div key={reel.id} className="flex flex-col sm:flex-row items-center gap-4 bg-zinc-950 p-4 rounded-lg border border-zinc-800">
+                <div className="flex-1">
+                  <p className="text-zinc-300 font-medium truncate">{reel.script || 'No Topic Provided'}</p>
+                  <p className="text-zinc-500 text-sm mt-1">Status: {reel.status} • {new Date(reel.createdAt).toLocaleDateString()}</p>
+                </div>
+                {reel.videoUrl && (
+                  <a href={reel.videoUrl} target="_blank" rel="noreferrer" className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    Watch Video
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
