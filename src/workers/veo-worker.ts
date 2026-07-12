@@ -10,7 +10,8 @@ import fs from 'fs';
 
 // Helper to poll Veo 3 operation
 async function pollVeoOperation(operationName: string, token: string): Promise<any> {
-  const url = `https://us-central1-aiplatform.googleapis.com/v1beta1/${operationName}`;
+  const cleanOperationName = operationName.replace(/\/publishers\/[^\/]+\/models\/[^\/]+/, '');
+  const url = `https://us-central1-aiplatform.googleapis.com/v1beta1/${cleanOperationName}`;
   while (true) {
     const res = await fetch(url, {
       headers: {

@@ -26,19 +26,19 @@ export default function VeoShortsCreator() {
       const data = await res.json();
       if (data.success && data.data) {
         setHistory(data.data);
-        
+
         // If the latest reel is still processing, automatically resume polling
         const latest = data.data[0];
         if (latest && (latest.status === 'PENDING' || latest.status === 'GENERATING')) {
           setReelId(latest.id);
           setStatus(latest.status);
           setStatusMessage(latest.statusMessage || 'Processing...');
-          
+
           // Poll again in 5 seconds
           setTimeout(fetchHistory, 5000);
         } else if (latest && latest.id === reelId) {
-           // If it finished, update the state
-           setStatus(latest.status);
+          // If it finished, update the state
+          setStatus(latest.status);
         }
       }
     } catch (e) {
@@ -50,7 +50,7 @@ export default function VeoShortsCreator() {
     try {
       setStatus('PENDING');
       setStatusMessage('Starting generation...');
-      
+
       const formData = new FormData();
       formData.append('topic', topic);
       formData.append('subtitleStyle', subtitleStyle);
@@ -65,11 +65,11 @@ export default function VeoShortsCreator() {
         },
         body: formData
       });
-      
+
       if (!res.ok) throw new Error('Failed to start generation');
       const data = await res.json();
       setReelId(data.data.reel.id);
-      
+
       // Start polling by refreshing history
       setTimeout(fetchHistory, 2000);
     } catch (e: any) {
@@ -111,7 +111,7 @@ export default function VeoShortsCreator() {
 
   return (
     <div className="p-4 lg:p-8 max-w-[1400px] mx-auto space-y-8 bg-slate-50/50 min-h-screen text-slate-900 font-sans">
-      
+
       {/* Header */}
       <div className="flex flex-col gap-2 mb-8 text-center max-w-2xl mx-auto">
         <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-rose-500 tracking-tight">
@@ -153,9 +153,9 @@ export default function VeoShortsCreator() {
                   </div>
                   <p className="text-sm font-medium text-slate-700 mb-1">Click to upload a product reference image</p>
                   <p className="text-xs text-slate-500 max-w-sm">The generated cinematic video will keep your product looking 100% identical!</p>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    accept="image/*"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     onChange={(e) => setProductImage(e.target.files?.[0] || null)}
                   />
@@ -215,7 +215,7 @@ export default function VeoShortsCreator() {
                 {history.map((reel) => {
                   const meta = reel.metadata || {};
                   const isCurrent = reel.id === reelId && (status === 'PENDING' || status === 'GENERATING');
-                  
+
                   // Determine step statuses
                   const step1Done = !!meta.generatedScript;
                   const step2Done = !!meta.generatedImage;
@@ -224,7 +224,7 @@ export default function VeoShortsCreator() {
 
                   return (
                     <div key={reel.id} className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col group">
-                      
+
                       {/* Current processing overlay bar at top */}
                       {isCurrent && (
                         <div className="absolute top-0 left-0 w-full h-1">
@@ -232,16 +232,16 @@ export default function VeoShortsCreator() {
                         </div>
                       )}
 
-                      <div className="mb-5 flex flex-col xl:flex-row xl:items-start justify-between gap-4">
+                      <div className="mb-5 flex flex-row xl:items-start justify-between gap-4">
                         <div className="flex-1 pr-4">
                           <h3 className="text-lg font-bold text-slate-800 mb-1 leading-tight">{reel.script || 'Untitled Video'}</h3>
                           <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span>{new Date(reel.createdAt).toLocaleDateString()} at {new Date(reel.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <span>{new Date(reel.createdAt).toLocaleDateString()} at {new Date(reel.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <span>•</span>
                             <span className="bg-slate-100 px-2 py-0.5 rounded-full text-slate-600 font-medium border border-slate-200">{meta.subtitleStyle || 'Default Style'}</span>
                           </div>
                         </div>
-                        
+
                         <div className="flex flex-wrap items-center gap-2 xl:justify-end shrink-0">
                           {isCurrent && (
                             <>
@@ -249,7 +249,7 @@ export default function VeoShortsCreator() {
                                 <svg className="animate-spin w-3 h-3 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 <span className="truncate">{statusMessage || 'Processing...'}</span>
                               </div>
-                              <button 
+                              <button
                                 onClick={() => handleCancel(reel.id)}
                                 className="p-1.5 rounded-full bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 border border-slate-200 hover:border-red-200 transition-colors"
                                 title="Cancel Generation"
