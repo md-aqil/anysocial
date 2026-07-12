@@ -213,7 +213,11 @@ export default function VeoShortsCreator() {
               <h2 className="text-2xl font-bold text-slate-800 text-center">Your Creation Journey</h2>
               <div className="space-y-12">
                 {history.map((reel) => {
-                  const meta = reel.metadata || {};
+                  let meta = reel.metadata || {};
+                  if (typeof meta === 'string') {
+                    try { meta = JSON.parse(meta); } catch(e) {}
+                  }
+                  
                   const isCurrent = reel.id === reelId && (status === 'PENDING' || status === 'GENERATING');
 
                   // Determine step statuses
@@ -236,9 +240,9 @@ export default function VeoShortsCreator() {
                         <div className="flex-1 pr-4">
                           <h3 className="text-lg font-bold text-slate-800 mb-1 leading-tight">{reel.script || 'Untitled Video'}</h3>
                           <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span>{new Date(reel.createdAt).toLocaleDateString()} at {new Date(reel.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>{new Date(reel.createdAt || Date.now()).toLocaleDateString()} at {new Date(reel.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <span>•</span>
-                            <span className="bg-slate-100 px-2 py-0.5 rounded-full text-slate-600 font-medium border border-slate-200">{meta.subtitleStyle || 'Default Style'}</span>
+                            <span className="bg-slate-100 px-2 py-0.5 rounded-full text-slate-600 font-medium border border-slate-200">{String(meta.subtitleStyle || 'Default Style')}</span>
                           </div>
                         </div>
 
@@ -247,7 +251,7 @@ export default function VeoShortsCreator() {
                             <>
                               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100 max-w-[200px]">
                                 <svg className="animate-spin w-3 h-3 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                <span className="truncate">{statusMessage || 'Processing...'}</span>
+                                <span className="truncate">{String(statusMessage || 'Processing...')}</span>
                               </div>
                               <button
                                 onClick={() => handleCancel(reel.id)}
@@ -278,8 +282,8 @@ export default function VeoShortsCreator() {
                         {renderCompactStep(
                           1, "Script & Visual",
                           <div className="w-full text-left flex flex-col h-[100px]">
-                            <p className="text-[11px] text-slate-700 line-clamp-3 mb-1.5 leading-snug"><span className="font-semibold text-slate-900">Script:</span> {meta.generatedScript || '...'}</p>
-                            <p className="text-[10px] text-slate-500 italic line-clamp-2 mt-auto border-t border-slate-100 pt-1.5">"{meta.generatedVisualPrompt || '...'}"</p>
+                            <p className="text-[11px] text-slate-700 line-clamp-3 mb-1.5 leading-snug"><span className="font-semibold text-slate-900">Script:</span> {String(meta.generatedScript || '...')}</p>
+                            <p className="text-[10px] text-slate-500 italic line-clamp-2 mt-auto border-t border-slate-100 pt-1.5">"{String(meta.generatedVisualPrompt || '...')}"</p>
                           </div>,
                           step1Done,
                           isCurrent && !step1Done
