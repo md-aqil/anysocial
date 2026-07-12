@@ -103,7 +103,7 @@ class VeoGenerationWorker {
     const outputBucket = process.env.VEO_STORAGE_BUCKET || 'anysocial-veo-videos';
     const outputGcsUri = `gs://${outputBucket}/veo_outputs/`;
 
-    const veoModelId = process.env.VEO_MODEL_ID || 'veo-2.0-generate-001';
+    const veoModelId = process.env.VEO_MODEL_ID || 'veo-3.0-generate-001';
     const veoUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${veoModelId}:predictLongRunning`;
     
     const veoInstance: any = { prompt: visual_prompt };
