@@ -4,8 +4,14 @@ import { jwtAuth as requireAuth } from '../middleware/jwt-auth.js';
 import { prisma } from '../db/prisma.js';
 import { Queue } from 'bullmq';
 import { redis } from '../db/redis.js';
+import multer from 'multer';
 
 const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+});
 
 // Create the Veo queue
 const veoQueue = new Queue('veo-generation', { connection: redis });
@@ -19,10 +25,22 @@ const generateVeoSchema = z.object({
  * POST /api/veo/generate
  * Create a new Veo Short generation job.
  */
-router.post('/generate', requireAuth, async (req: any, res: any) => {
+router.post('/generate', requireAuth, upload.single('productImage'), async (req: any, res: any) => {
   try {
     const userId = req.userId;
-    const validatedData = generateVeoSchema.parse(req.body);
+    // Parse fields properly since they come from FormData
+    const bodyData = {
+      topic: req.body.topic,
+      subtitleStyle: req.body.subtitleStyle,
+    };
+    const validatedData = generateVeoSchema.parse(bodyData);
+
+    let productImageBase64 = null;
+    let productImageMimeType = null;
+    if (req.file) {
+      productImageBase64 = req.file.buffer.toString('base64');
+      productImageMimeType = req.file.mimetype;
+    }
 
     const reel = await prisma.reel.create({
       data: {
@@ -32,6 +50,7 @@ router.post('/generate', requireAuth, async (req: any, res: any) => {
         script: validatedData.topic, // use script field to store the initial prompt/topic
         metadata: {
           subtitleStyle: validatedData.subtitleStyle,
+          hasProductImage: !!productImageBase64
         }
       },
     });
@@ -41,6 +60,8 @@ router.post('/generate', requireAuth, async (req: any, res: any) => {
       reelId: reel.id,
       topic: validatedData.topic,
       subtitleStyle: validatedData.subtitleStyle,
+      productImageBase64,
+      productImageMimeType
     });
 
     res.status(201).json({

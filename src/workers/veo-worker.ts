@@ -29,8 +29,8 @@ async function pollVeoOperation(operationName: string, token: string): Promise<a
 }
 
 export const veoWorker = new Worker('veo-generation', async (job: Job) => {
-  const { reelId, topic, subtitleStyle } = job.data;
-  logger.info({ event: 'veo_generation_started', reelId, topic });
+  const { reelId, topic, subtitleStyle, productImageBase64, productImageMimeType } = job.data;
+  logger.info({ event: 'veo_generation_started', reelId, topic, hasImage: !!productImageBase64 });
 
   try {
     const updateProgress = async (msg: string) => {
@@ -43,7 +43,10 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
     await updateProgress('📝 Generating AI script & prompt...');
     
     // 1. Generate text (script and video description)
-    const scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a highly detailed 1-sentence visual description of what the video should show. Format as JSON: { "script": "...", "visual_prompt": "..." }`;
+    let scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a highly detailed 1-sentence visual description of what the video should show. Format as JSON: { "script": "...", "visual_prompt": "..." }`;
+    if (productImageBase64) {
+      scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a highly detailed 1-sentence visual description of what the video should show. Since a product image is provided, ensure the visual prompt explicitly instructs to keep the product identical and unaltered. Format as JSON: { "script": "...", "visual_prompt": "..." }`;
+    }
     const aiResponse = await aiOrchestrator.generateContent(scriptPrompt);
     const parsed = typeof aiResponse === 'string' ? JSON.parse(aiResponse.replace(/```json/g, '').replace(/```/g, '')) : aiResponse;
     const { script, visual_prompt } = parsed;
@@ -51,14 +54,24 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
     await updateProgress('🎨 Generating initial image (Global AI)...');
     
     // 2. Generate one single image using global image API
-    const imagePath = await aiOrchestrator.generateImage(visual_prompt);
+    let imagePrompt = visual_prompt;
+    if (productImageBase64) {
+      imagePrompt = JSON.stringify({
+        prompt: visual_prompt,
+        negative_prompt: "human, person, people", // assume no humans to protect product if it's not requested
+      });
+    }
+
+    const imagePath = await aiOrchestrator.generateImage(imagePrompt, 0, productImageBase64, productImageMimeType);
     let publicThumbnailUrl = '';
+    let generatedImageBase64 = null;
     if (imagePath && fs.existsSync(imagePath)) {
       const thumbFilename = `veo_thumb_${Date.now()}.png`;
       const thumbDest = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', thumbFilename);
       if (!fs.existsSync(path.dirname(thumbDest))) fs.mkdirSync(path.dirname(thumbDest), { recursive: true });
       fs.copyFileSync(imagePath, thumbDest);
       publicThumbnailUrl = `/uploads/reels/${thumbFilename}`;
+      generatedImageBase64 = fs.readFileSync(imagePath).toString('base64');
     }
 
     await updateProgress('🎬 Submitting to Google Veo 3 (Long Running)...');
@@ -75,8 +88,16 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
 
     const veoUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/veo-3.0-generate-001:predictLongRunning`;
     
+    const veoInstance: any = { prompt: visual_prompt };
+    if (generatedImageBase64) {
+      veoInstance.image = {
+        bytesBase64Encoded: generatedImageBase64,
+        mimeType: "image/jpeg"
+      };
+    }
+
     const veoPayload = {
-      instances: [{ prompt: visual_prompt }],
+      instances: [veoInstance],
       parameters: {
         storageUri: outputGcsUri,
         sampleCount: 1,

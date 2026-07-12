@@ -10,19 +10,26 @@ export default function VeoShortsCreator() {
   const [statusMessage, setStatusMessage] = useState('');
   const [reelId, setReelId] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [productImage, setProductImage] = useState<File | null>(null);
 
   const handleGenerate = async () => {
     try {
       setStatus('PENDING');
       setStatusMessage('Starting generation...');
       
+      const formData = new FormData();
+      formData.append('topic', topic);
+      formData.append('subtitleStyle', subtitleStyle);
+      if (productImage) {
+        formData.append('productImage', productImage);
+      }
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/veo/generate`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ topic, subtitleStyle })
+        body: formData
       });
       
       if (!res.ok) throw new Error('Failed to start generation');
@@ -79,6 +86,32 @@ export default function VeoShortsCreator() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-zinc-300 mb-2">Product Image (Optional)</label>
+          <div className="border-2 border-dashed border-zinc-700 rounded-lg p-6 bg-zinc-950 flex flex-col items-center justify-center text-center relative overflow-hidden">
+            {productImage ? (
+              <div className="flex flex-col items-center">
+                <img src={URL.createObjectURL(productImage)} alt="Preview" className="w-32 h-32 object-cover rounded-lg border border-zinc-800 mb-3" />
+                <button onClick={() => setProductImage(null)} className="text-red-400 text-sm hover:text-red-300 transition-colors">Remove Image</button>
+              </div>
+            ) : (
+              <>
+                <svg className="w-8 h-8 text-zinc-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-sm text-zinc-400 mb-1">Click to upload a product reference image</p>
+                <p className="text-xs text-zinc-600">The generated video will keep this product identical!</p>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => setProductImage(e.target.files?.[0] || null)}
+                />
+              </>
+            )}
+          </div>
         </div>
 
         <div>
