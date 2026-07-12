@@ -28,7 +28,11 @@ async function pollVeoOperation(operationName: string, token: string): Promise<a
   }
 }
 
-export const veoWorker = new Worker('veo-generation', async (job: Job) => {
+class VeoGenerationWorker {
+  private worker: Worker;
+
+  constructor() {
+    this.worker = new Worker('veo-generation', async (job: Job) => {
   const { reelId, topic, subtitleStyle, productImageBase64, productImageMimeType } = job.data;
   logger.info({ event: 'veo_generation_started', reelId, topic, hasImage: !!productImageBase64 });
 
@@ -210,4 +214,22 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
       data: { status: 'FAILED', statusMessage: `Failed: ${error.message}` },
     });
   }
-}, { connection: redis });
+    }, { connection: redis });
+
+    this.worker.on('error', err => {
+      logger.error({ event: 'veo_worker_error', error: err.message });
+    });
+  }
+
+  public async start() {
+    logger.info({ event: 'veo_worker_started' });
+    await this.worker.waitUntilReady();
+  }
+
+  public async shutdown() {
+    await this.worker.close();
+    logger.info({ event: 'veo_worker_shutdown' });
+  }
+}
+
+export const veoWorker = new VeoGenerationWorker();

@@ -118,6 +118,7 @@ app.listen(PORT, () => {
   // Start refresh scheduler and workers
   postWorker.start().catch(console.error);
   seriesReelWorker.start().catch(console.error);
+  veoWorker.start().catch(console.error);
 });
 
 // Graceful shutdown
@@ -126,6 +127,7 @@ process.on('SIGTERM', async () => {
   refreshScheduler.stop();
   await postWorker.shutdown();
   await seriesReelWorker.shutdown();
+  await veoWorker.shutdown();
   process.exit(0);
 });
 
@@ -134,6 +136,7 @@ process.on('SIGINT', async () => {
   refreshScheduler.stop();
   await postWorker.shutdown();
   await seriesReelWorker.shutdown();
+  await veoWorker.shutdown();
   process.exit(0);
 });
 
