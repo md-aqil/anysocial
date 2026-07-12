@@ -9,7 +9,6 @@ export default function VeoShortsCreator() {
   const [status, setStatus] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [reelId, setReelId] = useState<string | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [history, setHistory] = useState<any[]>([]);
 
@@ -68,6 +67,8 @@ export default function VeoShortsCreator() {
       
       // Start polling
       pollStatus(data.data.reel.id);
+      // Immediately refresh history so the new pending item shows up in the journey list
+      fetchHistory();
     } catch (e: any) {
       setStatus('FAILED');
       setStatusMessage(e.message);
@@ -84,13 +85,12 @@ export default function VeoShortsCreator() {
       setStatus(data.data.status);
       setStatusMessage(data.data.statusMessage || 'Processing...');
       
-      if (data.data.status === 'READY' || data.data.status === 'PUBLISHED') {
-        setVideoUrl(data.data.videoUrl);
-        fetchHistory(); // Refresh history when done
-      } else if (data.data.status !== 'FAILED') {
-        setTimeout(() => pollStatus(id), 5000);
+      fetchHistory(); // Continuously update history to get fresh metadata for the journey UI
+      
+      if (data.data.status === 'READY' || data.data.status === 'PUBLISHED' || data.data.status === 'FAILED') {
+        // Done
       } else {
-        fetchHistory();
+        setTimeout(() => pollStatus(id), 5000);
       }
     } catch (e: any) {
       console.error(e);
@@ -98,22 +98,35 @@ export default function VeoShortsCreator() {
     }
   };
 
+  const renderJourneyStep = (title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean) => (
+    <div className={`flex flex-col border-l-2 pl-4 py-2 relative ${isComplete ? 'border-orange-500' : isActive ? 'border-blue-500' : 'border-slate-200'}`}>
+      <div className={`absolute -left-[9px] top-4 w-4 h-4 rounded-full border-2 bg-white ${isComplete ? 'border-orange-500 bg-orange-500' : isActive ? 'border-blue-500 animate-pulse' : 'border-slate-300'}`}></div>
+      <h4 className={`text-sm font-bold mb-2 ${isComplete ? 'text-orange-600' : isActive ? 'text-blue-600' : 'text-slate-400'}`}>{title}</h4>
+      <div className={!isComplete && !isActive ? 'opacity-50 grayscale pointer-events-none' : ''}>
+        {content}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-rose-400">
-          Cinematic Shorts (Veo 3)
+    <div className="p-8 max-w-5xl mx-auto space-y-12 bg-slate-50 min-h-screen text-slate-900 font-sans">
+      
+      {/* Header */}
+      <div className="flex flex-col gap-2 text-center max-w-2xl mx-auto">
+        <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-rose-500 tracking-tight">
+          Cinematic Shorts Studio
         </h1>
-        <p className="text-zinc-400">
-          Generate highly detailed, photorealistic videos using Google's state-of-the-art Veo 3 Video AI model.
+        <p className="text-slate-500 text-lg">
+          Generate stunning photorealistic videos using Google's Veo 3 AI model. Complete transparency from text to final video.
         </p>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-6">
+      {/* Creation Form */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-8">
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-2">Video Topic or Idea</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Video Topic or Idea</label>
           <textarea
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
             rows={4}
             placeholder="e.g. A dramatic cinematic shot of a neon city in cyberpunk style..."
             value={topic}
@@ -122,20 +135,22 @@ export default function VeoShortsCreator() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-2">Product Image (Optional)</label>
-          <div className="border-2 border-dashed border-zinc-700 rounded-lg p-6 bg-zinc-950 flex flex-col items-center justify-center text-center relative overflow-hidden">
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Product Image (Optional)</label>
+          <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 bg-slate-50 hover:bg-slate-100 transition-colors flex flex-col items-center justify-center text-center relative overflow-hidden group">
             {productImage ? (
               <div className="flex flex-col items-center">
-                <img src={URL.createObjectURL(productImage)} alt="Preview" className="w-32 h-32 object-cover rounded-lg border border-zinc-800 mb-3" />
-                <button onClick={() => setProductImage(null)} className="text-red-400 text-sm hover:text-red-300 transition-colors">Remove Image</button>
+                <img src={URL.createObjectURL(productImage)} alt="Preview" className="w-32 h-32 object-cover rounded-xl border border-slate-200 mb-4 shadow-sm" />
+                <button onClick={() => setProductImage(null)} className="text-red-500 font-medium text-sm hover:text-red-600 transition-colors">Remove Image</button>
               </div>
             ) : (
               <>
-                <svg className="w-8 h-8 text-zinc-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p className="text-sm text-zinc-400 mb-1">Click to upload a product reference image</p>
-                <p className="text-xs text-zinc-600">The generated video will keep this product identical!</p>
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-200 text-slate-400 group-hover:text-orange-500 transition-colors">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-slate-700 mb-1">Click to upload a product reference image</p>
+                <p className="text-xs text-slate-500 max-w-sm">The generated cinematic video will keep your product looking 100% identical!</p>
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -148,23 +163,23 @@ export default function VeoShortsCreator() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-2">Subtitle Overlay Style</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Subtitle Overlay Style</label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { id: 'orange-box', name: 'Orange Block', color: 'bg-orange-500' },
               { id: 'blue-box', name: 'Blue Block', color: 'bg-blue-500' },
               { id: 'outline', name: 'Bold Outline', color: 'bg-black' },
-              { id: 'minimal', name: 'Minimal Drop Shadow', color: 'bg-zinc-800' }
+              { id: 'minimal', name: 'Minimal Drop Shadow', color: 'bg-slate-800' }
             ].map((style) => (
               <button
                 key={style.id}
                 onClick={() => setSubtitleStyle(style.id)}
-                className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${subtitleStyle === style.id ? 'border-orange-500 bg-orange-500/10' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950'}`}
+                className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${subtitleStyle === style.id ? 'border-orange-500 bg-orange-50 shadow-md scale-105' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
               >
-                <div className={`w-full py-2 flex items-center justify-center rounded text-white font-bold text-sm ${style.color} ${style.id === 'outline' ? 'border border-zinc-700' : ''}`}>
+                <div className={`w-full py-3 flex items-center justify-center rounded-lg text-white font-bold text-sm shadow-sm ${style.color} ${style.id === 'outline' ? 'border border-slate-700' : ''}`}>
                   Abc
                 </div>
-                <span className="text-xs text-zinc-400 font-medium">{style.name}</span>
+                <span className={`text-xs font-semibold ${subtitleStyle === style.id ? 'text-orange-700' : 'text-slate-500'}`}>{style.name}</span>
               </button>
             ))}
           </div>
@@ -173,42 +188,118 @@ export default function VeoShortsCreator() {
         <button
           onClick={handleGenerate}
           disabled={!topic || status === 'GENERATING' || status === 'PENDING'}
-          className="w-full bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="w-full bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-0.5 active:translate-y-0"
         >
-          {status === 'GENERATING' || status === 'PENDING' ? 'Generating...' : 'Generate Veo Short'}
+          {status === 'GENERATING' || status === 'PENDING' ? 'Initializing Engine...' : 'Generate Cinematic Short'}
         </button>
       </div>
 
-      {(status || videoUrl) && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center space-y-4">
-          <h2 className="text-lg font-semibold text-white">Status: {status}</h2>
-          <p className="text-zinc-400 text-sm animate-pulse">{statusMessage}</p>
-          
-          {videoUrl && (
-            <div className="mt-4 flex justify-center">
-              <video src={videoUrl} controls className="max-h-[500px] rounded-lg shadow-2xl border border-zinc-800" />
-            </div>
-          )}
-        </div>
-      )}
-
+      {/* Generation Journey History */}
       {history.length > 0 && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 mt-8">
-          <h2 className="text-xl font-bold text-white mb-4">Recent Veo Shorts</h2>
-          <div className="space-y-4">
-            {history.map((reel) => (
-              <div key={reel.id} className="flex flex-col sm:flex-row items-center gap-4 bg-zinc-950 p-4 rounded-lg border border-zinc-800">
-                <div className="flex-1">
-                  <p className="text-zinc-300 font-medium truncate">{reel.script || 'No Topic Provided'}</p>
-                  <p className="text-zinc-500 text-sm mt-1">Status: {reel.status} • {new Date(reel.createdAt).toLocaleDateString()}</p>
+        <div className="space-y-8">
+          <h2 className="text-2xl font-bold text-slate-800 text-center">Your Creation Journey</h2>
+          
+          <div className="space-y-12">
+            {history.map((reel) => {
+              const meta = reel.metadata || {};
+              const isCurrent = reel.id === reelId && (status === 'PENDING' || status === 'GENERATING');
+              
+              // Determine step statuses
+              const step1Done = !!meta.generatedScript;
+              const step2Done = !!meta.generatedImage;
+              const step3Done = !!meta.rawVideoUrl;
+              const step4Done = reel.status === 'READY' || reel.status === 'PUBLISHED';
+
+              return (
+                <div key={reel.id} className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm relative overflow-hidden">
+                  
+                  {/* Current processing overlay bar at top */}
+                  {isCurrent && (
+                    <div className="absolute top-0 left-0 w-full h-1 bg-slate-100">
+                      <div className="h-full bg-gradient-to-r from-orange-400 to-rose-400 animate-pulse"></div>
+                    </div>
+                  )}
+
+                  <div className="mb-8">
+                    <h3 className="text-lg font-bold text-slate-800 mb-1">Topic: {reel.script}</h3>
+                    <p className="text-sm text-slate-500">{new Date(reel.createdAt).toLocaleString()} • Style: {meta.subtitleStyle || 'Unknown'}</p>
+                    
+                    {isCurrent && (
+                      <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold border border-blue-100">
+                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        {statusMessage}
+                      </div>
+                    )}
+                    {reel.status === 'FAILED' && (
+                      <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 text-red-700 text-sm font-semibold border border-red-100">
+                        Generation Failed. Check logs.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    {/* Step 1: AI Prompt */}
+                    {renderJourneyStep(
+                      "Step 1: AI Director Script & Scene",
+                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-sm">
+                        <p className="text-slate-800"><span className="font-semibold">Script:</span> {meta.generatedScript || 'Waiting for AI...'}</p>
+                        <p className="text-slate-600 mt-2 italic">"{meta.generatedVisualPrompt || 'Generating visual prompt...'}"</p>
+                      </div>,
+                      step1Done,
+                      isCurrent && !step1Done
+                    )}
+
+                    {/* Step 2: Image Base */}
+                    {renderJourneyStep(
+                      "Step 2: Reference Image Generation",
+                      <div className="rounded-xl overflow-hidden border border-slate-200 inline-block">
+                        {meta.generatedImage ? (
+                          <img src={meta.generatedImage} alt="Reference" className="h-48 object-cover" />
+                        ) : (
+                          <div className="h-48 w-48 bg-slate-50 flex items-center justify-center text-slate-400 text-sm p-4 text-center">
+                            Awaiting AI Image Generation
+                          </div>
+                        )}
+                      </div>,
+                      step2Done,
+                      isCurrent && step1Done && !step2Done
+                    )}
+
+                    {/* Step 3: Raw Veo Video */}
+                    {renderJourneyStep(
+                      "Step 3: Google Veo 3 Video Processing",
+                      <div className="rounded-xl overflow-hidden border border-slate-200 inline-block bg-slate-900 relative">
+                        {meta.rawVideoUrl ? (
+                          <video src={meta.rawVideoUrl} controls className="h-64 object-cover" />
+                        ) : (
+                          <div className="h-64 w-[450px] max-w-full bg-slate-100 flex items-center justify-center text-slate-400 text-sm p-4 text-center">
+                            Veo 3 is rendering (this takes a few minutes)...
+                          </div>
+                        )}
+                      </div>,
+                      step3Done,
+                      isCurrent && step2Done && !step3Done
+                    )}
+
+                    {/* Step 4: Final Composition */}
+                    {renderJourneyStep(
+                      "Step 4: Final Subtitle Composition",
+                      <div className="rounded-xl overflow-hidden border-2 border-orange-200 inline-block shadow-lg">
+                        {reel.videoUrl ? (
+                          <video src={reel.videoUrl} controls autoPlay muted loop className="h-[400px] object-cover" />
+                        ) : (
+                          <div className="h-[400px] w-[225px] max-w-full bg-slate-50 flex items-center justify-center text-slate-400 text-sm p-4 text-center border-t border-slate-200">
+                            Awaiting Final Rendering
+                          </div>
+                        )}
+                      </div>,
+                      step4Done,
+                      isCurrent && step3Done && !step4Done
+                    )}
+                  </div>
                 </div>
-                {reel.videoUrl && (
-                  <a href={reel.videoUrl} target="_blank" rel="noreferrer" className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    Watch Video
-                  </a>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

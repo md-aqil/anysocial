@@ -33,10 +33,18 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
   logger.info({ event: 'veo_generation_started', reelId, topic, hasImage: !!productImageBase64 });
 
   try {
-    const updateProgress = async (msg: string) => {
+    const reelDoc = await prisma.reel.findUnique({ where: { id: reelId } });
+    const currentMetadata: any = reelDoc?.metadata || {};
+
+    const updateProgress = async (msg: string, metadataUpdates: any = {}) => {
+      Object.assign(currentMetadata, metadataUpdates);
       await prisma.reel.update({
         where: { id: reelId },
-        data: { status: 'GENERATING', statusMessage: msg },
+        data: { 
+          status: 'GENERATING', 
+          statusMessage: msg,
+          metadata: currentMetadata
+        },
       });
     };
 
@@ -51,7 +59,10 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
     const parsed = typeof aiResponse === 'string' ? JSON.parse(aiResponse.replace(/```json/g, '').replace(/```/g, '')) : aiResponse;
     const { script, visual_prompt } = parsed;
 
-    await updateProgress('🎨 Generating initial image (Global AI)...');
+    await updateProgress('🎨 Generating initial image (Global AI)...', {
+      generatedScript: script,
+      generatedVisualPrompt: visual_prompt
+    });
     
     // 2. Generate one single image using global image API
     let imagePrompt = visual_prompt;
@@ -74,7 +85,9 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
       generatedImageBase64 = fs.readFileSync(imagePath).toString('base64');
     }
 
-    await updateProgress('🎬 Submitting to Google Veo 3 (Long Running)...');
+    await updateProgress('🎬 Submitting to Google Veo 3 (Long Running)...', {
+      generatedImage: publicThumbnailUrl
+    });
     
     // 3. Google Veo 3 Video Generation
     const { GoogleAuth } = await import('google-auth-library');
@@ -137,10 +150,14 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
     let gcsVideoFile = files.find((f: any) => f.name.endsWith('.mp4'));
     if (!gcsVideoFile) throw new Error("No video file found in Veo output bucket");
 
-    const localRawVideo = path.join(os.tmpdir(), `veo_raw_${Date.now()}.mp4`);
+    const rawVideoFilename = `veo_raw_${Date.now()}.mp4`;
+    const localRawVideo = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', rawVideoFilename);
     await gcsVideoFile.download({ destination: localRawVideo });
+    const publicRawVideoUrl = `/uploads/reels/${rawVideoFilename}`;
 
-    await updateProgress('🔤 Applying final text composition & styles...');
+    await updateProgress('🔤 Applying final text composition & styles...', {
+      rawVideoUrl: publicRawVideoUrl
+    });
 
     // 4. Final composition: Text on video
     const finalVideoFilename = `veo_final_${Date.now()}.mp4`;
@@ -181,6 +198,7 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
         statusMessage: 'Veo Short generation complete!',
         videoUrl: publicVideoUrl,
         thumbnail: publicThumbnailUrl,
+        metadata: currentMetadata
       },
     });
 
