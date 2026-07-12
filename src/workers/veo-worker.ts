@@ -23,8 +23,8 @@ async function pollVeoOperation(operationName: string, token: string): Promise<a
       if (data.error) throw new Error(`Veo generation error: ${data.error.message}`);
       return data.response;
     }
-    // wait 10 seconds before polling again
-    await new Promise(r => setTimeout(r, 10000));
+    // Wait 10 seconds before polling again
+    await new Promise(resolve => setTimeout(resolve, 10000));
   }
 }
 
@@ -99,7 +99,7 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
     const outputBucket = process.env.VEO_STORAGE_BUCKET || 'anysocial-veo-videos';
     const outputGcsUri = `gs://${outputBucket}/veo_outputs/`;
 
-    const veoUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/veo-3.0-generate-001:predictLongRunning`;
+    const veoUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/veo-0.1-generate-001:predictLongRunning`;
     
     const veoInstance: any = { prompt: visual_prompt };
     if (generatedImageBase64) {
