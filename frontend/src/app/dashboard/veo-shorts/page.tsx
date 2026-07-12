@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { useAuth } from '@/components/auth/auth-provider';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function VeoShortsCreator() {
-  const { getToken } = useAuth();
+  const { token } = useAuthStore();
   const [topic, setTopic] = useState('');
   const [subtitleStyle, setSubtitleStyle] = useState('orange-box');
   const [status, setStatus] = useState<string | null>(null);
@@ -16,7 +16,6 @@ export default function VeoShortsCreator() {
       setStatus('PENDING');
       setStatusMessage('Starting generation...');
       
-      const token = await getToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/veo/generate`, {
         method: 'POST',
         headers: {
@@ -40,7 +39,6 @@ export default function VeoShortsCreator() {
 
   const pollStatus = async (id: string) => {
     try {
-      const token = await getToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reels/status/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
