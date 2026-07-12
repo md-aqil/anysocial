@@ -433,24 +433,6 @@ export default function ReelCreatorPage() {
                         setLanguage(lang.id);
                         const voices = currentVoicesByLanguage[lang.id] || DEFAULT_VOICE_FALLBACK;
                         setVoiceId(voices[0].id);
-                        
-                        // Sync Target Region based on language
-                        const regionMap: Record<string, string> = {
-                          'Hindi': 'Indian',
-                          'Japanese': 'East Asian',
-                          'Korean': 'East Asian',
-                          'Chinese': 'East Asian',
-                          'Arabic': 'Middle Eastern',
-                          'Spanish': 'Latin American',
-                          'Portuguese': 'Latin American',
-                          'French': 'European',
-                          'German': 'European',
-                          'Italian': 'European',
-                          'English': 'Global'
-                        };
-                        if (regionMap[lang.id]) {
-                          setTargetRegion(regionMap[lang.id]);
-                        }
                       }}
                       className={cn(
                         "px-4 py-3 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-center gap-3 select-none",
