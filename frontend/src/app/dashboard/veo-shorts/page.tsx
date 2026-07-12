@@ -78,6 +78,22 @@ export default function VeoShortsCreator() {
     }
   };
 
+  const handleCancel = async (idToCancel: string) => {
+    try {
+      const res = await fetch(`/api/veo/cancel/${idToCancel}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setStatus('FAILED');
+        setStatusMessage('Cancelled by user');
+        fetchHistory();
+      }
+    } catch (e) {
+      console.error('Failed to cancel', e);
+    }
+  };
+
   const renderJourneyStep = (title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean) => (
     <div className={`flex flex-col border-l-2 pl-4 py-2 relative ${isComplete ? 'border-orange-500' : isActive ? 'border-blue-500' : 'border-slate-200'}`}>
       <div className={`absolute -left-[9px] top-4 w-4 h-4 rounded-full border-2 bg-white ${isComplete ? 'border-orange-500 bg-orange-500' : isActive ? 'border-blue-500 animate-pulse' : 'border-slate-300'}`}></div>
@@ -216,14 +232,22 @@ export default function VeoShortsCreator() {
                         <p className="text-sm text-slate-500">{new Date(reel.createdAt).toLocaleString()} • Style: {meta.subtitleStyle || 'Unknown'}</p>
                         
                         {isCurrent && (
-                          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold border border-blue-100">
-                            <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            {statusMessage}
+                          <div className="mt-4 flex flex-wrap items-center gap-4">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold border border-blue-100">
+                              <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                              {statusMessage}
+                            </div>
+                            <button 
+                              onClick={() => handleCancel(reel.id)}
+                              className="px-4 py-2 rounded-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-sm font-semibold border border-slate-200 hover:border-red-200 transition-colors"
+                            >
+                              Cancel Generation
+                            </button>
                           </div>
                         )}
                         {reel.status === 'FAILED' && (
                           <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 text-red-700 text-sm font-semibold border border-red-100">
-                            Generation Failed. Check logs.
+                            {reel.statusMessage || 'Generation Failed. Check logs.'}
                           </div>
                         )}
                       </div>
