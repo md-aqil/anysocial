@@ -125,6 +125,22 @@ router.get('/history', requireAuth, async (req: any, res: any) => {
       take: 10
     });
 
+    // Auto-fail stuck reels (older than 15 minutes)
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+    let updatedAny = false;
+
+    for (const reel of reels) {
+      if ((reel.status === 'PENDING' || reel.status === 'GENERATING') && reel.updatedAt < fifteenMinsAgo) {
+        await prisma.reel.update({
+          where: { id: reel.id },
+          data: { status: 'FAILED', statusMessage: 'Generation timed out.' }
+        });
+        reel.status = 'FAILED';
+        reel.statusMessage = 'Generation timed out.';
+        updatedAny = true;
+      }
+    }
+
     res.status(200).json({
       success: true,
       data: reels
