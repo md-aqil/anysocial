@@ -17,6 +17,7 @@ import { rateLimiter } from './middleware/rate-limiter.js';
 import { refreshScheduler } from './modules/tokens/refresh.scheduler.js';
 import { postWorker } from './workers/post-worker.js';
 import { seriesReelWorker } from './workers/series-reel-worker.js';
+import { veoWorker } from './workers/veo-worker.js';
 import { env } from './config/env.js';
 
 // Initialize Redis client for session store

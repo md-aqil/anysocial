@@ -16,6 +16,7 @@ import { curationRoutes } from './curation.routes.js';
 import adCreatorRoutes from './ad-creator.routes.js';
 import scrapeRoutes from './scrape.routes.js';
 import { settingsRoutes } from './settings.routes.js';
+import veoRoutes from './veo.routes.js';
 
 const router = Router();
 
@@ -96,5 +97,6 @@ router.use('/api/scrape', scrapeRoutes);
 
 // Settings routes
 router.use('/api/settings', settingsRoutes);
+router.use('/api/veo', jwtAuth, veoRoutes);
 
 export const routes = router;

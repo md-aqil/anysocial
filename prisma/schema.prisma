@@ -315,6 +315,7 @@ model ReelSeries {
 enum ReelType {
   SERIES
   PRODUCT
+  VEO_SHORT
 }
 
 model Reel {

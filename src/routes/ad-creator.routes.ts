@@ -110,13 +110,15 @@ router.post('/generate', authenticate, upload.single('image'), async (req: any, 
       "brandIntegration": "Logo placement, color overlays, typography style",
       "layoutAndEffects": "Product placement, negative space, special effects like glow/motion blur",
       "creativeRationale": "Explain which professional creative standards were applied and why",
-      "imagePrompt": "A highly-detailed, hyper-realistic ad visual..."
+      "imagePrompt": "A highly-detailed, hyper-realistic ad visual...",
+      "negativePrompt": "Comma-separated list of things to exclude (e.g., humans, people, hands, if the product is an animal/cartoon and no humans are needed)"
     }
     
     CRITICAL INSTRUCTION FOR IMAGE PROMPT:
     The imagePrompt MUST describe a COMPLETE, PROFESSIONALLY DESIGNED ADVERTISEMENT, not just a product photo. 
     It MUST explicitly command the image generator to render the typography (Tagline and CTA) beautifully integrated into the layout, utilizing negative space.
     CRITICAL: The image generator MUST NOT include any fake logos, watermarks, brand icons, or signatures.
+    CRITICAL: Do NOT add humans, people, or hands to the scene unless explicitly requested by the product description. If the product is an animal, pet, or cartoon, explicitly enforce "NO HUMANS, NO PEOPLE, NO HANDS" in the prompt.
     ${req.file ? 'IMPORTANT: We are passing the original product image. Instruct the image generator in the imagePrompt to use the reference image EXACTLY, and explicitly state that the product/dress/model MUST remain 100% identical and unaltered.' : ''}
     `;
 
@@ -126,7 +128,7 @@ router.post('/generate', authenticate, upload.single('image'), async (req: any, 
 
     const imagePayload = JSON.stringify({
       prompt: briefParsed.imagePrompt,
-      negative_prompt: "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces",
+      negative_prompt: (briefParsed.negativePrompt ? briefParsed.negativePrompt + ", " : "") + "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces",
       api_parameters: {
         resolution: "1K",
         output_format: "jpg",

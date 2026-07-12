@@ -23,6 +23,7 @@ import {
   List,
   Wand2,
   Bot,
+  Film,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -33,6 +34,7 @@ const navigation = [
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Reel Creator', href: '/dashboard/reels-creator', icon: Star },
+  { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film },
   { name: 'Ad/Post Creator', href: '/dashboard/post-creator', icon: Wand2 },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'Feed Curation', href: '/dashboard/curation', icon: List },
