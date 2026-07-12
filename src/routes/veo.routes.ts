@@ -81,4 +81,33 @@ router.post('/generate', requireAuth, upload.single('productImage'), async (req:
   }
 });
 
+/**
+ * GET /api/veo/status/:id
+ * Poll the status of a Veo Short reel.
+ */
+router.get('/status/:id', requireAuth, async (req: any, res: any) => {
+  try {
+    const reel = await prisma.reel.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!reel) {
+      return res.status(404).json({ success: false, error: 'Reel not found' });
+    }
+    
+    // Ensure the user owns it
+    if (reel.userId !== req.userId) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: reel
+    });
+  } catch (error: any) {
+    console.error('Error fetching reel status:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 export default router;

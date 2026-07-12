@@ -46,7 +46,7 @@ export default function VeoShortsCreator() {
 
   const pollStatus = async (id: string) => {
     try {
-      const res = await fetch(`/api/reels/status/${id}`, {
+      const res = await fetch(`/api/veo/status/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
