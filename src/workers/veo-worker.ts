@@ -18,7 +18,7 @@ async function pollVeoOperation(operationName: string, token: string): Promise<a
       }
     });
     if (!res.ok) throw new Error(`Veo polling failed: ${res.statusText}`);
-    const data = await res.json();
+    const data = await res.json() as any;
     if (data.done) {
       if (data.error) throw new Error(`Veo generation error: ${data.error.message}`);
       return data.response;
@@ -44,7 +44,7 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
     
     // 1. Generate text (script and video description)
     const scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a highly detailed 1-sentence visual description of what the video should show. Format as JSON: { "script": "...", "visual_prompt": "..." }`;
-    const aiResponse = await aiOrchestrator.generateGeminiResponse(scriptPrompt);
+    const aiResponse = await aiOrchestrator.generateContent(scriptPrompt);
     const parsed = typeof aiResponse === 'string' ? JSON.parse(aiResponse.replace(/```json/g, '').replace(/```/g, '')) : aiResponse;
     const { script, visual_prompt } = parsed;
 
@@ -98,7 +98,7 @@ export const veoWorker = new Worker('veo-generation', async (job: Job) => {
       throw new Error(`Veo API Error: ${errText}`);
     }
 
-    const veoInit = await veoRes.json();
+    const veoInit = await veoRes.json() as any;
     const operationName = veoInit.name;
 
     await updateProgress('⏳ Veo 3 is rendering video (this takes a few minutes)...');

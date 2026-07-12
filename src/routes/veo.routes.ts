@@ -1,19 +1,14 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../middleware/auth.middleware.js';
+import { jwtAuth as requireAuth } from '../middleware/jwt-auth.js';
 import { prisma } from '../db/prisma.js';
 import { Queue } from 'bullmq';
-import Redis from 'ioredis';
+import { redis } from '../db/redis.js';
 
 const router = Router();
 
-// Configure Redis connection for BullMQ
-const redisConnection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
-  maxRetriesPerRequest: null,
-});
-
 // Create the Veo queue
-const veoQueue = new Queue('veo-generation', { connection: redisConnection });
+const veoQueue = new Queue('veo-generation', { connection: redis });
 
 const generateVeoSchema = z.object({
   topic: z.string().min(1, 'Topic is required'),
