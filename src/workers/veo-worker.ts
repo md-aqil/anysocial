@@ -10,7 +10,9 @@ import fs from 'fs';
 
 // Helper to poll Veo 3 operation
 async function pollVeoOperation(operationName: string, token: string): Promise<any> {
-  const url = `https://us-central1-aiplatform.googleapis.com/v1/${operationName}`;
+  // Vertex AI sometimes includes the model path in the operation name, which breaks the GetOperation endpoint
+  const cleanOperationName = operationName.replace(/\/publishers\/[^\/]+\/models\/[^\/]+/, '');
+  const url = `https://us-central1-aiplatform.googleapis.com/v1/${cleanOperationName}`;
   while (true) {
     const res = await fetch(url, {
       headers: {
