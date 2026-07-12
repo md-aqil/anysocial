@@ -161,13 +161,13 @@ router.get('/playground-history', jwtAuth, async (req: Request, res: Response) =
  */
 router.post('/generate-voice', jwtAuth, async (req: Request, res: Response) => {
   try {
-    const { text, voiceName = 'Aoede', language = 'en-US', useAdvancedModel = true } = req.body;
+    const { text, voiceName = 'Aoede', language = 'en-US', useAdvancedModel = true, model } = req.body;
     if (!text) {
       res.status(400).json({ error: 'Text is required' });
       return;
     }
     
-    const { audioPath: tempAudioPath } = await aiOrchestrator.generateVoiceover(text, voiceName, language, useAdvancedModel, true);
+    const { audioPath: tempAudioPath } = await aiOrchestrator.generateVoiceover(text, voiceName, language, useAdvancedModel, true, model);
     
     // Move to public uploads folder
     const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-audio');

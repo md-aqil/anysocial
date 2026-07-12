@@ -21,38 +21,37 @@ export function getNextScheduledDate(scheduleDaysStr: string, scheduleTimeStr: s
   const timeStr = scheduleTimeStr || '12:00';
   const [hours, minutes] = timeStr.split(':').map(Number);
 
-  // Map of weekday abbreviations to numbers (0 = Sunday, 1 = Monday, etc.)
   const dayMap: Record<string, number> = {
     'SUN': 0, 'MON': 1, 'TUE': 2, 'WED': 3, 'THU': 4, 'FRI': 5, 'SAT': 6
   };
-
   const targetDayNumbers = days.map(d => dayMap[d.toUpperCase()]).filter(n => n !== undefined);
 
-  // Find the next matching day and time
-  let candidate = new Date(now);
-  candidate.setHours(hours, minutes, 0, 0);
+  // User's timezone offset in minutes (JS format: positive if behind UTC, negative if ahead of UTC)
+  // If not provided, fallback to server's offset
+  const offsetMs = timezoneOffset !== undefined ? timezoneOffset * 60 * 1000 : now.getTimezoneOffset() * 60 * 1000;
+  
+  // Calculate what "now" is in the user's local timezone
+  const userNow = new Date(now.getTime() - offsetMs);
+  
+  let candidateUser = new Date(userNow.getTime());
+  // Set hours/minutes using UTC methods so we strictly manipulate the user's local date/time 
+  // without server timezone interference.
+  candidateUser.setUTCHours(hours, minutes, 0, 0);
 
-  // Adjust for client timezoneOffset if applicable
-  if (timezoneOffset !== undefined) {
-    const localUtcTime = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
-    candidate = new Date(localUtcTime + (timezoneOffset * 60 * 1000));
+  if (candidateUser <= userNow) {
+    candidateUser.setUTCDate(candidateUser.getUTCDate() + 1);
   }
 
-  // If candidate is in the past, start searching from tomorrow
-  if (candidate <= now) {
-    candidate.setDate(candidate.getDate() + 1);
-  }
-
-  // Loop up to 8 days to find the next day that is in the allowed scheduleDays
   for (let i = 0; i < 8; i++) {
-    const dayOfWeek = candidate.getDay(); // 0-6
+    const dayOfWeek = candidateUser.getUTCDay(); // 0-6
     if (targetDayNumbers.includes(dayOfWeek)) {
-      return candidate;
+      // Convert back to absolute UTC Date
+      return new Date(candidateUser.getTime() + offsetMs);
     }
-    candidate.setDate(candidate.getDate() + 1);
+    candidateUser.setUTCDate(candidateUser.getUTCDate() + 1);
   }
 
-  return candidate;
+  return new Date(candidateUser.getTime() + offsetMs);
 }
 
 /**
@@ -99,8 +98,11 @@ export async function scheduleNextReel(seriesId: string, timezoneOffset?: number
       },
     });
 
-    // Enqueue delayed BullMQ job
-    const delay = Math.max(0, nextDate.getTime() - Date.now());
+    // Enqueue delayed BullMQ job to run 1 hour before schedule (or immediately if less than 1 hour away)
+    // This allows time for generation, so it can be automatically scheduled to post exactly AT the requested time.
+    const GENERATION_LEAD_TIME = 60 * 60 * 1000; 
+    const delay = Math.max(0, nextDate.getTime() - Date.now() - GENERATION_LEAD_TIME);
+    
     await reelGenerationQueue.add(
       'generate-reel',
       { reelId: reel.id, seriesId: series.id },

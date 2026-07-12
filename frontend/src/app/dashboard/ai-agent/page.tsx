@@ -17,9 +17,44 @@ interface Message {
   timestamp: number;
 }
 const VOICES_BY_LANGUAGE: Record<string, string[]> = {
-  'en-US': ['Aoede', 'Charon', 'Fenrir', 'Kore', 'Puck'],
-  'hi-IN': ['Ojas', 'Aarav', 'Ananya', 'Kavya'],
-  'es-ES': ['Isidora', 'Elena', 'Tomas']
+  'en-US': [
+    'Aoede', 'Charon', 'Fenrir', 'Kore', 'Puck', 
+    'en-US-Journey-D', 'en-US-Journey-F', 'en-US-Journey-O',
+    'en-US-Studio-M', 'en-US-Studio-O', 'en-US-Studio-Q',
+    'en-US-Wavenet-A', 'en-US-Wavenet-B', 'en-US-Wavenet-C', 'en-US-Wavenet-D', 'en-US-Wavenet-E', 'en-US-Wavenet-F', 'en-US-Wavenet-G', 'en-US-Wavenet-H', 'en-US-Wavenet-I', 'en-US-Wavenet-J',
+    'en-US-Neural2-A', 'en-US-Neural2-C', 'en-US-Neural2-D', 'en-US-Neural2-E', 'en-US-Neural2-F', 'en-US-Neural2-G', 'en-US-Neural2-H', 'en-US-Neural2-I', 'en-US-Neural2-J',
+    'en-US-Standard-A', 'en-US-Standard-B', 'en-US-Standard-C', 'en-US-Standard-D', 'en-US-Standard-E', 'en-US-Standard-F', 'en-US-Standard-G', 'en-US-Standard-H', 'en-US-Standard-I', 'en-US-Standard-J',
+    'en-US-Polyglot-1'
+  ],
+  'hi-IN': [
+    'Ojas', 'Aarav', 'Ananya', 'Kavya',
+    'hi-IN-Journey-D', 'hi-IN-Journey-F', 'hi-IN-Journey-O',
+    'hi-IN-Wavenet-A', 'hi-IN-Wavenet-B', 'hi-IN-Wavenet-C', 'hi-IN-Wavenet-D',
+    'hi-IN-Neural2-A', 'hi-IN-Neural2-B', 'hi-IN-Neural2-C', 'hi-IN-Neural2-D',
+    'hi-IN-Standard-A', 'hi-IN-Standard-B', 'hi-IN-Standard-C', 'hi-IN-Standard-D'
+  ],
+  'es-ES': [
+    'Isidora', 'Elena', 'Tomas',
+    'es-ES-Journey-D', 'es-ES-Journey-F', 'es-ES-Journey-O',
+    'es-ES-Studio-C', 'es-ES-Studio-F',
+    'es-ES-Wavenet-B', 'es-ES-Wavenet-C', 'es-ES-Wavenet-D',
+    'es-ES-Neural2-A', 'es-ES-Neural2-B', 'es-ES-Neural2-C', 'es-ES-Neural2-D', 'es-ES-Neural2-E', 'es-ES-Neural2-F',
+    'es-ES-Standard-A', 'es-ES-Standard-B', 'es-ES-Standard-C', 'es-ES-Standard-D'
+  ],
+  'fr-FR': [
+    'fr-FR-Journey-D', 'fr-FR-Journey-F', 'fr-FR-Journey-O',
+    'fr-FR-Studio-A', 'fr-FR-Studio-D',
+    'fr-FR-Wavenet-A', 'fr-FR-Wavenet-B', 'fr-FR-Wavenet-C', 'fr-FR-Wavenet-D', 'fr-FR-Wavenet-E',
+    'fr-FR-Neural2-A', 'fr-FR-Neural2-B', 'fr-FR-Neural2-C', 'fr-FR-Neural2-D', 'fr-FR-Neural2-E',
+    'fr-FR-Standard-A', 'fr-FR-Standard-B', 'fr-FR-Standard-C', 'fr-FR-Standard-D', 'fr-FR-Standard-E'
+  ],
+  'de-DE': [
+    'de-DE-Journey-D', 'de-DE-Journey-F', 'de-DE-Journey-O',
+    'de-DE-Studio-B', 'de-DE-Studio-C',
+    'de-DE-Wavenet-A', 'de-DE-Wavenet-B', 'de-DE-Wavenet-C', 'de-DE-Wavenet-D', 'de-DE-Wavenet-E', 'de-DE-Wavenet-F',
+    'de-DE-Neural2-B', 'de-DE-Neural2-C', 'de-DE-Neural2-D', 'de-DE-Neural2-F',
+    'de-DE-Standard-A', 'de-DE-Standard-B', 'de-DE-Standard-C', 'de-DE-Standard-D', 'de-DE-Standard-E', 'de-DE-Standard-F'
+  ]
 };
 
 export default function AIAgentPage() {
@@ -106,7 +141,7 @@ export default function AIAgentPage() {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           body: JSON.stringify({ 
-            messages: JSON.stringify([{ role: 'user', text: currentInput }]),
+            messages: JSON.stringify([{ role: 'user', content: currentInput }]),
             model: selectedModel 
           })
         });
@@ -143,6 +178,10 @@ export default function AIAgentPage() {
         }]);
       }
       else if (mode === 'voice') {
+        const isGeminiVoice = ['Aoede', 'Charon', 'Fenrir', 'Kore', 'Puck', 'Ojas', 'Aarav', 'Ananya', 'Kavya', 'Isidora', 'Elena', 'Tomas'].includes(selectedVoice);
+        const forceGoogleTTS = selectedModel === 'google-cloud-tts';
+        const useAdvancedModel = forceGoogleTTS ? false : isGeminiVoice;
+        
         const response = await fetch('/api/ai/generate-voice', {
           method: 'POST',
           headers: {
@@ -153,7 +192,8 @@ export default function AIAgentPage() {
             text: currentInput, 
             voiceName: selectedVoice, 
             language: selectedLanguage, 
-            useAdvancedModel: true 
+            useAdvancedModel: useAdvancedModel,
+            model: selectedModel
           })
         });
         if (!response.ok) throw new Error((await response.json()).error || 'Failed');
@@ -332,7 +372,7 @@ export default function AIAgentPage() {
         <div className="flex-1 flex flex-col">
           {/* Options Row */}
           <div className="flex items-center gap-2 mb-2 px-2">
-            {mode === 'text' && (
+            {(mode === 'text' || mode === 'voice') && (
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
@@ -341,6 +381,12 @@ export default function AIAgentPage() {
                 <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                 <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
                 <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                {mode === 'voice' && (
+                  <>
+                    <option value="gemini-2.5-flash-preview-tts">Gemini 2.5 Flash TTS (AI Studio)</option>
+                    <option value="google-cloud-tts">Google Cloud TTS</option>
+                  </>
+                )}
               </select>
             )}
 

@@ -473,7 +473,7 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false, strictPlaygroundMode: boolean = false): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> {
+  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false, strictPlaygroundMode: boolean = false, overrideModel?: string): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> {
     if (!text || text.trim().length === 0) {
       throw new Error("Voiceover script is empty. Please ensure your script contains text or uses the 🎙️ emoji for voiceover lines.");
     }
@@ -504,33 +504,57 @@ Make sure the output is a valid JSON object.`;
       if (language.includes('Hindi')) languageCode = 'hi-IN';
       else if (language.includes('Spanish')) languageCode = 'es-ES';
 
-      const executeVoiceGen = async (overrideModel?: string): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> => {
-        const modelName = overrideModel || 'gemini-2.5-flash';
-        const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'project-bcd01169-8285-4613-a17';
-        const location = process.env.VERTEX_AI_LOCATION || 'us-central1';
-        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
+      const executeVoiceGen = async (targetModel?: string): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> => {
+        const modelName = targetModel || 'gemini-2.5-flash';
+        const aiStudioKey = process.env.GEMINI_AI_STUDIO_KEY;
+        let resData: any = null;
         
-        const res = await client.request({
-          url: endpoint,
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          data: {
-            contents: [{ role: 'user', parts: [{ text }] }],
-            generationConfig: {
-              responseModalities: ['AUDIO'],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: { 
-                    voiceName: geminiVoice
+        if (modelName === 'gemini-2.5-flash-preview-tts' && aiStudioKey) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${aiStudioKey}`;
+            const fetchRes = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text }] }],
+                    generationConfig: {
+                      responseModalities: ['AUDIO'],
+                      speechConfig: {
+                        voiceConfig: {
+                          prebuiltVoiceConfig: { voiceName: geminiVoice }
+                        }
+                      }
+                    }
+                })
+            });
+            if (!fetchRes.ok) throw new Error("AI Studio TTS Error: " + await fetchRes.text());
+            resData = await fetchRes.json();
+        } else {
+            const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'project-bcd01169-8285-4613-a17';
+            const location = process.env.VERTEX_AI_LOCATION || 'us-central1';
+            const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
+            
+            const res = await client.request({
+              url: endpoint,
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              data: {
+                contents: [{ role: 'user', parts: [{ text }] }],
+                generationConfig: {
+                  responseModalities: ['AUDIO'],
+                  speechConfig: {
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { 
+                        voiceName: geminiVoice
+                      }
+                    }
                   }
                 }
               }
-            }
-          }
-        });
+            });
+            resData = res.data;
+        }
 
-        const data = res.data as any;
-        const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+        const inlineData = resData?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
         if (!inlineData || !inlineData.data) throw new Error("TTS generated no audio.");
 
         const rawBuffer = Buffer.from(inlineData.data, 'base64');
@@ -573,9 +597,9 @@ Make sure the output is a valid JSON object.`;
       };
 
       try {
-        return await executeVoiceGen('gemini-2.5-flash');
+        return await executeVoiceGen(overrideModel || 'gemini-2.5-flash');
       } catch (e: any) {
-        console.warn("[Gemini 2.5 Flash TTS Failed] High demand or error. Falling back...", e.message);
+        console.warn(`[${overrideModel || 'gemini-2.5-flash'} TTS Failed] High demand or error. Falling back...`, e.message);
         if (strictPlaygroundMode) throw new Error(`[AI Agent] Gemini TTS failed: ${e.message}`);
         
         try {
@@ -592,25 +616,30 @@ Make sure the output is a valid JSON object.`;
     const client = new textToSpeech.TextToSpeechClient();
     
     let bcp47Language = 'en-US';
-    let actualVoiceName = 'en-US-Journey-D';
+    if (language.includes('Hindi') || language.includes('hi-IN')) bcp47Language = 'hi-IN';
+    else if (language.includes('Spanish') || language.includes('es-ES')) bcp47Language = 'es-ES';
+    else if (language.includes('fr-FR')) bcp47Language = 'fr-FR';
+    else if (language.includes('de-DE')) bcp47Language = 'de-DE';
+    
+    let actualVoiceName = voiceName;
 
-    if (language.includes('Hindi')) {
-      bcp47Language = 'hi-IN';
-      if (['Aoede', 'Kore', 'Leda'].includes(voiceName) || voiceName.endsWith('-F') || voiceName.endsWith('-O')) actualVoiceName = 'hi-IN-Chirp3-HD-Aoede';
-      else if (['Charon', 'Fenrir'].includes(voiceName) || voiceName.endsWith('-D') || voiceName.endsWith('-J')) actualVoiceName = 'hi-IN-Chirp3-HD-Charon';
-      else if (voiceName === 'Puck') actualVoiceName = 'hi-IN-Chirp3-HD-Puck';
-      else actualVoiceName = 'hi-IN-Chirp3-HD-Aoede'; // Default to female Chirp3
-    } else if (language.includes('Spanish')) {
-      bcp47Language = 'es-ES';
-      if (voiceName === 'Aoede' || voiceName === 'Kore' || voiceName.endsWith('-O') || voiceName.endsWith('-F')) actualVoiceName = 'es-ES-Journey-O';
-      else actualVoiceName = 'es-ES-Journey-D';
-    } else {
-      bcp47Language = 'en-US';
-      if (voiceName === 'Aoede' || voiceName.endsWith('-O')) actualVoiceName = 'en-US-Journey-O'; // Female 1
-      else if (voiceName === 'Kore' || voiceName === 'Leda' || voiceName.endsWith('-F')) actualVoiceName = 'en-US-Journey-F'; // Female 2
-      else if (voiceName === 'Charon' || voiceName.endsWith('-J')) actualVoiceName = 'en-US-Journey-D'; // Male 1
-      else if (voiceName === 'Fenrir' || voiceName === 'Puck') actualVoiceName = 'en-US-Journey-D'; // Male 1 (Journey only has D, F, O)
-      else actualVoiceName = 'en-US-Journey-O';
+    // Map generic gemini names if they fall through to Cloud TTS
+    const genericVoices = ['Aoede', 'Charon', 'Puck', 'Kore', 'Fenrir', 'Leda', 'Ojas', 'Aarav', 'Ananya', 'Kavya', 'Isidora', 'Elena', 'Tomas'];
+    if (genericVoices.includes(voiceName)) {
+      if (bcp47Language === 'hi-IN') {
+        if (['Aoede', 'Kore', 'Leda', 'Ananya', 'Kavya'].includes(voiceName)) actualVoiceName = 'hi-IN-Neural2-A';
+        else actualVoiceName = 'hi-IN-Neural2-B'; 
+      } else if (bcp47Language === 'es-ES') {
+        if (['Aoede', 'Kore', 'Isidora', 'Elena'].includes(voiceName)) actualVoiceName = 'es-ES-Journey-O';
+        else actualVoiceName = 'es-ES-Journey-D';
+      } else {
+        if (['Aoede', 'Kore', 'Leda'].includes(voiceName)) actualVoiceName = 'en-US-Journey-O';
+        else if (voiceName === 'Charon') actualVoiceName = 'en-US-Journey-D';
+        else actualVoiceName = 'en-US-Journey-F';
+      }
+    } else if (!actualVoiceName.includes('-')) {
+       // Catch all for missing/weird names
+       actualVoiceName = bcp47Language === 'en-US' ? 'en-US-Journey-O' : `${bcp47Language}-Standard-A`;
     }
 
     const request = {

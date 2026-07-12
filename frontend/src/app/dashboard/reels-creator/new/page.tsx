@@ -58,26 +58,46 @@ const PRESETS = [
   },
 ];
 
-const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
+const GEMINI_VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
   'English': [
-    { id: 'Puck', name: 'Puck — Gemini 3.1 TTS', type: 'Male', description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
-    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS', type: 'Male', description: 'Deep, resonant and authoritative. Cinematic narrator.' },
-    { id: 'Fenrir', name: 'Fenrir — Gemini 3.1 TTS', type: 'Male', description: 'Gruff and dramatic. Great for intense storytelling.' },
-    { id: 'Aoede', name: 'Aoede — Gemini 3.1 TTS', type: 'Female', description: 'Expressive and engaging. Warm storyteller voice.' },
-    { id: 'Kore', name: 'Kore — Gemini 3.1 TTS', type: 'Female', description: 'Calm and soothing. Perfect for mystery & suspense.' },
-    { id: 'Leda', name: 'Leda — Gemini 3.1 TTS', type: 'Female', description: 'Clear and confident. Great for educational reels.' },
+    { id: 'Puck', name: 'Puck — Gemini TTS', type: 'Male', description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
+    { id: 'Charon', name: 'Charon — Gemini TTS', type: 'Male', description: 'Deep, resonant and authoritative. Cinematic narrator.' },
+    { id: 'Fenrir', name: 'Fenrir — Gemini TTS', type: 'Male', description: 'Gruff and dramatic. Great for intense storytelling.' },
+    { id: 'Aoede', name: 'Aoede — Gemini TTS', type: 'Female', description: 'Expressive and engaging. Warm storyteller voice.' },
+    { id: 'Kore', name: 'Kore — Gemini TTS', type: 'Female', description: 'Calm and soothing. Perfect for mystery & suspense.' },
+    { id: 'Leda', name: 'Leda — Gemini TTS', type: 'Female', description: 'Clear and confident. Great for educational reels.' },
   ],
   'Hindi': [
-    { id: 'Puck', name: 'Puck — Gemini 3.1 TTS (Hindi)', type: 'Male', description: 'Energetic and upbeat Hindi voice.' },
-    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Hindi)', type: 'Male', description: 'Deep and authoritative Hindi voice.' },
-    { id: 'Aoede', name: 'Aoede — Gemini 3.1 TTS (Hindi)', type: 'Female', description: 'Expressive and engaging Hindi narrator.' },
-    { id: 'Kore', name: 'Kore — Gemini 3.1 TTS (Hindi)', type: 'Female', description: 'Calm soothing Hindi storyteller.' },
+    { id: 'Ojas', name: 'Ojas — Gemini TTS', type: 'Male', description: 'Energetic and upbeat Hindi voice.' },
+    { id: 'Aarav', name: 'Aarav — Gemini TTS', type: 'Male', description: 'Deep and authoritative Hindi voice.' },
+    { id: 'Ananya', name: 'Ananya — Gemini TTS', type: 'Female', description: 'Expressive and engaging Hindi narrator.' },
+    { id: 'Kavya', name: 'Kavya — Gemini TTS', type: 'Female', description: 'Calm soothing Hindi storyteller.' },
   ],
   'Spanish': [
-    { id: 'Puck', name: 'Puck — Gemini 3.1 TTS (Spanish)', type: 'Male', description: 'Energetic Spanish voice.' },
-    { id: 'Charon', name: 'Charon — Gemini 3.1 TTS (Spanish)', type: 'Male', description: 'Deep Spanish narrator.' },
-    { id: 'Aoede', name: 'Aoede — Gemini 3.1 TTS (Spanish)', type: 'Female', description: 'Expressive Spanish female voice.' },
-    { id: 'Kore', name: 'Kore — Gemini 3.1 TTS (Spanish)', type: 'Female', description: 'Calm Spanish storyteller.' },
+    { id: 'Tomas', name: 'Tomas — Gemini TTS', type: 'Male', description: 'Energetic Spanish voice.' },
+    { id: 'Isidora', name: 'Isidora — Gemini TTS', type: 'Female', description: 'Expressive Spanish female voice.' },
+    { id: 'Elena', name: 'Elena — Gemini TTS', type: 'Female', description: 'Calm Spanish storyteller.' },
+  ]
+};
+
+const GOOGLE_CLOUD_VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
+  'English': [
+    { id: 'en-US-Journey-D', name: 'Journey D — Google Cloud TTS', type: 'Male', description: 'Expressive and natural male voice. Perfect for conversational storytelling.' },
+    { id: 'en-US-Journey-F', name: 'Journey F — Google Cloud TTS', type: 'Female', description: 'Expressive and confident female voice.' },
+    { id: 'en-US-Journey-O', name: 'Journey O — Google Cloud TTS', type: 'Female', description: 'Warm and inviting female voice.' },
+    { id: 'en-US-Studio-Q', name: 'Studio Q — Google Cloud TTS', type: 'Male', description: 'Premium professional male studio voice.' },
+    { id: 'en-US-Studio-O', name: 'Studio O — Google Cloud TTS', type: 'Female', description: 'Premium professional female studio voice.' },
+    { id: 'en-US-Wavenet-D', name: 'Wavenet D — Google Cloud TTS', type: 'Male', description: 'Classic Wavenet energetic male voice.' },
+  ],
+  'Hindi': [
+    { id: 'hi-IN-Neural2-B', name: 'Neural2 B — Google Cloud TTS (Hindi)', type: 'Male', description: 'Clear and natural male Hindi voice.' },
+    { id: 'hi-IN-Neural2-A', name: 'Neural2 A — Google Cloud TTS (Hindi)', type: 'Female', description: 'Professional female Hindi voice.' },
+    { id: 'hi-IN-Wavenet-B', name: 'Wavenet B — Google Cloud TTS (Hindi)', type: 'Male', description: 'Standard male Hindi voice.' },
+  ],
+  'Spanish': [
+    { id: 'es-ES-Journey-D', name: 'Journey D — Google Cloud TTS (Spanish)', type: 'Male', description: 'Expressive natural Spanish male voice.' },
+    { id: 'es-ES-Journey-O', name: 'Journey O — Google Cloud TTS (Spanish)', type: 'Female', description: 'Expressive natural Spanish female voice.' },
+    { id: 'es-ES-Neural2-B', name: 'Neural2 B — Google Cloud TTS (Spanish)', type: 'Male', description: 'Professional Spanish male voice.' },
   ]
 };
 
@@ -114,6 +134,20 @@ export default function ReelCreatorPage() {
     queryKey: ['accounts'],
     queryFn: () => api.oauth.getAccounts(),
   });
+
+  // Fetch AI Settings to determine the primary voice engine
+  const { data: aiSettings } = useQuery({
+    queryKey: ['aiSettings'],
+    queryFn: async () => {
+      const res = await fetch('/api/settings/ai-models', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      return res.json();
+    }
+  });
+
+  const isGoogleCloudTTS = aiSettings?.voice?.primary === 'google-cloud-tts';
+  const currentVoicesByLanguage = isGoogleCloudTTS ? GOOGLE_CLOUD_VOICES_BY_LANGUAGE : GEMINI_VOICES_BY_LANGUAGE;
 
   // Form State
   const [nicheType, setNicheType] = useState<'preset' | 'custom'>('preset');
@@ -397,7 +431,7 @@ export default function ReelCreatorPage() {
                       key={lang.id}
                       onClick={() => {
                         setLanguage(lang.id);
-                        const voices = VOICES_BY_LANGUAGE[lang.id] || DEFAULT_VOICE_FALLBACK;
+                        const voices = currentVoicesByLanguage[lang.id] || DEFAULT_VOICE_FALLBACK;
                         setVoiceId(voices[0].id);
                         
                         // Sync Target Region based on language
@@ -471,7 +505,7 @@ export default function ReelCreatorPage() {
                 <label className="block text-sm font-medium text-stone-900 mb-4">3. Select Narrator Voice</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {(() => {
-                    const availableVoices = VOICES_BY_LANGUAGE[language] || DEFAULT_VOICE_FALLBACK;
+                    const availableVoices = currentVoicesByLanguage[language] || DEFAULT_VOICE_FALLBACK;
                     return availableVoices.map(voice => (
                       <div
                         key={voice.id}

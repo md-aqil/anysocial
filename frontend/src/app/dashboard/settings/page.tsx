@@ -19,6 +19,14 @@ const IMAGE_MODELS = [
   { id: 'stock', name: 'Stock Photos (Pexels/Unsplash)' }
 ];
 
+const AUDIO_MODELS = [
+  { id: 'google-cloud-tts', name: 'Google Cloud TTS (Standard/Wavenet/Neural2/Journey)' },
+  { id: 'gemini-2.5-flash-preview-tts', name: 'Gemini 2.5 Flash TTS (AI Studio)' },
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Vertex AI)' },
+  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Vertex AI)' },
+  { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro (Vertex AI)' }
+];
+
 export default function SettingsPage() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
@@ -27,7 +35,8 @@ export default function SettingsPage() {
   
   const [config, setConfig] = useState({
     text: { primary: 'gemini-2.5-flash', secondary: 'gemini-1.5-pro', tertiary: 'gemini-2.5-pro' },
-    image: { primary: 'gemini-2.5-flash', secondary: 'pollinations', tertiary: 'stock' }
+    image: { primary: 'gemini-2.5-flash', secondary: 'pollinations', tertiary: 'stock' },
+    voice: { primary: 'google-cloud-tts', secondary: 'gemini-2.5-flash', tertiary: 'gemini-2.5-pro' }
   });
 
   useEffect(() => {
@@ -194,7 +203,44 @@ export default function SettingsPage() {
           </div>
         </div>
 
-
+        {/* AUDIO MODELS */}
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-stone-100">
+          <h2 className="text-xl font-bold text-stone-800 mb-6 flex items-center">
+            <Mic className="w-6 h-6 mr-2 text-purple-500" /> Audio Generation (TTS)
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-2">Primary Model</label>
+              <select 
+                value={config.voice?.primary || 'google-cloud-tts'} 
+                onChange={e => setConfig({ ...config, voice: { ...(config.voice || {}), primary: e.target.value } as any })}
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm font-medium"
+              >
+                {AUDIO_MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-2">Secondary (Fallback 1)</label>
+              <select 
+                value={config.voice?.secondary || 'gemini-2.5-flash'} 
+                onChange={e => setConfig({ ...config, voice: { ...(config.voice || {}), secondary: e.target.value } as any })}
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm font-medium"
+              >
+                {AUDIO_MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-2">Tertiary (Fallback 2)</label>
+              <select 
+                value={config.voice?.tertiary || 'gemini-2.5-pro'} 
+                onChange={e => setConfig({ ...config, voice: { ...(config.voice || {}), tertiary: e.target.value } as any })}
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm font-medium"
+              >
+                {AUDIO_MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>

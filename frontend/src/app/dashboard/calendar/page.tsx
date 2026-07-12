@@ -16,7 +16,7 @@ import {
   setHours,
   setMinutes
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -72,10 +72,40 @@ export default function CalendarPage() {
       SNAPCHAT: 'bg-[#FFFC00]'
     };
     return (
-      <div className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-1 ring-white/30", colors[platform] || 'bg-gray-500')}>
+      <div className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-1 ring-white/80", colors[platform] || 'bg-gray-500')}>
         {platform.substring(0, 1)}
       </div>
     );
+  };
+
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'PUBLISHED':
+        return {
+          wrapper: 'bg-emerald-50 hover:bg-emerald-100/80 border-emerald-200 text-emerald-800',
+          badge: 'bg-emerald-100/80 text-emerald-700 border-emerald-200/50',
+          icon: <CheckCircle2 className="w-3 h-3 text-emerald-600" />,
+          label: 'Published'
+        };
+      case 'FAILED':
+      case 'PARTIALLY_FAILED':
+        return {
+          wrapper: 'bg-red-50 hover:bg-red-100/80 border-red-200 text-red-800',
+          badge: 'bg-red-100/80 text-red-700 border-red-200/50',
+          icon: <AlertCircle className="w-3 h-3 text-red-600" />,
+          label: 'Failed'
+        };
+      case 'PROCESSING':
+      case 'QUEUED':
+      case 'DRAFT':
+      default:
+        return {
+          wrapper: 'bg-orange-50 hover:bg-orange-100/80 border-orange-200 text-orange-800',
+          badge: 'bg-orange-100/80 text-orange-700 border-orange-200/50',
+          icon: <Clock className="w-3 h-3 text-orange-600" />,
+          label: 'Scheduled'
+        };
+    }
   };
 
   return (
@@ -158,30 +188,43 @@ export default function CalendarPage() {
 
                       {/* Scheduled Posts */}
                       <div className="relative z-10 flex flex-col gap-2 h-full">
-                        {cellPosts.map(post => (
+                        {cellPosts.map(post => {
+                          const statusConfig = getStatusConfig(post.status);
+                          return (
                           <div 
                             key={post.id} 
-                            className="bg-[#D27D50] text-white p-2.5 rounded-xl shadow-md flex items-center gap-2.5 transform transition hover:scale-[1.02] cursor-default"
-                            onClick={(e) => e.stopPropagation()}
+                            className={cn(
+                              "relative p-2.5 rounded-xl border flex flex-col gap-2 transform transition hover:-translate-y-0.5 hover:shadow-md cursor-pointer",
+                              statusConfig.wrapper
+                            )}
+                            onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/posts/edit/${post.id}`); }}
                             title={post.title || post.content || 'Untitled Post'}
                           >
-                            <div className="flex -space-x-1.5 shrink-0">
-                              {post.platforms.map((p: string, i: number) => (
-                                <div key={i} className="relative z-10 rounded-full">
-                                  {getPlatformIcon(p)}
-                                </div>
-                              ))}
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex -space-x-1.5 shrink-0">
+                                {post.platforms.map((p: string, i: number) => (
+                                  <div key={i} className="relative z-10 rounded-full">
+                                    {getPlatformIcon(p)}
+                                  </div>
+                                ))}
+                              </div>
+                              <div 
+                                className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded-md border", statusConfig.badge)} 
+                                title={statusConfig.label}
+                              >
+                                {statusConfig.icon}
+                                <span className="font-bold text-[9px] uppercase tracking-wider">
+                                  {format(parseISO(post.scheduledAt!), 'h:mm a')}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="font-bold truncate text-[10px] uppercase opacity-90 tracking-wider">
-                                {format(parseISO(post.scheduledAt!), 'h:mm a')}
-                              </span>
-                              <span className="truncate text-[11px] font-medium leading-tight">
+                            <div className="flex flex-col min-w-0 mt-0.5">
+                              <span className="truncate text-[11.5px] font-semibold leading-snug">
                                 {post.title || post.content || 'Untitled Post'}
                               </span>
                             </div>
                           </div>
-                        ))}
+                        )})}
                       </div>
                     </div>
                   );
