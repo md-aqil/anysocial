@@ -379,10 +379,12 @@ export default function AIAgentPage() {
                 className="text-xs bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-stone-600 focus:outline-none"
               >
                 <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
                 <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
                 <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                 {mode === 'voice' && (
                   <>
+                    <option value="gemini-3.1-flash-tts-preview">Gemini 3.1 Flash TTS (AI Studio)</option>
                     <option value="gemini-2.5-flash-preview-tts">Gemini 2.5 Flash TTS (AI Studio)</option>
                     <option value="google-cloud-tts">Google Cloud TTS</option>
                   </>

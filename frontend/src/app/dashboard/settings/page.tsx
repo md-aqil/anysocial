@@ -8,6 +8,7 @@ import { Settings, Save, Loader2, Bot, Image as ImageIcon, Mic } from 'lucide-re
 const TEXT_MODELS = [
   { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro (Preview)' },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Fast & Reliable)' },
+  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite (Cheapest/Fastest)' },
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Advanced Reasoning)' },
   { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Legacy)' },
   { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Legacy)' }
@@ -21,6 +22,7 @@ const IMAGE_MODELS = [
 
 const AUDIO_MODELS = [
   { id: 'google-cloud-tts', name: 'Google Cloud TTS (Standard/Wavenet/Neural2/Journey)' },
+  { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 Flash TTS (AI Studio)' },
   { id: 'gemini-2.5-flash-preview-tts', name: 'Gemini 2.5 Flash TTS (AI Studio)' },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Vertex AI)' },
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Vertex AI)' },
