@@ -94,18 +94,20 @@ export default function VeoShortsCreator() {
     }
   };
 
-  const renderJourneyStep = (title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean) => (
-    <div className={`flex flex-col border-l-2 pl-4 py-2 relative ${isComplete ? 'border-orange-500' : isActive ? 'border-blue-500' : 'border-slate-200'}`}>
-      <div className={`absolute -left-[9px] top-4 w-4 h-4 rounded-full border-2 bg-white ${isComplete ? 'border-orange-500 bg-orange-500' : isActive ? 'border-blue-500 animate-pulse' : 'border-slate-300'}`}></div>
-      <h4 className={`text-sm font-bold mb-2 ${isComplete ? 'text-orange-600' : isActive ? 'text-blue-600' : 'text-slate-400'}`}>{title}</h4>
-      <div className={!isComplete && !isActive ? 'opacity-50 grayscale pointer-events-none' : ''}>
+  const renderCompactStep = (stepNum: number, title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean) => (
+    <div className={`flex flex-col border border-slate-100 rounded-xl bg-slate-50 overflow-hidden transition-all ${isComplete ? 'ring-1 ring-orange-500 shadow-sm' : isActive ? 'ring-2 ring-blue-500 shadow-md' : 'opacity-60'}`}>
+      <div className={`px-3 py-2 text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${isComplete ? 'bg-orange-100 text-orange-700' : isActive ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-500'}`}>
+        {isActive && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>}
+        Step {stepNum}: {title}
+      </div>
+      <div className="p-3 text-sm text-slate-700 flex-1 flex flex-col justify-center items-center text-center">
         {content}
       </div>
     </div>
   );
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-12 bg-slate-50 min-h-screen text-slate-900 font-sans">
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-screen text-slate-900 font-sans">
       
       {/* Header */}
       <div className="flex flex-col gap-2 mb-8 text-center max-w-2xl mx-auto">
@@ -218,7 +220,7 @@ export default function VeoShortsCreator() {
                   const step4Done = reel.status === 'READY' || reel.status === 'PUBLISHED';
 
                   return (
-                    <div key={reel.id} className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm relative overflow-hidden">
+                    <div key={reel.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm relative overflow-hidden flex flex-col">
                       
                       {/* Current processing overlay bar at top */}
                       {isCurrent && (
@@ -227,87 +229,84 @@ export default function VeoShortsCreator() {
                         </div>
                       )}
 
-                      <div className="mb-8">
-                        <h3 className="text-lg font-bold text-slate-800 mb-1">Topic: {reel.script}</h3>
-                        <p className="text-sm text-slate-500">{new Date(reel.createdAt).toLocaleString()} • Style: {meta.subtitleStyle || 'Unknown'}</p>
+                      <div className="mb-4 flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-base font-bold text-slate-800 mb-1 line-clamp-1" title={reel.script || 'Unknown Topic'}>{reel.script}</h3>
+                          <p className="text-xs text-slate-500">{new Date(reel.createdAt).toLocaleString()} • Style: <span className="font-semibold">{meta.subtitleStyle || 'Unknown'}</span></p>
+                        </div>
                         
-                        {isCurrent && (
-                          <div className="mt-4 flex flex-wrap items-center gap-4">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold border border-blue-100">
-                              <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                              {statusMessage}
+                        <div className="flex flex-col items-end gap-2">
+                          {isCurrent && (
+                            <div className="flex items-center gap-2">
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
+                                <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                {statusMessage}
+                              </div>
+                              <button 
+                                onClick={() => handleCancel(reel.id)}
+                                className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-xs font-semibold border border-slate-200 hover:border-red-200 transition-colors"
+                              >
+                                Cancel
+                              </button>
                             </div>
-                            <button 
-                              onClick={() => handleCancel(reel.id)}
-                              className="px-4 py-2 rounded-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-sm font-semibold border border-slate-200 hover:border-red-200 transition-colors"
-                            >
-                              Cancel Generation
-                            </button>
-                          </div>
-                        )}
-                        {reel.status === 'FAILED' && (
-                          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 text-red-700 text-sm font-semibold border border-red-100">
-                            {reel.statusMessage || 'Generation Failed. Check logs.'}
-                          </div>
-                        )}
+                          )}
+                          {reel.status === 'FAILED' && (
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-xs font-semibold border border-red-100">
+                              {reel.statusMessage || 'Failed'}
+                            </div>
+                          )}
+                          {reel.status === 'READY' && (
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-xs font-semibold border border-green-100">
+                              Completed Successfully
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-auto">
                         {/* Step 1: AI Prompt */}
-                        {renderJourneyStep(
-                          "Step 1: AI Director Script & Scene",
-                          <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-sm">
-                            <p className="text-slate-800"><span className="font-semibold">Script:</span> {meta.generatedScript || 'Waiting for AI...'}</p>
-                            <p className="text-slate-600 mt-2 italic">"{meta.generatedVisualPrompt || 'Generating visual prompt...'}"</p>
+                        {renderCompactStep(
+                          1, "Script & Scene",
+                          <div className="w-full text-left">
+                            <p className="text-xs text-slate-800 line-clamp-3 mb-1"><span className="font-semibold">Script:</span> {meta.generatedScript || '...'}</p>
+                            <p className="text-[10px] text-slate-500 italic line-clamp-2">"{meta.generatedVisualPrompt || '...'}"</p>
                           </div>,
                           step1Done,
                           isCurrent && !step1Done
                         )}
 
                         {/* Step 2: Image Base */}
-                        {renderJourneyStep(
-                          "Step 2: Reference Image Generation",
-                          <div className="rounded-xl overflow-hidden border border-slate-200 inline-block">
-                            {meta.generatedImage ? (
-                              <img src={meta.generatedImage} alt="Reference" className="h-48 object-cover" />
-                            ) : (
-                              <div className="h-48 w-48 bg-slate-50 flex items-center justify-center text-slate-400 text-sm p-4 text-center">
-                                Awaiting AI Image Generation
-                              </div>
-                            )}
-                          </div>,
+                        {renderCompactStep(
+                          2, "Image Generation",
+                          meta.generatedImage ? (
+                            <img src={meta.generatedImage} alt="Reference" className="w-full h-[120px] object-cover rounded-lg border border-slate-200" />
+                          ) : (
+                            <span className="text-xs text-slate-400">Waiting...</span>
+                          ),
                           step2Done,
                           isCurrent && step1Done && !step2Done
                         )}
 
                         {/* Step 3: Raw Veo Video */}
-                        {renderJourneyStep(
-                          "Step 3: Google Veo 3 Video Processing",
-                          <div className="rounded-xl overflow-hidden border border-slate-200 inline-block bg-slate-900 relative">
-                            {meta.rawVideoUrl ? (
-                              <video src={meta.rawVideoUrl} controls className="h-64 object-cover" />
-                            ) : (
-                              <div className="h-64 w-[450px] max-w-full bg-slate-100 flex items-center justify-center text-slate-400 text-sm p-4 text-center">
-                                Veo 3 is rendering (this takes a few minutes)...
-                              </div>
-                            )}
-                          </div>,
+                        {renderCompactStep(
+                          3, "Veo 3 Render",
+                          meta.rawVideoUrl ? (
+                            <video src={meta.rawVideoUrl} controls className="w-full h-[120px] object-cover rounded-lg border border-slate-200 bg-black" />
+                          ) : (
+                            <span className="text-xs text-slate-400">Rendering...</span>
+                          ),
                           step3Done,
                           isCurrent && step2Done && !step3Done
                         )}
 
                         {/* Step 4: Final Composition */}
-                        {renderJourneyStep(
-                          "Step 4: Final Subtitle Composition",
-                          <div className="rounded-xl overflow-hidden border-2 border-orange-200 inline-block shadow-lg">
-                            {reel.videoUrl ? (
-                              <video src={reel.videoUrl} controls autoPlay muted loop className="h-[400px] object-cover" />
-                            ) : (
-                              <div className="h-[400px] w-[225px] max-w-full bg-slate-50 flex items-center justify-center text-slate-400 text-sm p-4 text-center border-t border-slate-200">
-                                Awaiting Final Rendering
-                              </div>
-                            )}
-                          </div>,
+                        {renderCompactStep(
+                          4, "Final Output",
+                          reel.videoUrl ? (
+                            <video src={reel.videoUrl} controls autoPlay muted loop className="w-[67px] h-[120px] object-cover rounded-lg border-2 border-orange-300 shadow-sm mx-auto" />
+                          ) : (
+                            <span className="text-xs text-slate-400">Composition...</span>
+                          ),
                           step4Done,
                           isCurrent && step3Done && !step4Done
                         )}
