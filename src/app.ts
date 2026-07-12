@@ -116,7 +116,6 @@ app.listen(PORT, () => {
   });
 
   // Start refresh scheduler and workers
-  refreshScheduler.start();
   postWorker.start().catch(console.error);
   seriesReelWorker.start().catch(console.error);
 });
