@@ -38,7 +38,7 @@ const navigation = [
   { name: 'Ad/Post Creator', href: '/dashboard/post-creator', icon: Wand2 },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'Feed Curation', href: '/dashboard/curation', icon: List },
-  { name: 'AI Agent', href: '/dashboard/ai-agent', icon: Bot, adminOnly: true, superAdminOnly: true },
+  { name: 'AI Agent', href: '/dashboard/ai-agent', icon: Bot },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
 
