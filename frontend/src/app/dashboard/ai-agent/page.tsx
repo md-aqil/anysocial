@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Image as ImageIcon, Loader2, Mic, MessageSquare, Send, Bot, User, Volume2 } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Loader2, Mic, MessageSquare, Send, Bot, User, Volume2, Video, Paperclip, X } from 'lucide-react';
 
 type MessageType = 'text' | 'image' | 'voice' | 'video';
 
@@ -66,13 +66,14 @@ export default function AIAgentPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Agent is thinking...');
   const [isImproving, setIsImproving] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [attachedImage, setAttachedImage] = useState<{ base64: string; mimeType: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Testing Overrides
   const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
   const [selectedLanguage, setSelectedLanguage] = useState('en-US');
   const [selectedVoice, setSelectedVoice] = useState('Aoede');
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load history on mount
   useEffect(() => {
@@ -131,6 +132,7 @@ export default function AIAgentPage() {
     setMessages(prev => [...prev, userMsg]);
     const currentInput = input;
     setInput('');
+    setAttachedImage(null);
     setLoading(true);
     setLoadingMessage(
       mode === 'video' ? 'Generating video with Veo 3 (this takes a few minutes)...' :
@@ -217,13 +219,19 @@ export default function AIAgentPage() {
         }]);
       }
       else if (mode === 'video') {
+        const payload: any = { prompt: input };
+        if (attachedImage) {
+          payload.imageBase64 = attachedImage.base64;
+          payload.imageMimeType = attachedImage.mimeType;
+        }
+
         const response = await fetch('/api/ai/generate-video', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
-          body: JSON.stringify({ prompt: currentInput })
+          body: JSON.stringify(payload)
         });
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to start generation');
         const data = await response.json();
@@ -446,22 +454,60 @@ export default function AIAgentPage() {
             className={`p-2 rounded-xl transition-colors ${mode === 'video' ? 'bg-white shadow-sm text-[#D27D50]' : 'text-stone-400 hover:text-stone-600'}`}
             title="Video Mode (Veo 3)"
           >
-            <Sparkles className="w-4 h-4" />
+            <Video className="w-4 h-4" />
           </button>
         </div>
 
           <div className="flex-1 flex flex-col min-w-0 py-1">
+            {attachedImage && (
+              <div className="relative mb-2 w-16 h-16 shrink-0 ml-3 mt-2">
+                <img src={`data:${attachedImage.mimeType};base64,${attachedImage.base64}`} className="w-full h-full object-cover rounded-lg border border-stone-200" alt="attached" />
+                <button onClick={() => setAttachedImage(null)} className="absolute -top-2 -right-2 bg-stone-800 text-white p-0.5 rounded-full shadow hover:bg-stone-900">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={`Ask the agent to generate ${mode}... (Shift+Enter for new line)`}
+              placeholder={mode === 'video' ? "Describe the video you want to generate (Veo 3)..." : `Ask the agent to generate ${mode}... (Shift+Enter for new line)`}
               className="w-full max-h-40 min-h-[50px] resize-none bg-transparent border-0 focus:ring-0 px-3 py-2 text-stone-800 placeholder:text-stone-400 text-[15px] leading-relaxed"
               rows={1}
             />
           </div>
           
           <div className="flex items-center gap-2 pr-1 pb-1">
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const result = reader.result as string;
+                    const [meta, base64] = result.split(',');
+                    const mimeType = meta.split(':')[1].split(';')[0];
+                    setAttachedImage({ base64, mimeType });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }} 
+            />
+            {mode === 'video' && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => fileInputRef.current?.click()}
+                title="Attach Image for Image-to-Video"
+                className="w-10 h-10 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 p-0 flex items-center justify-center transition-colors"
+              >
+                <Paperclip className="w-4 h-4" />
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"

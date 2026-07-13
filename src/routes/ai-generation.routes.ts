@@ -196,7 +196,7 @@ router.post('/generate-voice', jwtAuth, async (req: Request, res: Response) => {
  */
 router.post('/generate-video', jwtAuth, async (req: Request, res: Response) => {
   try {
-    const { prompt } = req.body;
+    const { prompt, imageBase64, imageMimeType } = req.body;
     if (!prompt) {
       res.status(400).json({ error: 'Prompt is required' });
       return;
@@ -221,6 +221,14 @@ router.post('/generate-video', jwtAuth, async (req: Request, res: Response) => {
       await bucket.create({ location: 'us-central1' });
     }
 
+    const veoInstance: any = { prompt };
+    if (imageBase64 && imageMimeType) {
+      veoInstance.image = {
+        bytesBase64Encoded: imageBase64,
+        mimeType: imageMimeType
+      };
+    }
+
     // 1. Start long-running generation
     const response = await fetch(
       `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${MODEL}:predictLongRunning`,
@@ -231,9 +239,7 @@ router.post('/generate-video', jwtAuth, async (req: Request, res: Response) => {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            instances: [
-                { prompt }
-            ],
+            instances: [veoInstance],
             parameters: {
                 storageUri: outputGcsUri,
                 aspectRatio: "16:9",
