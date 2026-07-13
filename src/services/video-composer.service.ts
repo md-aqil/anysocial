@@ -333,6 +333,11 @@ export class VideoComposerService {
     const transliteratedWords = words.map(word => {
       if (/^\s+$/.test(word)) return word;
 
+      // Keep original spelling if word is already written in English/Roman script
+      if (/^[a-zA-Z0-9\-\.,!?'"’]+$/.test(word)) {
+        return word;
+      }
+
       let romanWord = '';
       for (let i = 0; i < word.length; i++) {
         const char = word[i];

@@ -42,6 +42,12 @@ const getScheduleLabel = (cron: string) => {
   return cron;
 };
 
+const getVoiceGender = (lang: string, voiceId: string) => {
+  const list = VOICES_BY_LANGUAGE[lang] || VOICES_BY_LANGUAGE['English'] || [];
+  const voice = list.find(v => v.id === voiceId);
+  return voice ? voice.type : 'Voice';
+};
+
 const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
   'English': [
     { id: 'Puck', name: 'Puck — Gemini 3.1 TTS', type: 'Male', description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
@@ -1106,9 +1112,12 @@ export default function ReelsDashboard() {
             <div className="mb-8 space-y-6">
               <h2 className="text-xl font-bold text-stone-900">Active Campaigns</h2>
               <div className="grid gap-6">
-                {automatedCampaigns.map((campaign: any) => (
-                  <div key={campaign.id} className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
-                    <div className="flex items-start justify-between">
+                {automatedCampaigns.map((campaign: any) => {
+                  const campaignReels = productReels?.filter((r: any) => r.metadata?.campaignId === campaign.id) || [];
+                  const nextReel = campaignReels.find((r: any) => r.scheduledFor && new Date(r.scheduledFor) > new Date());
+                  return (
+                    <div key={campaign.id} className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
+                      <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="text-lg font-bold text-stone-900 break-all">{campaign.websiteUrl}</h3>
@@ -1161,6 +1170,26 @@ export default function ReelsDashboard() {
                               return null;
                             }
                           })()}
+
+                          {/* Parent Campaign Configuration Chips */}
+                          <div className="flex flex-wrap gap-1.5 ml-4 border-l border-stone-200 pl-4">
+                            <span className="px-2 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                              🗣️ {campaign.language || 'English'}
+                            </span>
+                            <span className="px-2 py-0.5 bg-violet-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                              🎙️ {campaign.voiceId || 'Aoede'} ({getVoiceGender(campaign.language || 'English', campaign.voiceId || 'Aoede')})
+                            </span>
+                            {campaign.voicePrompt && (
+                              <span className="px-2 py-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1 max-w-[150px] truncate" title={campaign.voicePrompt}>
+                                ✨ {campaign.voicePrompt}
+                              </span>
+                            )}
+                            {campaign.ingredientsToVideo && (
+                              <span className="px-2 py-0.5 bg-pink-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                🎬 Ingredients to Video
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       
@@ -1264,52 +1293,7 @@ export default function ReelsDashboard() {
                                       "{reel.script || 'No script text generated'}"
                                     </p>
                                     
-                                    {/* Config details */}
-                                    {(() => {
-                                      let meta = reel.metadata || {};
-                                      if (typeof meta === 'string') {
-                                        try { meta = JSON.parse(meta); } catch(e) {}
-                                      }
-                                      const config = meta.configuration || {
-                                        language: campaign.language,
-                                        voiceId: campaign.voiceId,
-                                        voicePrompt: campaign.voicePrompt,
-                                        ingredientsToVideo: campaign.ingredientsToVideo,
-                                        animateImageCount: campaign.animateImageCount
-                                      };
-                                      return (
-                                        <div className="flex flex-wrap gap-1.5 mb-4 mt-1 border-t border-b border-stone-100/60 py-2.5">
-                                          <span className="px-2 py-1 bg-blue-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
-                                            🗣️ {config.language || 'English'}
-                                          </span>
-                                          <span className="px-2 py-1 bg-violet-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
-                                            🎙️ {config.voiceId || 'Aoede'}
-                                          </span>
-                                          {config.voicePrompt && (
-                                            <span className="px-2 py-1 bg-amber-500 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1 max-w-full truncate" title={config.voicePrompt}>
-                                              ✨ {config.voicePrompt}
-                                            </span>
-                                          )}
-                                          {(() => {
-                                            const sched = config.schedule || campaign.schedule || (reel.scheduledFor ? 'scheduled' : null);
-                                            if (!sched) return null;
-                                            const label = reel.scheduledFor 
-                                              ? format(new Date(reel.scheduledFor), 'MMM d @ p') 
-                                              : getScheduleLabel(sched);
-                                            return (
-                                              <span className="px-2 py-1 bg-emerald-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
-                                                📅 {label}
-                                              </span>
-                                            );
-                                          })()}
-                                          {config.ingredientsToVideo && (
-                                            <span className="px-2 py-1 bg-pink-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
-                                              🎬 Ingredients to Video
-                                            </span>
-                                          )}
-                                        </div>
-                                      );
-                                    })()}
+                                    {/* Config details moved to parent card */}
                                     
                                     {/* Detailed Live Log for Generation */}
                                     {((reel.status === 'GENERATING' && reel.statusMessage) || reel.status === 'READY') && (
@@ -1336,7 +1320,8 @@ export default function ReelsDashboard() {
                       })()}
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             </div>
           )}
@@ -1427,7 +1412,7 @@ export default function ReelsDashboard() {
                                  🗣️ {config.language || 'English'}
                                </span>
                                <span className="px-2 py-1 bg-violet-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
-                                 🎙️ {config.voiceId || 'Aoede'}
+                                 🎙️ {config.voiceId || 'Aoede'} ({getVoiceGender(config.language || 'English', config.voiceId || 'Aoede')})
                                </span>
                                {config.voicePrompt && (
                                  <span className="px-2 py-1 bg-amber-500 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1 max-w-full truncate" title={config.voicePrompt}>

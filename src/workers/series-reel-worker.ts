@@ -6,6 +6,7 @@ import { VideoComposerService } from '../services/video-composer.service.js';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
 import { VeoService } from '../services/veo.service.js';
 import fs from 'fs';
+import sharp from 'sharp';
 import path from 'path';
 import os from 'os';
 import stream from 'stream';
@@ -266,12 +267,29 @@ export class ReelWorker {
             const maxImages = Math.min(animateImageCount, 3, imageOnlyPaths.length);
 
             if (maxImages > 0) {
-              // Convert images to base64 for Gemini Vision
-              const imagePayloads = imageOnlyPaths.slice(0, maxImages).map(p => ({
-                path: p,
-                base64: fs.readFileSync(p).toString('base64'),
-                mimeType: 'image/jpeg'
-              }));
+              // Convert and resize images to base64 for Gemini Vision
+              const imagePayloads = await Promise.all(
+                imageOnlyPaths.slice(0, maxImages).map(async (p) => {
+                  try {
+                    const resizedBuffer = await sharp(p)
+                      .resize(768, 768, { fit: 'inside', withoutEnlargement: true })
+                      .jpeg({ quality: 80 })
+                      .toBuffer();
+                    return {
+                      path: p,
+                      base64: resizedBuffer.toString('base64'),
+                      mimeType: 'image/jpeg'
+                    };
+                  } catch (resizeErr: any) {
+                    console.warn('[Worker Image Resize] Sharp failed, using raw file:', p, resizeErr.message);
+                    return {
+                      path: p,
+                      base64: fs.readFileSync(p).toString('base64'),
+                      mimeType: 'image/jpeg'
+                    };
+                  }
+                })
+              );
 
               // Deep visual analysis using existing configured LLM (same model as story/script generation)
               const mediaParts = imagePayloads.map(img => ({ data: img.base64, mimeType: img.mimeType }));
