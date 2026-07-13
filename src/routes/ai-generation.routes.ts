@@ -198,7 +198,8 @@ router.post('/generate-video', jwtAuth, async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
     if (!prompt) {
-      return res.status(400).json({ error: 'Prompt is required' });
+      res.status(400).json({ error: 'Prompt is required' });
+      return;
     }
 
     const { GoogleAuth } = await import('google-auth-library');
