@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+import parser from 'cron-parser';
 import { prisma } from '../db/prisma.js';
 import { logger } from '../logger/pino.js';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
@@ -27,15 +28,31 @@ export const campaignWorker = {
         }
       });
 
+      const now = new Date();
+      // Look ahead for the next 65 minutes since this cron runs hourly
+      const lookAheadTime = new Date(now.getTime() + 65 * 60 * 1000);
+
       for (const campaign of activeCampaigns) {
-        await this.processSingleCampaign(campaign.id);
+        if (!campaign.products || campaign.products.length === 0) continue;
+
+        try {
+          const interval = parser.parseExpression(campaign.schedule);
+          const nextDate = interval.next().toDate();
+
+          // If the next scheduled time is between now and lookAheadTime
+          if (nextDate >= now && nextDate <= lookAheadTime) {
+            await this.processSingleCampaign(campaign.id, nextDate);
+          }
+        } catch (err) {
+          logger.error(`Error parsing cron for campaign ${campaign.id}: ${err}`);
+        }
       }
     } catch (error: any) {
       logger.error(`Campaign Worker Error: ${error.message}`);
     }
   },
 
-  async processSingleCampaign(campaignId: string) {
+  async processSingleCampaign(campaignId: string, scheduledForDate?: Date) {
     try {
       const campaign = await prisma.automatedCampaign.findUnique({
         where: { id: campaignId },
@@ -89,7 +106,7 @@ export const campaignWorker = {
               productTitle: product.title,
               productUrl: product.productUrl
             },
-            scheduledFor: new Date(Date.now() + 2 * 60 * 60 * 1000)
+            scheduledFor: scheduledForDate || new Date()
           }
         });
 
