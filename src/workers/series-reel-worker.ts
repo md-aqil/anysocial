@@ -256,56 +256,62 @@ export class ReelWorker {
                 mimeType: 'image/jpeg'
               }));
 
-              // Gemini Flash (Omni) multimodal analysis — pick best images + write motion prompts
+              // Deep visual analysis using existing configured LLM (same model as story/script generation)
               const mediaParts = imagePayloads.map(img => ({ data: img.base64, mimeType: img.mimeType }));
-              const analysisPrompt = `You are a creative director producing a short product video ad.
-You will receive ${imagePayloads.length} product image(s). For each image, write a short cinematic motion description (max 15 words) for Veo 3 image-to-video.
-Focus on: slow zooms, subtle motion, bokeh, premium lighting.
-Respond ONLY with valid JSON array:
-[{ "index": 0, "motionPrompt": "Slow cinematic zoom into product, golden hour light, bokeh background" }, ...]`;
+              const analysisPrompt = `You are a world-class creative director specialising in luxury product video ads.
 
-              let analysisResult: Array<{ index: number; motionPrompt: string }> = [];
+You are given ${imagePayloads.length} product image(s). Study them carefully.
+
+Your task: Write ONE single, highly detailed Veo 3 video generation prompt for a cinematic product hero clip.
+
+The prompt MUST:
+- Be grounded in exactly what you SEE in the images: product shape, materials, colours, textures, branding, packaging, scale
+- Describe cinematic camera movement (e.g. slow push-in, orbital, top-down reveal, rising pan)
+- Describe lighting (e.g. soft studio, golden hour rim light, dramatic side light with bokeh)
+- Describe the product's context/environment (e.g. white marble surface, dark premium table, floating in soft mist)
+- Mention any key product details visible (logo, label, colour, finish)
+- Be 50-100 words long and written as a single flowing cinematic description (NOT bullet points)
+- End with: ", photorealistic, 4K, cinematic, smooth motion, no text, no watermark"
+
+Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
+
+              let veoPrompt = 'A beautiful cinematic product showcase with slow zoom and bokeh, golden hour lighting, photorealistic, 4K, cinematic, smooth motion, no text, no watermark';
               try {
-                const raw = await aiOrchestrator.generateContent(analysisPrompt, mediaParts, false);
-                const jsonMatch = raw.match(/\[[\s\S]*\]/);
-                if (jsonMatch) analysisResult = JSON.parse(jsonMatch[0]);
+                // useAdvancedModel = true → uses same Gemini Pro/Flash configured for story & script generation
+                const raw = await aiOrchestrator.generateContent(analysisPrompt, mediaParts, true);
+                const cleaned = raw.trim().replace(/^["']|["']$/g, '');
+                if (cleaned.length > 30) {
+                  veoPrompt = cleaned;
+                  console.log(`[IngredientsToVideo] AI-generated Veo prompt (${cleaned.length} chars): "${cleaned.slice(0, 120)}..."`);
+                }
               } catch (analysisErr: any) {
-                console.warn('[IngredientsToVideo] Gemini analysis failed, using default prompts:', analysisErr.message);
-                analysisResult = imagePayloads.map((_, i) => ({
-                  index: i,
-                  motionPrompt: 'Slow cinematic zoom into product with soft bokeh background'
-                }));
+                console.warn('[IngredientsToVideo] LLM analysis failed, using default prompt:', analysisErr.message);
               }
 
-              // Prepare Veo inputs — all images as ingredients for ONE clip
-              const veoImages = analysisResult.slice(0, maxImages).map(r => ({
-                base64: imagePayloads[r.index]?.base64 || imagePayloads[0].base64,
-                mimeType: 'image/jpeg'
+              // All images used as ingredients for ONE clip
+              const veoImages = imagePayloads.map(img => ({
+                base64: img.base64,
+                mimeType: img.mimeType
               }));
 
-              // Build a combined motion prompt from all image descriptions
-              const combinedPrompt = analysisResult.slice(0, maxImages)
-                .map(r => r.motionPrompt)
-                .join('. ') + '. Cinematic product showcase, smooth motion, premium lighting.';
+              await updateProgress(`🎬 Generating cinematic product clip with Veo Omni (${veoImages.length} image${veoImages.length > 1 ? 's' : ''} as ingredients)...`);
 
-              await updateProgress(`🎬 Generating ONE animated product clip with Veo Omni using ${veoImages.length} image${veoImages.length > 1 ? 's' : ''} as ingredients...`);
-
-              const opName = await VeoService.initiateIngredientsToVideo(combinedPrompt, veoImages);
-              await updateProgress(`⏳ Veo Omni rendering clip... (~2-3 min)`);
+              const opName = await VeoService.initiateIngredientsToVideo(veoPrompt, veoImages);
+              await updateProgress(`⏳ Veo Omni rendering... (~2-3 min)`);
 
               const VEO_OMNI_MODEL = process.env.VEO_OMNI_MODEL || 'veo-2.0-flash-exp';
               const veoClipPath = await VeoService.pollUntilDone(opName, VEO_OMNI_MODEL);
               const veoClipPaths = [veoClipPath];
 
-              // Add Veo clips to cleanup
+              // Add Veo clip to cleanup
               tempFilesToCleanup.push(...veoClipPaths);
 
-              // Get indices of images that were animated (to replace them)
-              const animatedImageIndices = new Set(analysisResult.slice(0, maxImages).map(r => r.index));
+              // All images in imagePayloads were used as ingredients — remove them from static pool
+              const animatedImageIndices = new Set(imagePayloads.map((_, i) => i));
               const remainingImagePaths = imageOnlyPaths.filter((_, i) => !animatedImageIndices.has(i));
               const videoAssetPaths = downloadedAssetPaths.filter(p => isVideoFile(p));
 
-              // Rebuild: Veo clips first, then remaining static images, then original videos
+              // Rebuild: Veo clip first, then remaining static images, then original videos
               downloadedAssetPaths.splice(
                 0,
                 downloadedAssetPaths.length,
@@ -314,7 +320,7 @@ Respond ONLY with valid JSON array:
                 ...videoAssetPaths
               );
 
-              await updateProgress(`✅ Ingredients to Video complete — ${veoClipPaths.length} animated clips added to reel.`);
+              await updateProgress(`✅ Ingredients to Video complete — cinematic clip ready.`);
             }
           } catch (veoErr: any) {
             logger.warn({ event: 'ingredients_to_video_failed', reelId, error: veoErr.message });

@@ -4,9 +4,9 @@ import fs from 'fs';
 import path from 'path';
 
 // Veo Omni (flash) model — ~15 credits per video, supports referenceImages
-const VEO_OMNI_MODEL = process.env.VEO_OMNI_MODEL || 'veo-2.0-flash-exp';
+const VEO_OMNI_MODEL = process.env.VEO_OMNI_MODEL || 'veo-3.0-fast-generate-001';
 // Standard Veo 3 for AI Agent (full quality)
-const VEO_STANDARD_MODEL = process.env.VEO_MODEL || 'veo-3.0-generate-001';
+const VEO_STANDARD_MODEL = process.env.VEO_MODEL || 'veo-3.0-fast-generate-001';
 
 export class VeoService {
   private static async getAuth() {
