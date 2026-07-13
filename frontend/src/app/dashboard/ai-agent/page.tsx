@@ -442,9 +442,10 @@ export default function AIAgentPage() {
             onClick={() => setMode('video')} 
             className={`p-2 rounded-xl transition-colors ${mode === 'video' ? 'bg-white shadow-sm text-[#D27D50]' : 'text-stone-400 hover:text-stone-600'}`}
             title="Video Mode (Veo 3)"
-                        <Sparkles className="w-4 h-4" />
-            </button>
-          </div>
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
+        </div>
 
           <div className="flex-1 flex flex-col min-w-0 py-1">
             <textarea
@@ -530,5 +531,6 @@ export default function AIAgentPage() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
