@@ -191,9 +191,35 @@ const getReelStatus = (reel: any) => {
   };
 };
 
-const renderCompactStep = (title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean) => (
-  <div className={`flex flex-col rounded-xl overflow-hidden transition-all duration-300 ${isComplete ? 'bg-white border border-stone-200' : isActive ? 'bg-white border-2 border-violet-400 shadow-sm' : 'bg-transparent border border-dashed border-stone-200 opacity-60'}`}>
-    <div className={`px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider flex items-center justify-between border-b ${isComplete ? 'text-stone-700 border-stone-100' : isActive ? 'text-violet-600 border-violet-100 bg-violet-50/50' : 'text-stone-400 border-stone-200/50'}`}>
+const renderCompactStep = (
+  title: string, 
+  content: React.ReactNode, 
+  isComplete: boolean, 
+  isActive: boolean, 
+  onClick?: () => void, 
+  isSelected?: boolean
+) => (
+  <div 
+    onClick={onClick} 
+    className={`flex flex-col rounded-xl overflow-hidden transition-all duration-300 ${
+      onClick ? 'cursor-pointer' : ''
+    } ${
+      isSelected 
+        ? 'ring-2 ring-violet-500 bg-white shadow-md border-transparent' 
+        : isComplete 
+          ? 'bg-white border border-stone-200 hover:border-stone-300 hover:shadow-xs' 
+          : isActive 
+            ? 'bg-white border-2 border-violet-400 shadow-sm hover:shadow-xs' 
+            : 'bg-transparent border border-dashed border-stone-200 opacity-60 hover:opacity-80'
+    }`}
+  >
+    <div className={`px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider flex items-center justify-between border-b ${
+      isComplete 
+        ? 'text-stone-700 border-stone-100' 
+        : isActive 
+          ? 'text-violet-600 border-violet-100 bg-violet-50/50' 
+          : 'text-stone-400 border-stone-200/50'
+    }`}>
       <span className="flex items-center gap-1.5">
         {isActive && <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span></span>}
         {isComplete && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
@@ -218,6 +244,18 @@ const GenerationTimeline = ({ statusMessage, metadata, isCompleted = false }: { 
     else if (msg.includes('assembling') || msg.includes('finalizing') || msg.includes('successfully')) currentStep = 4;
   }
 
+  // Parse metadata if it's stringified
+  let meta = metadata || {};
+  if (typeof meta === 'string') {
+    try { meta = JSON.parse(meta); } catch(e) {}
+  }
+
+  const [activeDetails, setActiveDetails] = useState<string | null>(null);
+
+  const toggleDetails = (step: string) => {
+    setActiveDetails(prev => prev === step ? null : step);
+  };
+
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-2 px-1">
@@ -231,51 +269,171 @@ const GenerationTimeline = ({ statusMessage, metadata, isCompleted = false }: { 
       <div className="grid grid-cols-2 gap-2">
         {renderCompactStep(
           "Analysis",
-          metadata?.generatedVisualPrompt ? (
-             <div className="w-full text-left flex flex-col h-[50px] overflow-hidden">
-               {metadata?.extractedImages?.length > 0 && (
-                 <div className="flex -space-x-2 mb-1.5 cursor-pointer hover:space-x-1 transition-all duration-300" title={`Found ${metadata.extractedImages.length} images`}>
-                   {metadata.extractedImages.slice(0, 3).map((imgUrl: string, idx: number) => (
-                     <img key={idx} src={imgUrl} className="w-6 h-6 rounded border border-white shadow-sm object-cover z-10" style={{ zIndex: 10 - idx }} />
+          meta?.generatedVisualPrompt ? (
+             <div className="w-full text-left flex flex-col h-[50px] overflow-hidden justify-center">
+               {meta?.extractedImages?.length > 0 && (
+                 <div className="flex -space-x-2 mb-1 transition-all duration-300" title={`Found ${meta.extractedImages.length} images`}>
+                   {meta.extractedImages.slice(0, 3).map((imgUrl: string, idx: number) => (
+                     <img key={idx} src={imgUrl} className="w-5 h-5 rounded border border-white shadow-sm object-cover z-10" style={{ zIndex: 10 - idx }} />
                    ))}
-                   {metadata.extractedImages.length > 3 && (
-                     <div className="w-6 h-6 rounded border border-white shadow-sm bg-stone-100 flex items-center justify-center text-[8px] font-bold text-stone-500 relative z-0">
-                       +{metadata.extractedImages.length - 3}
+                   {meta.extractedImages.length > 3 && (
+                     <div className="w-5 h-5 rounded border border-white shadow-sm bg-stone-100 flex items-center justify-center text-[7px] font-bold text-stone-500 relative z-0">
+                       +{meta.extractedImages.length - 3}
                      </div>
                    )}
                  </div>
                )}
-               <p className="text-[9px] text-stone-500 italic line-clamp-2 leading-snug">"{metadata.generatedVisualPrompt}"</p>
+               <p className="text-[8px] text-stone-500 italic line-clamp-2 leading-snug">"{meta.generatedVisualPrompt}"</p>
              </div>
           ) : (
             <span className="text-[10px] font-medium text-stone-600">Assets & Prompts</span>
           ),
           currentStep > 1,
-          currentStep === 1
+          currentStep === 1,
+          () => toggleDetails('analysis'),
+          activeDetails === 'analysis'
         )}
         {renderCompactStep(
           "Veo 3.0 Fast",
-          metadata?.rawVideoUrl ? (
-            <video src={metadata.rawVideoUrl} controls className="w-full h-[80px] object-cover rounded bg-black border border-stone-200" />
+          meta?.rawVideoUrl ? (
+            <div className="relative group w-full h-[50px] overflow-hidden rounded bg-black flex items-center justify-center">
+              <span className="text-[9px] font-semibold text-emerald-400">Play Clip ▶</span>
+            </div>
           ) : (
             <span className="text-[10px] font-medium text-stone-600">Video Generation</span>
           ),
           currentStep > 2,
-          currentStep === 2
+          currentStep === 2,
+          () => toggleDetails('veo'),
+          activeDetails === 'veo'
         )}
         {renderCompactStep(
           "Audio",
           <span className="text-[10px] font-medium text-stone-600">Voiceover & Music</span>,
           currentStep > 3,
-          currentStep === 3
+          currentStep === 3,
+          () => toggleDetails('audio'),
+          activeDetails === 'audio'
         )}
         {renderCompactStep(
           "Assembly",
           <span className="text-[10px] font-medium text-stone-600">Final Composition</span>,
           currentStep > 4,
-          currentStep === 4
+          currentStep === 4,
+          () => toggleDetails('assembly'),
+          activeDetails === 'assembly'
         )}
       </div>
+
+      {activeDetails && (
+        <div className="mt-2.5 p-3 bg-stone-50 border border-stone-200/80 rounded-2xl space-y-3 animate-in fade-in slide-in-from-top-1 duration-150 text-left">
+          <div className="flex items-center justify-between border-b border-stone-200/50 pb-1.5">
+            <span className="text-[9px] font-extrabold uppercase text-stone-600 tracking-wider">
+              {activeDetails === 'analysis' && "🔍 Extraction & Analysis"}
+              {activeDetails === 'veo' && "🎬 Veo 3.0 Fast Video"}
+              {activeDetails === 'audio' && "🗣️ Voiceover & Sound Settings"}
+              {activeDetails === 'assembly' && "⚙️ Video Composer Assembly"}
+            </span>
+            <button 
+              type="button" 
+              onClick={() => setActiveDetails(null)} 
+              className="text-[9px] font-bold text-stone-400 hover:text-stone-600"
+            >
+              Hide
+            </button>
+          </div>
+
+          {activeDetails === 'analysis' && (
+            <div className="space-y-2 text-[11px] leading-relaxed">
+              {meta.generatedVisualPrompt && (
+                <div>
+                  <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Generated Visual Prompt</span>
+                  <p className="p-2.5 bg-white rounded-xl border border-stone-200 text-stone-700 italic">
+                    "{meta.generatedVisualPrompt}"
+                  </p>
+                </div>
+              )}
+              {meta.extractedImages && meta.extractedImages.length > 0 ? (
+                <div>
+                  <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block mb-1.5">Extracted Store Images ({meta.extractedImages.length})</span>
+                  <div className="grid grid-cols-4 gap-1.5 max-h-[140px] overflow-y-auto p-1 bg-white border border-stone-200 rounded-xl">
+                    {meta.extractedImages.map((imgUrl: string, idx: number) => (
+                      <a key={idx} href={imgUrl} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg border border-stone-100 overflow-hidden hover:scale-[1.03] transition-transform">
+                        <img src={imgUrl} className="w-full h-full object-cover" alt="Extracted resource" />
+                      </a>
+                    ))}
+                  </div>
+                  <p className="text-[8px] text-stone-400 mt-1 font-medium italic">Click any image thumbnail to view full-size.</p>
+                </div>
+              ) : (
+                <p className="text-stone-500 italic text-[10px]">No product images extracted yet or url invalid.</p>
+              )}
+            </div>
+          )}
+
+          {activeDetails === 'veo' && (
+            <div className="space-y-2">
+              {meta.rawVideoUrl ? (
+                <div className="space-y-2">
+                  <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">Raw Veo Video Clip (Without overlays/music)</span>
+                  <video src={meta.rawVideoUrl} controls className="w-full rounded-xl bg-black border border-stone-200 shadow-inner" />
+                  {meta.generatedVisualPrompt && (
+                    <div>
+                      <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Prompt configuration used for Veo</span>
+                      <p className="text-[10px] text-stone-600 bg-white p-2 border border-stone-200 rounded-lg italic">
+                        "{meta.generatedVisualPrompt}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-stone-500 italic text-[10px]">Raw Veo video url not available yet. Generation in progress...</p>
+              )}
+            </div>
+          )}
+
+          {activeDetails === 'audio' && (
+            <div className="space-y-2 text-[11px]">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white p-2 rounded-xl border border-stone-200">
+                  <span className="text-[8px] font-bold text-stone-400 uppercase block tracking-wide">Voice Model</span>
+                  <span className="font-semibold text-stone-700">{meta.model_voice || meta.configuration?.voiceId || 'Aoede'}</span>
+                </div>
+                <div className="bg-white p-2 rounded-xl border border-stone-200">
+                  <span className="text-[8px] font-bold text-stone-400 uppercase block tracking-wide">Voice Style</span>
+                  <span className="font-semibold text-amber-700">{meta.configuration?.voicePrompt || 'Standard'}</span>
+                </div>
+              </div>
+              {meta.llmDetails && (
+                <div className="bg-white p-2 rounded-xl border border-stone-200">
+                  <span className="text-[8px] font-bold text-stone-400 uppercase block tracking-wide font-mono">Synthesis Engine</span>
+                  <span className="text-stone-600 font-medium text-[10px]">{meta.llmDetails}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeDetails === 'assembly' && (
+            <div className="space-y-2 text-[10px]">
+              <div className="bg-white p-2.5 rounded-xl border border-stone-200 space-y-1 text-stone-600">
+                <div className="flex justify-between">
+                  <span>Aspect ratio settings:</span>
+                  <span className="font-bold text-stone-800">9:16 Vertical video</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Background Music:</span>
+                  <span className="font-bold text-stone-800">Yes (Synth/Pop loop)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Subtitles Burn-in:</span>
+                  <span className="font-bold text-stone-800">Enabled (Dynamic words styling)</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mt-2 text-[10px] font-mono text-violet-600 bg-violet-50 rounded px-2 py-1 flex items-center justify-between border border-violet-100 shadow-inner">
         <span className="truncate pr-2">{statusMessage}</span>
         <span className="animate-pulse inline-block w-1.5 h-3 bg-violet-400 shrink-0"></span>
