@@ -206,18 +206,26 @@ const renderCompactStep = (title: string, content: React.ReactNode, isComplete: 
   </div>
 );
 
-const GenerationTimeline = ({ statusMessage, metadata }: { statusMessage: string, metadata?: any }) => {
-  const msg = statusMessage.toLowerCase();
+const GenerationTimeline = ({ statusMessage, metadata, isCompleted = false }: { statusMessage: string, metadata?: any, isCompleted?: boolean }) => {
+  const msg = (statusMessage || '').toLowerCase();
   
   let currentStep = 1;
-  if (msg.includes('veo') || msg.includes('generating cinematic')) currentStep = 2;
-  else if (msg.includes('copy') || msg.includes('voiceover') || msg.includes('synthesizing') || msg.includes('music')) currentStep = 3;
-  else if (msg.includes('assembling') || msg.includes('finalizing') || msg.includes('successfully')) currentStep = 4;
+  if (isCompleted) {
+    currentStep = 5;
+  } else {
+    if (msg.includes('veo') || msg.includes('generating cinematic')) currentStep = 2;
+    else if (msg.includes('copy') || msg.includes('voiceover') || msg.includes('synthesizing') || msg.includes('music')) currentStep = 3;
+    else if (msg.includes('assembling') || msg.includes('finalizing') || msg.includes('successfully')) currentStep = 4;
+  }
 
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-2 px-1">
-        <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-500" />
+        {isCompleted ? (
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+        ) : (
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-500" />
+        )}
         <span className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Generation Process</span>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -1091,8 +1099,8 @@ export default function ReelsDashboard() {
                                     </p>
                                     
                                     {/* Detailed Live Log for Generation */}
-                                    {reel.status === 'GENERATING' && reel.statusMessage && (
-                                      <GenerationTimeline statusMessage={reel.statusMessage} metadata={reel.metadata} />
+                                    {((reel.status === 'GENERATING' && reel.statusMessage) || reel.status === 'READY') && (
+                                      <GenerationTimeline statusMessage={reel.statusMessage || ''} metadata={reel.metadata} isCompleted={reel.status === 'READY'} />
                                     )}
 
                                     {reel.videoUrl && reel.status === 'READY' && (
@@ -1200,8 +1208,8 @@ export default function ReelsDashboard() {
                         )}
 
                         {/* Detailed Live Log for Generation */}
-                        {reel.status === 'GENERATING' && reel.statusMessage && (
-                          <GenerationTimeline statusMessage={reel.statusMessage} metadata={reel.metadata} />
+                        {((reel.status === 'GENERATING' && reel.statusMessage) || reel.status === 'READY') && (
+                          <GenerationTimeline statusMessage={reel.statusMessage || ''} metadata={reel.metadata} isCompleted={reel.status === 'READY'} />
                         )}
 
                         {/* Error message block */}

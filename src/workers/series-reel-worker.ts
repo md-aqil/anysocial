@@ -266,20 +266,21 @@ export class ReelWorker {
 
               // Deep visual analysis using existing configured LLM (same model as story/script generation)
               const mediaParts = imagePayloads.map(img => ({ data: img.base64, mimeType: img.mimeType }));
-              const analysisPrompt = `You are a world-class creative director specialising in luxury product video ads.
+              const analysisPrompt = `You are a world-class creative director and cinematographer specialising in luxury product video ads.
 
-You are given ${imagePayloads.length} product image(s). Study them carefully.
+You are given ${imagePayloads.length} reference product image(s). Study them carefully.
 
-Your task: Write ONE single, highly detailed Veo 3 video generation prompt for a cinematic product hero clip.
+Your task: Write ONE single, highly detailed, and deeply evocative Veo 3 video generation prompt for a cinematic product hero clip. 
+
+CRITICAL: You MUST maintain absolute consistency with the product shown. Do NOT invent new product features, change its core shape, or alter its primary colors. 
 
 The prompt MUST:
-- Be grounded in exactly what you SEE in the images: product shape, materials, colours, textures, branding, packaging, scale
-- Describe cinematic camera movement (e.g. slow push-in, orbital, top-down reveal, rising pan)
-- Describe lighting (e.g. soft studio, golden hour rim light, dramatic side light with bokeh)
-- Describe the product's context/environment (e.g. white marble surface, dark premium table, floating in soft mist)
-- Mention any key product details visible (logo, label, colour, finish)
-- Be 50-100 words long and written as a single flowing cinematic description (NOT bullet points)
-- End with: ", photorealistic, 4K, cinematic, smooth motion, no text, no watermark"
+1. Product Fidelity: Ground the description in exactly what you SEE in the images (exact materials, colours, textures, branding, packaging, scale).
+2. Dynamic Cinematography: Describe a sophisticated, dynamic camera movement (e.g., a macro sweep transitioning into a slow orbital tracking shot, a dramatic push-in with a rack focus, or a top-down reveal).
+3. Ethereal Lighting & Atmosphere: Specify complex lighting setups (e.g., soft volumetric studio lighting, bioluminescent rim light, dramatic chiaroscuro with anamorphic lens flares, or golden hour rays filtering through mist).
+4. Immersive Environment: Place the product in a breathtaking, premium context that matches its vibe (e.g., resting on raw obsidian, floating in a zero-gravity silky void, submerged in crystal-clear rippling water, or on a sleek minimalist podium).
+5. Format: Be 60-120 words long, written as a single flowing, highly descriptive cinematic paragraph. NO bullet points.
+6. Suffix: End your prompt exactly with: ", ultra-photorealistic, 8K resolution, macro detail, cinematic lighting, smooth slow-motion, highly detailed, no text, no watermark"
 
 Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
 
