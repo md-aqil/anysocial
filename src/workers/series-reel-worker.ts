@@ -211,6 +211,13 @@ export class ReelWorker {
         },
       });
       
+      if (reelWithDetails.metadata) {
+        Object.assign(generationMetadata, reelWithDetails.metadata);
+        if (!Array.isArray(generationMetadata.shots)) {
+          generationMetadata.shots = [];
+        }
+      }
+
       if (reelWithDetails.type === 'PRODUCT') {
         await updateProgress('🚀 Initializing AI Product Reel Engine...');
   
