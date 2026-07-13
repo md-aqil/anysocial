@@ -254,9 +254,9 @@ const GenerationTimeline = ({ statusMessage, metadata, isCompleted = false }: { 
           currentStep === 1
         )}
         {renderCompactStep(
-          "Veo Omni",
+          "Veo 3.0 Fast",
           metadata?.rawVideoUrl ? (
-            <video src={metadata.rawVideoUrl} autoPlay muted loop className="w-full h-[50px] object-cover rounded bg-black border border-stone-200" />
+            <video src={metadata.rawVideoUrl} controls className="w-full h-[80px] object-cover rounded bg-black border border-stone-200" />
           ) : (
             <span className="text-[10px] font-medium text-stone-600">Video Generation</span>
           ),

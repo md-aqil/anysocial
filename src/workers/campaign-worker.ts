@@ -155,6 +155,7 @@ export const campaignWorker = {
           voiceId: campaign.voiceId,
           ingredientsToVideo: campaign.ingredientsToVideo || false,
           animateImageCount: campaign.animateImageCount || 3,
+          productDescription: product.description || ''
         });
 
         logger.info(`Successfully queued Reel ${reel.id} for product ${product.id}`);

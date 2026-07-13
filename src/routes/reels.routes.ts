@@ -416,6 +416,7 @@ Output your response strictly as a valid JSON object matching the provided schem
 // Validation schema for creating a product reel
 const generateProductReelSchema = z.object({
   prompt: z.string().optional(),
+  productDescription: z.string().optional(),
   assets: z.array(z.object({
     url: z.string(),
     type: z.string(), // IMAGE or VIDEO
@@ -461,6 +462,7 @@ router.post("/generate-product-reel", requireAuth, async (req: any, res: any) =>
       hookText: validatedData.hookText,
       language: validatedData.language,
       voiceId: validatedData.voiceId,
+      productDescription: validatedData.productDescription,
     });
 
     res.status(201).json({

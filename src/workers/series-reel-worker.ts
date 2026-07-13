@@ -175,6 +175,7 @@ export class ReelWorker {
     regenerateShots?: number[];
     ingredientsToVideo?: boolean;
     animateImageCount?: number;
+    productDescription?: string;
   }>) {
     const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'Aoede', isRecompose = false, regenerateShots = [], ingredientsToVideo = false, animateImageCount = 3 } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
@@ -266,19 +267,24 @@ export class ReelWorker {
 
               // Deep visual analysis using existing configured LLM (same model as story/script generation)
               const mediaParts = imagePayloads.map(img => ({ data: img.base64, mimeType: img.mimeType }));
+              const productDescription = job.data.productDescription || '';
+              const productInfoStr = productDescription ? `\nProduct Description / Details:\n${productDescription}\n` : '';
+
               const analysisPrompt = `You are a world-class creative director and cinematographer specialising in luxury product video ads.
 
-You are given ${imagePayloads.length} reference product image(s). Study them carefully.
+You are given ${imagePayloads.length} reference product image(s). Study them carefully.${productInfoStr}
 
 Your task: Write ONE single, highly detailed, and deeply evocative Veo 3 video generation prompt for a cinematic product hero clip. 
 
-CRITICAL: You MUST maintain absolute consistency with the product shown. Do NOT invent new product features, change its core shape, or alter its primary colors. 
+CRITICAL RULES: 
+1. Maintain absolute consistency with the product shown. Do NOT invent new product features, change its core shape, or alter its primary colors. 
+2. The environment, vibe, and aesthetic MUST be directly derived and inspired by the extracted images. Extract ideas from the images and extend the world already shown into a dynamic video space. Do NOT use generic backgrounds if a clear vibe is present.
 
-The prompt MUST:
-1. Product Fidelity: Ground the description in exactly what you SEE in the images (exact materials, colours, textures, branding, packaging, scale).
-2. Dynamic Cinematography: Describe a sophisticated, dynamic camera movement (e.g., a macro sweep transitioning into a slow orbital tracking shot, a dramatic push-in with a rack focus, or a top-down reveal).
-3. Ethereal Lighting & Atmosphere: Specify complex lighting setups (e.g., soft volumetric studio lighting, bioluminescent rim light, dramatic chiaroscuro with anamorphic lens flares, or golden hour rays filtering through mist).
-4. Immersive Environment: Place the product in a breathtaking, premium context that matches its vibe (e.g., resting on raw obsidian, floating in a zero-gravity silky void, submerged in crystal-clear rippling water, or on a sleek minimalist podium).
+The prompt MUST include:
+1. Product Fidelity: Ground the description in exactly what you SEE in the images (exact materials, colours, textures, branding, packaging, scale). Use the provided Product Description for extra context if needed.
+2. Inspired Environment: Build a breathtaking, premium context that perfectly matches and extends the background, props, colors, or aesthetic already present in the images.
+3. Cinematic Lighting: Specify complex lighting setups that enhance the mood of the images (e.g., soft volumetric studio lighting, natural sun rays, or dramatic chiaroscuro).
+4. Dynamic Cinematography: Describe a sophisticated, dynamic camera movement (e.g., a macro sweep transitioning into a slow orbital tracking shot, a dramatic push-in, or a top-down reveal).
 5. Format: Be 60-120 words long, written as a single flowing, highly descriptive cinematic paragraph. NO bullet points.
 6. Suffix: End your prompt exactly with: ", ultra-photorealistic, 8K resolution, macro detail, cinematic lighting, smooth slow-motion, highly detailed, no text, no watermark"
 
