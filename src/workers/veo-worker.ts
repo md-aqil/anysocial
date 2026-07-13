@@ -114,8 +114,17 @@ class VeoGenerationWorker {
     const token = (await client.getAccessToken()).token;
     const projectId = await auth.getProjectId();
     
-    const outputBucket = process.env.VEO_STORAGE_BUCKET || 'anysocial-veo-videos';
+    const outputBucket = process.env.VEO_STORAGE_BUCKET || `anysocial-veo-videos-${projectId}`;
     const outputGcsUri = `gs://${outputBucket}/veo_outputs/`;
+
+    // Ensure bucket exists
+    const gcs = await import('@google-cloud/storage');
+    const initStorage = new gcs.Storage();
+    const bucket = initStorage.bucket(outputBucket);
+    const [exists] = await bucket.exists();
+    if (!exists) {
+      await bucket.create({ location: 'us-central1' });
+    }
 
     const veoModelId = process.env.VEO_MODEL_ID || 'veo-3.0-generate-001';
     const veoUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${veoModelId}:predictLongRunning`;

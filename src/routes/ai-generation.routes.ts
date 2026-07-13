@@ -208,9 +208,18 @@ router.post('/generate-video', jwtAuth, async (req: Request, res: Response) => {
     const token = (await client.getAccessToken()).token;
     const projectId = await auth.getProjectId();
 
-    const outputBucket = process.env.VEO_STORAGE_BUCKET || 'anysocial-veo-videos';
+    const outputBucket = process.env.VEO_STORAGE_BUCKET || `anysocial-veo-videos-${projectId}`;
     const outputGcsUri = `gs://${outputBucket}/veo_outputs/`;
     const MODEL = 'veo-3.0-generate-001';
+
+    // Ensure bucket exists
+    const { Storage } = await import('@google-cloud/storage');
+    const storage = new Storage();
+    const bucket = storage.bucket(outputBucket);
+    const [exists] = await bucket.exists();
+    if (!exists) {
+      await bucket.create({ location: 'us-central1' });
+    }
 
     // 1. Start long-running generation
     const response = await fetch(
