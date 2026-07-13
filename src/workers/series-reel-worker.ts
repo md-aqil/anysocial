@@ -176,14 +176,22 @@ export class ReelWorker {
     ingredientsToVideo?: boolean;
     animateImageCount?: number;
     productDescription?: string;
+    voicePrompt?: string;
   }>) {
-    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'Aoede', isRecompose = false, regenerateShots = [], ingredientsToVideo = false, animateImageCount = 3 } = job.data;
+    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'Aoede', isRecompose = false, regenerateShots = [], ingredientsToVideo = false, animateImageCount = 3, voicePrompt = '' } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
     const tempFilesToCleanup: string[] = [];
     
     const generationMetadata: any = {
       llmDetails: "Script: Gemini 2.5 | Audio: Google TTS | Visuals: Gemini Flash Image",
       startedAt: Date.now(),
+      configuration: {
+        language,
+        voiceId,
+        voicePrompt,
+        ingredientsToVideo,
+        animateImageCount,
+      },
       model_llm: 'gemini-2.5-flash',
       model_image: 'gemini-2.5-flash-image',
       model_voice: voiceId || 'Aoede',
@@ -439,7 +447,7 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
         let ttsDuration = 0;
         if (activeEnableVoice && scriptText && scriptText.length > 0) {
           await updateProgress('🗣️ Synthesizing premium brand voiceover...');
-          const ttsResult = await aiOrchestrator.generateVoiceover(extractedVoiceover, voiceId, language, false);
+          const ttsResult = await aiOrchestrator.generateVoiceover(extractedVoiceover, voiceId, language, false, false, undefined, voicePrompt);
           ttsPath = ttsResult.audioPath;
           generationMetadata.llmDetails = `Script: Gemini 2.5 | Audio: ${ttsResult.engineUsed} | Visuals: Gemini Flash Image`;
           generationMetadata.model_voice = ttsResult.voiceUsed;

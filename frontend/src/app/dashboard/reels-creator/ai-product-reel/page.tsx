@@ -66,6 +66,7 @@ export default function AIProductReelPage() {
   const [socialChannels, setSocialChannels] = useState<string[]>([]);
   const [language, setLanguage] = useState('English');
   const [voiceId, setVoiceId] = useState('Puck');
+  const [voicePrompt, setVoicePrompt] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -106,6 +107,7 @@ export default function AIProductReelPage() {
           voiceId,
           ingredientsToVideo,
           animateImageCount,
+          voicePrompt,
         })
       });
 
@@ -231,6 +233,23 @@ export default function AIProductReelPage() {
                     ))}
                   </div>
                 </div>
+
+                <div className="md:col-span-4 space-y-2 pt-2 border-t border-stone-100">
+                  <label className="text-xs font-bold text-stone-500 uppercase flex items-center gap-1.5">
+                    <span>Voice Style / Emotion</span>
+                    <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200">Gemini TTS Exclusive</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={voicePrompt}
+                    onChange={(e) => setVoicePrompt(e.target.value)}
+                    placeholder="e.g. Say in a spooky whisper, Make it sound very excited, Speak slowly and dynamically..."
+                    className="w-full h-10 px-3 border border-stone-200 rounded-lg bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-stone-400"
+                  />
+                  <p className="text-[10px] text-stone-400 font-medium leading-relaxed">
+                    Direct natural language control over style, tone, and pacing. Prepend details to shape how the speaker sounds.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -345,6 +364,11 @@ export default function AIProductReelPage() {
                     <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Voice & Lang</span>
                     <div className="text-sm font-medium">
                       {language} / {selectedVoice?.name || 'Puck'}
+                      {voicePrompt && (
+                        <div className="text-[10px] text-amber-400 font-bold mt-0.5 truncate" title={voicePrompt}>
+                          "{voicePrompt}"
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>

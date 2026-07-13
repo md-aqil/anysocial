@@ -473,7 +473,7 @@ Make sure the output is a valid JSON object.`;
     }
   }
 
-  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false, strictPlaygroundMode: boolean = false, overrideModel?: string): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> {
+  async generateVoiceover(text: string, voiceName: string = 'en-US-Journey-D', language: string = 'en-US', useAdvancedModel: boolean = false, strictPlaygroundMode: boolean = false, overrideModel?: string, voicePrompt?: string): Promise<{ audioPath: string, engineUsed: string, voiceUsed: string }> {
     if (!text || text.trim().length === 0) {
       throw new Error("Voiceover script is empty. Please ensure your script contains text or uses the 🎙️ emoji for voiceover lines.");
     }
@@ -499,6 +499,8 @@ Make sure the output is a valid JSON object.`;
       }
     }
     
+    const voiceoverInput = voicePrompt ? `${voicePrompt}:\n"${text}"` : text;
+
     if (resolvedUseGemini) {
       const { GoogleAuth } = await import('google-auth-library');
       const auth = new GoogleAuth({
@@ -533,7 +535,7 @@ Make sure the output is a valid JSON object.`;
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text }] }],
+                    contents: [{ role: 'user', parts: [{ text: voiceoverInput }] }],
                     generationConfig: {
                       responseModalities: ['AUDIO'],
                       speechConfig: {
@@ -549,7 +551,7 @@ Make sure the output is a valid JSON object.`;
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ role: 'user', parts: [{ text }] }],
+                        contents: [{ role: 'user', parts: [{ text: voiceoverInput }] }],
                         generationConfig: {
                           responseModalities: ['AUDIO'],
                           speechConfig: {
@@ -572,7 +574,7 @@ Make sure the output is a valid JSON object.`;
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               data: {
-                contents: [{ role: 'user', parts: [{ text }] }],
+                contents: [{ role: 'user', parts: [{ text: voiceoverInput }] }],
                 generationConfig: {
                   responseModalities: ['AUDIO'],
                   speechConfig: {

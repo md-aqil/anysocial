@@ -1098,6 +1098,36 @@ export default function ReelsDashboard() {
                                       "{reel.script || 'No script text generated'}"
                                     </p>
                                     
+                                    {/* Config details */}
+                                    {(() => {
+                                      let meta = reel.metadata || {};
+                                      if (typeof meta === 'string') {
+                                        try { meta = JSON.parse(meta); } catch(e) {}
+                                      }
+                                      const config = meta.configuration || {
+                                        language: campaign.language,
+                                        voiceId: campaign.voiceId,
+                                        voicePrompt: campaign.voicePrompt,
+                                        ingredientsToVideo: campaign.ingredientsToVideo,
+                                        animateImageCount: campaign.animateImageCount
+                                      };
+                                      return (
+                                        <div className="flex flex-wrap gap-1.5 mb-4 mt-1 border-t border-b border-stone-100/60 py-2.5">
+                                          <span className="px-2 py-0.5 bg-stone-50 border border-stone-200 text-stone-600 text-[9px] font-bold rounded-md">
+                                            🗣️ {config.voiceId || 'Aoede'} ({config.language || 'English'})
+                                          </span>
+                                          {config.voicePrompt && (
+                                            <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold rounded-md truncate max-w-full animate-pulse-subtle" title={config.voicePrompt}>
+                                              ✨ Style: {config.voicePrompt}
+                                            </span>
+                                          )}
+                                          <span className="px-2 py-0.5 bg-violet-50 border border-violet-100 text-violet-700 text-[9px] font-bold rounded-md">
+                                            {config.ingredientsToVideo ? `🎬 Veo Omni Animation (${config.animateImageCount || 3} imgs)` : '🖼️ Static Images'}
+                                          </span>
+                                        </div>
+                                      );
+                                    })()}
+                                    
                                     {/* Detailed Live Log for Generation */}
                                     {((reel.status === 'GENERATING' && reel.statusMessage) || reel.status === 'READY') && (
                                       <GenerationTimeline statusMessage={reel.statusMessage || ''} metadata={reel.metadata} isCompleted={reel.status === 'READY'} />
@@ -1194,6 +1224,36 @@ export default function ReelsDashboard() {
                         <p className="text-sm text-stone-700 font-medium line-clamp-3 mb-4 italic leading-relaxed">
                           "{reel.script || 'No script text generated'}"
                         </p>
+
+                         {/* Config details */}
+                         {(() => {
+                           let meta = reel.metadata || {};
+                           if (typeof meta === 'string') {
+                             try { meta = JSON.parse(meta); } catch(e) {}
+                           }
+                           const config = meta.configuration || {
+                             language: reel.language || 'English',
+                             voiceId: meta.model_voice || 'Aoede',
+                             voicePrompt: '',
+                             ingredientsToVideo: false,
+                             animateImageCount: 3
+                           };
+                           return (
+                             <div className="flex flex-wrap gap-1.5 mb-4 mt-1 border-t border-b border-stone-100/60 py-2.5">
+                               <span className="px-2 py-0.5 bg-stone-50 border border-stone-200 text-stone-600 text-[9px] font-bold rounded-md">
+                                 🗣️ {config.voiceId || 'Aoede'} ({config.language || 'English'})
+                               </span>
+                               {config.voicePrompt && (
+                                 <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold rounded-md truncate max-w-full animate-pulse-subtle" title={config.voicePrompt}>
+                                   ✨ Style: {config.voicePrompt}
+                                 </span>
+                               )}
+                               <span className="px-2 py-0.5 bg-violet-50 border border-violet-100 text-violet-700 text-[9px] font-bold rounded-md">
+                                 {config.ingredientsToVideo ? `🎬 Veo Omni Animation (${config.animateImageCount || 3} imgs)` : '🖼️ Static Images'}
+                               </span>
+                             </div>
+                           );
+                         })()}
 
                         {/* Generation Details Button */}
                         {reel.metadata && (

@@ -11,7 +11,7 @@ const router = Router();
 router.post('/campaigns', requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { websiteUrl, schedule, socialChannels, language, voiceId, ingredientsToVideo, animateImageCount } = req.body;
+    const { websiteUrl, schedule, socialChannels, language, voiceId, ingredientsToVideo, animateImageCount, voicePrompt } = req.body;
 
     if (!websiteUrl || !schedule) {
       return res.status(400).json({ error: 'Website URL and Schedule are required' });
@@ -27,6 +27,7 @@ router.post('/campaigns', requireAuth, async (req, res) => {
         voiceId: voiceId || 'Aoede',
         ingredientsToVideo: ingredientsToVideo === true,
         animateImageCount: animateImageCount ? Math.min(Math.max(1, Number(animateImageCount)), 3) : 3,
+        voicePrompt: voicePrompt || null,
       },
     });
 

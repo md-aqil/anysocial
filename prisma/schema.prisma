@@ -473,6 +473,7 @@ model AutomatedCampaign {
   voiceId        String?            @default("Aoede") @map("voice_id")
   ingredientsToVideo Boolean        @default(false) @map("ingredients_to_video")
   animateImageCount  Int            @default(3) @map("animate_image_count")
+  voicePrompt        String?        @map("voice_prompt")
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   products       AutomatedProduct[]
