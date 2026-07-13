@@ -308,7 +308,13 @@ router.post('/poll-video', jwtAuth, async (req: Request, res: Response) => {
       throw new Error(result.error.message || 'Generation failed');
     }
 
-    const videoUri = result.response.generatedSamples[0].video.uri;
+    console.log('Veo Polling Result Payload:', JSON.stringify(result, null, 2));
+
+    const videoUri = result.response?.generatedSamples?.[0]?.video?.uri || result.response?.videoUri || result.metadata?.outputUri || result.response?.uri;
+    
+    if (!videoUri) {
+      throw new Error(`Could not find video URI in response. Check backend logs for payload.`);
+    }
 
     // Download the video from GCS to local public folder
     const path = await import('path');
