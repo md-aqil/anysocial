@@ -320,6 +320,7 @@ router.post('/poll-video', jwtAuth, async (req: Request, res: Response) => {
     res.json({ status: 'done', url: publicUrl });
 
   } catch (error: any) {
+    console.error('Poll video error:', error);
     res.status(500).json({ error: error.message });
   }
 });

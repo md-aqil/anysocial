@@ -246,7 +246,10 @@ export default function AIAgentPage() {
             body: JSON.stringify({ operationName })
           });
 
-          if (!pollRes.ok) throw new Error('Polling failed');
+          if (!pollRes.ok) {
+            const errTxt = await pollRes.text();
+            throw new Error(`Polling failed: ${pollRes.status} ${errTxt}`);
+          }
           const pollData = await pollRes.json();
           if (pollData.status === 'done') {
             videoUrl = pollData.url;
