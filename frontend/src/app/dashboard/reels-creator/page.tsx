@@ -191,6 +191,69 @@ const getReelStatus = (reel: any) => {
   };
 };
 
+const renderCompactStep = (title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean) => (
+  <div className={`flex flex-col rounded-xl overflow-hidden transition-all duration-300 ${isComplete ? 'bg-white border border-stone-200' : isActive ? 'bg-white border-2 border-violet-400 shadow-sm' : 'bg-transparent border border-dashed border-stone-200 opacity-60'}`}>
+    <div className={`px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider flex items-center justify-between border-b ${isComplete ? 'text-stone-700 border-stone-100' : isActive ? 'text-violet-600 border-violet-100 bg-violet-50/50' : 'text-stone-400 border-stone-200/50'}`}>
+      <span className="flex items-center gap-1.5">
+        {isActive && <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span></span>}
+        {isComplete && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+        {title}
+      </span>
+    </div>
+    <div className="p-2 flex-1 flex flex-col justify-center text-center bg-stone-50/30">
+      {content}
+    </div>
+  </div>
+);
+
+const GenerationTimeline = ({ statusMessage }: { statusMessage: string }) => {
+  const msg = statusMessage.toLowerCase();
+  
+  let currentStep = 1;
+  if (msg.includes('veo') || msg.includes('generating cinematic')) currentStep = 2;
+  else if (msg.includes('copy') || msg.includes('voiceover') || msg.includes('synthesizing') || msg.includes('music')) currentStep = 3;
+  else if (msg.includes('assembling') || msg.includes('finalizing') || msg.includes('successfully')) currentStep = 4;
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-500" />
+        <span className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Generation Process</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {renderCompactStep(
+          "Analysis",
+          <span className="text-[10px] font-medium text-stone-600">Assets & Prompts</span>,
+          currentStep > 1,
+          currentStep === 1
+        )}
+        {renderCompactStep(
+          "Veo Omni",
+          <span className="text-[10px] font-medium text-stone-600">Video Generation</span>,
+          currentStep > 2,
+          currentStep === 2
+        )}
+        {renderCompactStep(
+          "Audio",
+          <span className="text-[10px] font-medium text-stone-600">Voiceover & Music</span>,
+          currentStep > 3,
+          currentStep === 3
+        )}
+        {renderCompactStep(
+          "Assembly",
+          <span className="text-[10px] font-medium text-stone-600">Final Composition</span>,
+          currentStep > 4,
+          currentStep === 4
+        )}
+      </div>
+      <div className="mt-2 text-[10px] font-mono text-violet-600 bg-violet-50 rounded px-2 py-1 flex items-center justify-between border border-violet-100 shadow-inner">
+        <span className="truncate pr-2">{statusMessage}</span>
+        <span className="animate-pulse inline-block w-1.5 h-3 bg-violet-400 shrink-0"></span>
+      </div>
+    </div>
+  );
+};
+
 export default function ReelsDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -1005,17 +1068,7 @@ export default function ReelsDashboard() {
                                     
                                     {/* Detailed Live Log for Generation */}
                                     {reel.status === 'GENERATING' && reel.statusMessage && (
-                                      <div className="mt-auto mb-4 bg-stone-900 border border-stone-800 rounded-lg p-3 shadow-inner">
-                                        <div className="flex items-center gap-2 mb-1.5">
-                                          <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
-                                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Live Engine Log</span>
-                                        </div>
-                                        <div className="text-xs font-mono text-emerald-400 break-words leading-relaxed line-clamp-2">
-                                          <span className="text-stone-500 mr-2">$</span>
-                                          {reel.statusMessage}
-                                          <span className="animate-pulse inline-block w-1.5 h-3.5 bg-emerald-400 ml-1 align-middle"></span>
-                                        </div>
-                                      </div>
+                                      <GenerationTimeline statusMessage={reel.statusMessage} />
                                     )}
 
                                     {reel.videoUrl && reel.status === 'READY' && (
@@ -1124,17 +1177,7 @@ export default function ReelsDashboard() {
 
                         {/* Detailed Live Log for Generation */}
                         {reel.status === 'GENERATING' && reel.statusMessage && (
-                          <div className="mb-4 bg-stone-900 border border-stone-800 rounded-lg p-3 shadow-inner">
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
-                              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Live Engine Log</span>
-                            </div>
-                            <div className="text-xs font-mono text-emerald-400 break-words leading-relaxed">
-                              <span className="text-stone-500 mr-2">$</span>
-                              {reel.statusMessage}
-                              <span className="animate-pulse inline-block w-1.5 h-3.5 bg-emerald-400 ml-1 align-middle"></span>
-                            </div>
-                          </div>
+                          <GenerationTimeline statusMessage={reel.statusMessage} />
                         )}
 
                         {/* Error message block */}
