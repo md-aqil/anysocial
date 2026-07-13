@@ -64,6 +64,7 @@ export default function AIAgentPage() {
   const [input, setInput] = useState('');
   const [mode, setMode] = useState<MessageType>('text');
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Agent is thinking...');
   const [isImproving, setIsImproving] = useState(false);
 
   // Testing Overrides
@@ -131,6 +132,12 @@ export default function AIAgentPage() {
     const currentInput = input;
     setInput('');
     setLoading(true);
+    setLoadingMessage(
+      mode === 'video' ? 'Generating video with Veo 3 (this takes a few minutes)...' :
+      mode === 'image' ? 'Generating image...' :
+      mode === 'voice' ? 'Synthesizing voice...' :
+      'Agent is thinking...'
+    );
 
     try {
       if (mode === 'text') {
@@ -218,15 +225,41 @@ export default function AIAgentPage() {
           },
           body: JSON.stringify({ prompt: currentInput })
         });
-        if (!response.ok) throw new Error((await response.json()).error || 'Failed');
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to start generation');
         const data = await response.json();
+        
+        const operationName = data.operationName;
+        if (!operationName) throw new Error('No operation name returned');
+
+        setLoadingMessage('Rendering video... (Veo 3 is processing)');
+
+        // Poll until done
+        let videoUrl = '';
+        while (true) {
+          await new Promise(r => setTimeout(r, 10000));
+          const pollRes = await fetch('/api/ai/poll-video', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ operationName })
+          });
+
+          if (!pollRes.ok) throw new Error('Polling failed');
+          const pollData = await pollRes.json();
+          if (pollData.status === 'done') {
+            videoUrl = pollData.url;
+            break;
+          }
+        }
         
         setMessages(prev => [...prev, {
           id: Date.now().toString(),
           role: 'ai',
           type: 'video',
           content: 'Here is your generated Veo 3 video:',
-          url: data.url,
+          url: videoUrl,
           timestamp: Date.now()
         }]);
       }
@@ -361,7 +394,7 @@ export default function AIAgentPage() {
               </div>
               <div className="bg-stone-50 border border-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm flex items-center gap-2">
                 <Loader2 className="w-4 h-4 text-[#D27D50] animate-spin" />
-                <span className="text-stone-500 font-medium">Agent is thinking...</span>
+                <span className="text-stone-500 font-medium">{loadingMessage}</span>
               </div>
             </div>
           </div>
