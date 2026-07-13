@@ -89,8 +89,32 @@ export class AutomationScraperService {
       logger.info(`Not a standard Shopify store or /products.json blocked for ${domain}`);
     }
     
-    // Future Strategy 2: Sitemap parsing or HTML crawling can be added here
-    // For now, if it's not Shopify, we just return empty or we could try fetching the homepage and extracting links.
+    // Strategy 2: Try WooCommerce Store API (public endpoint used by Woo blocks)
+    try {
+      const response = await axios.get(`${domain}/wp-json/wc/store/products`, { timeout: 10000 });
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        for (const item of response.data) {
+          const productUrl = item.permalink;
+          const title = item.name;
+          const description = item.short_description ? cheerio.load(item.short_description).root().text().trim() : '';
+          const allImages = item.images ? item.images.map((img: any) => img.src) : [];
+          const imageUrl = allImages.length > 0 ? allImages[0] : '';
+          
+          if (title && imageUrl) {
+            products.push({ url: productUrl, title, description, imageUrl, images: allImages });
+          }
+        }
+        if (products.length > 0) {
+          logger.info(`WooCommerce Store API succeeded for ${domain}, found ${products.length} products`);
+          return products;
+        }
+      }
+    } catch (e) {
+      logger.info(`WooCommerce Store API failed or not available for ${domain}`);
+    }
+
+    // Future Strategy 3: Sitemap parsing or HTML crawling can be added here
+    // For now, if it's not Shopify or WooCommerce, we just return empty or we could try fetching the homepage and extracting links.
     
     return products;
   }
