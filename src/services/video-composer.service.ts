@@ -309,22 +309,86 @@ export class VideoComposerService {
       'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'i', 'उ': 'u', 'ऊ': 'u', 'ऋ': 'ri', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
       'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng', 'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
       'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n', 'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
-      'प': 'p', 'फ': 'f', 'ब': 'b', 'भ': 'bh', 'म': 'm', 'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'w', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
-      'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy',
+      'प': 'p', 'फ': 'f', 'ब': 'b', 'भ': 'bh', 'म': 'm', 'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
+      'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy', 'ड़': 'd', 'ढ़': 'dh',
       'ा': 'a', 'ि': 'i', 'ी': 'i', 'ु': 'u', 'ू': 'u', 'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
       'ं': 'n', 'ँ': 'n', 'ः': 'h', '्': '', '़': '', 'ऽ': 'a', 'ॐ': 'om', '।': '.', '॥': '.'
     };
-    
-    let result = '';
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      if (charMap[char] !== undefined) {
-        result += charMap[char];
-      } else {
-        result += char;
+
+    const consonants = new Set([
+      'क', 'ख', 'ग', 'घ', 'ङ', 'च', 'छ', 'ज', 'झ', 'ञ',
+      'ट', 'ठ', 'ड', 'ढ', 'ण', 'त', 'थ', 'द', 'ध', 'न',
+      'प', 'फ', 'ब', 'भ', 'म', 'य', 'र', 'ल', 'व', 'श', 'ष', 'स', 'ह',
+      'क्ष', 'त्र', 'ज्ञ', 'ड़', 'ढ़'
+    ]);
+
+    const vowelSigns = new Set([
+      'ा', 'ि', 'ी', 'ु', 'ू', 'ृ', 'े', 'ै', 'ो', 'ौ', 'ं', 'ँ', 'ः', '्'
+    ]);
+
+    // Normalize Unicode nuktas for ड़ and ढ़
+    let cleanText = text.replace(/ड\u093c/g, 'ड़').replace(/ढ\u093c/g, 'ढ़');
+
+    const words = cleanText.split(/(\s+)/);
+    const transliteratedWords = words.map(word => {
+      if (/^\s+$/.test(word)) return word;
+
+      let romanWord = '';
+      for (let i = 0; i < word.length; i++) {
+        const char = word[i];
+        let romanChar = charMap[char] !== undefined ? charMap[char] : char;
+        romanWord += romanChar;
+
+        // Schwa insertion rule
+        if (consonants.has(char) && i < word.length - 1) {
+          const nextChar = word[i + 1];
+          if (!vowelSigns.has(nextChar) && nextChar !== '़') {
+            romanWord += 'a';
+          }
+        }
       }
-    }
-    return result;
+
+      // Normalise punctuation and check common loanwords
+      const lower = romanWord.toLowerCase().replace(/[^a-z]/g, '');
+      const replacements: Record<string, string> = {
+        'faibrik': 'fabric',
+        'febrik': 'fabric',
+        'dres': 'dress',
+        'dizein': 'design',
+        'dizain': 'design',
+        'dizayn': 'design',
+        'stail': 'style',
+        'luk': 'look',
+        'faishn': 'fashion',
+        'kolekshn': 'collection',
+        'kuwaliti': 'quality',
+        'kwaliti': 'quality',
+        'shoping': 'shopping',
+        'ordr': 'order',
+        'websait': 'website',
+        'diliveri': 'delivery',
+        'diskaunt': 'discount',
+        'saiz': 'size',
+        'fitig': 'fitting',
+        'silv': 'sleeve',
+        'silvs': 'sleeves',
+        'bdi': 'badi',
+        'kalar': 'colour',
+        'trenadi': 'trendy',
+        'trendi': 'trendy'
+      };
+
+      if (replacements[lower]) {
+        const rep = replacements[lower];
+        if (romanWord === romanWord.toUpperCase()) return rep.toUpperCase();
+        if (romanWord[0] === romanWord[0].toUpperCase()) return rep[0].toUpperCase() + rep.slice(1);
+        return rep;
+      }
+
+      return romanWord;
+    });
+
+    return transliteratedWords.join('');
   }
 
   /**
