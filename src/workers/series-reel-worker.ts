@@ -333,18 +333,20 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
 
               // Make Veo clip available for UI timeline preview
               try {
-                const { Storage } = await import('@google-cloud/storage');
-                const storage = new Storage();
-                const bucketName = await VeoService.ensureBucket(process.env.VERTEX_AI_PROJECT_ID || '');
-                const destFileName = `preview-${reelId}-${Date.now()}.mp4`;
-                await storage.bucket(bucketName).upload(veoClipPath, { destination: destFileName });
-                generationMetadata.rawVideoUrl = `https://storage.googleapis.com/${bucketName}/${destFileName}`;
+                const publicPreviewFilename = `raw-veo-${reelId}-${Date.now()}.mp4`;
+                const publicPreviewDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels');
+                if (!fs.existsSync(publicPreviewDir)) {
+                  fs.mkdirSync(publicPreviewDir, { recursive: true });
+                }
+                const publicPreviewPath = path.join(publicPreviewDir, publicPreviewFilename);
+                fs.copyFileSync(veoClipPath, publicPreviewPath);
+                generationMetadata.rawVideoUrl = `/uploads/reels/${publicPreviewFilename}`;
                 await prisma.reel.update({
                   where: { id: reelId },
                   data: { metadata: generationMetadata }
                 });
               } catch (previewErr: any) {
-                console.warn('[IngredientsToVideo] Could not upload preview video to UI metadata:', previewErr.message);
+                console.warn('[IngredientsToVideo] Could not copy preview video locally:', previewErr.message);
               }
 
               // Add Veo clip to cleanup
@@ -465,10 +467,40 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
         // Dynamically scale clip durations to perfectly match voiceover
         if (ttsDuration > 0 && clipDurations.length > 0) {
            const targetTotal = ttsDuration + totalOverlap + 1.0; // Add 1s padding
-           const currentTotal = clipDurations.reduce((a, b) => a + b, 0);
-           const scaleFactor = targetTotal / currentTotal;
-           for (let i = 0; i < clipDurations.length; i++) {
-             clipDurations[i] = clipDurations[i] * scaleFactor;
+           const isVideoFile = (p: string) => /\.(mp4|webm|mov)$/i.test(p);
+           
+           let videoDurationsTotal = 0;
+           let imageClipsCount = 0;
+           let imageDurationTotal = 0;
+           
+           for (let i = 0; i < downloadedAssetPaths.length; i++) {
+             const isVideo = isVideoFile(downloadedAssetPaths[i]);
+             if (isVideo) {
+               videoDurationsTotal += clipDurations[i];
+             } else {
+               imageClipsCount++;
+               imageDurationTotal += clipDurations[i];
+             }
+           }
+           
+           if (imageClipsCount > 0) {
+             const targetImageTotal = Math.max(1.5 * imageClipsCount, targetTotal - videoDurationsTotal);
+             const scaleFactor = targetImageTotal / imageDurationTotal;
+             for (let i = 0; i < clipDurations.length; i++) {
+               const isVideo = isVideoFile(downloadedAssetPaths[i]);
+               if (!isVideo) {
+                 clipDurations[i] = clipDurations[i] * scaleFactor;
+               }
+             }
+           } else {
+             // If only videos, make sure they run at least their full original duration
+             const currentTotal = clipDurations.reduce((a, b) => a + b, 0);
+             if (currentTotal < targetTotal) {
+               const scaleFactor = targetTotal / currentTotal;
+               for (let i = 0; i < clipDurations.length; i++) {
+                 clipDurations[i] = clipDurations[i] * scaleFactor;
+               }
+             }
            }
         }
         

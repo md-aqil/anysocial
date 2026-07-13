@@ -34,6 +34,14 @@ const platformStyles: Record<string, {
   SNAPCHAT: { name: 'Snapchat', icon: SnapchatLogo, color: '#B89400', bg: '#FFF8D9' },
 };
 
+const getScheduleLabel = (cron: string) => {
+  if (cron === '0 9 * * *') return '9 AM Daily';
+  if (cron === '0 12 * * *') return '12 PM Daily';
+  if (cron === '0 17 * * *') return '5 PM Daily';
+  if (cron === '0 21 * * *') return '9 PM Daily';
+  return cron;
+};
+
 const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: string, description: string }[]> = {
   'English': [
     { id: 'Puck', name: 'Puck — Gemini 3.1 TTS', type: 'Male', description: 'Energetic, punchy and upbeat. Perfect for viral hooks.' },
@@ -1271,17 +1279,34 @@ export default function ReelsDashboard() {
                                       };
                                       return (
                                         <div className="flex flex-wrap gap-1.5 mb-4 mt-1 border-t border-b border-stone-100/60 py-2.5">
-                                          <span className="px-2 py-0.5 bg-stone-50 border border-stone-200 text-stone-600 text-[9px] font-bold rounded-md">
-                                            🗣️ {config.voiceId || 'Aoede'} ({config.language || 'English'})
+                                          <span className="px-2 py-1 bg-blue-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                            🗣️ {config.language || 'English'}
+                                          </span>
+                                          <span className="px-2 py-1 bg-violet-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                            🎙️ {config.voiceId || 'Aoede'}
                                           </span>
                                           {config.voicePrompt && (
-                                            <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold rounded-md truncate max-w-full animate-pulse-subtle" title={config.voicePrompt}>
-                                              ✨ Style: {config.voicePrompt}
+                                            <span className="px-2 py-1 bg-amber-500 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1 max-w-full truncate" title={config.voicePrompt}>
+                                              ✨ {config.voicePrompt}
                                             </span>
                                           )}
-                                          <span className="px-2 py-0.5 bg-violet-50 border border-violet-100 text-violet-700 text-[9px] font-bold rounded-md">
-                                            {config.ingredientsToVideo ? `🎬 Veo Omni Animation (${config.animateImageCount || 3} imgs)` : '🖼️ Static Images'}
-                                          </span>
+                                          {(() => {
+                                            const sched = config.schedule || campaign.schedule || (reel.scheduledFor ? 'scheduled' : null);
+                                            if (!sched) return null;
+                                            const label = reel.scheduledFor 
+                                              ? format(new Date(reel.scheduledFor), 'MMM d @ p') 
+                                              : getScheduleLabel(sched);
+                                            return (
+                                              <span className="px-2 py-1 bg-emerald-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                                📅 {label}
+                                              </span>
+                                            );
+                                          })()}
+                                          {config.ingredientsToVideo && (
+                                            <span className="px-2 py-1 bg-pink-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                              🎬 Ingredients to Video
+                                            </span>
+                                          )}
                                         </div>
                                       );
                                     })()}
@@ -1398,17 +1423,34 @@ export default function ReelsDashboard() {
                            };
                            return (
                              <div className="flex flex-wrap gap-1.5 mb-4 mt-1 border-t border-b border-stone-100/60 py-2.5">
-                               <span className="px-2 py-0.5 bg-stone-50 border border-stone-200 text-stone-600 text-[9px] font-bold rounded-md">
-                                 🗣️ {config.voiceId || 'Aoede'} ({config.language || 'English'})
+                               <span className="px-2 py-1 bg-blue-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                 🗣️ {config.language || 'English'}
+                               </span>
+                               <span className="px-2 py-1 bg-violet-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                 🎙️ {config.voiceId || 'Aoede'}
                                </span>
                                {config.voicePrompt && (
-                                 <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold rounded-md truncate max-w-full animate-pulse-subtle" title={config.voicePrompt}>
-                                   ✨ Style: {config.voicePrompt}
+                                 <span className="px-2 py-1 bg-amber-500 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1 max-w-full truncate" title={config.voicePrompt}>
+                                   ✨ {config.voicePrompt}
                                  </span>
                                )}
-                               <span className="px-2 py-0.5 bg-violet-50 border border-violet-100 text-violet-700 text-[9px] font-bold rounded-md">
-                                 {config.ingredientsToVideo ? `🎬 Veo Omni Animation (${config.animateImageCount || 3} imgs)` : '🖼️ Static Images'}
-                               </span>
+                               {(() => {
+                                 const sched = config.schedule || (reel.scheduledFor ? 'scheduled' : null);
+                                 if (!sched) return null;
+                                 const label = reel.scheduledFor 
+                                   ? format(new Date(reel.scheduledFor), 'MMM d @ p') 
+                                   : getScheduleLabel(sched);
+                                 return (
+                                   <span className="px-2 py-1 bg-emerald-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                     📅 {label}
+                                   </span>
+                                 );
+                               })()}
+                               {config.ingredientsToVideo && (
+                                 <span className="px-2 py-1 bg-pink-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                   🎬 Ingredients to Video
+                                 </span>
+                               )}
                              </div>
                            );
                          })()}
