@@ -231,6 +231,14 @@ export class ReelWorker {
 
         await updateProgress(`Downloading ${assets.length} product assets...`);
         const downloadedAssetPaths: string[] = [];
+        
+        // Save extracted images to metadata so the UI can display them in the timeline
+        generationMetadata.extractedImages = assets.filter((a: any) => !a.url.endsWith('.mp4') && !a.url.endsWith('.webm')).map((a: any) => a.url);
+        await prisma.reel.update({
+          where: { id: reelId },
+          data: { metadata: generationMetadata }
+        });
+
         for (const asset of assets) {
           const fileName = `${reelId}_${path.basename(asset.url)}`;
           // Use strict = true to ensure only original provided images are kept and no random fallbacks are generated
@@ -327,17 +335,15 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
               // Add Veo clip to cleanup
               tempFilesToCleanup.push(...veoClipPaths);
 
-              // All images in imagePayloads were used as ingredients — remove them from static pool
-              const animatedImageIndices = new Set(imagePayloads.map((_, i) => i));
-              const remainingImagePaths = imageOnlyPaths.filter((_, i) => !animatedImageIndices.has(i));
+              // KEEP all static images in the final video composition so the viewer sees the generated clip PLUS the static images
               const videoAssetPaths = downloadedAssetPaths.filter(p => isVideoFile(p));
 
-              // Rebuild: Veo clip first, then remaining static images, then original videos
+              // Rebuild: Veo clip first, then ALL original static images, then original videos
               downloadedAssetPaths.splice(
                 0,
                 downloadedAssetPaths.length,
                 ...veoClipPaths,
-                ...remainingImagePaths,
+                ...imageOnlyPaths,
                 ...videoAssetPaths
               );
 

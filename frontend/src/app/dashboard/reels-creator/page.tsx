@@ -225,7 +225,19 @@ const GenerationTimeline = ({ statusMessage, metadata }: { statusMessage: string
           "Analysis",
           metadata?.generatedVisualPrompt ? (
              <div className="w-full text-left flex flex-col h-[50px] overflow-hidden">
-               <p className="text-[9px] text-stone-500 italic line-clamp-3 leading-snug">"{metadata.generatedVisualPrompt}"</p>
+               {metadata?.extractedImages?.length > 0 && (
+                 <div className="flex -space-x-2 mb-1.5 cursor-pointer hover:space-x-1 transition-all duration-300" title={`Found ${metadata.extractedImages.length} images`}>
+                   {metadata.extractedImages.slice(0, 3).map((imgUrl: string, idx: number) => (
+                     <img key={idx} src={imgUrl} className="w-6 h-6 rounded border border-white shadow-sm object-cover z-10" style={{ zIndex: 10 - idx }} />
+                   ))}
+                   {metadata.extractedImages.length > 3 && (
+                     <div className="w-6 h-6 rounded border border-white shadow-sm bg-stone-100 flex items-center justify-center text-[8px] font-bold text-stone-500 relative z-0">
+                       +{metadata.extractedImages.length - 3}
+                     </div>
+                   )}
+                 </div>
+               )}
+               <p className="text-[9px] text-stone-500 italic line-clamp-2 leading-snug">"{metadata.generatedVisualPrompt}"</p>
              </div>
           ) : (
             <span className="text-[10px] font-medium text-stone-600">Assets & Prompts</span>
