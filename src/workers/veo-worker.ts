@@ -112,7 +112,7 @@ class VeoGenerationWorker {
     const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
     const client = await auth.getClient();
     const token = (await client.getAccessToken()).token;
-    const projectId = await auth.getProjectId();
+    const projectId = process.env.VERTEX_AI_PROJECT_ID || await auth.getProjectId();
     
     const outputBucket = process.env.VEO_STORAGE_BUCKET || `anysocial-veo-videos-${projectId}`;
     const outputGcsUri = `gs://${outputBucket}/veo_outputs/`;
