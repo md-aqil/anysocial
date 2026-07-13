@@ -72,7 +72,7 @@ export class AutomationScraperService {
         for (const item of response.data.products) {
           const productUrl = `${domain}/products/${item.handle}`;
           const title = item.title;
-          const description = item.body_html ? cheerio.load(item.body_html).text().trim() : '';
+          const description = item.body_html ? cheerio.load(item.body_html).root().text().trim() : '';
           const imageUrl = item.images && item.images.length > 0 ? item.images[0].src : '';
           
           if (title && imageUrl) {

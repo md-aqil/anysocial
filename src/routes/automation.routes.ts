@@ -33,10 +33,10 @@ router.post('/campaigns', requireAuth, async (req, res) => {
       logger.error(`Initial scrape failed for campaign ${campaign.id}: ${err.message}`);
     });
 
-    res.status(201).json(campaign);
+    return res.status(201).json(campaign);
   } catch (error: any) {
     logger.error(`Error creating automated campaign: ${error.message}`);
-    res.status(500).json({ error: 'Failed to create campaign' });
+    return res.status(500).json({ error: 'Failed to create campaign' });
   }
 });
 
@@ -54,10 +54,10 @@ router.get('/campaigns', requireAuth, async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json(campaigns);
+    return res.json(campaigns);
   } catch (error: any) {
     logger.error(`Error fetching campaigns: ${error.message}`);
-    res.status(500).json({ error: 'Failed to fetch campaigns' });
+    return res.status(500).json({ error: 'Failed to fetch campaigns' });
   }
 });
 
@@ -73,9 +73,9 @@ router.put('/campaigns/:id/toggle', requireAuth, async (req, res) => {
       data: { isActive }
     });
 
-    res.json(campaign);
+    return res.json(campaign);
   } catch (error: any) {
-    res.status(500).json({ error: 'Failed to toggle campaign status' });
+    return res.status(500).json({ error: 'Failed to toggle campaign status' });
   }
 });
 
@@ -98,10 +98,10 @@ router.post('/campaigns/:id/generate', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'No pending products found to generate a reel for.' });
     }
 
-    res.json({ success: true, reel });
+    return res.json({ message: 'Reel generation started', reel });
   } catch (error: any) {
-    logger.error(`Error generating campaign reel: ${error.message}`);
-    res.status(500).json({ error: 'Failed to generate reel for campaign' });
+    logger.error(`Error generating reel for campaign: ${error.message}`);
+    return res.status(500).json({ error: 'Failed to generate reel for campaign' });
   }
 });
 

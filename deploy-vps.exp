@@ -1,0 +1,6 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn ssh -o StrictHostKeyChecking=no aqil@187.127.154.55 "cd /var/www/socialsched && echo aqil@noon | sudo -S git fetch origin && echo aqil@noon | sudo -S git reset --hard origin/main && echo aqil@noon | sudo -S bash deploy/deploy.sh"
+expect "assword:"
+send "aqil@noon\r"
+expect eof
