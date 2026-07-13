@@ -34,7 +34,8 @@ export class AutomationScraperService {
             update: {
               title: p.title,
               description: p.description,
-              imageUrl: p.imageUrl
+              imageUrl: p.imageUrl,
+              images: p.images ? JSON.stringify(p.images) : null
             },
             create: {
               campaignId,
@@ -42,6 +43,8 @@ export class AutomationScraperService {
               title: p.title,
               description: p.description,
               imageUrl: p.imageUrl,
+              images: p.images ? JSON.stringify(p.images) : null,
+              updatedAt: new Date(),
               status: 'PENDING'
             }
           });
@@ -58,8 +61,8 @@ export class AutomationScraperService {
     }
   }
 
-  private async scrapeProducts(baseUrl: string): Promise<Array<{url: string, title: string, description: string, imageUrl: string}>> {
-    const products: Array<{url: string, title: string, description: string, imageUrl: string}> = [];
+  private async scrapeProducts(baseUrl: string): Promise<Array<{url: string, title: string, description: string, imageUrl: string, images: string[]}>> {
+    const products: Array<{url: string, title: string, description: string, imageUrl: string, images: string[]}> = [];
     
     // Clean URL
     const urlObj = new URL(baseUrl);
@@ -74,9 +77,10 @@ export class AutomationScraperService {
           const title = item.title;
           const description = item.body_html ? cheerio.load(item.body_html).root().text().trim() : '';
           const imageUrl = item.images && item.images.length > 0 ? item.images[0].src : '';
+          const allImages = item.images ? item.images.map((img: any) => img.src) : [];
           
           if (title && imageUrl) {
-            products.push({ url: productUrl, title, description, imageUrl });
+            products.push({ url: productUrl, title, description, imageUrl, images: allImages });
           }
         }
         return products; // If Shopify succeeds, return

@@ -487,6 +487,7 @@ model AutomatedProduct {
   title       String
   description String?
   imageUrl    String?           @map("image_url")
+  images      String?           // JSON array of image URLs
   status      String            @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
   reelId      String?           @map("reel_id")
   createdAt   DateTime          @default(now())

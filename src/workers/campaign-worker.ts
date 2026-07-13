@@ -65,7 +65,8 @@ export const campaignWorker = {
         // We don't generate the script here to avoid blocking the API request.
         // Instead, we pass the prompt as the scriptText (or null) to the background queue, 
         // which handles the script generation, TTS, and image generation.
-        const aiPrompt = `Create a short viral TikTok/Reels promotional video voiceover script for this product: ${product.title}. Details: ${product.description}. Focus on high energy, hooks, and benefits. IMPORTANT: Output ONLY the spoken voiceover text. Do not include scene descriptions, JSON, brackets, or any other formatting. Just the raw dialogue.`;
+        const targetLanguage = campaign.language || 'English';
+        const aiPrompt = `Create a short viral TikTok/Reels promotional video voiceover script for this product: ${product.title}. Details: ${product.description}. Focus on high energy, hooks, and benefits. IMPORTANT: Write the script entirely in ${targetLanguage}. Output ONLY the spoken voiceover text in ${targetLanguage}. Do not include scene descriptions, JSON, brackets, or any other formatting. Just the raw dialogue.`;
         
         let scriptText = '';
         try {
@@ -92,7 +93,24 @@ export const campaignWorker = {
           }
         });
 
-        if (product.imageUrl) {
+        let addedImages = 0;
+        if (product.images) {
+          try {
+            const parsedImages = JSON.parse(product.images);
+            if (Array.isArray(parsedImages) && parsedImages.length > 0) {
+              for (const imgUrl of parsedImages) {
+                await prisma.productReelAsset.create({
+                  data: { reelId: reel.id, url: imgUrl, type: 'IMAGE' }
+                });
+                addedImages++;
+              }
+            }
+          } catch (e) {
+            logger.warn(`Failed to parse images for product ${product.id}`);
+          }
+        }
+        
+        if (addedImages === 0 && product.imageUrl) {
           await prisma.productReelAsset.create({
             data: {
               reelId: reel.id,
