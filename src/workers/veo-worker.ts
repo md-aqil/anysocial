@@ -175,7 +175,7 @@ class VeoGenerationWorker {
     const { Storage } = await import('@google-cloud/storage');
     const storage = new Storage();
     
-    const gcsUri = veoResult?.generatedSamples?.[0]?.video?.uri;
+    const gcsUri = veoResult?.videos?.[0]?.gcsUri || veoResult?.generatedSamples?.[0]?.video?.uri;
     if (!gcsUri) throw new Error("No video URI returned from Veo 3 API");
     
     // Parse gs://bucket-name/path/to/video.mp4

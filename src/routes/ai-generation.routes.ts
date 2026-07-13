@@ -310,7 +310,11 @@ router.post('/poll-video', jwtAuth, async (req: Request, res: Response) => {
 
     console.log('Veo Polling Result Payload:', JSON.stringify(result, null, 2));
 
-    const videoUri = result.response?.generatedSamples?.[0]?.video?.uri || result.response?.videoUri || result.metadata?.outputUri || result.response?.uri;
+    const videoUri = result.response?.videos?.[0]?.gcsUri || 
+                     result.response?.generatedSamples?.[0]?.video?.uri || 
+                     result.response?.videoUri || 
+                     result.metadata?.outputUri || 
+                     result.response?.uri;
     
     if (!videoUri) {
       throw new Error(`Could not find video URI in response. Check backend logs for payload.`);
