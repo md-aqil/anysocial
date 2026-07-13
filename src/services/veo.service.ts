@@ -86,7 +86,7 @@ export class VeoService {
     const bucketName = await VeoService.ensureBucket(projectId);
     const outputGcsUri = `gs://${bucketName}/veo_outputs/`;
 
-    // Primary image as the main anchor, rest as referenceImages for consistency
+    // Primary image as the main anchor (first frame), rest as referenceImages (subject/style)
     const instance: any = { prompt };
     if (images.length > 0) {
       instance.image = {
@@ -95,15 +95,18 @@ export class VeoService {
       };
     }
 
-    // Additional images passed as referenceImages (up to 2 more, total 3 max)
-    const referenceImages = images.slice(1, 3).map((img, idx) => ({
-      referenceType: 'REFERENCE_TYPE_SUBJECT',
-      referenceId: idx + 1,
-      referenceImage: {
+    // Additional images passed as referenceImages (up to 2 more, total 3 max) inside the instance
+    const referenceImages = images.slice(1, 3).map((img) => ({
+      referenceType: 'asset',
+      image: {
         bytesBase64Encoded: img.base64,
         mimeType: img.mimeType
       }
     }));
+
+    if (referenceImages.length > 0) {
+      instance.referenceImages = referenceImages;
+    }
 
     const parameters: any = {
       storageUri: outputGcsUri,
@@ -112,10 +115,6 @@ export class VeoService {
       durationSeconds: 6,
       resolution: '720p'
     };
-
-    if (referenceImages.length > 0) {
-      parameters.referenceImages = referenceImages;
-    }
 
     console.log(`[VeoService] Ingredients to Video — model: ${VEO_MODEL}, images: ${images.length}`);
     const response = await fetch(
