@@ -321,8 +321,9 @@ export default function AIAgentPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto h-[calc(100vh-80px)] flex flex-col p-4 lg:p-6">
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+    <div className="max-w-5xl mx-auto h-[calc(100vh-80px)] flex flex-col relative pb-4">
+      {/* Header */}
+      <div className="flex items-center justify-between p-6 pb-2 flex-shrink-0">
         <div>
           <h1 className="text-2xl font-black text-[#2F281F] tracking-tight flex items-center gap-2">
             <Bot className="w-8 h-8 text-[#D27D50]" /> AI Agent
@@ -335,22 +336,29 @@ export default function AIAgentPage() {
       </div>
 
       {/* Chat Messages Area */}
-      <div className="flex-1 bg-white rounded-3xl shadow-sm border border-stone-100 overflow-y-auto p-6 mb-4 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-6 scroll-smooth">
+        {messages.length === 1 && messages[0].id === 'welcome' && (
+          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
+            <Bot className="w-16 h-16 text-[#D27D50] mb-4" />
+            <h2 className="text-xl font-medium text-stone-800">How can I help you today?</h2>
+            <p className="text-sm text-stone-500 mt-2">Generate text, images, or Veo 3 videos instantly.</p>
+          </div>
+        )}
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div className={`flex gap-4 max-w-[85%] lg:max-w-[75%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
               
               {/* Avatar */}
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${msg.role === 'user' ? 'bg-stone-200 text-stone-600' : 'bg-[#D27D50] text-white'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-sm ${msg.role === 'user' ? 'bg-stone-200 text-stone-600' : 'bg-[#2F281F] text-white'}`}>
                 {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
 
               {/* Message Bubble */}
               <div className={`flex flex-col gap-2 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                <div className={`px-4 py-3 rounded-2xl text-sm ${
+                <div className={`px-5 py-3.5 text-[15px] shadow-sm leading-relaxed ${
                   msg.role === 'user' 
-                    ? 'bg-[#2F281F] text-white rounded-tr-sm' 
-                    : 'bg-stone-50 border border-stone-100 text-stone-800 rounded-tl-sm'
+                    ? 'bg-[#2F281F] text-white rounded-2xl rounded-tr-sm' 
+                    : 'bg-white border border-stone-100 text-stone-800 rounded-2xl rounded-tl-sm'
                 }`}>
                   {msg.type !== 'text' && msg.role === 'user' && (
                     <div className="text-[10px] uppercase font-bold opacity-70 mb-1 flex items-center gap-1">
@@ -389,10 +397,10 @@ export default function AIAgentPage() {
         {loading && (
           <div className="flex justify-start">
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#D27D50] text-white flex items-center justify-center flex-shrink-0 mt-1">
+              <div className="w-8 h-8 rounded-full bg-[#2F281F] text-white flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
                 <Bot className="w-4 h-4" />
               </div>
-              <div className="bg-stone-50 border border-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm flex items-center gap-2">
+              <div className="bg-white border border-stone-100 shadow-sm rounded-2xl rounded-tl-sm px-5 py-3.5 text-[15px] flex items-center gap-3">
                 <Loader2 className="w-4 h-4 text-[#D27D50] animate-spin" />
                 <span className="text-stone-500 font-medium">{loadingMessage}</span>
               </div>
@@ -403,9 +411,12 @@ export default function AIAgentPage() {
       </div>
 
       {/* Input Area */}
-      <div className="bg-white rounded-3xl shadow-sm border border-stone-100 p-2 flex-shrink-0 flex items-end gap-2">
-        {/* Mode Selector */}
-        <div className="flex flex-col gap-1 p-2 bg-stone-50 rounded-2xl">
+      <div className="px-6 flex-shrink-0 w-full max-w-4xl mx-auto">
+        <div className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-stone-100 p-2 flex flex-col gap-2 relative">
+          
+          <div className="flex items-end gap-2">
+            {/* Mode Selector */}
+            <div className="flex flex-col gap-1 p-1.5 bg-stone-50/80 rounded-2xl border border-stone-100">
           <button 
             onClick={() => setMode('text')} 
             className={`p-2 rounded-xl transition-colors ${mode === 'text' ? 'bg-white shadow-sm text-[#D27D50]' : 'text-stone-400 hover:text-stone-600'}`}
@@ -431,89 +442,91 @@ export default function AIAgentPage() {
             onClick={() => setMode('video')} 
             className={`p-2 rounded-xl transition-colors ${mode === 'video' ? 'bg-white shadow-sm text-[#D27D50]' : 'text-stone-400 hover:text-stone-600'}`}
             title="Video Mode (Veo 3)"
-          >
-            <Sparkles className="w-5 h-5" />
-          </button>
-        </div>
+                        <Sparkles className="w-4 h-4" />
+            </button>
+          </div>
 
-        <div className="flex-1 flex flex-col">
-          {/* Options Row */}
-          <div className="flex items-center gap-2 mb-2 px-2">
-            {(mode === 'text' || mode === 'voice') && (
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="text-xs bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-stone-600 focus:outline-none"
-              >
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
-                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                {mode === 'voice' && (
-                  <>
-                    <option value="gemini-3.1-flash-tts-preview">Gemini 3.1 Flash TTS (AI Studio)</option>
-                    <option value="gemini-2.5-flash-preview-tts">Gemini 2.5 Flash TTS (AI Studio)</option>
-                    <option value="google-cloud-tts">Google Cloud TTS</option>
-                  </>
-                )}
-              </select>
-            )}
-
-            {mode === 'voice' && (
-              <>
-                <select
-                  value={selectedLanguage}
-                  onChange={(e) => {
-                    setSelectedLanguage(e.target.value);
-                    setSelectedVoice(VOICES_BY_LANGUAGE[e.target.value][0]);
-                  }}
-                  className="text-xs bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-stone-600 focus:outline-none"
-                >
-                  {Object.keys(VOICES_BY_LANGUAGE).map(lang => (
-                    <option key={lang} value={lang}>{lang}</option>
-                  ))}
-                </select>
-                <select
-                  value={selectedVoice}
-                  onChange={(e) => setSelectedVoice(e.target.value)}
-                  className="text-xs bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-stone-600 focus:outline-none"
-                >
-                  {VOICES_BY_LANGUAGE[selectedLanguage].map(voice => (
-                    <option key={voice} value={voice}>{voice}</option>
-                  ))}
-                </select>
-              </>
-            )}
+          <div className="flex-1 flex flex-col min-w-0 py-1">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={`Ask the agent to generate ${mode}... (Shift+Enter for new line)`}
+              className="w-full max-h-40 min-h-[50px] resize-none bg-transparent border-0 focus:ring-0 px-3 py-2 text-stone-800 placeholder:text-stone-400 text-[15px] leading-relaxed"
+              rows={1}
+            />
           </div>
           
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={`Ask the agent to generate ${mode}... (Shift+Enter for new line)`}
-            className="w-full max-h-32 min-h-[56px] resize-none bg-transparent border-0 focus:ring-0 px-2 py-1 text-stone-800 placeholder:text-stone-400"
-            rows={1}
-          />
+          <div className="flex items-center gap-2 pr-1 pb-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={improvePrompt}
+              disabled={!input.trim() || isImproving || loading}
+              title="Improve Prompt with AI"
+              className="w-10 h-10 rounded-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 p-0 flex items-center justify-center transition-colors"
+            >
+              {isImproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            </Button>
+            <Button 
+              onClick={handleSend} 
+              disabled={!input.trim() || loading}
+              className="w-10 h-10 rounded-full bg-[#2F281F] hover:bg-black text-white p-0 flex items-center justify-center transition-transform active:scale-95 shadow-sm"
+            >
+              <Send className="w-4 h-4 ml-0.5" />
+            </Button>
+          </div>
         </div>
-        
-        <div className="p-2 flex flex-col gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={improvePrompt}
-            disabled={!input.trim() || isImproving || loading}
-            title="Improve Prompt with AI"
-            className="w-12 h-10 rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 p-0 flex items-center justify-center"
-          >
-            {isImproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          </Button>
-          <Button 
-            onClick={handleSend} 
-            disabled={!input.trim() || loading}
-            className="w-12 h-12 rounded-2xl bg-[#2F281F] hover:bg-black text-white p-0 flex items-center justify-center transition-transform active:scale-95"
-          >
-            <Send className="w-5 h-5 ml-1" />
-          </Button>
+
+        {/* Options Row Below Input */}
+        <div className="flex items-center justify-center gap-2 mt-3 px-2 text-stone-400">
+          {(mode === 'text' || mode === 'voice') && (
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="text-[11px] bg-transparent border-0 font-medium text-stone-400 hover:text-stone-600 cursor-pointer focus:outline-none focus:ring-0"
+            >
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+              <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+              <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+              {mode === 'voice' && (
+                <>
+                  <option value="gemini-3.1-flash-tts-preview">Gemini 3.1 Flash TTS (AI Studio)</option>
+                  <option value="gemini-2.5-flash-preview-tts">Gemini 2.5 Flash TTS (AI Studio)</option>
+                  <option value="google-cloud-tts">Google Cloud TTS</option>
+                </>
+              )}
+            </select>
+          )}
+
+          {mode === 'voice' && (
+            <>
+              <span className="text-stone-300">•</span>
+              <select
+                value={selectedLanguage}
+                onChange={(e) => {
+                  setSelectedLanguage(e.target.value);
+                  setSelectedVoice(VOICES_BY_LANGUAGE[e.target.value][0]);
+                }}
+                className="text-[11px] bg-transparent border-0 font-medium text-stone-400 hover:text-stone-600 cursor-pointer focus:outline-none focus:ring-0"
+              >
+                {Object.keys(VOICES_BY_LANGUAGE).map(lang => (
+                  <option key={lang} value={lang}>{lang}</option>
+                ))}
+              </select>
+              <span className="text-stone-300">•</span>
+              <select
+                value={selectedVoice}
+                onChange={(e) => setSelectedVoice(e.target.value)}
+                className="text-[11px] bg-transparent border-0 font-medium text-stone-400 hover:text-stone-600 cursor-pointer focus:outline-none focus:ring-0"
+              >
+                {VOICES_BY_LANGUAGE[selectedLanguage].map(voice => (
+                  <option key={voice} value={voice}>{voice}</option>
+                ))}
+              </select>
+            </>
+          )}
         </div>
       </div>
     </div>
