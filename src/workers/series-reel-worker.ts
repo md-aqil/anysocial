@@ -299,8 +299,7 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
               const opName = await VeoService.initiateIngredientsToVideo(veoPrompt, veoImages);
               await updateProgress(`⏳ Veo Omni rendering... (~2-3 min)`);
 
-              const VEO_OMNI_MODEL = process.env.VEO_OMNI_MODEL || 'veo-2.0-flash-exp';
-              const veoClipPath = await VeoService.pollUntilDone(opName, VEO_OMNI_MODEL);
+              const veoClipPath = await VeoService.pollUntilDone(opName);
               const veoClipPaths = [veoClipPath];
 
               // Add Veo clip to cleanup

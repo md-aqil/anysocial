@@ -3,10 +3,7 @@ import { GoogleAuth } from 'google-auth-library';
 import fs from 'fs';
 import path from 'path';
 
-// Veo Omni (flash) model — ~15 credits per video, supports referenceImages
-const VEO_OMNI_MODEL = process.env.VEO_OMNI_MODEL || 'veo-3.0-fast-generate-001';
-// Standard Veo 3 for AI Agent (full quality)
-const VEO_STANDARD_MODEL = process.env.VEO_MODEL || 'veo-3.0-fast-generate-001';
+const VEO_MODEL = process.env.VEO_MODEL || 'veo-3.0-fast-generate-001';
 
 export class VeoService {
   private static async getAuth() {
@@ -48,7 +45,7 @@ export class VeoService {
     }
 
     const response = await fetch(
-      `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${VEO_STANDARD_MODEL}:predictLongRunning`,
+      `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${VEO_MODEL}:predictLongRunning`,
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -120,9 +117,9 @@ export class VeoService {
       parameters.referenceImages = referenceImages;
     }
 
-    console.log(`[VeoService] Ingredients to Video — model: ${VEO_OMNI_MODEL}, images: ${images.length}`);
+    console.log(`[VeoService] Ingredients to Video — model: ${VEO_MODEL}, images: ${images.length}`);
     const response = await fetch(
-      `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${VEO_OMNI_MODEL}:predictLongRunning`,
+      `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${VEO_MODEL}:predictLongRunning`,
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -148,7 +145,7 @@ export class VeoService {
 
   static async pollUntilDone(
     operationName: string,
-    model: string = VEO_STANDARD_MODEL,
+    model: string = VEO_MODEL,
     maxWaitMs: number = 600_000
   ): Promise<string> {
     const { token, projectId } = await VeoService.getAuth();
