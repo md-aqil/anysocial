@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import parser from 'cron-parser';
+import { CronExpressionParser } from 'cron-parser';
 import { prisma } from '../db/prisma.js';
 import { logger } from '../logger/pino.js';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
@@ -36,7 +36,7 @@ export const campaignWorker = {
         if (!campaign.products || campaign.products.length === 0) continue;
 
         try {
-          const interval = parser.parseExpression(campaign.schedule);
+          const interval = CronExpressionParser.parse(campaign.schedule);
           const nextDate = interval.next().toDate();
 
           // If the next scheduled time is between now and lookAheadTime
