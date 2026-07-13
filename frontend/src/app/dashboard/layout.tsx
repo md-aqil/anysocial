@@ -32,10 +32,8 @@ const navigation = [
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
-  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Reel Creator', href: '/dashboard/reels-creator', icon: Star },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
-  { name: 'Feed Curation', href: '/dashboard/curation', icon: List },
   { name: 'AI Agent', href: '/dashboard/ai-agent', icon: Bot, adminOnly: true, superAdminOnly: true },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];

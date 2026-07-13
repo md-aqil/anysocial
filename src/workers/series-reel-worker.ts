@@ -261,8 +261,29 @@ export class ReelWorker {
         let scriptText = customScriptText !== undefined && customScriptText !== null ? customScriptText.trim() : '';
         let hookText = customHookText !== undefined && customHookText !== null ? customHookText.trim() : '';
 
+        // Try to parse scriptText as JSON to extract only voiceover text if it's an automated product script
+        let extractedVoiceover = scriptText;
+        if (scriptText) {
+          try {
+            // Check if it looks like JSON
+            const jsonMatch = scriptText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              if (parsed.scenes && Array.isArray(parsed.scenes)) {
+                // Extract voiceover lines and join them
+                extractedVoiceover = parsed.scenes
+                  .map((s: any) => s.voiceover)
+                  .filter((v: any) => v && typeof v === 'string')
+                  .join(' ');
+              }
+            }
+          } catch (e) {
+            console.warn("Failed to parse scriptText as JSON for voiceover extraction:", e);
+          }
+        }
+
         let activeEnableVoice = enableVoice;
-        if (!scriptText || scriptText.length === 0) {
+        if (!extractedVoiceover || extractedVoiceover.trim().length === 0) {
           activeEnableVoice = false;
         }
 
@@ -270,7 +291,7 @@ export class ReelWorker {
         let ttsDuration = 0;
         if (activeEnableVoice && scriptText && scriptText.length > 0) {
           await updateProgress('🗣️ Synthesizing premium brand voiceover...');
-          const ttsResult = await aiOrchestrator.generateVoiceover(scriptText, voiceId, language, false);
+          const ttsResult = await aiOrchestrator.generateVoiceover(extractedVoiceover, voiceId, language, false);
           ttsPath = ttsResult.audioPath;
           generationMetadata.llmDetails = `Script: Gemini 2.5 | Audio: ${ttsResult.engineUsed} | Visuals: Gemini Flash Image`;
           generationMetadata.model_voice = ttsResult.voiceUsed;
@@ -279,7 +300,7 @@ export class ReelWorker {
             ttsDuration = await VideoComposerService.getMediaDuration(ttsPath);
           } catch (e) {
             console.error("Failed to get TTS duration, estimating:", e);
-            ttsDuration = Math.ceil(scriptText.split(/\s+/).length / 2.3);
+            ttsDuration = Math.ceil(extractedVoiceover.split(/\s+/).length / 2.3);
           }
         }
 
@@ -384,12 +405,12 @@ export class ReelWorker {
             } catch(e) {}
             
             await updateProgress("💬 Burning animated subtitles into final video...");
-            subtitlePath = await VideoComposerService.generateSubtitlesFile(scriptText, actualAudioDuration, wordTimings);
+            subtitlePath = await VideoComposerService.generateSubtitlesFile(extractedVoiceover, actualAudioDuration, wordTimings);
             if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
           } else if (activeEnableVoice && scriptText && scriptText.length > 0) {
             // Fallback if voiceover wasn't generated but text exists
             await updateProgress("💬 Burning animated subtitles into final video...");
-            subtitlePath = await VideoComposerService.generateSubtitlesFile(scriptText, targetDuration);
+            subtitlePath = await VideoComposerService.generateSubtitlesFile(extractedVoiceover, targetDuration);
             if (subtitlePath) tempFilesToCleanup.push(subtitlePath);
           }
 
