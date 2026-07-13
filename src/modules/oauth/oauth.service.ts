@@ -741,6 +741,11 @@ export class OAuthService {
               params: { part: 'snippet', mine: true }
             }
           );
+          
+          if (!response.data.items || response.data.items.length === 0) {
+             throw new Error('No YouTube channel found for this Google account. Please create a YouTube channel first.');
+          }
+          
           const channel = response.data.items[0];
           return [{ id: channel?.id, name: channel?.snippet?.title }];
         }

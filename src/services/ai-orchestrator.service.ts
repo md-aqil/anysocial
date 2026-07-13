@@ -334,7 +334,6 @@ Make sure the output is a valid JSON object.`;
       const client = await auth.getClient();
       const accessToken = await client.getAccessToken();
 
-      const modelId = 'gemini-2.5-flash-image';
       let finalPromptText = prompt;
       let aspectRatio = "1:1";
       try {
