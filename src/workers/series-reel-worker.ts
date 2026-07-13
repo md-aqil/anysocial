@@ -4,6 +4,7 @@ import { prisma } from '../db/prisma.js';
 import { logger } from '../logger/pino.js';
 import { VideoComposerService } from '../services/video-composer.service.js';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
+import { VeoService } from '../services/veo.service.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -172,8 +173,10 @@ export class ReelWorker {
     voiceId?: string;
     isRecompose?: boolean;
     regenerateShots?: number[];
+    ingredientsToVideo?: boolean;
+    animateImageCount?: number;
   }>) {
-    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'Aoede', isRecompose = false, regenerateShots = [] } = job.data;
+    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'Aoede', isRecompose = false, regenerateShots = [], ingredientsToVideo = false, animateImageCount = 3 } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
     const tempFilesToCleanup: string[] = [];
     
@@ -235,6 +238,81 @@ export class ReelWorker {
           downloadedAssetPaths.push(downloadedPath);
           tempFilesToCleanup.push(downloadedPath);
         }
+
+        // ─── Ingredients to Video ────────────────────────────────────────────
+        if (ingredientsToVideo) {
+          try {
+            await updateProgress('🎬 Ingredients to Video: Analysing product images with AI...');
+
+            const isVideoFile = (p: string) => /\.(mp4|webm|mov)$/i.test(p);
+            const imageOnlyPaths = downloadedAssetPaths.filter(p => !isVideoFile(p));
+            const maxImages = Math.min(animateImageCount, 3, imageOnlyPaths.length);
+
+            if (maxImages > 0) {
+              // Convert images to base64 for Gemini Vision
+              const imagePayloads = imageOnlyPaths.slice(0, maxImages).map(p => ({
+                path: p,
+                base64: fs.readFileSync(p).toString('base64'),
+                mimeType: 'image/jpeg'
+              }));
+
+              // Gemini Flash (Omni) multimodal analysis — pick best images + write motion prompts
+              const mediaParts = imagePayloads.map(img => ({ data: img.base64, mimeType: img.mimeType }));
+              const analysisPrompt = `You are a creative director producing a short product video ad.
+You will receive ${imagePayloads.length} product image(s). For each image, write a short cinematic motion description (max 15 words) for Veo 3 image-to-video.
+Focus on: slow zooms, subtle motion, bokeh, premium lighting.
+Respond ONLY with valid JSON array:
+[{ "index": 0, "motionPrompt": "Slow cinematic zoom into product, golden hour light, bokeh background" }, ...]`;
+
+              let analysisResult: Array<{ index: number; motionPrompt: string }> = [];
+              try {
+                const raw = await aiOrchestrator.generateContent(analysisPrompt, mediaParts, false);
+                const jsonMatch = raw.match(/\[[\s\S]*\]/);
+                if (jsonMatch) analysisResult = JSON.parse(jsonMatch[0]);
+              } catch (analysisErr: any) {
+                console.warn('[IngredientsToVideo] Gemini analysis failed, using default prompts:', analysisErr.message);
+                analysisResult = imagePayloads.map((_, i) => ({
+                  index: i,
+                  motionPrompt: 'Slow cinematic zoom into product with soft bokeh background'
+                }));
+              }
+
+              // Prepare Veo inputs
+              const veoInputs = analysisResult.slice(0, maxImages).map(r => ({
+                base64: imagePayloads[r.index]?.base64 || imagePayloads[0].base64,
+                mimeType: 'image/jpeg',
+                motionPrompt: r.motionPrompt
+              }));
+
+              await updateProgress(`🎥 Generating ${veoInputs.length} animated product clips with Veo 3...`);
+              const veoClipPaths = await VeoService.generateFromImages(veoInputs, updateProgress);
+
+              // Add Veo clips to cleanup
+              tempFilesToCleanup.push(...veoClipPaths);
+
+              // Get indices of images that were animated (to replace them)
+              const animatedImageIndices = new Set(analysisResult.slice(0, maxImages).map(r => r.index));
+              const remainingImagePaths = imageOnlyPaths.filter((_, i) => !animatedImageIndices.has(i));
+              const videoAssetPaths = downloadedAssetPaths.filter(p => isVideoFile(p));
+
+              // Rebuild: Veo clips first, then remaining static images, then original videos
+              downloadedAssetPaths.splice(
+                0,
+                downloadedAssetPaths.length,
+                ...veoClipPaths,
+                ...remainingImagePaths,
+                ...videoAssetPaths
+              );
+
+              await updateProgress(`✅ Ingredients to Video complete — ${veoClipPaths.length} animated clips added to reel.`);
+            }
+          } catch (veoErr: any) {
+            logger.warn({ event: 'ingredients_to_video_failed', reelId, error: veoErr.message });
+            console.warn('[IngredientsToVideo] Failed, falling back to static images:', veoErr.message);
+            await updateProgress('⚠️ Animation failed, continuing with static images...');
+          }
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         const secondsPerAsset = 4.0;
         const clipDurations: number[] = [];

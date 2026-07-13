@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sparkles, ArrowLeft, Link2, Calendar, Share2, CheckCircle2, Mic, Languages } from 'lucide-react';
+import { Sparkles, ArrowLeft, Link2, Calendar, Share2, CheckCircle2, Mic, Languages, Video, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -69,6 +69,8 @@ export default function AIProductReelPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [ingredientsToVideo, setIngredientsToVideo] = useState(false);
+  const [animateImageCount, setAnimateImageCount] = useState(3);
 
   const router = useRouter();
 
@@ -101,7 +103,9 @@ export default function AIProductReelPage() {
           schedule,
           socialChannels,
           language,
-          voiceId
+          voiceId,
+          ingredientsToVideo,
+          animateImageCount,
         })
       });
 
@@ -253,6 +257,48 @@ export default function AIProductReelPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Ingredients to Video */}
+            <div className={`bg-white p-6 rounded-2xl border shadow-sm space-y-4 transition-all ${ingredientsToVideo ? 'border-violet-400 ring-1 ring-violet-300' : 'border-stone-100'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-violet-600">
+                  <Video className="h-5 w-5 shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider">Ingredients to Video</h3>
+                    <p className="text-xs text-stone-400 font-medium mt-0.5">AI animates your product images into cinematic Veo 3 clips</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIngredientsToVideo(v => !v)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${ingredientsToVideo ? 'bg-violet-600' : 'bg-stone-200'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${ingredientsToVideo ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+              {ingredientsToVideo && (
+                <div className="pt-3 border-t border-stone-100 space-y-3">
+                  <label className="text-xs font-bold text-stone-500 uppercase block">Clips to Generate (1–3)</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3].map(n => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setAnimateImageCount(n)}
+                        className={`flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all ${
+                          animateImageCount === n
+                            ? 'border-violet-500 bg-violet-50 text-violet-700 ring-1 ring-violet-400'
+                            : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
+                        }`}
+                      >
+                        {n} {n === 1 ? 'clip' : 'clips'}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-stone-400">Each clip is ~6s. {animateImageCount} clip{animateImageCount > 1 ? 's' : ''} = ~{animateImageCount * 6}s animated hero segment in your reel.</p>
+                </div>
+              )}
             </div>
 
             {/* Social Channels */}

@@ -471,6 +471,8 @@ model AutomatedCampaign {
   isActive       Boolean            @default(true) @map("is_active")
   language       String?            @default("English")
   voiceId        String?            @default("Aoede") @map("voice_id")
+  ingredientsToVideo Boolean        @default(false) @map("ingredients_to_video")
+  animateImageCount  Int            @default(3) @map("animate_image_count")
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   products       AutomatedProduct[]

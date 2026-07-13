@@ -3,6 +3,7 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
+import { VeoService } from '../services/veo.service.js';
 import { jwtAuth } from '../middleware/jwt-auth.js';
 import { prisma } from '../db/prisma.js';
 
@@ -201,67 +202,8 @@ router.post('/generate-video', jwtAuth, async (req: Request, res: Response) => {
       res.status(400).json({ error: 'Prompt is required' });
       return;
     }
-
-    const { GoogleAuth } = await import('google-auth-library');
-    const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
-    const client = await auth.getClient();
-    const token = (await client.getAccessToken()).token;
-    const projectId = process.env.VERTEX_AI_PROJECT_ID || await auth.getProjectId();
-
-    const outputBucket = process.env.VEO_STORAGE_BUCKET || `anysocial-veo-videos-${projectId}`;
-    const outputGcsUri = `gs://${outputBucket}/veo_outputs/`;
-    const MODEL = 'veo-3.0-generate-001';
-
-    // Ensure bucket exists
-    const { Storage } = await import('@google-cloud/storage');
-    const storage = new Storage();
-    const bucket = storage.bucket(outputBucket);
-    const [exists] = await bucket.exists();
-    if (!exists) {
-      await bucket.create({ location: 'us-central1' });
-    }
-
-    const veoInstance: any = { prompt };
-    if (imageBase64 && imageMimeType) {
-      veoInstance.image = {
-        bytesBase64Encoded: imageBase64,
-        mimeType: imageMimeType
-      };
-    }
-
-    // 1. Start long-running generation
-    const response = await fetch(
-      `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${MODEL}:predictLongRunning`,
-      {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            instances: [veoInstance],
-            parameters: {
-                storageUri: outputGcsUri,
-                aspectRatio: "16:9",
-                sampleCount: 1,
-                durationSeconds: 8,
-                resolution: "720p"
-            }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Veo API Error: ${errText}`);
-    }
-
-    const data = await response.json() as any;
-    const operationName = data.name;
-
-    // Return operation name immediately to avoid 504 Gateway Timeout
+    const operationName = await VeoService.initiateGeneration(prompt, imageBase64, imageMimeType);
     res.json({ operationName });
-
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -269,7 +211,7 @@ router.post('/generate-video', jwtAuth, async (req: Request, res: Response) => {
 
 /**
  * POST /api/ai/poll-video
- * Polls the Veo 3 operation
+ * Polls the Veo 3 operation — single poll (frontend loops)
  */
 router.post('/poll-video', jwtAuth, async (req: Request, res: Response) => {
   try {
@@ -283,26 +225,19 @@ router.post('/poll-video', jwtAuth, async (req: Request, res: Response) => {
     const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
     const client = await auth.getClient();
     const token = (await client.getAccessToken()).token;
-    
-    let pollUrl = `https://us-central1-aiplatform.googleapis.com/v1/${operationName}`;
-    const match = operationName.match(/^projects\/([^\/]+)\/locations\/([^\/]+)\/.*operations\/([^\/]+)$/);
-    if (match) {
-      const [, projId, location] = match;
-      pollUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projId}/locations/${location}/publishers/google/models/veo-3.0-generate-001:fetchPredictOperation`;
-    }
+    const projectId = process.env.VERTEX_AI_PROJECT_ID || await auth.getProjectId();
+
+    const match = operationName.match(/^projects\/([^\/]+)\/locations\/([^\/]+)\//); 
+    const location = match?.[2] || 'us-central1';
+    const pollUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/veo-3.0-generate-001:fetchPredictOperation`;
 
     const pollRes = await fetch(pollUrl, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ operationName })
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operationName })
     });
 
-    if (!pollRes.ok) {
-      throw new Error(`Veo Polling Error: ${await pollRes.text()}`);
-    }
+    if (!pollRes.ok) throw new Error(`Polling API error: ${await pollRes.text()}`);
 
     const result = await pollRes.json() as any;
     if (!result.done) {
@@ -310,40 +245,24 @@ router.post('/poll-video', jwtAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    if (result.error) {
-      throw new Error(result.error.message || 'Generation failed');
-    }
+    if (result.error) throw new Error(result.error.message || 'Generation failed');
 
-    console.log('Veo Polling Result Payload:', JSON.stringify(result, null, 2));
+    const videoUri: string =
+      result.response?.videos?.[0]?.gcsUri ||
+      result.response?.generatedSamples?.[0]?.video?.uri;
 
-    const videoUri = result.response?.videos?.[0]?.gcsUri || 
-                     result.response?.generatedSamples?.[0]?.video?.uri || 
-                     result.response?.videoUri || 
-                     result.metadata?.outputUri || 
-                     result.response?.uri;
-    
-    if (!videoUri) {
-      throw new Error(`Could not find video URI in response. Check backend logs for payload.`);
-    }
+    if (!videoUri) throw new Error('No video URI in Veo response');
 
-    // Download the video from GCS to local public folder
-    const path = await import('path');
     const { Storage } = await import('@google-cloud/storage');
     const storage = new Storage();
-    
     const gcsPathParts = videoUri.replace('gs://', '').split('/');
-    const targetBucket = gcsPathParts.shift();
-    const gcsFilePath = gcsPathParts.join('/');
-    
-    const gcsVideoFile = storage.bucket(targetBucket!).file(gcsFilePath);
-    const rawVideoFilename = `veo_ai_agent_${Date.now()}.mp4`;
-    const localRawVideo = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', rawVideoFilename);
-    
-    await gcsVideoFile.download({ destination: localRawVideo });
-    const publicUrl = `/uploads/reels/${rawVideoFilename}`;
+    const bucket = gcsPathParts.shift()!;
+    const filePath = gcsPathParts.join('/');
+    const filename = `veo_ai_agent_${Date.now()}.mp4`;
+    const localPath = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', filename);
+    await storage.bucket(bucket).file(filePath).download({ destination: localPath });
 
-    res.json({ status: 'done', url: publicUrl });
-
+    res.json({ status: 'done', url: `/uploads/reels/${filename}` });
   } catch (error: any) {
     console.error('Poll video error:', error);
     res.status(500).json({ error: error.message });

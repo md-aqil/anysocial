@@ -153,6 +153,8 @@ export const campaignWorker = {
           scriptText: scriptText,
           language: campaign.language,
           voiceId: campaign.voiceId,
+          ingredientsToVideo: campaign.ingredientsToVideo || false,
+          animateImageCount: campaign.animateImageCount || 3,
         });
 
         logger.info(`Successfully queued Reel ${reel.id} for product ${product.id}`);
