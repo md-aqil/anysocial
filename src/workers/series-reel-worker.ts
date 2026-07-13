@@ -269,16 +269,36 @@ export class ReelWorker {
             const jsonMatch = scriptText.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
               const parsed = JSON.parse(jsonMatch[0]);
+              let extracted = '';
+              
               if (parsed.scenes && Array.isArray(parsed.scenes)) {
-                // Extract voiceover lines and join them
-                extractedVoiceover = parsed.scenes
-                  .map((s: any) => s.voiceover)
+                // Extract voiceover lines from scenes and join them
+                extracted = parsed.scenes
+                  .map((s: any) => s.voiceover || s.voice_over || s.narration || s.dialogue || s.speech || s.text)
                   .filter((v: any) => v && typeof v === 'string')
                   .join(' ');
+              } else {
+                // Try top level keys
+                const topLevelKeys = ['voiceover', 'voice_over', 'narration', 'script', 'text', 'dialogue'];
+                for (const key of topLevelKeys) {
+                  if (parsed[key] && typeof parsed[key] === 'string') {
+                    extracted = parsed[key];
+                    break;
+                  }
+                }
+              }
+              
+              if (extracted.trim().length > 0) {
+                extractedVoiceover = extracted;
+              } else {
+                // Fallback: remove JSON syntax and use as text
+                extractedVoiceover = scriptText.replace(/[{}[\]"]/g, '').trim();
               }
             }
           } catch (e) {
             console.warn("Failed to parse scriptText as JSON for voiceover extraction:", e);
+            // Fallback to raw script text
+            extractedVoiceover = scriptText.replace(/[{}[\]"]/g, '').trim();
           }
         }
 
