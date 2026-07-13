@@ -10,19 +10,23 @@ import fs from 'fs';
 
 // Helper to poll Veo 3 operation
 async function pollVeoOperation(operationName: string, token: string): Promise<any> {
-  // Extract project, location, and UUID to route to the new OpenAPI endpoint which supports UUIDs
-  let url = `https://us-central1-aiplatform.googleapis.com/v1beta1/${operationName}`;
+  // Extract project and location to build fetchPredictOperation endpoint
+  let url = `https://us-central1-aiplatform.googleapis.com/v1/${operationName}`;
   const match = operationName.match(/^projects\/([^\/]+)\/locations\/([^\/]+)\/.*operations\/([^\/]+)$/);
   if (match) {
-    const [, projectId, location, uuid] = match;
-    url = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/endpoints/openapi/operations/${uuid}`;
+    const [, projectId, location] = match;
+    const modelId = 'veo-3.0-generate-001';
+    url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:fetchPredictOperation`;
   }
 
   while (true) {
     const res = await fetch(url, {
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ operationName })
     });
     if (!res.ok) {
       const errText = await res.text();
@@ -114,7 +118,7 @@ class VeoGenerationWorker {
     const outputGcsUri = `gs://${outputBucket}/veo_outputs/`;
 
     const veoModelId = process.env.VEO_MODEL_ID || 'veo-3.0-generate-001';
-    const veoUrl = `https://us-central1-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/us-central1/publishers/google/models/${veoModelId}:predictLongRunning`;
+    const veoUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${veoModelId}:predictLongRunning`;
     
     const veoInstance: any = { prompt: visual_prompt };
     if (generatedImageBase64) {
@@ -128,8 +132,10 @@ class VeoGenerationWorker {
       instances: [veoInstance],
       parameters: {
         storageUri: outputGcsUri,
+        aspectRatio: "16:9",
         sampleCount: 1,
-        resolution: "1080p"
+        durationSeconds: 8,
+        resolution: "720p"
       }
     };
 
@@ -159,11 +165,16 @@ class VeoGenerationWorker {
     
     const { Storage } = await import('@google-cloud/storage');
     const storage = new Storage();
-    const [files] = await storage.bucket(outputBucket).getFiles({ prefix: 'veo_outputs/' });
-    files.sort((a: any, b: any) => (b.metadata.timeCreated ? new Date(b.metadata.timeCreated).getTime() : 0) - (a.metadata.timeCreated ? new Date(a.metadata.timeCreated).getTime() : 0));
     
-    let gcsVideoFile = files.find((f: any) => f.name.endsWith('.mp4'));
-    if (!gcsVideoFile) throw new Error("No video file found in Veo output bucket");
+    const gcsUri = veoResult?.generatedSamples?.[0]?.video?.uri;
+    if (!gcsUri) throw new Error("No video URI returned from Veo 3 API");
+    
+    // Parse gs://bucket-name/path/to/video.mp4
+    const gcsPathParts = gcsUri.replace('gs://', '').split('/');
+    const targetBucket = gcsPathParts.shift();
+    const gcsFilePath = gcsPathParts.join('/');
+    
+    const gcsVideoFile = storage.bucket(targetBucket).file(gcsFilePath);
 
     const rawVideoFilename = `veo_raw_${Date.now()}.mp4`;
     const localRawVideo = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', rawVideoFilename);
