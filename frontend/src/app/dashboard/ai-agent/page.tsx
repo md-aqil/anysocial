@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Image as ImageIcon, Loader2, Mic, MessageSquare, Send, Bot, User, Volume2 } from 'lucide-react';
 
-type MessageType = 'text' | 'image' | 'voice';
+type MessageType = 'text' | 'image' | 'voice' | 'video';
 
 interface Message {
   id: string;
@@ -209,6 +209,27 @@ export default function AIAgentPage() {
           timestamp: Date.now()
         }]);
       }
+      else if (mode === 'video') {
+        const response = await fetch('/api/ai/generate-video', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ prompt: currentInput })
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed');
+        const data = await response.json();
+        
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'ai',
+          type: 'video',
+          content: 'Here is your generated Veo 3 video:',
+          url: data.url,
+          timestamp: Date.now()
+        }]);
+      }
     } catch (err: any) {
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
@@ -300,7 +321,7 @@ export default function AIAgentPage() {
                 }`}>
                   {msg.type !== 'text' && msg.role === 'user' && (
                     <div className="text-[10px] uppercase font-bold opacity-70 mb-1 flex items-center gap-1">
-                      {msg.type === 'image' ? <ImageIcon className="w-3 h-3"/> : msg.type === 'voice' ? <Mic className="w-3 h-3"/> : <MessageSquare className="w-3 h-3" />}
+                      {msg.type === 'image' ? <ImageIcon className="w-3 h-3"/> : msg.type === 'voice' ? <Mic className="w-3 h-3"/> : msg.type === 'video' ? <Sparkles className="w-3 h-3"/> : <MessageSquare className="w-3 h-3" />}
                       Generate {msg.type}
                     </div>
                   )}
@@ -320,6 +341,12 @@ export default function AIAgentPage() {
                       <Volume2 className="w-3 h-3"/> {msg.metadata}
                     </div>
                     <audio src={msg.url} controls className="w-full h-10" />
+                  </div>
+                )}
+
+                {msg.type === 'video' && msg.url && (
+                  <div className="mt-1 rounded-2xl overflow-hidden border border-stone-100 shadow-sm max-w-sm">
+                    <video src={msg.url} controls className="w-full h-auto" />
                   </div>
                 )}
               </div>
@@ -366,6 +393,13 @@ export default function AIAgentPage() {
             title="Voice Mode"
           >
             <Mic className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => setMode('video')} 
+            className={`p-2 rounded-xl transition-colors ${mode === 'video' ? 'bg-white shadow-sm text-[#D27D50]' : 'text-stone-400 hover:text-stone-600'}`}
+            title="Video Mode (Veo 3)"
+          >
+            <Sparkles className="w-5 h-5" />
           </button>
         </div>
 
