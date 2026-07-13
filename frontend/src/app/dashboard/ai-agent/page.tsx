@@ -73,8 +73,9 @@ export default function AIAgentPage() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Load history on mount
   useEffect(() => {
-    if (user) {
+    if (user && user.role === 'super_admin') {
       const saved = localStorage.getItem('ai-agent-chat-history');
       if (saved) {
         try {
@@ -107,7 +108,13 @@ export default function AIAgentPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-
+  if (!user || user.role !== 'super_admin') {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-stone-500 font-medium">Access Denied: Superadmin only.</p>
+      </div>
+    );
+  }
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;

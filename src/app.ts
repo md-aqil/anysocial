@@ -18,6 +18,7 @@ import { refreshScheduler } from './modules/tokens/refresh.scheduler.js';
 import { postWorker } from './workers/post-worker.js';
 import { seriesReelWorker } from './workers/series-reel-worker.js';
 import { veoWorker } from './workers/veo-worker.js';
+import { campaignWorker } from './workers/campaign-worker.js';
 import { env } from './config/env.js';
 
 // Initialize Redis client for session store
@@ -119,6 +120,7 @@ app.listen(PORT, () => {
   postWorker.start().catch(console.error);
   seriesReelWorker.start().catch(console.error);
   veoWorker.start().catch(console.error);
+  campaignWorker.start();
 });
 
 // Graceful shutdown

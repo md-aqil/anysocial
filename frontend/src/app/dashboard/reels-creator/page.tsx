@@ -319,6 +319,69 @@ export default function ReelsDashboard() {
     refetchInterval: 60000 // refresh every minute
   });
 
+  const { data: automatedCampaigns, isLoading: loadingCampaigns } = useQuery({
+    queryKey: ['automated-campaigns'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/automation/campaigns`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch campaigns');
+      return res.json();
+    },
+    refetchInterval: 10000
+  });
+
+  const toggleCampaignMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string, isActive: boolean }) => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/automation/campaigns/${id}/toggle`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive })
+      });
+      if (!res.ok) throw new Error('Failed to toggle campaign');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['automated-campaigns'] })
+  });
+
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!confirm('Are you sure you want to delete this campaign?')) throw new Error('Cancelled');
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/automation/campaigns/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to delete campaign');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['automated-campaigns'] })
+  });
+
+  const generateCampaignMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/automation/campaigns/${id}/generate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to generate reel');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['automated-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['product-reels'] });
+    },
+    onError: (error: any) => {
+      alert(error.message);
+    }
+  });
+
   return (
     <div className="max-w-6xl mx-auto p-6 lg:p-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -777,39 +840,226 @@ export default function ReelsDashboard() {
         </>
       ) : (
         <>
+          {/* Automated Campaigns Section */}
+          {automatedCampaigns && automatedCampaigns.length > 0 && (
+            <div className="mb-8 space-y-6">
+              <h2 className="text-xl font-bold text-stone-900">Active Campaigns</h2>
+              <div className="grid gap-6">
+                {automatedCampaigns.map((campaign: any) => (
+                  <div key={campaign.id} className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-bold text-stone-900 break-all">{campaign.websiteUrl}</h3>
+                          {campaign.isActive ? (
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Active</span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-stone-100 text-stone-600 text-[10px] font-bold rounded-full uppercase">Paused</span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-stone-500">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4 text-blue-500" />
+                            Schedule: {campaign.schedule}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Sparkles className="h-4 w-4 text-violet-500" />
+                            Products Found: <span className="font-bold text-stone-700">{campaign._count?.products || 0}</span>
+                          </span>
+                          
+                          {/* Connected Channels */}
+                          {(() => {
+                            try {
+                              const channels = JSON.parse(campaign.socialChannels);
+                              if (!channels || channels.length === 0) return null;
+                              return (
+                                <div className="flex items-center gap-1.5 ml-4 border-l border-stone-200 pl-4">
+                                  <span className="text-xs text-stone-400 font-semibold uppercase tracking-wider">Channels:</span>
+                                  <div className="flex items-center -space-x-1">
+                                    {channels.map((chId: string) => {
+                                      const acc = accountsData?.accounts?.find((a: any) => a.id === chId);
+                                      if (!acc) return null;
+                                      const config = platformStyles[acc.platform.toUpperCase()];
+                                      if (!config) return null;
+                                      const Logo = config.icon;
+                                      return (
+                                        <div
+                                          key={chId}
+                                          className="w-6 h-6 rounded-full border border-white bg-stone-50 flex items-center justify-center shadow-sm hover:scale-110 transition-transform duration-200"
+                                          title={acc.metadata?.accountName || config.name}
+                                          style={{ backgroundColor: config.bg }}
+                                        >
+                                          <Logo className="w-3 h-3" style={{ color: config.color }} />
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            } catch {
+                              return null;
+                            }
+                          })()}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2 text-violet-700 border-violet-200 hover:bg-violet-50 hover:border-violet-300"
+                          onClick={() => generateCampaignMutation.mutate(campaign.id)}
+                          disabled={generateCampaignMutation.isPending}
+                        >
+                          {generateCampaignMutation.isPending && generateCampaignMutation.variables === campaign.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Wand2 className="h-4 w-4" />
+                          )}
+                          Generate Now
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-colors">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 p-2 rounded-2xl border border-stone-100 shadow-xl bg-white/95 backdrop-blur-xl">
+                            <DropdownMenuItem
+                              className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-amber-700 hover:bg-amber-50 focus:bg-amber-50 transition-colors"
+                              onClick={() => toggleCampaignMutation.mutate({ id: campaign.id, isActive: !campaign.isActive })}
+                              disabled={toggleCampaignMutation.isPending}
+                            >
+                              <PauseCircle className="h-4 w-4" /> {campaign.isActive ? 'Pause Campaign' : 'Resume Campaign'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="my-1" />
+                            <DropdownMenuItem
+                              className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-red-600 hover:bg-red-50 focus:bg-red-50 transition-colors"
+                              onClick={() => deleteCampaignMutation.mutate(campaign.id)}
+                              disabled={deleteCampaignMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" /> Delete Campaign
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    <div className="mt-8 space-y-4">
+                      <h4 className="text-sm font-semibold text-stone-900 uppercase tracking-wider">Generated Reels</h4>
+                      {(() => {
+                        const campaignReels = productReels?.filter((r: any) => r.metadata?.campaignId === campaign.id) || [];
+                        if (campaignReels.length === 0) {
+                          return (
+                            <div className="bg-stone-50 rounded-xl p-4 text-center text-sm text-stone-500">
+                              No reels generated yet for this campaign.
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {campaignReels.map((reel: any) => {
+                              const badge = getReelStatus(reel);
+                              const hasThumbnail = !!reel.thumbnail;
+                              const thumbnailPath = hasThumbnail
+                                ? reel.thumbnail
+                                : '/assets/styles/cinematic.jpg';
+
+                              return (
+                                <div key={reel.id} className="border border-stone-100 rounded-xl bg-white overflow-hidden flex flex-col shadow-sm group relative">
+                                  <div className="w-full h-32 relative bg-stone-100 border-b border-stone-100 overflow-hidden">
+                                    <img
+                                      src={thumbnailPath}
+                                      alt="Reel preview"
+                                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                                    <div className="absolute top-2 right-2 z-10">
+                                      <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full flex items-center gap-1.5 shadow-sm border backdrop-blur-md ${badge.classes}`}>
+                                        {badge.icon}
+                                        {badge.label}
+                                      </span>
+                                    </div>
+                                    {reel.videoUrl && (
+                                      <a
+                                        href={reel.videoUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-xs"
+                                      >
+                                        <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg text-violet-600 hover:scale-110 transition-transform">
+                                          <Play className="h-5 w-5 fill-violet-600 ml-1" />
+                                        </div>
+                                      </a>
+                                    )}
+                                  </div>
+
+                                  <div className="p-4 flex-1 flex flex-col">
+                                    <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">
+                                      {reel.createdAt ? format(new Date(reel.createdAt), 'MMM d, yyyy') : 'Recently'}
+                                    </p>
+                                    <p className="text-sm text-stone-700 font-medium line-clamp-2 mb-4 italic leading-relaxed">
+                                      "{reel.script || 'No script text generated'}"
+                                    </p>
+                                    
+                                    {/* Detailed Live Log for Generation */}
+                                    {reel.status === 'GENERATING' && reel.statusMessage && (
+                                      <div className="mt-auto mb-4 bg-stone-900 border border-stone-800 rounded-lg p-3 shadow-inner">
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                          <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
+                                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Live Engine Log</span>
+                                        </div>
+                                        <div className="text-xs font-mono text-emerald-400 break-words leading-relaxed line-clamp-2">
+                                          <span className="text-stone-500 mr-2">$</span>
+                                          {reel.statusMessage}
+                                          <span className="animate-pulse inline-block w-1.5 h-3.5 bg-emerald-400 ml-1 align-middle"></span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {reel.videoUrl && reel.status === 'READY' && (
+                                      <div className="mt-auto pt-4 border-t border-stone-100">
+                                        <Link
+                                          href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(campaign.socialChannels || '[]')}`}
+                                          className="flex items-center justify-center gap-1.5 w-full py-2 bg-violet-600 border border-transparent rounded-lg text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
+                                        >
+                                          <Send className="h-3.5 w-3.5" />
+                                          Post Now
+                                        </Link>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Standalone Generated Product Reels */}
+          {(() => {
+            const standaloneReels = productReels?.filter((r: any) => !r.metadata?.campaignId) || [];
+            if (standaloneReels.length === 0 && (!automatedCampaigns || automatedCampaigns.length === 0)) return null;
+            if (standaloneReels.length === 0) return null;
+
+            return (
+              <>
+                <h2 className="text-xl font-bold text-stone-900 mb-6 mt-8">Standalone Product Reels</h2>
           {loadingProduct ? (
             <div className="flex h-64 items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600" />
             </div>
-          ) : !productReels || productReels.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-stone-200 p-12 text-center shadow-sm">
-              <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Sparkles className="h-10 w-10" />
-              </div>
-              <h2 className="text-xl font-bold text-stone-900 mb-2">No Product Reels Yet</h2>
-              <p className="text-stone-500 mb-8 max-w-md mx-auto">
-                Generate high-converting cinematic reels directly from your product images and video clips in one click.
-              </p>
-              <Button
-                onClick={() => router.push('/dashboard/reels-creator/ai-product-reel')}
-                className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
-              >
-                Create Your First Product Reel
-              </Button>
-            </div>
           ) : (
             <section className="pt-2">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
-                    <Sparkles className="h-6 w-6 text-violet-500 animate-pulse" />
-                    Your AI Product Reels
-                  </h2>
-                  <p className="text-stone-500 text-sm mt-1">High-converting social clips generated from your products</p>
-                </div>
-              </div>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {productReels.map((reel: any) => {
+                {standaloneReels.map((reel: any) => {
                   const badge = getReelStatus(reel);
                   const hasThumbnail = !!reel.thumbnail;
                   const thumbnailPath = hasThumbnail
@@ -936,6 +1186,9 @@ export default function ReelsDashboard() {
               </div>
             </section>
           )}
+              </>
+            );
+          })()}
         </>
       )}
 

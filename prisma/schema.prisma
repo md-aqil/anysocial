@@ -66,25 +66,26 @@ enum WebhookEvent {
 }
 
 model User {
-  id               String                @id @default(uuid())
-  email            String                @unique
-  passwordHash     String                @map("password_hash")
-  name             String?
-  avatarUrl        String?               @map("avatar_url")
-  role             String                @default("user") @map("role")
-  socialAccounts   SocialAccount[]
-  adCreatives      AdCreative[]
-  oauthStates      OAuthState[]
-  posts            Post[]
-  webhooks         WebhookSubscription[]
-  notifications    Notification[]
-  notificationLogs NotificationLog[]
-  reelSeries       ReelSeries[]
-  reels            Reel[]
-  curatedPosts     CuratedPost[]
-  playgroundImages PlaygroundImage[]
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  id                String                @id @default(uuid())
+  email             String                @unique
+  passwordHash      String                @map("password_hash")
+  name              String?
+  avatarUrl         String?               @map("avatar_url")
+  role              String                @default("user") @map("role")
+  socialAccounts    SocialAccount[]
+  adCreatives       AdCreative[]
+  oauthStates       OAuthState[]
+  posts             Post[]
+  webhooks          WebhookSubscription[]
+  notifications     Notification[]
+  notificationLogs  NotificationLog[]
+  reelSeries        ReelSeries[]
+  reels             Reel[]
+  curatedPosts      CuratedPost[]
+  playgroundImages  PlaygroundImage[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  AutomatedCampaign AutomatedCampaign[]
 
   @@index([email])
   @@index([role])
@@ -282,32 +283,32 @@ model AnalyticsRollup {
 }
 
 model ReelSeries {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String
-  niche        String?
-  customPrompt String?
-  language     String
-  voiceId      String
+  id             String            @id @default(uuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  niche          String?
+  customPrompt   String?
+  language       String
+  voiceId        String
   musicId        String?
   artStyle       String
-  duration       String   @default("30s")
-  hookType       String?  @map("hook_type")
+  duration       String            @default("30s")
+  hookType       String?           @map("hook_type")
   tone           String?
-  storyStructure String?  @map("story_structure")
-  isActive       Boolean  @default(true) @map("is_active")
-  scheduleDays   String   @default("[]") @map("schedule_days") // JSON array like ["MON", "WED", "FRI"]
-  scheduleTime   String?  @map("schedule_time") // HH:mm format
-  timezoneOffset Int?     @map("timezone_offset")
-  socialChannels String   @default("[]") @map("social_channels") // JSON array of account IDs
-  targetRegion   String   @default("Global") @map("target_region")
-  createdAt      DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  reels        Reel[]
-  characters   SeriesCharacter[]
-  locations    SeriesLocation[]
-  objects      SeriesObject[]
+  storyStructure String?           @map("story_structure")
+  isActive       Boolean           @default(true) @map("is_active")
+  scheduleDays   String            @default("[]") @map("schedule_days") // JSON array like ["MON", "WED", "FRI"]
+  scheduleTime   String?           @map("schedule_time") // HH:mm format
+  timezoneOffset Int?              @map("timezone_offset")
+  socialChannels String            @default("[]") @map("social_channels") // JSON array of account IDs
+  targetRegion   String            @default("Global") @map("target_region")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  reels          Reel[]
+  characters     SeriesCharacter[]
+  locations      SeriesLocation[]
+  objects        SeriesObject[]
 
   @@map("reel_series")
 }
@@ -319,25 +320,25 @@ enum ReelType {
 }
 
 model Reel {
-  id             String      @id @default(uuid())
+  id             String             @id @default(uuid())
   userId         String?
-  user           User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type           ReelType    @default(SERIES)
+  user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           ReelType           @default(SERIES)
   seriesId       String?
-  series         ReelSeries? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  series         ReelSeries?        @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   script         String?
   videoUrl       String?
   thumbnail      String?
-  status         String      @default("PENDING") // PENDING, GENERATING, READY, PUBLISHED, FAILED
+  status         String             @default("PENDING") // PENDING, GENERATING, READY, PUBLISHED, FAILED
   statusMessage  String?
   scheduledFor   DateTime?
-  socialChannels String      @default("[]") // JSON array of selected channel IDs (Platform enums or SocialAccount IDs)
+  socialChannels String             @default("[]") // JSON array of selected channel IDs (Platform enums or SocialAccount IDs)
   postId         String?
-  post           Post?       @relation(fields: [postId], references: [id], onDelete: SetNull)
+  post           Post?              @relation(fields: [postId], references: [id], onDelete: SetNull)
   assets         ProductReelAsset[]
   metadata       Json?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   @@index([seriesId])
   @@index([userId])
@@ -349,7 +350,7 @@ model ProductReelAsset {
   reelId    String
   reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
   url       String
-  type      String   // IMAGE or VIDEO
+  type      String // IMAGE or VIDEO
   createdAt DateTime @default(now())
 
   @@index([reelId])
@@ -375,51 +376,51 @@ model CuratedPost {
 }
 
 model SeriesCharacter {
-  id             String      @id @default(uuid())
-  seriesId       String      @map("series_id")
-  series         ReelSeries  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-  name           String
-  demographics   Json?       
-  physical       Json?       
-  wardrobe       Json?       
-  mannerisms     Json?       
-  loraReference  String?     @map("lora_reference")
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id            String     @id @default(uuid())
+  seriesId      String     @map("series_id")
+  series        ReelSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  name          String
+  demographics  Json?
+  physical      Json?
+  wardrobe      Json?
+  mannerisms    Json?
+  loraReference String?    @map("lora_reference")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   @@index([seriesId])
   @@map("series_characters")
 }
 
 model SeriesLocation {
-  id             String      @id @default(uuid())
-  seriesId       String      @map("series_id")
-  series         ReelSeries  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-  name           String
-  architecture   String?
-  lighting       String?
-  atmosphere     String?
-  colorPalette   Json?       @map("color_palette")
-  keyObjects     Json?       @map("key_objects")
-  cameraMood     String?     @map("camera_mood")
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id           String     @id @default(uuid())
+  seriesId     String     @map("series_id")
+  series       ReelSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  name         String
+  architecture String?
+  lighting     String?
+  atmosphere   String?
+  colorPalette Json?      @map("color_palette")
+  keyObjects   Json?      @map("key_objects")
+  cameraMood   String?    @map("camera_mood")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@index([seriesId])
   @@map("series_locations")
 }
 
 model SeriesObject {
-  id             String      @id @default(uuid())
-  seriesId       String      @map("series_id")
-  series         ReelSeries  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-  name           String
-  material       String?
-  details        String?
-  scale          String?
-  state          String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id        String     @id @default(uuid())
+  seriesId  String     @map("series_id")
+  series    ReelSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  name      String
+  material  String?
+  details   String?
+  scale     String?
+  state     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   @@index([seriesId])
   @@map("series_objects")
@@ -441,12 +442,12 @@ model AdCreative {
 }
 
 model PlaygroundImage {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  prompt      String
-  imageUrl    String
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt    String
+  imageUrl  String
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@map("playground_images")
@@ -460,3 +461,38 @@ model AppSetting {
   @@map("app_settings")
 }
 
+model AutomatedCampaign {
+  id             String             @id @default(uuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websiteUrl     String             @map("website_url")
+  schedule       String // e.g. '0 9,17 * * *' or 'daily'
+  socialChannels String             @default("[]") @map("social_channels") // JSON array of account IDs
+  isActive       Boolean            @default(true) @map("is_active")
+  language       String?            @default("English")
+  voiceId        String?            @default("Aoede") @map("voice_id")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  products       AutomatedProduct[]
+
+  @@index([userId])
+  @@map("automated_campaigns")
+}
+
+model AutomatedProduct {
+  id          String            @id @default(uuid())
+  campaignId  String            @map("campaign_id")
+  campaign    AutomatedCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  productUrl  String            @map("product_url")
+  title       String
+  description String?
+  imageUrl    String?           @map("image_url")
+  status      String            @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  reelId      String?           @map("reel_id")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([campaignId, productUrl])
+  @@index([campaignId, status])
+  @@map("automated_products")
+}
