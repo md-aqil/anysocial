@@ -33,6 +33,7 @@ const navigation = [
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'Reel Creator', href: '/dashboard/reels-creator', icon: Star },
+  { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film, adminOnly: true },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'AI Agent', href: '/dashboard/ai-agent', icon: Bot, adminOnly: true, superAdminOnly: true },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
