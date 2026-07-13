@@ -260,13 +260,15 @@ export default function AIProductReelPage() {
             </div>
 
             {/* Ingredients to Video */}
-            <div className={`bg-white p-6 rounded-2xl border shadow-sm space-y-4 transition-all ${ingredientsToVideo ? 'border-violet-400 ring-1 ring-violet-300' : 'border-stone-100'}`}>
+            <div className={`bg-white p-6 rounded-2xl border shadow-sm transition-all ${ingredientsToVideo ? 'border-violet-400 ring-1 ring-violet-300' : 'border-stone-100'}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-violet-600">
                   <Video className="h-5 w-5 shrink-0" />
                   <div>
                     <h3 className="text-sm font-bold uppercase tracking-wider">Ingredients to Video</h3>
-                    <p className="text-xs text-stone-400 font-medium mt-0.5">AI animates your product images into cinematic Veo 3 clips</p>
+                    <p className="text-xs text-stone-400 font-medium mt-0.5">
+                      Veo Omni analyses all product images and generates <strong className="text-stone-600">one cinematic clip</strong> — 15 credits per reel
+                    </p>
                   </div>
                 </div>
                 <button
@@ -278,25 +280,11 @@ export default function AIProductReelPage() {
                 </button>
               </div>
               {ingredientsToVideo && (
-                <div className="pt-3 border-t border-stone-100 space-y-3">
-                  <label className="text-xs font-bold text-stone-500 uppercase block">Clips to Generate (1–3)</label>
-                  <div className="flex gap-2">
-                    {[1, 2, 3].map(n => (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setAnimateImageCount(n)}
-                        className={`flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all ${
-                          animateImageCount === n
-                            ? 'border-violet-500 bg-violet-50 text-violet-700 ring-1 ring-violet-400'
-                            : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
-                        }`}
-                      >
-                        {n} {n === 1 ? 'clip' : 'clips'}
-                      </button>
-                    ))}
+                <div className="mt-3 pt-3 border-t border-stone-100">
+                  <div className="flex items-center gap-2 bg-violet-50 rounded-xl px-3 py-2">
+                    <span className="text-violet-500 text-sm">🎬</span>
+                    <p className="text-xs text-violet-700 font-medium">AI uses up to 3 product images as ingredients → 1 animated 6s hero clip with Veo Omni</p>
                   </div>
-                  <p className="text-[10px] text-stone-400">Each clip is ~6s. {animateImageCount} clip{animateImageCount > 1 ? 's' : ''} = ~{animateImageCount * 6}s animated hero segment in your reel.</p>
                 </div>
               )}
             </div>

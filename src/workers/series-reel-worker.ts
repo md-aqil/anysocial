@@ -277,15 +277,25 @@ Respond ONLY with valid JSON array:
                 }));
               }
 
-              // Prepare Veo inputs
-              const veoInputs = analysisResult.slice(0, maxImages).map(r => ({
+              // Prepare Veo inputs — all images as ingredients for ONE clip
+              const veoImages = analysisResult.slice(0, maxImages).map(r => ({
                 base64: imagePayloads[r.index]?.base64 || imagePayloads[0].base64,
-                mimeType: 'image/jpeg',
-                motionPrompt: r.motionPrompt
+                mimeType: 'image/jpeg'
               }));
 
-              await updateProgress(`🎥 Generating ${veoInputs.length} animated product clips with Veo 3...`);
-              const veoClipPaths = await VeoService.generateFromImages(veoInputs, updateProgress);
+              // Build a combined motion prompt from all image descriptions
+              const combinedPrompt = analysisResult.slice(0, maxImages)
+                .map(r => r.motionPrompt)
+                .join('. ') + '. Cinematic product showcase, smooth motion, premium lighting.';
+
+              await updateProgress(`🎬 Generating ONE animated product clip with Veo Omni using ${veoImages.length} image${veoImages.length > 1 ? 's' : ''} as ingredients...`);
+
+              const opName = await VeoService.initiateIngredientsToVideo(combinedPrompt, veoImages);
+              await updateProgress(`⏳ Veo Omni rendering clip... (~2-3 min)`);
+
+              const VEO_OMNI_MODEL = process.env.VEO_OMNI_MODEL || 'veo-2.0-flash-exp';
+              const veoClipPath = await VeoService.pollUntilDone(opName, VEO_OMNI_MODEL);
+              const veoClipPaths = [veoClipPath];
 
               // Add Veo clips to cleanup
               tempFilesToCleanup.push(...veoClipPaths);
