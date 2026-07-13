@@ -206,7 +206,7 @@ const renderCompactStep = (title: string, content: React.ReactNode, isComplete: 
   </div>
 );
 
-const GenerationTimeline = ({ statusMessage }: { statusMessage: string }) => {
+const GenerationTimeline = ({ statusMessage, metadata }: { statusMessage: string, metadata?: any }) => {
   const msg = statusMessage.toLowerCase();
   
   let currentStep = 1;
@@ -223,13 +223,23 @@ const GenerationTimeline = ({ statusMessage }: { statusMessage: string }) => {
       <div className="grid grid-cols-2 gap-2">
         {renderCompactStep(
           "Analysis",
-          <span className="text-[10px] font-medium text-stone-600">Assets & Prompts</span>,
+          metadata?.generatedVisualPrompt ? (
+             <div className="w-full text-left flex flex-col h-[50px] overflow-hidden">
+               <p className="text-[9px] text-stone-500 italic line-clamp-3 leading-snug">"{metadata.generatedVisualPrompt}"</p>
+             </div>
+          ) : (
+            <span className="text-[10px] font-medium text-stone-600">Assets & Prompts</span>
+          ),
           currentStep > 1,
           currentStep === 1
         )}
         {renderCompactStep(
           "Veo Omni",
-          <span className="text-[10px] font-medium text-stone-600">Video Generation</span>,
+          metadata?.rawVideoUrl ? (
+            <video src={metadata.rawVideoUrl} autoPlay muted loop className="w-full h-[50px] object-cover rounded bg-black border border-stone-200" />
+          ) : (
+            <span className="text-[10px] font-medium text-stone-600">Video Generation</span>
+          ),
           currentStep > 2,
           currentStep === 2
         )}
@@ -259,7 +269,7 @@ export default function ReelsDashboard() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as 'series' | 'product' | null;
-  const [activeTab, setActiveTab] = useState<'series' | 'product'>(tabParam || 'series');
+  const [activeTab, setActiveTab] = useState<'series' | 'product'>(tabParam || 'product');
   const [selectedMetadataReel, setSelectedMetadataReel] = useState<any | null>(null);
   const [editedScript, setEditedScript] = useState("");
   const [editedVoiceModel, setEditedVoiceModel] = useState("");
@@ -474,33 +484,35 @@ export default function ReelsDashboard() {
         </div>
       </div>
 
-      {/* Premium Glassmorphic Tab Bar */}
-      <div className="flex border-b border-stone-200 mb-8 space-x-6">
+      <div className="flex mb-8 bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
         <button
-          onClick={() => setActiveTab('series')}
-          className={`pb-4 text-base font-bold border-b-2 transition-all relative ${activeTab === 'series'
-              ? 'border-violet-600 text-violet-600'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
-            }`}
-        >
-          Automated Series
-          {seriesList && seriesList.length > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full">
-              {seriesList.length}
-            </span>
-          )}
-        </button>
-        <button
+          className={`flex-1 py-3 text-sm font-bold border-b-2 transition-all ${
+            activeTab === 'product'
+              ? 'border-violet-600 text-violet-700 bg-violet-50/50'
+              : 'border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50'
+          }`}
           onClick={() => setActiveTab('product')}
-          className={`pb-4 text-base font-bold border-b-2 transition-all relative ${activeTab === 'product'
-              ? 'border-violet-600 text-violet-600'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
-            }`}
         >
           AI Product Reels
           {productReels && productReels.length > 0 && (
             <span className="ml-2 px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full">
               {productReels.length}
+            </span>
+          )}
+        </button>
+        <div className="w-px bg-stone-200" />
+        <button
+          className={`flex-1 py-3 text-sm font-bold border-b-2 transition-all ${
+            activeTab === 'series'
+              ? 'border-violet-600 text-violet-700 bg-violet-50/50'
+              : 'border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50'
+          }`}
+          onClick={() => setActiveTab('series')}
+        >
+          Automated Series
+          {seriesList && seriesList.length > 0 && (
+            <span className="ml-2 px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full">
+              {seriesList.length}
             </span>
           )}
         </button>
@@ -1068,7 +1080,7 @@ export default function ReelsDashboard() {
                                     
                                     {/* Detailed Live Log for Generation */}
                                     {reel.status === 'GENERATING' && reel.statusMessage && (
-                                      <GenerationTimeline statusMessage={reel.statusMessage} />
+                                      <GenerationTimeline statusMessage={reel.statusMessage} metadata={reel.metadata} />
                                     )}
 
                                     {reel.videoUrl && reel.status === 'READY' && (
@@ -1177,7 +1189,7 @@ export default function ReelsDashboard() {
 
                         {/* Detailed Live Log for Generation */}
                         {reel.status === 'GENERATING' && reel.statusMessage && (
-                          <GenerationTimeline statusMessage={reel.statusMessage} />
+                          <GenerationTimeline statusMessage={reel.statusMessage} metadata={reel.metadata} />
                         )}
 
                         {/* Error message block */}

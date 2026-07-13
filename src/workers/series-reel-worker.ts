@@ -296,11 +296,33 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
 
               await updateProgress(`🎬 Generating cinematic product clip with Veo Omni (${veoImages.length} image${veoImages.length > 1 ? 's' : ''} as ingredients)...`);
 
+              generationMetadata.generatedVisualPrompt = veoPrompt;
+              await prisma.reel.update({
+                where: { id: reelId },
+                data: { metadata: generationMetadata }
+              });
+
               const opName = await VeoService.initiateIngredientsToVideo(veoPrompt, veoImages);
               await updateProgress(`⏳ Veo Omni rendering... (~2-3 min)`);
 
               const veoClipPath = await VeoService.pollUntilDone(opName);
               const veoClipPaths = [veoClipPath];
+
+              // Make Veo clip available for UI timeline preview
+              try {
+                const { Storage } = await import('@google-cloud/storage');
+                const storage = new Storage();
+                const bucketName = await VeoService.ensureBucket(process.env.VERTEX_AI_PROJECT_ID || '');
+                const destFileName = `preview-${reelId}-${Date.now()}.mp4`;
+                await storage.bucket(bucketName).upload(veoClipPath, { destination: destFileName });
+                generationMetadata.rawVideoUrl = `https://storage.googleapis.com/${bucketName}/${destFileName}`;
+                await prisma.reel.update({
+                  where: { id: reelId },
+                  data: { metadata: generationMetadata }
+                });
+              } catch (previewErr: any) {
+                console.warn('[IngredientsToVideo] Could not upload preview video to UI metadata:', previewErr.message);
+              }
 
               // Add Veo clip to cleanup
               tempFilesToCleanup.push(...veoClipPaths);
