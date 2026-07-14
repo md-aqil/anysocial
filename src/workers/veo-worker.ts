@@ -54,12 +54,12 @@ function buildAssSubtitleFile(
   const ORANGE = '&H00006BFF'; // #FF6B00
   const BLUE = '&H00FF5500';   // #0055FF
 
-  let fontSize = 40;
+  let fontSize = 35; // Reduced from 40
   let borderStyle = 1;
   let outline = 1.5;
-  let shadow = 2; // Reduced shadow distance
+  let shadow = 1; // Further reduced shadow distance
   let outlineColour = '&H00000000';
-  let backColour = '&HB3000000'; // 30% opacity instead of 40% for softer shadow
+  let backColour = '&HB3000000'; 
   let extraTags = '\\blur12';
 
   if (style === 'solid-dark-box') {
@@ -78,7 +78,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Helvetica,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},700,0,0,0,100,100,-1,0,${borderStyle},${outline},${shadow},5,72,72,0,1
+Style: Default,Helvetica,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},700,0,0,0,100,100,-1,0,${borderStyle},${outline},${shadow},5,100,100,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -123,7 +123,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     currentTimeMs += pDurationMs;
   }
   
-  const finalEventText = `{${extraTags}\\pos(360,665)}` + eventTextBlocks.join('\\N\\N\\N');
+  const finalEventText = `{${extraTags}\\pos(360,665)}` + eventTextBlocks.join('\\N\\N\\N\\N\\N');
   
   const start = formatAssTime(0);
   const end = formatAssTime(totalDuration); // Displays until the very end
