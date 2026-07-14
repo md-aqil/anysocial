@@ -13,6 +13,7 @@ const veoQueue = new Queue('veo-generation', { connection: redis });
 const generateVeoSchema = z.object({
   topic: z.string().min(1, 'Topic is required'),
   subtitleStyle: z.enum(['orange-box', 'blue-box', 'outline', 'minimal']).optional().default('minimal'),
+  visualStyle: z.string().optional().default('scandi'),
 });
 
 /**
@@ -25,6 +26,7 @@ router.post('/generate', requireAuth, async (req: any, res: any) => {
     const validatedData = generateVeoSchema.parse({
       topic: req.body.topic,
       subtitleStyle: req.body.subtitleStyle,
+      visualStyle: req.body.visualStyle,
     });
 
     const reel = await prisma.reel.create({
@@ -44,6 +46,7 @@ router.post('/generate', requireAuth, async (req: any, res: any) => {
       reelId: reel.id,
       topic: validatedData.topic,
       subtitleStyle: validatedData.subtitleStyle,
+      visualStyle: validatedData.visualStyle,
     }, {
       attempts: 2,
       backoff: { type: 'exponential', delay: 15_000 },

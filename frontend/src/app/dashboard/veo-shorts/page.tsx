@@ -6,6 +6,7 @@ export default function VeoShortsCreator() {
   const { token } = useAuthStore();
   const [topic, setTopic] = useState('how I built a $10k/month software agency at 22 without showing my face');
   const [subtitleStyle, setSubtitleStyle] = useState('minimal');
+  const [visualStyle, setVisualStyle] = useState('scandi');
   const [status, setStatus] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [reelId, setReelId] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export default function VeoShortsCreator() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ topic, subtitleStyle })
+        body: JSON.stringify({ topic, subtitleStyle, visualStyle })
       });
 
       if (!res.ok) throw new Error('Failed to start generation');
@@ -139,6 +140,29 @@ export default function VeoShortsCreator() {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Cinematic Aesthetic</label>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { id: 'scandi', name: 'Quiet Luxury', emoji: '🌿' },
+                { id: 'moody', name: 'Dark & Moody', emoji: '🌙' },
+                { id: 'hygge', name: 'Morning Hygge', emoji: '☕' },
+                { id: 'luxury', name: 'Luxury Hotel', emoji: '🥂' },
+                { id: 'vintage', name: 'Warm Vintage', emoji: '🎞️' },
+                { id: 'tech', name: 'Sleek Cyber', emoji: '💻' }
+              ].map((style) => (
+                <button
+                  key={style.id}
+                  onClick={() => setVisualStyle(style.id)}
+                  className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${visualStyle === style.id ? 'border-orange-500 bg-orange-50 shadow-sm scale-[1.02]' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                >
+                  <span className="text-xl">{style.emoji}</span>
+                  <span className={`text-sm font-medium ${visualStyle === style.id ? 'text-orange-700' : 'text-slate-600'}`}>{style.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>

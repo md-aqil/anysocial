@@ -107,7 +107,7 @@ class VeoGenerationWorker {
 
   constructor() {
     this.worker = new Worker('veo-generation', async (job: Job) => {
-  const { reelId, topic, subtitleStyle } = job.data;
+  const { reelId, topic, subtitleStyle, visualStyle } = job.data;
   logger.info({ event: 'veo_generation_started', reelId, topic });
 
   const tempFilesToCleanup: string[] = [];
@@ -131,6 +131,13 @@ class VeoGenerationWorker {
     await updateProgress('📝 Generating AI script & prompt...');
 
     // 1. Generate script + Veo visual prompt (faceless cinematic creator format).
+    let aestheticInstruction = "Vibrant natural colors, premium Scandinavian interior, cinematic shallow depth of field, subtle movement only, no camera movement, realistic motion, quiet luxury aesthetic.";
+    if (visualStyle === 'moody') aestheticInstruction = "Dark wood textures, subtle warm neon ambient lighting, deep cinematic shadows, shallow depth of field, moody atmosphere, ultra-detailed masterpiece, sharp focus.";
+    if (visualStyle === 'hygge') aestheticInstruction = "Soft morning sunlight filtering through sheer linen curtains, casting beautiful shadows. White marble textures, serene, peaceful, light and airy aesthetic, shallow depth of field.";
+    if (visualStyle === 'luxury') aestheticInstruction = "Overcast, diffused natural light, quiet luxury, high-end travel aesthetic, cinematic realism, premium hotel vibe.";
+    if (visualStyle === 'vintage') aestheticInstruction = "Rich golden hour lighting pouring into the room, cinematic film grain, retro aesthetic, nostalgic and incredibly calm atmosphere, warm glowing tones.";
+    if (visualStyle === 'tech') aestheticInstruction = "Sleek modern glass textures, matte black accessories, cool blue-toned natural light mixed with subtle LED rim lighting, ultra-crisp, futuristic yet grounded luxury aesthetic.";
+
     const scriptPrompt = `You are a viral TikTok and Instagram Reels creator specialist. Write a calm, luxury minimalist faceless script about: ${topic}.
 The video follows the quiet luxury, Scandi minimalist lifestyle aesthetic.
 We need exactly 3 short paragraphs. 
@@ -157,7 +164,7 @@ my face.
 Here is exactly what I did 👇"
 Also, provide a highly detailed 1-sentence visual prompt optimized for Google Veo 3 that represents a premium faceless lifestyle scene.
 It MUST follow this exact style:
-"Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. Soft natural daylight fills the room, creating a calm editorial atmosphere. Vibrant natural colors, premium Scandinavian interior, cinematic shallow depth of field, subtle movement only, no camera movement, realistic motion, quiet luxury aesthetic."
+"Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. ${aestheticInstruction}"
 
 CRITICAL INSTRUCTION: You MUST violently randomize the [environment], [subject/entrepreneur], and lighting for EVERY generation! DO NOT use the same generic room. Use different locations (e.g., modern glass office, cozy hygge living room, minimalist cafe, moody dusk studio), different subtle actions (e.g., pouring matcha, organizing aesthetic notebooks, adjusting a lamp), and unique clothing styles. 
 Also, explicitly end the visual prompt with: "9:16 vertical aspect ratio, shot on 35mm lens, 8k resolution, ultra-detailed masterpiece, photorealistic, sharp focus, perfectly crisp lighting."
