@@ -12,6 +12,7 @@ export default function VeoShortsCreator() {
   const [reelId, setReelId] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedScriptDetails, setSelectedScriptDetails] = useState<any>(null);
 
   useEffect(() => {
@@ -38,9 +39,9 @@ export default function VeoShortsCreator() {
 
           // Poll again in 5 seconds
           setTimeout(fetchHistory, 5000);
-        } else if (latest && latest.id === reelId) {
-          // If it finished, update the state
-          setStatus(latest.status);
+        } else {
+          // If the latest is done (or failed), we are no longer actively generating
+          setStatus(null);
         }
       }
     } catch (e) {
@@ -90,7 +91,7 @@ export default function VeoShortsCreator() {
     }
   };
 
-  const renderCompactStep = (stepNum: number, title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean, onClick?: () => void) => (
+  const renderCompactStep = (stepNum: number, title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean, onClick?: (e: any) => void) => (
     <div 
       onClick={onClick}
       className={`flex flex-col rounded-xl overflow-hidden transition-all duration-300 ${isComplete ? 'bg-white border border-slate-200' : isActive ? 'bg-white border-2 border-blue-400 shadow-sm' : 'bg-transparent border border-dashed border-slate-200 opacity-60'} ${onClick ? 'cursor-pointer hover:border-orange-300 hover:shadow-md' : ''}`}
@@ -118,6 +119,17 @@ export default function VeoShortsCreator() {
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <video src={selectedVideo} controls autoPlay className="w-full rounded-2xl shadow-2xl bg-black max-h-[85vh] object-contain" />
+          </div>
+        </div>
+      )}
+
+      {selectedImage && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4" onClick={() => setSelectedImage(null)}>
+          <div className="relative w-full max-w-sm max-h-[90vh] mx-auto" onClick={e => e.stopPropagation()}>
+            <button className="absolute -top-12 right-0 text-white hover:text-orange-400 p-2" onClick={() => setSelectedImage(null)}>
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <img src={selectedImage} alt="Base Image" className="w-full rounded-2xl shadow-2xl bg-black max-h-[85vh] object-contain" />
           </div>
         </div>
       )}
@@ -158,6 +170,16 @@ export default function VeoShortsCreator() {
                 </h3>
                 <div className="p-4 bg-purple-50 rounded-xl text-slate-800 text-sm leading-relaxed border border-purple-100 italic">
                   {selectedScriptDetails.fullVideoPrompt || "Generating..."}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold tracking-wider text-pink-600 uppercase mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+                  Music AI Prompt
+                </h3>
+                <div className="p-4 bg-pink-50 rounded-xl text-slate-800 text-sm leading-relaxed border border-pink-100 italic">
+                  {selectedScriptDetails.musicPrompt || "Generating..."}
                 </div>
               </div>
             </div>
@@ -224,12 +246,10 @@ export default function VeoShortsCreator() {
                 <button
                   key={style.id}
                   onClick={() => setSubtitleStyle(style.id)}
-                  className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${subtitleStyle === style.id ? 'border-orange-500 bg-orange-50 shadow-md scale-105' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                  className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all ${subtitleStyle === style.id ? 'border-orange-500 bg-orange-50 shadow-sm scale-[1.02]' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
                 >
-                  <div className={`w-full py-3 flex items-center justify-center rounded-lg text-white font-bold text-sm shadow-sm ${style.color} ${style.id === 'outline' ? 'border border-slate-700' : ''}`}>
-                    Abc
-                  </div>
-                  <span className={`text-xs font-semibold ${subtitleStyle === style.id ? 'text-orange-700' : 'text-slate-500'}`}>{style.name}</span>
+                  <div className={`w-8 h-8 rounded-md ${style.color} shadow-sm border border-slate-200 flex items-center justify-center text-white font-bold text-[10px]`}>Aa</div>
+                  <span className={`text-xs font-semibold text-center ${subtitleStyle === style.id ? 'text-orange-700' : 'text-slate-600'}`}>{style.name}</span>
                 </button>
               ))}
             </div>

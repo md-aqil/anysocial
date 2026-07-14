@@ -285,11 +285,11 @@ Format your output as a JSON object:
       logger.warn({ event: 'veo_duration_probe_failed', reelId, error: durErr.message });
     }
 
+    const musicVibePrompt = `Ultra high quality, masterpiece audio, cinematic lo-fi ambient background music, calm luxury scandi minimalist lifestyle vibe, highly detailed`;
     await updateProgress('🎵 Generating background music & final composition...', {
-      rawVideoUrl: publicRawVideoUrl
+      rawVideoUrl: publicRawVideoUrl,
+      musicPrompt: musicVibePrompt
     });
-
-    const musicVibePrompt = `Calm, luxury, scandi minimalist lifestyle background music, lo-fi aesthetic, quiet and ambient`;
     let bgmPath: string | null = null;
     try {
       bgmPath = await aiOrchestrator.generateMusic(musicVibePrompt, []);
