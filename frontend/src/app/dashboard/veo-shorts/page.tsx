@@ -116,7 +116,7 @@ export default function VeoShortsCreator() {
 
       {/* Header */}
       <div className="flex flex-col gap-2 mb-8 text-center max-w-2xl mx-auto">
-        <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-rose-500 tracking-tight">
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
           Cinematic Shorts Studio
         </h1>
         <p className="text-slate-500 text-lg">
