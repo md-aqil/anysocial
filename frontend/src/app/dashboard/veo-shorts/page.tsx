@@ -12,6 +12,7 @@ export default function VeoShortsCreator() {
   const [reelId, setReelId] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [selectedScriptDetails, setSelectedScriptDetails] = useState<any>(null);
 
   useEffect(() => {
     if (token) {
@@ -89,8 +90,11 @@ export default function VeoShortsCreator() {
     }
   };
 
-  const renderCompactStep = (stepNum: number, title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean) => (
-    <div className={`flex flex-col rounded-xl overflow-hidden transition-all duration-300 ${isComplete ? 'bg-white border border-slate-200' : isActive ? 'bg-white border-2 border-blue-400 shadow-sm' : 'bg-transparent border border-dashed border-slate-200 opacity-60'}`}>
+  const renderCompactStep = (stepNum: number, title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean, onClick?: () => void) => (
+    <div 
+      onClick={onClick}
+      className={`flex flex-col rounded-xl overflow-hidden transition-all duration-300 ${isComplete ? 'bg-white border border-slate-200' : isActive ? 'bg-white border-2 border-blue-400 shadow-sm' : 'bg-transparent border border-dashed border-slate-200 opacity-60'} ${onClick ? 'cursor-pointer hover:border-orange-300 hover:shadow-md' : ''}`}
+    >
       <div className={`px-3 py-2 text-[10px] font-bold uppercase tracking-wider flex items-center justify-between border-b ${isComplete ? 'text-slate-700 border-slate-100' : isActive ? 'text-blue-600 border-blue-100 bg-blue-50/50' : 'text-slate-400 border-slate-200/50'}`}>
         <span className="flex items-center gap-1.5">
           {isActive && <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span></span>}
@@ -114,6 +118,49 @@ export default function VeoShortsCreator() {
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <video src={selectedVideo} controls autoPlay className="w-full rounded-2xl shadow-2xl bg-black max-h-[85vh] object-contain" />
+          </div>
+        </div>
+      )}
+
+      {selectedScriptDetails && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4" onClick={() => setSelectedScriptDetails(null)}>
+          <div className="relative w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl p-8 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <button className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2" onClick={() => setSelectedScriptDetails(null)}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">AI Generation Details</h2>
+            
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-bold tracking-wider text-orange-600 uppercase mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  Generated Script
+                </h3>
+                <div className="p-4 bg-orange-50 rounded-xl text-slate-800 text-sm whitespace-pre-wrap leading-relaxed border border-orange-100">
+                  {selectedScriptDetails.generatedScript}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold tracking-wider text-blue-600 uppercase mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  Text-to-Image Prompt
+                </h3>
+                <div className="p-4 bg-blue-50 rounded-xl text-slate-800 text-sm leading-relaxed border border-blue-100 italic">
+                  {selectedScriptDetails.fullImagePrompt || selectedScriptDetails.generatedVisualPrompt}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold tracking-wider text-purple-600 uppercase mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  Image-to-Video Prompt (Veo 3)
+                </h3>
+                <div className="p-4 bg-purple-50 rounded-xl text-slate-800 text-sm leading-relaxed border border-purple-100 italic">
+                  {selectedScriptDetails.fullVideoPrompt || "Generating..."}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -169,10 +216,10 @@ export default function VeoShortsCreator() {
             <label className="block text-sm font-semibold text-slate-700 mb-2">Subtitle Overlay Style</label>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { id: 'orange-box', name: 'Orange Block', color: 'bg-orange-500' },
-                { id: 'blue-box', name: 'Blue Block', color: 'bg-blue-500' },
-                { id: 'outline', name: 'Bold Outline', color: 'bg-black' },
-                { id: 'minimal', name: 'Minimal Drop Shadow', color: 'bg-slate-800' }
+                { id: 'cinematic-shadow', name: 'Cinematic Drop Shadow', color: 'bg-slate-800' },
+                { id: 'solid-dark-box', name: 'Solid Dark Box (Max Visibility)', color: 'bg-black' },
+                { id: 'transparent-dark-box', name: 'Transparent Dark Box', color: 'bg-slate-700' },
+                { id: 'classic-outline', name: 'Classic Bold Outline', color: 'bg-slate-900' }
               ].map((style) => (
                 <button
                   key={style.id}
@@ -291,7 +338,8 @@ export default function VeoShortsCreator() {
                             <p className="text-[10px] text-slate-500 italic line-clamp-2 mt-auto border-t border-slate-100 pt-1.5">"{String(meta.generatedVisualPrompt || '...')}"</p>
                           </div>,
                           step1Done,
-                          isCurrent && !step1Done
+                          isCurrent && !step1Done,
+                          step1Done ? (e) => { e.stopPropagation(); setSelectedScriptDetails(meta); } : undefined
                         )}
 
                         {/* Step 2: Image Base */}

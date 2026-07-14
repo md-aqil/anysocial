@@ -58,8 +58,17 @@ function buildAssSubtitleFile(
   let borderStyle = 1;
   let outline = 1.5;
   let shadow = 4;
-  let outlineColour = '&H00000000'; // Solid black outline
-  let backColour = '&H99000000';    // 40% shadow for contrast
+  let outlineColour = '&H00000000';
+  let backColour = '&H99000000';
+  let extraTags = '\\blur12';
+
+  if (style === 'solid-dark-box') {
+    borderStyle = 3; outline = 8; shadow = 0; outlineColour = '&H00000000'; backColour = '&H00000000'; extraTags = '';
+  } else if (style === 'transparent-dark-box') {
+    borderStyle = 3; outline = 8; shadow = 0; outlineColour = '&H66000000'; backColour = '&H66000000'; extraTags = '';
+  } else if (style === 'classic-outline') {
+    borderStyle = 1; outline = 3.5; shadow = 0; outlineColour = '&H00000000'; extraTags = '';
+  }
 
   const header = `[Script Info]
 ScriptType: v4.00+
@@ -114,7 +123,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     currentTimeMs += pDurationMs;
   }
   
-  const finalEventText = `{\\blur12\\pos(360,665)}` + eventTextBlocks.join('\\N\\N\\N');
+  const finalEventText = `{${extraTags}\\pos(360,665)}` + eventTextBlocks.join('\\N\\N\\N');
   
   const start = formatAssTime(0);
   const end = formatAssTime(totalDuration); // Displays until the very end
@@ -233,13 +242,15 @@ Format your output as a JSON object:
       tempFilesToCleanup.push(croppedImagePath);
     }
 
-    await updateProgress('🎬 Submitting to Google Veo 3 (Long Running)...', {
-      generatedImage: publicThumbnailUrl
-    });
-
     // 3. Google Veo 3 Video Generation
     const motionParameters = "Movement adheres strictly to physical weight and gravity at real-time natural human speed. Strictly locked tripod camera with zero drift and stable optical depth of field. Absolutely no structural morphing, zero background warping, and no hallucinatory merging. True temporal consistency.";
     const fullVideoPrompt = `${visual_prompt}. ${imageParameters} ${motionParameters}`;
+    
+    await updateProgress('🎬 Submitting to Google Veo 3 (Long Running)...', {
+      generatedImage: publicThumbnailUrl,
+      fullImagePrompt: fullImagePrompt,
+      fullVideoPrompt: fullVideoPrompt
+    });
     
     const targetDuration = 8;
     const operationName = await VeoService.initiateGeneration(
@@ -297,7 +308,7 @@ Format your output as a JSON object:
       ffmpeg(localRawVideo)
         .inputOptions(['-stream_loop', '1'])
         .videoFilters([
-          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.1:t=fill'
+          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.15:t=fill'
         ])
         .outputOptions(['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'copy'])
         .save(processedVideoPath)
