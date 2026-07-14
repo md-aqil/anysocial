@@ -52,13 +52,13 @@ function buildAssSubtitleFile(
   const ORANGE = '&H00006BFF'; // #FF6B00
   const BLUE = '&H00FF5500';   // #0055FF
 
-  // Style tuning per option. BorderStyle 3 = opaque box (box colour = OutlineColour).
-  let fontSize = 45;
+  // Style tuning to exactly match Image 2 reference (clean, subtle drop shadow, tight)
+  let fontSize = 38;
   let borderStyle = 1;
-  let outline = 3;
-  let shadow = 0;
-  let outlineColour = BLACK;
-  let backColour = '&H00000000';
+  let outline = 0.5;
+  let shadow = 2.5;
+  let outlineColour = '&H66000000'; // Semi-transparent black outline
+  let backColour = '&H99000000';    // Dark shadow
 
   if (style === 'orange-box') {
     borderStyle = 3; outline = 8; shadow = 0; outlineColour = ORANGE; backColour = ORANGE;
@@ -66,8 +66,6 @@ function buildAssSubtitleFile(
     borderStyle = 3; outline = 8; shadow = 0; outlineColour = BLUE; backColour = BLUE;
   } else if (style === 'outline') {
     borderStyle = 1; outline = 4; shadow = 0; outlineColour = BLACK;
-  } else { // minimal — subtle drop shadow
-    borderStyle = 1; outline = 1; shadow = 2; outlineColour = BLACK; backColour = '&H80000000';
   }
 
   const header = `[Script Info]
@@ -78,7 +76,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Poppins,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},8,60,60,250,1
+Style: Default,Poppins,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},5,60,60,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -192,12 +190,13 @@ Format your output as a JSON object:
       generatedImage: publicThumbnailUrl
     });
 
-    // 3. Google Veo 3 Video Generation (delegated to VeoService for bounded polling + retries)
+    // 3. Google Veo 3 Video Generation
+    // We pass `undefined` for the image so Veo natively generates a flawless 9:16 video via Text-to-Video.
     const targetDuration = 8;
     const operationName = await VeoService.initiateGeneration(
       visual_prompt,
-      generatedImageBase64 || undefined,
-      generatedImageBase64 ? 'image/jpeg' : undefined,
+      undefined,
+      undefined,
       { durationSeconds: targetDuration }
     );
 
@@ -249,8 +248,6 @@ Format your output as a JSON object:
       ffmpeg(localRawVideo)
         .inputOptions(['-stream_loop', '1'])
         .videoFilters([
-          'scale=720:1280:force_original_aspect_ratio=increase',
-          'crop=720:1280',
           'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.4:t=fill'
         ])
         .outputOptions(['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-c:a', 'copy'])
@@ -269,7 +266,7 @@ Format your output as a JSON object:
     const paragraphs: string[] = [];
     const sentencesPerGroup = Math.ceil(rawSentences.length / 3);
     for (let i = 0; i < rawSentences.length; i += sentencesPerGroup) {
-      paragraphs.push(rawSentences.slice(i, i + sentencesPerGroup).join('\\n'));
+      paragraphs.push(rawSentences.slice(i, i + sentencesPerGroup).join('\n'));
     }
     
     const assPath = buildAssSubtitleFile(paragraphs, actualDuration, (subtitleStyle || 'minimal') as SubtitleStyle);
