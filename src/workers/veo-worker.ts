@@ -54,21 +54,12 @@ function buildAssSubtitleFile(
   const ORANGE = '&H00006BFF'; // #FF6B00
   const BLUE = '&H00FF5500';   // #0055FF
 
-  // Style tuning to exactly match Image 2 reference but slightly larger and starting from top
-  let fontSize = 48;
+  let fontSize = 58;
   let borderStyle = 1;
   let outline = 1.5;
-  let shadow = 3.5;
+  let shadow = 4;
   let outlineColour = '&H00000000'; // Solid black outline
-  let backColour = '&H40000000';    // Deep shadow for contrast
-
-  if (style === 'orange-box') {
-    borderStyle = 3; outline = 8; shadow = 0; outlineColour = ORANGE; backColour = ORANGE;
-  } else if (style === 'blue-box') {
-    borderStyle = 3; outline = 8; shadow = 0; outlineColour = BLUE; backColour = BLUE;
-  } else if (style === 'outline') {
-    borderStyle = 1; outline = 4; shadow = 0; outlineColour = BLACK;
-  }
+  let backColour = '&H99000000';    // 40% shadow for contrast
 
   const header = `[Script Info]
 ScriptType: v4.00+
@@ -78,23 +69,65 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},600,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},8,25,25,350,1
+Style: Default,Helvetica,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},700,0,0,0,100,100,-0.5,0,${borderStyle},${outline},${shadow},5,144,144,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 `;
 
-  const perGroup = totalDuration / lines.length;
-  let body = '';
-  let accumulatedText = '';
-  for (let i = 0; i < lines.length; i++) {
-    const start = formatAssTime(i * perGroup);
-    const end = formatAssTime(i === lines.length - 1 ? totalDuration : (i + 1) * perGroup);
-    if (i > 0) {
-      accumulatedText += '\\N\\N';
+  // 1. Group sentences into paragraphs logically (target 2-3 sentences max)
+  const paragraphs: string[][] = [];
+  let currentParagraph: string[] = [];
+  let currentWords = 0;
+
+  for (const sentence of sentences) {
+    const cleanSentence = escapeAssText(sentence);
+    if (!cleanSentence) continue;
+    const words = cleanSentence.split(/\\s+/).length;
+    if (currentParagraph.length >= 3 || currentWords + words > 20) {
+      if (currentParagraph.length > 0) paragraphs.push(currentParagraph);
+      currentParagraph = [cleanSentence];
+      currentWords = words;
+    } else {
+      currentParagraph.push(cleanSentence);
+      currentWords += words;
     }
-    accumulatedText += lines[i];
-    body += `Dialogue: 0,${start},${end},Default,,0,0,0,,${accumulatedText}\n`;
+  }
+  if (currentParagraph.length > 0) paragraphs.push(currentParagraph);
+
+  // 2. Format paragraphs with intelligent text wrapping
+  const formattedParagraphs = paragraphs.map(p => {
+    return p.map(s => {
+       const words = s.split(/\\s+/);
+       // Balance long sentences by splitting in half
+       if (words.length > 6) {
+          const mid = Math.floor(words.length / 2);
+          return words.slice(0, mid).join(' ') + '\\N' + words.slice(mid).join(' ');
+       }
+       return s;
+    }).join('\\N'); 
+  });
+
+  // 3. Calculate timing based on reading speed and proportional duration
+  const paragraphWordCounts = formattedParagraphs.map(text => text.replace(/\\\\N/g, ' ').split(/\\s+/).length);
+  const totalWords = paragraphWordCounts.reduce((a, b) => a + b, 0);
+  
+  let currentTime = 0;
+  let body = '';
+  
+  for (let i = 0; i < formattedParagraphs.length; i++) {
+    const text = formattedParagraphs[i];
+    // Proportion total duration based on word count
+    let pDuration = (paragraphWordCounts[i] / totalWords) * totalDuration;
+    
+    const start = formatAssTime(currentTime);
+    const end = formatAssTime(currentTime + pDuration);
+    
+    // Inject fade animation (180ms in/out), blur12 for soft shadow, and explicit vertical centering pos
+    const eventText = `{\\fad(180,180)\\blur12\\pos(360,665)}${text}`;
+    body += `Dialogue: 0,${start},${end},Default,,0,0,0,,${eventText}\\n`;
+    
+    currentTime += pDuration;
   }
 
   const assPath = path.join(os.tmpdir(), `veo_subs_${Date.now()}.ass`);
