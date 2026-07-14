@@ -55,7 +55,7 @@ function buildAssSubtitleFile(
   const BLUE = '&H00FF5500';   // #0055FF
 
   // Style tuning to exactly match Image 2 reference but slightly larger and starting from top
-  let fontSize = 42;
+  let fontSize = 48;
   let borderStyle = 1;
   let outline = 0.5;
   let shadow = 2.5;
@@ -78,7 +78,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Poppins,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},8,60,60,350,1
+Style: Default,Poppins,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},8,25,25,350,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -160,7 +160,7 @@ It MUST follow this exact style:
 "Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. Soft natural daylight fills the room, creating a calm editorial atmosphere. Muted colors, premium Scandinavian interior, cinematic shallow depth of field, subtle movement only, no camera movement, realistic motion, quiet luxury aesthetic."
 
 CRITICAL INSTRUCTION: You MUST violently randomize the [environment], [subject/entrepreneur], and lighting for EVERY generation! DO NOT use the same generic room. Use different locations (e.g., modern glass office, cozy hygge living room, minimalist cafe, moody dusk studio), different subtle actions (e.g., pouring matcha, organizing aesthetic notebooks, adjusting a lamp), and unique clothing styles. 
-Also, explicitly end the visual prompt with: "9:16 vertical aspect ratio, shot on 35mm lens."
+Also, explicitly end the visual prompt with: "9:16 vertical aspect ratio, shot on 35mm lens, 8k resolution, ultra-detailed masterpiece, photorealistic, sharp focus, perfectly crisp lighting."
 
 Ensure the visual prompt matches the tone/subject of the topic.
 Format your output as a JSON object:
@@ -184,13 +184,13 @@ Format your output as a JSON object:
     let generatedImageBase64 = null;
     if (imagePath && fs.existsSync(imagePath)) {
       // Crop the generated image to exactly 9:16 (720x1280) so Veo generates a native 9:16 video
-      const croppedImagePath = path.join(os.tmpdir(), `veo_thumb_cropped_${Date.now()}.jpg`);
+      const croppedImagePath = path.join(os.tmpdir(), `veo_thumb_cropped_${Date.now()}.png`);
       await sharp(imagePath)
         .resize({ width: 720, height: 1280, fit: 'cover', position: 'center' })
-        .jpeg({ quality: 95 })
+        .png()
         .toFile(croppedImagePath);
 
-      const thumbFilename = `veo_thumb_${Date.now()}.jpg`;
+      const thumbFilename = `veo_thumb_${Date.now()}.png`;
       const thumbDest = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', thumbFilename);
       if (!fs.existsSync(path.dirname(thumbDest))) fs.mkdirSync(path.dirname(thumbDest), { recursive: true });
       fs.copyFileSync(croppedImagePath, thumbDest);
@@ -210,7 +210,7 @@ Format your output as a JSON object:
     const operationName = await VeoService.initiateGeneration(
       visual_prompt,
       generatedImageBase64 || undefined,
-      generatedImageBase64 ? 'image/jpeg' : undefined,
+      generatedImageBase64 ? 'image/png' : undefined,
       { durationSeconds: targetDuration }
     );
 
