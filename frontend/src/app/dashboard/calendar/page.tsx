@@ -31,7 +31,13 @@ export default function CalendarPage() {
     queryFn: () => api.posts.list({ limit: 100 })
   });
 
+  const { data: reelsData } = useQuery({
+    queryKey: ['calendar-reels'],
+    queryFn: () => api.reels.list()
+  });
+
   const posts = data?.posts || [];
+  const reels = reelsData?.data || [];
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -51,8 +57,37 @@ export default function CalendarPage() {
       if (!map[key]) map[key] = [];
       map[key].push(post);
     });
+
+    reels.forEach((reel: any) => {
+      // If the reel has no postId (meaning no Post has been created yet) and is scheduled
+      if (!reel.postId && reel.scheduledFor) {
+        let channels: string[] = [];
+        try {
+          channels = JSON.parse(reel.socialChannels || '[]');
+        } catch {
+          channels = [];
+        }
+        
+        const date = parseISO(reel.scheduledFor);
+        const dayKey = format(date, 'yyyy-MM-dd');
+        const hour = date.getHours();
+        const key = `${dayKey}-${hour}`;
+        if (!map[key]) map[key] = [];
+
+        map[key].push({
+          id: reel.id,
+          title: `🎬 Reel: ${reel.series?.name || 'Standalone'}`,
+          content: reel.script || 'No script generated yet',
+          platforms: channels,
+          scheduledAt: reel.scheduledFor,
+          status: reel.status, // PENDING, GENERATING, READY, FAILED
+          isReel: true
+        });
+      }
+    });
+
     return map;
-  }, [posts]);
+  }, [posts, reels]);
 
   const handleCellClick = (day: Date, hour: number) => {
     const scheduledDate = setMinutes(setHours(day, hour), 0);
@@ -197,7 +232,14 @@ export default function CalendarPage() {
                               "relative p-2.5 rounded-xl border flex flex-col gap-2 transform transition hover:-translate-y-0.5 hover:shadow-md cursor-pointer",
                               statusConfig.wrapper
                             )}
-                            onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/posts/edit/${post.id}`); }}
+                            onClick={(e) => {
+                               e.stopPropagation();
+                               if (post.isReel) {
+                                 router.push('/dashboard/reels-creator');
+                               } else {
+                                 router.push(`/dashboard/posts/edit/${post.id}`);
+                               }
+                             }}
                             title={post.title || post.content || 'Untitled Post'}
                           >
                             <div className="flex items-center justify-between w-full">

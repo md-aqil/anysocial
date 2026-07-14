@@ -300,23 +300,22 @@ export class ReelWorker {
 
 You are given ${imagePayloads.length} reference product image(s). Study them carefully.${productInfoStr}
 
-Your task: Write ONE single, highly detailed, and deeply evocative Veo 3 video generation prompt for a cinematic product hero clip. 
+Your task: Write ONE single, concise, and highly effective Veo 3 image-to-video prompt to generate a cinematic product hero video.
 
-CRITICAL RULES: 
-1. Maintain absolute consistency with the product shown. Do NOT invent new product features, change its core shape, or alter its primary colors. 
-2. The environment, vibe, and aesthetic MUST be directly derived and inspired by the extracted images. Extract ideas from the images and extend the world already shown into a dynamic video space. Do NOT use generic backgrounds if a clear vibe is present.
-
-The prompt MUST include:
-1. Product Fidelity: Ground the description in exactly what you SEE in the images (exact materials, colours, textures, branding, packaging, scale). Use the provided Product Description for extra context if needed.
-2. Inspired Environment: Build a breathtaking, premium context that perfectly matches and extends the background, props, colors, or aesthetic already present in the images.
-3. Cinematic Lighting: Specify complex lighting setups that enhance the mood of the images (e.g., soft volumetric studio lighting, natural sun rays, or dramatic chiaroscuro).
-4. Dynamic Cinematography: Describe a sophisticated, dynamic camera movement (e.g., a macro sweep transitioning into a slow orbital tracking shot, a dramatic push-in, or a top-down reveal).
-5. Format: Be 60-120 words long, written as a single flowing, highly descriptive cinematic paragraph. NO bullet points.
-6. Suffix: End your prompt exactly with: ", ultra-photorealistic, 8K resolution, macro detail, cinematic lighting, smooth slow-motion, highly detailed, no text, no watermark"
+CRITICAL RULES FOR IMAGE-TO-VIDEO PROMPTING:
+1. Do NOT describe the detailed visual features, patterns, materials, or colors of the product itself (e.g. do not say "a deep black kurta with vertical stripes and silver sequins"). Veo extracts the product details directly from the reference images, and describing them redundantly confuses the model.
+2. Refer to the product simply using high-level terms (e.g. "the clothing from the reference images", "the product from the reference images", "the shoes from the reference images").
+3. Focus entirely on:
+   - Subject Motion & Action: Describe what is happening in the video (e.g., a model walking, a product rotating, liquid splashing).
+   - Scene Environment: Describe a clean, premium, or minimalist setting that complements the reference images.
+   - Cinematic Lighting: Specify the lighting setup (e.g., soft golden hour sunset lighting, clean studio lighting, or dramatic rim light).
+   - Cinematography: Describe dynamic camera movement (e.g., a smooth panning shot, close-ups of fabric texture, or wide orbital tracking shots).
+4. Keep the prompt short, concise, and impactful (between 35 to 60 words). Do NOT write a long paragraph.
+5. End your prompt exactly with: ", professional fashion film aesthetic, cinematic lighting, smooth slow-motion, no text, no watermark"
 
 Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
 
-              let veoPrompt = 'A beautiful cinematic product showcase with slow zoom and bokeh, golden hour lighting, photorealistic, 4K, cinematic, smooth motion, no text, no watermark';
+              let veoPrompt = 'A high-fashion cinematic reel showcasing the clothing from the reference images. A stylish model walks confidently down a runway. Soft lighting, professional fashion film aesthetic, cinematic lighting, smooth slow-motion, no text, no watermark';
               try {
                 // useAdvancedModel = true → uses same Gemini Pro/Flash configured for story & script generation
                 const raw = await aiOrchestrator.generateContent(analysisPrompt, mediaParts, true);

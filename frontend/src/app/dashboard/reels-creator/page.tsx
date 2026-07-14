@@ -205,6 +205,72 @@ const getReelStatus = (reel: any) => {
   };
 };
 
+const renderPostStatus = (reel: any) => {
+  if (!reel.post) return null;
+  
+  const results = reel.post.platformResults || [];
+  if (results.length === 0) return null;
+
+  return (
+    <div className="mb-4 mt-2 p-3 bg-stone-50 border border-stone-100 rounded-xl space-y-2">
+      <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest block">Publishing Status</span>
+      <div className="flex flex-col gap-1.5">
+        {results.map((res: any, idx: number) => {
+          const platformName = res.platform.toUpperCase();
+          const config = platformStyles[platformName];
+          if (!config) return null;
+          const Logo = config.icon;
+
+          const isSuccess = res.status === 'PUBLISHED';
+          const isFailed = res.status === 'FAILED';
+          const isPending = res.status === 'QUEUED' || res.status === 'PROCESSING';
+
+          return (
+            <div key={idx} className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Logo className="h-3.5 w-3.5" style={{ color: config.color }} />
+                <span className="font-semibold text-stone-700 truncate">{config.name}</span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {isSuccess && (
+                  <>
+                    {res.url ? (
+                      <a 
+                        href={res.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold rounded-md hover:bg-emerald-100/80 transition-colors flex items-center gap-1"
+                      >
+                        <span>Live Link</span>
+                        <span className="text-[9px]">↗</span>
+                      </a>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold rounded-md">Posted</span>
+                    )}
+                  </>
+                )}
+                {isFailed && (
+                  <span 
+                    className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 text-[10px] font-bold rounded-md cursor-help font-semibold"
+                    title={res.error || 'Unknown error'}
+                  >
+                    Failed
+                  </span>
+                )}
+                {isPending && (
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold rounded-md animate-pulse font-semibold">
+                    Publishing...
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const renderCompactStep = (
   title: string, 
   content: React.ReactNode, 
@@ -1300,6 +1366,8 @@ export default function ReelsDashboard() {
                                       <GenerationTimeline statusMessage={reel.statusMessage || ''} metadata={reel.metadata} isCompleted={reel.status === 'READY'} />
                                     )}
 
+                                    {renderPostStatus(reel)}
+
                                     {reel.videoUrl && reel.status === 'READY' && (
                                       <div className="mt-auto pt-4 border-t border-stone-100">
                                         <Link
@@ -1456,6 +1524,8 @@ export default function ReelsDashboard() {
                         {((reel.status === 'GENERATING' && reel.statusMessage) || reel.status === 'READY') && (
                           <GenerationTimeline statusMessage={reel.statusMessage || ''} metadata={reel.metadata} isCompleted={reel.status === 'READY'} />
                         )}
+
+                        {renderPostStatus(reel)}
 
                         {/* Error message block */}
                         {reel.status === 'FAILED' && reel.statusMessage && (

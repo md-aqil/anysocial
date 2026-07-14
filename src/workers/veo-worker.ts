@@ -12,10 +12,10 @@ import fs from 'fs';
 async function pollVeoOperation(operationName: string, token: string): Promise<any> {
   // Extract project and location to build fetchPredictOperation endpoint
   let url = `https://us-central1-aiplatform.googleapis.com/v1/${operationName}`;
-  const match = operationName.match(/^projects\/([^\/]+)\/locations\/([^\/]+)\/.*operations\/([^\/]+)$/);
+  const match = operationName.match(/^projects\/([^\/]+)\/locations\/([^\/]+)\/(?:publishers\/google\/models\/([^\/]+)\/)?operations\/([^\/]+)$/);
   if (match) {
-    const [, projectId, location] = match;
-    const modelId = 'veo-3.0-generate-001';
+    const [, projectId, location, modelIdFromPath, operationId] = match;
+    const modelId = modelIdFromPath || process.env.VEO_MODEL || 'veo-3.0-fast-generate-001';
     url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:fetchPredictOperation`;
   }
 
@@ -71,7 +71,13 @@ class VeoGenerationWorker {
     // 1. Generate text (script and video description)
     let scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a highly detailed 1-sentence visual description of what the video should show. Format as JSON: { "script": "...", "visual_prompt": "..." }`;
     if (productImageBase64) {
-      scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a highly detailed 1-sentence visual description of what the video should show. Since a product image is provided, ensure the visual prompt explicitly instructs to keep the product identical and unaltered. Format as JSON: { "script": "...", "visual_prompt": "..." }`;
+      scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a concise, high-level visual description (30-50 words) optimized for Veo image-to-video generation. 
+CRITICAL PROMPTING RULES:
+1. Do NOT describe the detailed visual features, patterns, materials, or colors of the product itself (since the model extracts them directly from the reference image).
+2. Refer to the product simply as "the product from the reference image" or "the item in the reference image".
+3. Focus the prompt entirely on motion, environment, lighting, and cinematic camera movement.
+4. End the visual prompt exactly with: ", professional fashion film aesthetic, cinematic lighting, smooth slow-motion, no text, no watermark"
+Format as JSON: { "script": "...", "visual_prompt": "..." }`;
     }
     const aiResponse = await aiOrchestrator.generateContent(scriptPrompt);
     const parsed = typeof aiResponse === 'string' ? JSON.parse(aiResponse.replace(/```json/g, '').replace(/```/g, '')) : aiResponse;
@@ -126,7 +132,7 @@ class VeoGenerationWorker {
       await bucket.create({ location: 'us-central1' });
     }
 
-    const veoModelId = process.env.VEO_MODEL_ID || 'veo-3.0-generate-001';
+    const veoModelId = process.env.VEO_MODEL || process.env.VEO_MODEL_ID || 'veo-3.0-fast-generate-001';
     const veoUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${veoModelId}:predictLongRunning`;
     
     const veoInstance: any = { prompt: visual_prompt };

@@ -348,6 +348,9 @@ export const api = {
         : `/api/curation/public/${userId}`;
       return request<{ success: boolean; posts: any[] }>(url);
     }
+  },
+  reels: {
+    list: () => request<{ success: boolean; data: any[] }>('/api/reels'),
   }
 };
 

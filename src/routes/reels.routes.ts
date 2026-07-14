@@ -11,6 +11,22 @@ import fs from 'fs';
 
 const router = Router();
 
+// GET /api/reels - list all reels for the user
+router.get('/', requireAuth, async (req: any, res: any) => {
+  try {
+    const userId = req.userId;
+    const reels = await prisma.reel.findMany({
+      where: { userId },
+      include: { post: true, series: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json({ success: true, data: reels });
+  } catch (error: any) {
+    console.error('Error fetching reels:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // Multer disk storage for local uploads in reels
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -490,6 +506,7 @@ router.get('/product', requireAuth, async (req: any, res: any) => {
     const userId = req.userId;
     const productReels = await prisma.reel.findMany({
       where: { userId, type: 'PRODUCT' },
+      include: { post: true },
       orderBy: { createdAt: 'desc' },
     });
     res.status(200).json({ success: true, data: productReels });

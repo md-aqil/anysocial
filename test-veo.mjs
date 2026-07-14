@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { GoogleAuth } from 'google-auth-library';
 import { Storage } from '@google-cloud/storage';
 
