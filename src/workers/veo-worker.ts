@@ -57,9 +57,9 @@ function buildAssSubtitleFile(
   let fontSize = 40;
   let borderStyle = 1;
   let outline = 1.5;
-  let shadow = 4;
+  let shadow = 2; // Reduced shadow distance
   let outlineColour = '&H00000000';
-  let backColour = '&H99000000';
+  let backColour = '&HB3000000'; // 30% opacity instead of 40% for softer shadow
   let extraTags = '\\blur12';
 
   if (style === 'solid-dark-box') {
@@ -179,9 +179,10 @@ Paragraph 2: The middle section/context.
 Paragraph 3: A short CTA (Call To Action).
 
 Format requirements:
+- VERY IMPORTANT: The script MUST be extremely short and punchy. Maximum 3 short sentences TOTAL for the entire video. Do not write a long script.
 - Separate each paragraph with a blank line (double newline).
-- Each paragraph should have 2-3 short lines formatted with line breaks.
-- Keep the sentences/lines very short (maximum 5-8 words per line) so it fits perfectly on a mobile portrait screen without wrapping.
+- Each paragraph should have 1-2 short lines formatted with line breaks.
+- Keep the sentences/lines very short (maximum 4-6 words per line) so it fits perfectly on a mobile portrait screen without wrapping.
 
 For example:
 "I'm Victoria.
@@ -290,10 +291,12 @@ Format your output as a JSON object:
       rawVideoUrl: publicRawVideoUrl,
       musicPrompt: musicVibePrompt
     });
-    let bgmPath: string | null = null;
+    let bgmPath: string | null = path.join(process.cwd(), 'bgm.mp3');
     try {
-      bgmPath = await aiOrchestrator.generateMusic(musicVibePrompt, []);
-      if (bgmPath) tempFilesToCleanup.push(bgmPath);
+      // Lyria 2 API is currently unavailable in this project, using fallback high-quality lofi track
+      if (!fs.existsSync(bgmPath)) {
+         bgmPath = null;
+      }
     } catch (musicErr: any) {
       logger.warn({ event: 'veo_music_failed', reelId, error: musicErr.message });
     }
