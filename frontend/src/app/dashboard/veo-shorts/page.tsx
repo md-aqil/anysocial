@@ -4,8 +4,9 @@ import { useAuthStore } from '@/store/auth-store';
 
 export default function VeoShortsCreator() {
   const { token } = useAuthStore();
-  const [topic, setTopic] = useState('');
-  const [subtitleStyle, setSubtitleStyle] = useState('orange-box');
+  const [topic, setTopic] = useState('how I built a $10k/month software agency at 22 without showing my face');
+  const [subtitleStyle, setSubtitleStyle] = useState('minimal');
+  const [format, setFormat] = useState('creator'); // creator, product
   const [status, setStatus] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [reelId, setReelId] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export default function VeoShortsCreator() {
       const formData = new FormData();
       formData.append('topic', topic);
       formData.append('subtitleStyle', subtitleStyle);
+      formData.append('format', format);
       if (productImage) {
         formData.append('productImage', productImage);
       }
@@ -126,11 +128,37 @@ export default function VeoShortsCreator() {
         {/* Left Column: Form Controls */}
         <div className="lg:col-span-5 flex flex-col gap-8 bg-white border border-slate-200 p-8 rounded-3xl shadow-sm sticky top-8">
           <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Reel Format</label>
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormat('creator');
+                  setSubtitleStyle('minimal');
+                  setTopic('how I built a $10k/month software agency at 22 without showing my face');
+                }}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${format === 'creator' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                🎥 Faceless Creator
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormat('product');
+                  setSubtitleStyle('orange-box');
+                  setTopic('A dramatic cinematic shot of a neon city in cyberpunk style');
+                }}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${format === 'product' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                📦 Product Showcase
+              </button>
+            </div>
+
             <label className="block text-sm font-semibold text-slate-700 mb-2">Video Topic or Idea</label>
             <textarea
               className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
               rows={4}
-              placeholder="e.g. A dramatic cinematic shot of a neon city in cyberpunk style..."
+              placeholder={format === 'creator' ? "e.g. how I quit my corporate job to travel full-time" : "e.g. A dramatic cinematic shot of a neon city..."}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
             />

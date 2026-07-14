@@ -19,6 +19,7 @@ const veoQueue = new Queue('veo-generation', { connection: redis });
 const generateVeoSchema = z.object({
   topic: z.string().min(1, 'Topic is required'),
   subtitleStyle: z.string().optional().default('orange-box'), // orange-box, blue-box, outline, minimal
+  format: z.string().optional().default('creator'), // creator, product
 });
 
 /**
@@ -32,6 +33,7 @@ router.post('/generate', requireAuth, upload.single('productImage'), async (req:
     const bodyData = {
       topic: req.body.topic,
       subtitleStyle: req.body.subtitleStyle,
+      format: req.body.format,
     };
     const validatedData = generateVeoSchema.parse(bodyData);
 
@@ -50,6 +52,7 @@ router.post('/generate', requireAuth, upload.single('productImage'), async (req:
         script: validatedData.topic, // use script field to store the initial prompt/topic
         metadata: {
           subtitleStyle: validatedData.subtitleStyle,
+          format: validatedData.format,
           hasProductImage: !!productImageBase64
         }
       },
@@ -60,6 +63,7 @@ router.post('/generate', requireAuth, upload.single('productImage'), async (req:
       reelId: reel.id,
       topic: validatedData.topic,
       subtitleStyle: validatedData.subtitleStyle,
+      format: validatedData.format,
       productImageBase64,
       productImageMimeType
     });

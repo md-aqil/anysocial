@@ -42,13 +42,21 @@ async function pollVeoOperation(operationName: string, token: string): Promise<a
   }
 }
 
+function escapeFfmpegText(text: string): string {
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "'\\\\''")
+    .replace(/:/g, '\\\\:')
+    .replace(/%/g, '\\\\%');
+}
+
 class VeoGenerationWorker {
   private worker: Worker;
 
   constructor() {
     this.worker = new Worker('veo-generation', async (job: Job) => {
-  const { reelId, topic, subtitleStyle, productImageBase64, productImageMimeType } = job.data;
-  logger.info({ event: 'veo_generation_started', reelId, topic, hasImage: !!productImageBase64 });
+  const { reelId, topic, subtitleStyle, format = 'creator', productImageBase64, productImageMimeType } = job.data;
+  logger.info({ event: 'veo_generation_started', reelId, topic, format, hasImage: !!productImageBase64 });
 
   try {
     const reelDoc = await prisma.reel.findUnique({ where: { id: reelId } });
@@ -70,7 +78,30 @@ class VeoGenerationWorker {
     
     // 1. Generate text (script and video description)
     let scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a highly detailed 1-sentence visual description of what the video should show. Format as JSON: { "script": "...", "visual_prompt": "..." }`;
-    if (productImageBase64) {
+    
+    if (format === 'creator') {
+      scriptPrompt = `You are a viral TikTok and Instagram Reels creator specialist. Write a calm, luxury minimalist faceless script about: ${topic}.
+The video follows the quiet luxury, Scandi minimalist lifestyle aesthetic.
+We need a curiosity-inducing contradiction hook at the beginning, followed by 3-5 short, sequential, high-impact lines.
+For example:
+"I made $2M without showing my face."
+"I quit my job at 21."
+"I never went to college."
+"I have zero employees."
+"Here's exactly how I did it."
+
+Keep the sentences/lines very short (maximum 5-8 words per line/sentence so it fits perfectly on a mobile portrait screen without wrapping).
+Also, provide a highly detailed 1-sentence visual prompt optimized for Google Veo 3 that represents a premium faceless lifestyle scene.
+It MUST follow this exact style:
+"Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. Soft natural daylight fills the room, creating a calm editorial atmosphere. Muted colors, premium Scandinavian interior, cinematic shallow depth of field, subtle movement only, no camera movement, realistic motion, quiet luxury aesthetic."
+
+Ensure the visual prompt matches the tone/subject of the topic.
+Format your output as a JSON object:
+{
+  "script": "Sentence 1. Sentence 2. Sentence 3. Sentence 4. Sentence 5.",
+  "visual_prompt": "The detailed visual prompt following the Scandinavian locked-tripod format."
+}`;
+    } else if (productImageBase64) {
       scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a concise, high-level visual description (30-50 words) optimized for Veo image-to-video generation. 
 CRITICAL PROMPTING RULES:
 1. Do NOT describe the detailed visual features, patterns, materials, or colors of the product itself (since the model extracts them directly from the reference image).
@@ -207,23 +238,48 @@ Format as JSON: { "script": "...", "visual_prompt": "..." }`;
     // We will use FFmpeg to draw text
     const ffmpeg = (await import('fluent-ffmpeg')).default;
     
-    // Split script into sentences for blocky drawing
-    const sentence = script.substring(0, 100).replace(/'/g, "\u2019").replace(/:/g, '\\\\:');
-    
-    let drawtextStr = '';
-    if (subtitleStyle === 'orange-box') {
-      drawtextStr = `drawtext=text='${sentence}':fontcolor=white:fontsize=48:box=1:boxcolor=#FF6B00@0.9:boxborderw=15:x=(w-text_w)/2:y=(h-text_h)/2`;
-    } else if (subtitleStyle === 'blue-box') {
-      drawtextStr = `drawtext=text='${sentence}':fontcolor=white:fontsize=48:box=1:boxcolor=#0055FF@0.9:boxborderw=15:x=(w-text_w)/2:y=(h-text_h)/2`;
-    } else if (subtitleStyle === 'outline') {
-      drawtextStr = `drawtext=text='${sentence}':fontcolor=white:fontsize=54:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/2`;
-    } else { // minimal
-      drawtextStr = `drawtext=text='${sentence}':fontcolor=white:fontsize=40:shadowcolor=black@0.7:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h-text_h)/2`;
+    let drawtextFilters: string[] = [];
+    if (format === 'creator') {
+      // Split by sentence boundaries, clean whitespace
+      const sentences = script.split(/[.!?]+/).map((s: string) => s.trim()).filter(Boolean);
+      const totalDuration = 8; // default duration is 8 seconds
+      const sentenceDuration = totalDuration / Math.max(1, sentences.length);
+
+      sentences.forEach((sentence: string, index: number) => {
+        const start = index * sentenceDuration;
+        const end = (index + 1) * sentenceDuration;
+        const escaped = escapeFfmpegText(sentence);
+        
+        let filter = '';
+        if (subtitleStyle === 'orange-box') {
+          filter = `drawtext=text='${escaped}':fontcolor=white:fontsize=40:box=1:boxcolor=#FF6B00@0.9:boxborderw=12:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`;
+        } else if (subtitleStyle === 'blue-box') {
+          filter = `drawtext=text='${escaped}':fontcolor=white:fontsize=40:box=1:boxcolor=#0055FF@0.9:boxborderw=12:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`;
+        } else if (subtitleStyle === 'outline') {
+          filter = `drawtext=text='${escaped}':fontcolor=white:fontsize=44:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`;
+        } else { // minimal (Instagram-style sans-serif default)
+          filter = `drawtext=text='${escaped}':fontcolor=white:fontsize=36:shadowcolor=black@0.7:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`;
+        }
+        drawtextFilters.push(filter);
+      });
+    } else {
+      const sentence = script.substring(0, 100).replace(/'/g, "\u2019").replace(/:/g, '\\\\:');
+      let filter = '';
+      if (subtitleStyle === 'orange-box') {
+        filter = `drawtext=text='${sentence}':fontcolor=white:fontsize=48:box=1:boxcolor=#FF6B00@0.9:boxborderw=15:x=(w-text_w)/2:y=(h-text_h)/2`;
+      } else if (subtitleStyle === 'blue-box') {
+        filter = `drawtext=text='${sentence}':fontcolor=white:fontsize=48:box=1:boxcolor=#0055FF@0.9:boxborderw=15:x=(w-text_w)/2:y=(h-text_h)/2`;
+      } else if (subtitleStyle === 'outline') {
+        filter = `drawtext=text='${sentence}':fontcolor=white:fontsize=54:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/2`;
+      } else { // minimal
+        filter = `drawtext=text='${sentence}':fontcolor=white:fontsize=40:shadowcolor=black@0.7:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h-text_h)/2`;
+      }
+      drawtextFilters.push(filter);
     }
 
     await new Promise((resolve, reject) => {
       ffmpeg(localRawVideo)
-        .videoFilters(drawtextStr)
+        .videoFilters(drawtextFilters)
         .outputOptions(['-c:v libx264', '-preset fast', '-crf 23', '-c:a copy'])
         .save(finalVideoPath)
         .on('end', resolve)
