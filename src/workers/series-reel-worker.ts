@@ -175,11 +175,12 @@ export class ReelWorker {
     isRecompose?: boolean;
     regenerateShots?: number[];
     ingredientsToVideo?: boolean;
+    imageToVideo?: boolean;
     animateImageCount?: number;
     productDescription?: string;
     voicePrompt?: string;
   }>) {
-    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'Aoede', isRecompose = false, regenerateShots = [], ingredientsToVideo = false, animateImageCount = 3, voicePrompt = '' } = job.data;
+    const { reelId, seriesId, enableMusic = true, enableVoice = true, scriptText: customScriptText, hookText: customHookText, language = 'English', voiceId = 'Aoede', isRecompose = false, regenerateShots = [], ingredientsToVideo = false, imageToVideo = false, animateImageCount = 3, voicePrompt = '' } = job.data;
     logger.info({ event: 'reel_generation_started', reelId, seriesId });
     const tempFilesToCleanup: string[] = [];
     
@@ -191,6 +192,7 @@ export class ReelWorker {
         voiceId,
         voicePrompt,
         ingredientsToVideo,
+        imageToVideo,
         animateImageCount,
       },
       model_llm: 'gemini-2.5-flash',
@@ -257,14 +259,18 @@ export class ReelWorker {
           tempFilesToCleanup.push(downloadedPath);
         }
 
-        // ─── Ingredients to Video ────────────────────────────────────────────
-        if (ingredientsToVideo) {
+        // ─── Ingredients / Image to Video ────────────────────────────────────
+        if (ingredientsToVideo || imageToVideo) {
           try {
-            await updateProgress('🎬 Ingredients to Video: Analysing product images with AI...');
+            await updateProgress(
+              imageToVideo 
+                ? '🎬 Image to Video: Analysing product image with AI...' 
+                : '🎬 Ingredients to Video: Analysing product images with AI...'
+            );
 
             const isVideoFile = (p: string) => /\.(mp4|webm|mov)$/i.test(p);
             const imageOnlyPaths = downloadedAssetPaths.filter(p => !isVideoFile(p));
-            const maxImages = Math.min(animateImageCount, 3, imageOnlyPaths.length);
+            const maxImages = imageToVideo ? 1 : Math.min(animateImageCount, 3, imageOnlyPaths.length);
 
             if (maxImages > 0) {
               // Convert and resize images to base64 for Gemini Vision
@@ -334,7 +340,11 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
                 mimeType: img.mimeType
               }));
 
-              await updateProgress(`🎬 Generating cinematic product clip with Veo Omni (${veoImages.length} image${veoImages.length > 1 ? 's' : ''} as ingredients)...`);
+              await updateProgress(
+                imageToVideo 
+                  ? `🎬 Generating cinematic product clip with Veo Image-to-Video (1 image)...`
+                  : `🎬 Generating cinematic product clip with Veo Omni (${veoImages.length} image${veoImages.length > 1 ? 's' : ''} as ingredients)...`
+              );
 
               generationMetadata.generatedVisualPrompt = veoPrompt;
               await prisma.reel.update({

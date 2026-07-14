@@ -154,6 +154,7 @@ export const campaignWorker = {
           language: campaign.language,
           voiceId: campaign.voiceId,
           ingredientsToVideo: campaign.ingredientsToVideo || false,
+          imageToVideo: campaign.imageToVideo || false,
           animateImageCount: campaign.animateImageCount || 3,
           productDescription: product.description || '',
           voicePrompt: campaign.voicePrompt || '',

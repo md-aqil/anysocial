@@ -71,6 +71,7 @@ export default function AIProductReelPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [ingredientsToVideo, setIngredientsToVideo] = useState(false);
+  const [imageToVideo, setImageToVideo] = useState(false);
   const [animateImageCount, setAnimateImageCount] = useState(3);
 
   const router = useRouter();
@@ -106,6 +107,7 @@ export default function AIProductReelPage() {
           language,
           voiceId,
           ingredientsToVideo,
+          imageToVideo,
           animateImageCount,
           voicePrompt,
         })
@@ -278,6 +280,39 @@ export default function AIProductReelPage() {
               </div>
             </div>
 
+            {/* Image to Video */}
+            <div className={`bg-white p-6 rounded-2xl border shadow-sm transition-all ${imageToVideo ? 'border-violet-400 ring-1 ring-violet-300' : 'border-stone-100'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-violet-600">
+                  <Video className="h-5 w-5 shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider">Image to Video</h3>
+                    <p className="text-xs text-stone-400 font-medium mt-0.5">
+                      Veo Omni animates <strong className="text-stone-600">exactly one main product image</strong> — 15 credits per reel
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImageToVideo(v => !v);
+                    setIngredientsToVideo(false);
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${imageToVideo ? 'bg-violet-600' : 'bg-stone-200'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${imageToVideo ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+              {imageToVideo && (
+                <div className="mt-3 pt-3 border-t border-stone-100">
+                  <div className="flex items-center gap-2 bg-violet-50 rounded-xl px-3 py-2">
+                    <span className="text-violet-500 text-sm">🎬</span>
+                    <p className="text-xs text-violet-700 font-medium">AI uses 1 product image as a starting anchor → 1 animated 6s hero clip with Veo Omni</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Ingredients to Video */}
             <div className={`bg-white p-6 rounded-2xl border shadow-sm transition-all ${ingredientsToVideo ? 'border-violet-400 ring-1 ring-violet-300' : 'border-stone-100'}`}>
               <div className="flex items-center justify-between">
@@ -286,13 +321,16 @@ export default function AIProductReelPage() {
                   <div>
                     <h3 className="text-sm font-bold uppercase tracking-wider">Ingredients to Video</h3>
                     <p className="text-xs text-stone-400 font-medium mt-0.5">
-                      Veo Omni analyses all product images and generates <strong className="text-stone-600">one cinematic clip</strong> — 15 credits per reel
+                      Veo Omni analyses <strong className="text-stone-600">up to 3 product images</strong> as ingredients — 15 credits per reel
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIngredientsToVideo(v => !v)}
+                  onClick={() => {
+                    setIngredientsToVideo(v => !v);
+                    setImageToVideo(false);
+                  }}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${ingredientsToVideo ? 'bg-violet-600' : 'bg-stone-200'}`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${ingredientsToVideo ? 'translate-x-6' : 'translate-x-1'}`} />

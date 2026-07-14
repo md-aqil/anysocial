@@ -1255,6 +1255,11 @@ export default function ReelsDashboard() {
                                 🎬 Ingredients to Video
                               </span>
                             )}
+                            {campaign.imageToVideo && (
+                              <span className="px-2 py-0.5 bg-violet-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                🎬 Image to Video
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1502,6 +1507,11 @@ export default function ReelsDashboard() {
                                {config.ingredientsToVideo && (
                                  <span className="px-2 py-1 bg-pink-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
                                    🎬 Ingredients to Video
+                                 </span>
+                               )}
+                               {config.imageToVideo && (
+                                 <span className="px-2 py-1 bg-violet-600 text-white text-[9px] font-bold rounded-lg shadow-xs flex items-center gap-1">
+                                   🎬 Image to Video
                                  </span>
                                )}
                              </div>
