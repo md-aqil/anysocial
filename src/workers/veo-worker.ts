@@ -54,7 +54,7 @@ function buildAssSubtitleFile(
   const ORANGE = '&H00006BFF'; // #FF6B00
   const BLUE = '&H00FF5500';   // #0055FF
 
-  let fontSize = 58;
+  let fontSize = 30;
   let borderStyle = 1;
   let outline = 1.5;
   let shadow = 4;
@@ -105,7 +105,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           return words.slice(0, mid).join(' ') + '\\N' + words.slice(mid).join(' ');
        }
        return s;
-    }).join('\\N'); 
+    }).join('\\N\\N'); 
   });
 
   // 3. Calculate timing based on reading speed and proportional duration
@@ -302,7 +302,7 @@ Format your output as a JSON object:
       ffmpeg(localRawVideo)
         .inputOptions(['-stream_loop', '1'])
         .videoFilters([
-          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.3:t=fill'
+          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.1:t=fill'
         ])
         .outputOptions(['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'copy'])
         .save(processedVideoPath)
