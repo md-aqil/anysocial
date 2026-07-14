@@ -12,7 +12,7 @@ const sharp = (sharpModule as any).default || sharpModule;
 import { VeoService } from '../services/veo.service.js';
 import os from 'os';
 
-type SubtitleStyle = 'orange-box' | 'blue-box' | 'outline' | 'minimal';
+type SubtitleStyle = 'cinematic-shadow' | 'solid-dark-box' | 'transparent-dark-box' | 'classic-outline';
 
 /** Formats seconds into ASS time format H:MM:SS.cs */
 function formatAssTime(totalSeconds: number): string {
@@ -329,7 +329,7 @@ Format your output as a JSON object:
       paragraphs.push(rawSentences.slice(i, i + sentencesPerGroup).join('\n'));
     }
     
-    const assPath = buildAssSubtitleFile(paragraphs, actualDuration, (subtitleStyle || 'minimal') as SubtitleStyle);
+    const assPath = buildAssSubtitleFile(paragraphs, actualDuration, (subtitleStyle || 'cinematic-shadow') as SubtitleStyle);
     if (assPath) tempFilesToCleanup.push(assPath);
 
     const { outputPath: mergedVideoPath, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(
