@@ -78,20 +78,23 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Poppins,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},5,60,60,0,1
+Style: Default,Poppins,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},8,60,60,250,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 `;
 
-  const perLine = totalDuration / lines.length;
+  const perGroup = totalDuration / lines.length;
   let body = '';
+  let accumulatedText = '';
   for (let i = 0; i < lines.length; i++) {
-    const start = formatAssTime(i * perLine);
-    const end = formatAssTime((i + 1) * perLine);
-    // Gentle pop-in scale animation for a premium feel.
-    const anim = `{\\fscx90\\fscy90\\t(0,150,\\fscx100\\fscy100)}`;
-    body += `Dialogue: 0,${start},${end},Default,,0,0,0,,${anim}${lines[i]}\n`;
+    const start = formatAssTime(i * perGroup);
+    const end = formatAssTime(i === lines.length - 1 ? totalDuration : (i + 1) * perGroup);
+    if (i > 0) {
+      accumulatedText += '\\N\\N';
+    }
+    accumulatedText += lines[i];
+    body += `Dialogue: 0,${start},${end},Default,,0,0,0,,${accumulatedText}\n`;
   }
 
   const assPath = path.join(os.tmpdir(), `veo_subs_${Date.now()}.ass`);
@@ -130,15 +133,28 @@ class VeoGenerationWorker {
     // 1. Generate script + Veo visual prompt (faceless cinematic creator format).
     const scriptPrompt = `You are a viral TikTok and Instagram Reels creator specialist. Write a calm, luxury minimalist faceless script about: ${topic}.
 The video follows the quiet luxury, Scandi minimalist lifestyle aesthetic.
-We need a curiosity-inducing contradiction hook at the beginning, followed by 3-5 short, sequential, high-impact lines.
-For example:
-"I made $2M without showing my face."
-"I quit my job at 21."
-"I never went to college."
-"I have zero employees."
-"Here's exactly how I did it."
+We need exactly 3 short paragraphs. 
+Paragraph 1: A curiosity-inducing contradiction hook.
+Paragraph 2: The middle section/context.
+Paragraph 3: A short CTA (Call To Action).
 
-Keep the sentences/lines very short (maximum 5-8 words per line/sentence so it fits perfectly on a mobile portrait screen without wrapping).
+Format requirements:
+- Separate each paragraph with a blank line (double newline).
+- Each paragraph should have 2-3 short lines formatted with line breaks.
+- Keep the sentences/lines very short (maximum 5-8 words per line) so it fits perfectly on a mobile portrait screen without wrapping.
+
+For example:
+"I'm Victoria.
+I'm 30 & I'm unemployed but
+last month I cleared $11,371.
+
+I'm not an influencer,
+I don't do UGC,
+and I don't sell Etsy stuff.
+Actually, I don't even show
+my face.
+
+Here is exactly what I did 👇"
 Also, provide a highly detailed 1-sentence visual prompt optimized for Google Veo 3 that represents a premium faceless lifestyle scene.
 It MUST follow this exact style:
 "Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. Soft natural daylight fills the room, creating a calm editorial atmosphere. Muted colors, premium Scandinavian interior, cinematic shallow depth of field, subtle movement only, no camera movement, realistic motion, quiet luxury aesthetic."
@@ -209,38 +225,40 @@ Format your output as a JSON object:
       logger.warn({ event: 'veo_duration_probe_failed', reelId, error: durErr.message });
     }
 
-    await updateProgress('🔤 Applying final text composition & styles...', {
+    await updateProgress('🎵 Generating background music & final composition...', {
       rawVideoUrl: publicRawVideoUrl
     });
 
-    // 4. Final composition: burn captions as a styled ASS subtitle track.
+    const musicVibePrompt = `Calm, luxury, scandi minimalist lifestyle background music, lo-fi aesthetic, quiet and ambient`;
+    let bgmPath: string | null = null;
+    try {
+      bgmPath = await aiOrchestrator.generateMusic(musicVibePrompt, []);
+      if (bgmPath) tempFilesToCleanup.push(bgmPath);
+    } catch (musicErr: any) {
+      logger.warn({ event: 'veo_music_failed', reelId, error: musicErr.message });
+    }
+
+    // 4. Final composition: burn captions as a styled ASS subtitle track and add music.
     const finalVideoFilename = `veo_final_${Date.now()}.mp4`;
     const finalVideoPath = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', finalVideoFilename);
 
-    const ffmpeg = (await import('fluent-ffmpeg')).default;
-
-    // Split the script into short caption lines and time them across the real duration.
-    const sentences = script.split(/[.!?\n]+/).map((s: string) => s.trim()).filter(Boolean);
-    const assPath = buildAssSubtitleFile(sentences, actualDuration, (subtitleStyle || 'minimal') as SubtitleStyle);
+    // Split the script into paragraphs and time them across the real duration.
+    const paragraphs = script.split(/\n\s*\n/).map((s: string) => s.trim()).filter(Boolean);
+    const assPath = buildAssSubtitleFile(paragraphs, actualDuration, (subtitleStyle || 'minimal') as SubtitleStyle);
     if (assPath) tempFilesToCleanup.push(assPath);
 
-    await new Promise((resolve, reject) => {
-      const proc = ffmpeg(localRawVideo);
-
-      if (assPath) {
-        // The subtitles filter is a single filter — no chained-filtergraph comma pitfalls.
-        const escapedPath = assPath.replace(/\\/g, '/').replace(/:/g, '\\:');
-        proc.videoFilters(`subtitles='${escapedPath}'`)
-            .outputOptions(['-c:v libx264', '-preset fast', '-crf 23', '-c:a copy']);
-      } else {
-        // No captions — just remux without re-encoding.
-        proc.outputOptions(['-c copy']);
-      }
-
-      proc.save(finalVideoPath)
-        .on('end', resolve)
-        .on('error', reject);
-    });
+    const { outputPath: mergedVideoPath, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(
+      localRawVideo,
+      bgmPath,
+      assPath ?? undefined,
+      undefined,
+      undefined,
+      actualDuration
+    );
+    if (mergeTempFiles) tempFilesToCleanup.push(...mergeTempFiles);
+    
+    fs.copyFileSync(mergedVideoPath, finalVideoPath);
+    tempFilesToCleanup.push(mergedVideoPath);
 
     const publicVideoUrl = `/uploads/reels/${finalVideoFilename}`;
 
