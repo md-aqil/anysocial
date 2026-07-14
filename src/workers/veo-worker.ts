@@ -55,7 +55,7 @@ function buildAssSubtitleFile(
   const BLUE = '&H00FF5500';   // #0055FF
 
   // Style tuning to exactly match Image 2 reference but slightly larger and starting from top
-  let fontSize = 84;
+  let fontSize = 48;
   let borderStyle = 1;
   let outline = 1.5;
   let shadow = 3.5;
@@ -167,7 +167,7 @@ It MUST follow this exact style:
 "Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. ${aestheticInstruction}"
 
 CRITICAL INSTRUCTION: You MUST violently randomize the [environment], [subject/entrepreneur], and lighting for EVERY generation! DO NOT use the same generic room. Use different locations (e.g., modern glass office, cozy hygge living room, minimalist cafe, moody dusk studio), different subtle actions (e.g., pouring matcha, organizing aesthetic notebooks, adjusting a lamp), and unique clothing styles. 
-Also, explicitly end the visual prompt with: "9:16 vertical aspect ratio. Shot on 85mm lens, f/1.8, ISO 200. Do not beautify. No plastic skin, no CGI smoothing. Lighting creates sharp realistic highlights. Raw, unretouched, hyper-realistic candid photography."
+Also, explicitly end the visual prompt with: "9:16 vertical aspect ratio. Shot on 85mm lens, f/1.8, ISO 200. Do not beautify. No plastic skin, no CGI smoothing. Lighting creates sharp realistic highlights. Raw, unretouched, hyper-realistic candid photography. Movement adheres strictly to physical weight and gravity at real-time natural human speed. Strictly locked tripod camera with zero drift and stable optical depth of field. Absolutely no structural morphing, zero background warping, and no hallucinatory merging. True temporal consistency."
 
 Ensure the visual prompt matches the tone/subject of the topic.
 Format your output as a JSON object:
@@ -271,7 +271,7 @@ Format your output as a JSON object:
         .videoFilters([
           'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.3:t=fill'
         ])
-        .outputOptions(['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-c:a', 'copy'])
+        .outputOptions(['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'copy'])
         .save(processedVideoPath)
         .on('end', resolve)
         .on('error', reject);
