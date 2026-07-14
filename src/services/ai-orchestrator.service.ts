@@ -323,6 +323,7 @@ Make sure the output is a valid JSON object.`;
       throw new Error("Vertex AI is not configured for LLM image generation.");
     }
 
+    let finalPromptText = prompt;
     try {
       // 🚀 Primary: Gemini 2.5 Flash Image Model (via REST API to match cURL exactly)
       const projectId = process.env.VERTEX_AI_PROJECT_ID;
@@ -333,8 +334,6 @@ Make sure the output is a valid JSON object.`;
       });
       const client = await auth.getClient();
       const accessToken = await client.getAccessToken();
-
-      let finalPromptText = prompt;
       let aspectRatio = "1:1";
       try {
         const parsed = JSON.parse(prompt);
@@ -355,7 +354,8 @@ Make sure the output is a valid JSON object.`;
 
       let url, requestBody;
       let base64Data = null;
-      const modelId = 'gemini-3.1-flash-image';
+      const settings = await this.getAiSettings();
+      const modelId = settings.image?.primary || 'gemini-2.5-flash';
       url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
 
       const requestParts: any[] = [{ text: finalPromptText }];
@@ -416,10 +416,10 @@ Make sure the output is a valid JSON object.`;
     } catch (e: any) {
       console.warn("[Gemini Image Generation Error] Falling back to Pollinations:", e.message || e);
       try {
-        return await this.fetchPollinationsImage(prompt, seed);
+        return await this.fetchPollinationsImage(finalPromptText, seed);
       } catch (fallbackErr: any) {
         console.warn("[Pollinations Fallback Error] Falling back to Stock Image:", fallbackErr.message);
-        return await this.fetchStockImage(prompt);
+        return await this.fetchStockImage(finalPromptText);
       }
     }
   }
@@ -488,7 +488,9 @@ Make sure the output is a valid JSON object.`;
         const config = setting?.value as any;
         if (config?.voice?.primary) {
           if (config.voice.primary === 'google-cloud-tts') {
-             resolvedUseGemini = false;
+             if (!isGeminiVoice) {
+               resolvedUseGemini = false;
+             }
           } else {
              resolvedUseGemini = true;
              resolvedModelName = config.voice.primary;
