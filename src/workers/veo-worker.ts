@@ -294,7 +294,7 @@ Format your output as a JSON object:
     let bgmPath: string | null = path.join(process.cwd(), 'bgm.mp3');
     try {
       // Lyria 2 API is currently unavailable in this project, using fallback high-quality lofi track
-      if (!fs.existsSync(bgmPath)) {
+      if (!fs.existsSync(bgmPath) || fs.statSync(bgmPath).size === 0) {
          bgmPath = null;
       }
     } catch (musicErr: any) {
