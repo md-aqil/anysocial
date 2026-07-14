@@ -147,7 +147,7 @@ Format as JSON: { "script": "...", "visual_prompt": "..." }`;
       instances: [veoInstance],
       parameters: {
         storageUri: outputGcsUri,
-        aspectRatio: "16:9",
+        aspectRatio: "9:16",
         sampleCount: 1,
         durationSeconds: 8,
         resolution: "720p"
