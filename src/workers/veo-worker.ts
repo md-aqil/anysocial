@@ -55,7 +55,7 @@ function buildAssSubtitleFile(
   const BLUE = '&H00FF5500';   // #0055FF
 
   // Style tuning to exactly match Image 2 reference but slightly larger and starting from top
-  let fontSize = 48;
+  let fontSize = 52;
   let borderStyle = 1;
   let outline = 0.5;
   let shadow = 2.5;
@@ -157,7 +157,7 @@ my face.
 Here is exactly what I did 👇"
 Also, provide a highly detailed 1-sentence visual prompt optimized for Google Veo 3 that represents a premium faceless lifestyle scene.
 It MUST follow this exact style:
-"Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. Soft natural daylight fills the room, creating a calm editorial atmosphere. Muted colors, premium Scandinavian interior, cinematic shallow depth of field, subtle movement only, no camera movement, realistic motion, quiet luxury aesthetic."
+"Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. Soft natural daylight fills the room, creating a calm editorial atmosphere. Vibrant natural colors, premium Scandinavian interior, cinematic shallow depth of field, subtle movement only, no camera movement, realistic motion, quiet luxury aesthetic."
 
 CRITICAL INSTRUCTION: You MUST violently randomize the [environment], [subject/entrepreneur], and lighting for EVERY generation! DO NOT use the same generic room. Use different locations (e.g., modern glass office, cozy hygge living room, minimalist cafe, moody dusk studio), different subtle actions (e.g., pouring matcha, organizing aesthetic notebooks, adjusting a lamp), and unique clothing styles. 
 Also, explicitly end the visual prompt with: "9:16 vertical aspect ratio, shot on 35mm lens, 8k resolution, ultra-detailed masterpiece, photorealistic, sharp focus, perfectly crisp lighting."
@@ -262,7 +262,7 @@ Format your output as a JSON object:
       ffmpeg(localRawVideo)
         .inputOptions(['-stream_loop', '1'])
         .videoFilters([
-          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.4:t=fill'
+          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.2:t=fill'
         ])
         .outputOptions(['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-c:a', 'copy'])
         .save(processedVideoPath)
