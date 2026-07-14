@@ -55,7 +55,7 @@ function buildAssSubtitleFile(
   const BLUE = '&H00FF5500';   // #0055FF
 
   // Style tuning to exactly match Image 2 reference but slightly larger and starting from top
-  let fontSize = 68;
+  let fontSize = 84;
   let borderStyle = 1;
   let outline = 1.5;
   let shadow = 3.5;
@@ -78,7 +78,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},8,25,25,350,1
+Style: Default,Arial,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},600,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},8,25,25,350,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -167,7 +167,7 @@ It MUST follow this exact style:
 "Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. ${aestheticInstruction}"
 
 CRITICAL INSTRUCTION: You MUST violently randomize the [environment], [subject/entrepreneur], and lighting for EVERY generation! DO NOT use the same generic room. Use different locations (e.g., modern glass office, cozy hygge living room, minimalist cafe, moody dusk studio), different subtle actions (e.g., pouring matcha, organizing aesthetic notebooks, adjusting a lamp), and unique clothing styles. 
-Also, explicitly end the visual prompt with: "9:16 vertical aspect ratio, shot on 35mm lens, 8k resolution, ultra-detailed masterpiece, photorealistic, sharp focus, perfectly crisp lighting."
+Also, explicitly end the visual prompt with: "9:16 vertical aspect ratio. Shot on 85mm lens, f/1.8, ISO 200. Do not beautify. No plastic skin, no CGI smoothing. Lighting creates sharp realistic highlights. Raw, unretouched, hyper-realistic candid photography."
 
 Ensure the visual prompt matches the tone/subject of the topic.
 Format your output as a JSON object:
@@ -269,7 +269,7 @@ Format your output as a JSON object:
       ffmpeg(localRawVideo)
         .inputOptions(['-stream_loop', '1'])
         .videoFilters([
-          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.4:t=fill'
+          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.3:t=fill'
         ])
         .outputOptions(['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-c:a', 'copy'])
         .save(processedVideoPath)
