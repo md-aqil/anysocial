@@ -53,7 +53,7 @@ function buildAssSubtitleFile(
   const BLUE = '&H00FF5500';   // #0055FF
 
   // Style tuning per option. BorderStyle 3 = opaque box (box colour = OutlineColour).
-  let fontSize = 60;
+  let fontSize = 45;
   let borderStyle = 1;
   let outline = 3;
   let shadow = 0;
@@ -91,7 +91,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     const start = formatAssTime(i * perGroup);
     const end = formatAssTime(i === lines.length - 1 ? totalDuration : (i + 1) * perGroup);
     if (i > 0) {
-      accumulatedText += '\\N\\N';
+      accumulatedText += '\\N\\N\\N';
     }
     accumulatedText += lines[i];
     body += `Dialogue: 0,${start},${end},Default,,0,0,0,,${accumulatedText}\n`;
@@ -218,9 +218,10 @@ Format your output as a JSON object:
     const publicRawVideoUrl = `/uploads/reels/${rawVideoFilename}`;
 
     // Determine the true rendered duration so caption timing matches the actual video.
-    let actualDuration = targetDuration;
+    // We multiply by 2 because we will loop the video once in the next step.
+    let actualDuration = targetDuration * 2;
     try {
-      actualDuration = await VideoComposerService.getMediaDuration(localRawVideo);
+      actualDuration = (await VideoComposerService.getMediaDuration(localRawVideo)) * 2;
     } catch (durErr: any) {
       logger.warn({ event: 'veo_duration_probe_failed', reelId, error: durErr.message });
     }
@@ -238,17 +239,44 @@ Format your output as a JSON object:
       logger.warn({ event: 'veo_music_failed', reelId, error: musicErr.message });
     }
 
-    // 4. Final composition: burn captions as a styled ASS subtitle track and add music.
+    // 4. Pre-process raw video: crop to 9:16 and add a 40% black overlay for text readability
+    const processedVideoFilename = `veo_processed_${Date.now()}.mp4`;
+    const processedVideoPath = path.join(os.tmpdir(), processedVideoFilename);
+    const ffmpegModule = await import('fluent-ffmpeg');
+    const ffmpeg = (ffmpegModule as any).default || ffmpegModule;
+    
+    await new Promise((resolve, reject) => {
+      ffmpeg(localRawVideo)
+        .inputOptions(['-stream_loop', '1'])
+        .videoFilters([
+          'scale=720:1280:force_original_aspect_ratio=increase',
+          'crop=720:1280',
+          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.4:t=fill'
+        ])
+        .outputOptions(['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-c:a', 'copy'])
+        .save(processedVideoPath)
+        .on('end', resolve)
+        .on('error', reject);
+    });
+    tempFilesToCleanup.push(processedVideoPath);
+
+    // 5. Final composition: burn captions as a styled ASS subtitle track and add music.
     const finalVideoFilename = `veo_final_${Date.now()}.mp4`;
     const finalVideoPath = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', finalVideoFilename);
 
-    // Split the script into paragraphs and time them across the real duration.
-    const paragraphs = script.split(/\n\s*\n/).map((s: string) => s.trim()).filter(Boolean);
+    // Split the script into exact sentences, then chunk into 3 groups.
+    const rawSentences = script.replace(/\\n/g, ' ').split(/(?<=[.!?])\s+/).map((s: string) => s.trim()).filter(Boolean);
+    const paragraphs: string[] = [];
+    const sentencesPerGroup = Math.ceil(rawSentences.length / 3);
+    for (let i = 0; i < rawSentences.length; i += sentencesPerGroup) {
+      paragraphs.push(rawSentences.slice(i, i + sentencesPerGroup).join('\\n'));
+    }
+    
     const assPath = buildAssSubtitleFile(paragraphs, actualDuration, (subtitleStyle || 'minimal') as SubtitleStyle);
     if (assPath) tempFilesToCleanup.push(assPath);
 
     const { outputPath: mergedVideoPath, tempFiles: mergeTempFiles } = await VideoComposerService.mergeAudioVideo(
-      localRawVideo,
+      processedVideoPath,
       bgmPath,
       assPath ?? undefined,
       undefined,

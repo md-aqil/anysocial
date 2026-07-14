@@ -607,7 +607,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         if (filters.length > 0) {
           proc.videoCodec('libx264')
               .videoFilters(filters);
-          outputOpts.push('-preset', 'superfast');
+          outputOpts.push('-preset', 'fast', '-crf', '18');
         } else {
           proc.videoCodec('copy');
         }

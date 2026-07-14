@@ -10,6 +10,7 @@ export default function VeoShortsCreator() {
   const [statusMessage, setStatusMessage] = useState('');
   const [reelId, setReelId] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
 
   useEffect(() => {
     if (token) {
@@ -105,6 +106,17 @@ export default function VeoShortsCreator() {
   return (
     <div className="p-4 lg:p-8 max-w-[1400px] mx-auto space-y-8 bg-slate-50/50 min-h-screen text-slate-900 font-sans">
 
+      {selectedVideo && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4" onClick={() => setSelectedVideo(null)}>
+          <div className="relative w-full max-w-sm max-h-[90vh] mx-auto" onClick={e => e.stopPropagation()}>
+            <button className="absolute -top-12 right-0 text-white hover:text-orange-400 p-2" onClick={() => setSelectedVideo(null)}>
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <video src={selectedVideo} controls autoPlay className="w-full rounded-2xl shadow-2xl bg-black max-h-[85vh] object-contain" />
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-2 mb-8 text-center max-w-2xl mx-auto">
         <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
@@ -192,7 +204,11 @@ export default function VeoShortsCreator() {
                   const step4Done = reel.status === 'READY' || reel.status === 'PUBLISHED';
 
                   return (
-                    <div key={reel.id} className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col group">
+                    <div key={reel.id} 
+                         className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col group cursor-pointer"
+                         onClick={() => {
+                           if (reel.videoUrl) setSelectedVideo(reel.videoUrl);
+                         }}>
 
                       {/* Current processing overlay bar at top */}
                       {isCurrent && (
@@ -219,7 +235,7 @@ export default function VeoShortsCreator() {
                                 <span className="truncate">{String(statusMessage || 'Processing...')}</span>
                               </div>
                               <button
-                                onClick={() => handleCancel(reel.id)}
+                                onClick={(e) => { e.stopPropagation(); handleCancel(reel.id); }}
                                 className="p-1.5 rounded-full bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 border border-slate-200 hover:border-red-200 transition-colors"
                                 title="Cancel Generation"
                               >
