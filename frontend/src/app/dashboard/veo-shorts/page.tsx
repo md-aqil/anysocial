@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/auth-store';
 export default function VeoShortsCreator() {
   const { token } = useAuthStore();
   const [topic, setTopic] = useState('how I built a $10k/month software agency at 22 without showing my face');
-  const [subtitleStyle, setSubtitleStyle] = useState('minimal');
+  const [subtitleStyle, setSubtitleStyle] = useState('cinematic-shadow');
   const [visualStyle, setVisualStyle] = useState('scandi');
   const [status, setStatus] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');

@@ -12,7 +12,7 @@ const veoQueue = new Queue('veo-generation', { connection: redis });
 
 const generateVeoSchema = z.object({
   topic: z.string().min(1, 'Topic is required'),
-  subtitleStyle: z.enum(['orange-box', 'blue-box', 'outline', 'minimal']).optional().default('minimal'),
+  subtitleStyle: z.enum(['cinematic-shadow', 'solid-dark-box', 'transparent-dark-box', 'classic-outline']).optional().default('cinematic-shadow'),
   visualStyle: z.string().optional().default('scandi'),
 });
 
