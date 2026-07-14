@@ -5,49 +5,98 @@ import { logger } from '../logger/pino.js';
 import { aiOrchestrator } from '../services/ai-orchestrator.service.js';
 import { VideoComposerService } from '../services/video-composer.service.js';
 import path from 'path';
-import os from 'os';
 import fs from 'fs';
 
-// Helper to poll Veo 3 operation
-async function pollVeoOperation(operationName: string, token: string): Promise<any> {
-  // Extract project and location to build fetchPredictOperation endpoint
-  let url = `https://us-central1-aiplatform.googleapis.com/v1/${operationName}`;
-  const match = operationName.match(/^projects\/([^\/]+)\/locations\/([^\/]+)\/(?:publishers\/google\/models\/([^\/]+)\/)?operations\/([^\/]+)$/);
-  if (match) {
-    const [, projectId, location, modelIdFromPath, operationId] = match;
-    const modelId = modelIdFromPath || process.env.VEO_MODEL || 'veo-3.0-fast-generate-001';
-    url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:fetchPredictOperation`;
-  }
+import { VeoService } from '../services/veo.service.js';
+import os from 'os';
 
-  while (true) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ operationName })
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Veo polling failed: ${res.status} ${res.statusText} - ${errText}`);
-    }
-    const data = await res.json() as any;
-    if (data.done) {
-      if (data.error) throw new Error(`Veo generation error: ${data.error.message}`);
-      return data.response;
-    }
-    // Wait 10 seconds before polling again
-    await new Promise(resolve => setTimeout(resolve, 10000));
-  }
+type SubtitleStyle = 'orange-box' | 'blue-box' | 'outline' | 'minimal';
+
+/** Formats seconds into ASS time format H:MM:SS.cs */
+function formatAssTime(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  const centiseconds = Math.floor((totalSeconds % 1) * 100);
+  const pad = (n: number, size = 2) => ('00' + n).slice(-size);
+  return `${hours}:${pad(minutes)}:${pad(seconds)}.${pad(centiseconds)}`;
 }
 
-function escapeFfmpegText(text: string): string {
+/** Escapes text for safe inclusion in an ASS dialogue line. */
+function escapeAssText(text: string): string {
   return text
     .replace(/\\/g, '\\\\')
-    .replace(/'/g, "'\\\\''")
-    .replace(/:/g, '\\\\:')
-    .replace(/%/g, '\\\\%');
+    .replace(/\{/g, '(')
+    .replace(/\}/g, ')')
+    .replace(/\r?\n/g, '\\N')
+    .trim();
+}
+
+/**
+ * Builds an animated ASS subtitle file for the given caption lines and style.
+ * Using a subtitle file + the `subtitles` filter is far more robust than chained
+ * `drawtext` filters (no filtergraph comma/quote parsing pitfalls), and gives
+ * consistent, brand-styled captions.
+ */
+function buildAssSubtitleFile(
+  sentences: string[],
+  totalDuration: number,
+  style: SubtitleStyle
+): string | null {
+  const lines = sentences.map((s) => escapeAssText(s)).filter(Boolean);
+  if (lines.length === 0) return null;
+
+  // ASS colours are &HAABBGGRR (alpha, blue, green, red); alpha 00 = opaque.
+  const WHITE = '&H00FFFFFF';
+  const BLACK = '&H00000000';
+  const ORANGE = '&H00006BFF'; // #FF6B00
+  const BLUE = '&H00FF5500';   // #0055FF
+
+  // Style tuning per option. BorderStyle 3 = opaque box (box colour = OutlineColour).
+  let fontSize = 60;
+  let borderStyle = 1;
+  let outline = 3;
+  let shadow = 0;
+  let outlineColour = BLACK;
+  let backColour = '&H00000000';
+
+  if (style === 'orange-box') {
+    borderStyle = 3; outline = 8; shadow = 0; outlineColour = ORANGE; backColour = ORANGE;
+  } else if (style === 'blue-box') {
+    borderStyle = 3; outline = 8; shadow = 0; outlineColour = BLUE; backColour = BLUE;
+  } else if (style === 'outline') {
+    borderStyle = 1; outline = 4; shadow = 0; outlineColour = BLACK;
+  } else { // minimal — subtle drop shadow
+    borderStyle = 1; outline = 1; shadow = 2; outlineColour = BLACK; backColour = '&H80000000';
+  }
+
+  const header = `[Script Info]
+ScriptType: v4.00+
+PlayResX: 720
+PlayResY: 1280
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Poppins,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},5,60,60,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`;
+
+  const perLine = totalDuration / lines.length;
+  let body = '';
+  for (let i = 0; i < lines.length; i++) {
+    const start = formatAssTime(i * perLine);
+    const end = formatAssTime((i + 1) * perLine);
+    // Gentle pop-in scale animation for a premium feel.
+    const anim = `{\\fscx90\\fscy90\\t(0,150,\\fscx100\\fscy100)}`;
+    body += `Dialogue: 0,${start},${end},Default,,0,0,0,,${anim}${lines[i]}\n`;
+  }
+
+  const assPath = path.join(os.tmpdir(), `veo_subs_${Date.now()}.ass`);
+  fs.writeFileSync(assPath, header + body);
+  return assPath;
 }
 
 class VeoGenerationWorker {
@@ -55,8 +104,10 @@ class VeoGenerationWorker {
 
   constructor() {
     this.worker = new Worker('veo-generation', async (job: Job) => {
-  const { reelId, topic, subtitleStyle, format = 'creator', productImageBase64, productImageMimeType } = job.data;
-  logger.info({ event: 'veo_generation_started', reelId, topic, format, hasImage: !!productImageBase64 });
+  const { reelId, topic, subtitleStyle } = job.data;
+  logger.info({ event: 'veo_generation_started', reelId, topic });
+
+  const tempFilesToCleanup: string[] = [];
 
   try {
     const reelDoc = await prisma.reel.findUnique({ where: { id: reelId } });
@@ -75,12 +126,9 @@ class VeoGenerationWorker {
     };
 
     await updateProgress('📝 Generating AI script & prompt...');
-    
-    // 1. Generate text (script and video description)
-    let scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a highly detailed 1-sentence visual description of what the video should show. Format as JSON: { "script": "...", "visual_prompt": "..." }`;
-    
-    if (format === 'creator') {
-      scriptPrompt = `You are a viral TikTok and Instagram Reels creator specialist. Write a calm, luxury minimalist faceless script about: ${topic}.
+
+    // 1. Generate script + Veo visual prompt (faceless cinematic creator format).
+    const scriptPrompt = `You are a viral TikTok and Instagram Reels creator specialist. Write a calm, luxury minimalist faceless script about: ${topic}.
 The video follows the quiet luxury, Scandi minimalist lifestyle aesthetic.
 We need a curiosity-inducing contradiction hook at the beginning, followed by 3-5 short, sequential, high-impact lines.
 For example:
@@ -101,15 +149,7 @@ Format your output as a JSON object:
   "script": "Sentence 1. Sentence 2. Sentence 3. Sentence 4. Sentence 5.",
   "visual_prompt": "The detailed visual prompt following the Scandinavian locked-tripod format."
 }`;
-    } else if (productImageBase64) {
-      scriptPrompt = `Write a short, viral script about: ${topic}. Also provide a concise, high-level visual description (30-50 words) optimized for Veo image-to-video generation. 
-CRITICAL PROMPTING RULES:
-1. Do NOT describe the detailed visual features, patterns, materials, or colors of the product itself (since the model extracts them directly from the reference image).
-2. Refer to the product simply as "the product from the reference image" or "the item in the reference image".
-3. Focus the prompt entirely on motion, environment, lighting, and cinematic camera movement.
-4. End the visual prompt exactly with: ", professional fashion film aesthetic, cinematic lighting, smooth slow-motion, no text, no watermark"
-Format as JSON: { "script": "...", "visual_prompt": "..." }`;
-    }
+
     const aiResponse = await aiOrchestrator.generateContent(scriptPrompt);
     const parsed = typeof aiResponse === 'string' ? JSON.parse(aiResponse.replace(/```json/g, '').replace(/```/g, '')) : aiResponse;
     const { script, visual_prompt } = parsed;
@@ -118,17 +158,9 @@ Format as JSON: { "script": "...", "visual_prompt": "..." }`;
       generatedScript: script,
       generatedVisualPrompt: visual_prompt
     });
-    
-    // 2. Generate one single image using global image API
-    let imagePrompt = visual_prompt;
-    if (productImageBase64) {
-      imagePrompt = JSON.stringify({
-        prompt: visual_prompt,
-        negative_prompt: "human, person, people", // assume no humans to protect product if it's not requested
-      });
-    }
 
-    const imagePath = await aiOrchestrator.generateImage(imagePrompt, 0, productImageBase64, productImageMimeType);
+    // 2. Generate a single anchor image for Veo image-to-video.
+    const imagePath = await aiOrchestrator.generateImage(visual_prompt, 0);
     let publicThumbnailUrl = '';
     let generatedImageBase64 = null;
     if (imagePath && fs.existsSync(imagePath)) {
@@ -143,145 +175,69 @@ Format as JSON: { "script": "...", "visual_prompt": "..." }`;
     await updateProgress('🎬 Submitting to Google Veo 3 (Long Running)...', {
       generatedImage: publicThumbnailUrl
     });
-    
-    // 3. Google Veo 3 Video Generation
-    const { GoogleAuth } = await import('google-auth-library');
-    const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
-    const client = await auth.getClient();
-    const token = (await client.getAccessToken()).token;
-    const projectId = process.env.VERTEX_AI_PROJECT_ID || await auth.getProjectId();
-    
-    const outputBucket = process.env.VEO_STORAGE_BUCKET || `anysocial-veo-videos-${projectId}`;
-    const outputGcsUri = `gs://${outputBucket}/veo_outputs/`;
 
-    // Ensure bucket exists
-    const gcs = await import('@google-cloud/storage');
-    const initStorage = new gcs.Storage();
-    const bucket = initStorage.bucket(outputBucket);
-    const [exists] = await bucket.exists();
-    if (!exists) {
-      await bucket.create({ location: 'us-central1' });
-    }
-
-    const veoModelId = process.env.VEO_MODEL || process.env.VEO_MODEL_ID || 'veo-3.0-fast-generate-001';
-    const veoUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${veoModelId}:predictLongRunning`;
-    
-    const veoInstance: any = { prompt: visual_prompt };
-    if (generatedImageBase64) {
-      veoInstance.image = {
-        bytesBase64Encoded: generatedImageBase64,
-        mimeType: "image/jpeg"
-      };
-    }
-
-    const veoPayload = {
-      instances: [veoInstance],
-      parameters: {
-        storageUri: outputGcsUri,
-        aspectRatio: "9:16",
-        sampleCount: 1,
-        durationSeconds: 8,
-        resolution: "720p"
-      }
-    };
-
-    const veoRes = await fetch(veoUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(veoPayload)
-    });
-
-    if (!veoRes.ok) {
-      const errText = await veoRes.text();
-      throw new Error(`Veo API Error: ${errText}`);
-    }
-
-    const veoInit = await veoRes.json() as any;
-    const operationName = veoInit.name;
+    // 3. Google Veo 3 Video Generation (delegated to VeoService for bounded polling + retries)
+    const targetDuration = 8;
+    const operationName = await VeoService.initiateGeneration(
+      visual_prompt,
+      generatedImageBase64 || undefined,
+      generatedImageBase64 ? 'image/jpeg' : undefined,
+      { durationSeconds: targetDuration }
+    );
 
     await updateProgress('⏳ Veo 3 is rendering video (this takes a few minutes)...');
-    
-    // Poll for completion
-    const veoResult = await pollVeoOperation(operationName, token as string);
-    
-    await updateProgress('📥 Downloading rendered video from Google Cloud Storage...');
-    
-    const { Storage } = await import('@google-cloud/storage');
-    const storage = new Storage();
-    
-    const gcsUri = veoResult?.videos?.[0]?.gcsUri || veoResult?.generatedSamples?.[0]?.video?.uri;
-    if (!gcsUri) throw new Error("No video URI returned from Veo 3 API");
-    
-    // Parse gs://bucket-name/path/to/video.mp4
-    const gcsPathParts = gcsUri.replace('gs://', '').split('/');
-    const targetBucket = gcsPathParts.shift();
-    const gcsFilePath = gcsPathParts.join('/');
-    
-    const gcsVideoFile = storage.bucket(targetBucket).file(gcsFilePath);
+
+    // pollUntilDone polls with a 10-minute cap and downloads the clip to a temp file.
+    const veoTempPath = await VeoService.pollUntilDone(operationName);
+    tempFilesToCleanup.push(veoTempPath);
+
+    await updateProgress('📥 Preparing rendered video...');
+
+    const uploadsDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels');
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
     const rawVideoFilename = `veo_raw_${Date.now()}.mp4`;
-    const localRawVideo = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', rawVideoFilename);
-    await gcsVideoFile.download({ destination: localRawVideo });
+    const localRawVideo = path.join(uploadsDir, rawVideoFilename);
+    fs.copyFileSync(veoTempPath, localRawVideo);
     const publicRawVideoUrl = `/uploads/reels/${rawVideoFilename}`;
+
+    // Determine the true rendered duration so caption timing matches the actual video.
+    let actualDuration = targetDuration;
+    try {
+      actualDuration = await VideoComposerService.getMediaDuration(localRawVideo);
+    } catch (durErr: any) {
+      logger.warn({ event: 'veo_duration_probe_failed', reelId, error: durErr.message });
+    }
 
     await updateProgress('🔤 Applying final text composition & styles...', {
       rawVideoUrl: publicRawVideoUrl
     });
 
-    // 4. Final composition: Text on video
+    // 4. Final composition: burn captions as a styled ASS subtitle track.
     const finalVideoFilename = `veo_final_${Date.now()}.mp4`;
     const finalVideoPath = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', finalVideoFilename);
-    
-    // We will use FFmpeg to draw text
-    const ffmpeg = (await import('fluent-ffmpeg')).default;
-    
-    let drawtextFilters: string[] = [];
-    if (format === 'creator') {
-      // Split by sentence boundaries, clean whitespace
-      const sentences = script.split(/[.!?]+/).map((s: string) => s.trim()).filter(Boolean);
-      const totalDuration = 8; // default duration is 8 seconds
-      const sentenceDuration = totalDuration / Math.max(1, sentences.length);
 
-      sentences.forEach((sentence: string, index: number) => {
-        const start = index * sentenceDuration;
-        const end = (index + 1) * sentenceDuration;
-        const escaped = escapeFfmpegText(sentence);
-        
-        let filter = '';
-        if (subtitleStyle === 'orange-box') {
-          filter = `drawtext=text='${escaped}':fontcolor=white:fontsize=40:box=1:boxcolor=#FF6B00@0.9:boxborderw=12:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`;
-        } else if (subtitleStyle === 'blue-box') {
-          filter = `drawtext=text='${escaped}':fontcolor=white:fontsize=40:box=1:boxcolor=#0055FF@0.9:boxborderw=12:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`;
-        } else if (subtitleStyle === 'outline') {
-          filter = `drawtext=text='${escaped}':fontcolor=white:fontsize=44:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`;
-        } else { // minimal (Instagram-style sans-serif default)
-          filter = `drawtext=text='${escaped}':fontcolor=white:fontsize=36:shadowcolor=black@0.7:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`;
-        }
-        drawtextFilters.push(filter);
-      });
-    } else {
-      const sentence = script.substring(0, 100).replace(/'/g, "\u2019").replace(/:/g, '\\\\:');
-      let filter = '';
-      if (subtitleStyle === 'orange-box') {
-        filter = `drawtext=text='${sentence}':fontcolor=white:fontsize=48:box=1:boxcolor=#FF6B00@0.9:boxborderw=15:x=(w-text_w)/2:y=(h-text_h)/2`;
-      } else if (subtitleStyle === 'blue-box') {
-        filter = `drawtext=text='${sentence}':fontcolor=white:fontsize=48:box=1:boxcolor=#0055FF@0.9:boxborderw=15:x=(w-text_w)/2:y=(h-text_h)/2`;
-      } else if (subtitleStyle === 'outline') {
-        filter = `drawtext=text='${sentence}':fontcolor=white:fontsize=54:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/2`;
-      } else { // minimal
-        filter = `drawtext=text='${sentence}':fontcolor=white:fontsize=40:shadowcolor=black@0.7:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h-text_h)/2`;
-      }
-      drawtextFilters.push(filter);
-    }
+    const ffmpeg = (await import('fluent-ffmpeg')).default;
+
+    // Split the script into short caption lines and time them across the real duration.
+    const sentences = script.split(/[.!?\n]+/).map((s: string) => s.trim()).filter(Boolean);
+    const assPath = buildAssSubtitleFile(sentences, actualDuration, (subtitleStyle || 'minimal') as SubtitleStyle);
+    if (assPath) tempFilesToCleanup.push(assPath);
 
     await new Promise((resolve, reject) => {
-      ffmpeg(localRawVideo)
-        .videoFilters(drawtextFilters)
-        .outputOptions(['-c:v libx264', '-preset fast', '-crf 23', '-c:a copy'])
-        .save(finalVideoPath)
+      const proc = ffmpeg(localRawVideo);
+
+      if (assPath) {
+        // The subtitles filter is a single filter — no chained-filtergraph comma pitfalls.
+        const escapedPath = assPath.replace(/\\/g, '/').replace(/:/g, '\\:');
+        proc.videoFilters(`subtitles='${escapedPath}'`)
+            .outputOptions(['-c:v libx264', '-preset fast', '-crf 23', '-c:a copy']);
+      } else {
+        // No captions — just remux without re-encoding.
+        proc.outputOptions(['-c copy']);
+      }
+
+      proc.save(finalVideoPath)
         .on('end', resolve)
         .on('error', reject);
     });
@@ -306,6 +262,18 @@ Format as JSON: { "script": "...", "visual_prompt": "..." }`;
       where: { id: reelId },
       data: { status: 'FAILED', statusMessage: `Failed: ${error.message}` },
     });
+  } finally {
+    // Clean up transient temp files (never touch published assets in public/uploads).
+    const uniqueFiles = Array.from(new Set(tempFilesToCleanup));
+    for (const filePath of uniqueFiles) {
+      try {
+        if (filePath && fs.existsSync(filePath) && !filePath.includes('/frontend/public/uploads/')) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (cleanupErr: any) {
+        logger.debug({ event: 'veo_cleanup_failed', filePath, error: cleanupErr.message });
+      }
+    }
   }
     }, { connection: redis });
 

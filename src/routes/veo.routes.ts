@@ -4,45 +4,28 @@ import { jwtAuth as requireAuth } from '../middleware/jwt-auth.js';
 import { prisma } from '../db/prisma.js';
 import { Queue } from 'bullmq';
 import { redis } from '../db/redis.js';
-import multer from 'multer';
 
 const router = Router();
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-});
 
 // Create the Veo queue
 const veoQueue = new Queue('veo-generation', { connection: redis });
 
 const generateVeoSchema = z.object({
   topic: z.string().min(1, 'Topic is required'),
-  subtitleStyle: z.string().optional().default('orange-box'), // orange-box, blue-box, outline, minimal
-  format: z.string().optional().default('creator'), // creator, product
+  subtitleStyle: z.enum(['orange-box', 'blue-box', 'outline', 'minimal']).optional().default('minimal'),
 });
 
 /**
  * POST /api/veo/generate
  * Create a new Veo Short generation job.
  */
-router.post('/generate', requireAuth, upload.single('productImage'), async (req: any, res: any) => {
+router.post('/generate', requireAuth, async (req: any, res: any) => {
   try {
     const userId = req.userId;
-    // Parse fields properly since they come from FormData
-    const bodyData = {
+    const validatedData = generateVeoSchema.parse({
       topic: req.body.topic,
       subtitleStyle: req.body.subtitleStyle,
-      format: req.body.format,
-    };
-    const validatedData = generateVeoSchema.parse(bodyData);
-
-    let productImageBase64 = null;
-    let productImageMimeType = null;
-    if (req.file) {
-      productImageBase64 = req.file.buffer.toString('base64');
-      productImageMimeType = req.file.mimetype;
-    }
+    });
 
     const reel = await prisma.reel.create({
       data: {
@@ -52,20 +35,27 @@ router.post('/generate', requireAuth, upload.single('productImage'), async (req:
         script: validatedData.topic, // use script field to store the initial prompt/topic
         metadata: {
           subtitleStyle: validatedData.subtitleStyle,
-          format: validatedData.format,
-          hasProductImage: !!productImageBase64
         }
       },
     });
 
-    // Pass to worker queue
-    await veoQueue.add('generate-veo', {
+    // Pass to worker queue. Store the jobId so it can be cancelled/removed later.
+    const job = await veoQueue.add('generate-veo', {
       reelId: reel.id,
       topic: validatedData.topic,
       subtitleStyle: validatedData.subtitleStyle,
-      format: validatedData.format,
-      productImageBase64,
-      productImageMimeType
+    }, {
+      attempts: 2,
+      backoff: { type: 'exponential', delay: 15_000 },
+      removeOnComplete: 50,
+      removeOnFail: 100,
+    });
+
+    // Persist the BullMQ job id for later cancellation.
+    const existingMeta = (reel.metadata as any) || {};
+    await prisma.reel.update({
+      where: { id: reel.id },
+      data: { metadata: { ...existingMeta, jobId: job.id } },
     });
 
     res.status(201).json({
@@ -175,6 +165,17 @@ router.post('/cancel/:id', requireAuth, async (req: any, res: any) => {
 
     if (reel.status !== 'PENDING' && reel.status !== 'GENERATING') {
       return res.status(400).json({ success: false, error: 'Cannot cancel a completed or failed reel' });
+    }
+
+    // Best-effort removal of the queued/active BullMQ job so it stops consuming resources.
+    const meta = (reel.metadata as any) || {};
+    if (meta.jobId) {
+      try {
+        const job = await veoQueue.getJob(String(meta.jobId));
+        if (job) await job.remove();
+      } catch (jobErr) {
+        console.warn('Failed to remove Veo job from queue:', jobErr);
+      }
     }
 
     await prisma.reel.update({

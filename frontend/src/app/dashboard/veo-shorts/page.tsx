@@ -6,11 +6,9 @@ export default function VeoShortsCreator() {
   const { token } = useAuthStore();
   const [topic, setTopic] = useState('how I built a $10k/month software agency at 22 without showing my face');
   const [subtitleStyle, setSubtitleStyle] = useState('minimal');
-  const [format, setFormat] = useState('creator'); // creator, product
   const [status, setStatus] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [reelId, setReelId] = useState<string | null>(null);
-  const [productImage, setProductImage] = useState<File | null>(null);
   const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
@@ -52,20 +50,13 @@ export default function VeoShortsCreator() {
       setStatus('PENDING');
       setStatusMessage('Starting generation...');
 
-      const formData = new FormData();
-      formData.append('topic', topic);
-      formData.append('subtitleStyle', subtitleStyle);
-      formData.append('format', format);
-      if (productImage) {
-        formData.append('productImage', productImage);
-      }
-
       const res = await fetch(`/api/veo/generate`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: formData
+        body: JSON.stringify({ topic, subtitleStyle })
       });
 
       if (!res.ok) throw new Error('Failed to start generation');
@@ -128,68 +119,14 @@ export default function VeoShortsCreator() {
         {/* Left Column: Form Controls */}
         <div className="lg:col-span-5 flex flex-col gap-8 bg-white border border-slate-200 p-8 rounded-3xl shadow-sm sticky top-8">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Reel Format</label>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setFormat('creator');
-                  setSubtitleStyle('minimal');
-                  setTopic('how I built a $10k/month software agency at 22 without showing my face');
-                }}
-                className={`py-2 text-xs font-bold rounded-lg transition-all ${format === 'creator' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                🎥 Faceless Creator
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormat('product');
-                  setSubtitleStyle('orange-box');
-                  setTopic('A dramatic cinematic shot of a neon city in cyberpunk style');
-                }}
-                className={`py-2 text-xs font-bold rounded-lg transition-all ${format === 'product' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                📦 Product Showcase
-              </button>
-            </div>
-
             <label className="block text-sm font-semibold text-slate-700 mb-2">Video Topic or Idea</label>
             <textarea
               className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
               rows={4}
-              placeholder={format === 'creator' ? "e.g. how I quit my corporate job to travel full-time" : "e.g. A dramatic cinematic shot of a neon city..."}
+              placeholder="e.g. how I quit my corporate job to travel full-time"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Product Image (Optional)</label>
-            <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 bg-slate-50 hover:bg-slate-100 transition-colors flex flex-col items-center justify-center text-center relative overflow-hidden group">
-              {productImage ? (
-                <div className="flex flex-col items-center">
-                  <img src={URL.createObjectURL(productImage)} alt="Preview" className="w-32 h-32 object-cover rounded-xl border border-slate-200 mb-4 shadow-sm" />
-                  <button onClick={() => setProductImage(null)} className="text-red-500 font-medium text-sm hover:text-red-600 transition-colors">Remove Image</button>
-                </div>
-              ) : (
-                <>
-                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-200 text-slate-400 group-hover:text-orange-500 transition-colors">
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-medium text-slate-700 mb-1">Click to upload a product reference image</p>
-                  <p className="text-xs text-slate-500 max-w-sm">The generated cinematic video will keep your product looking 100% identical!</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    onChange={(e) => setProductImage(e.target.files?.[0] || null)}
-                  />
-                </>
-              )}
-            </div>
           </div>
 
           <div>

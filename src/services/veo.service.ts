@@ -33,7 +33,8 @@ export class VeoService {
   static async initiateGeneration(
     prompt: string,
     imageBase64?: string,
-    imageMimeType?: string
+    imageMimeType?: string,
+    options?: { durationSeconds?: number }
   ): Promise<string> {
     const { token, projectId } = await VeoService.getAuth();
     const bucketName = await VeoService.ensureBucket(projectId);
@@ -55,7 +56,7 @@ export class VeoService {
             storageUri: outputGcsUri,
             aspectRatio: '9:16',
             sampleCount: 1,
-            durationSeconds: 6,
+            durationSeconds: options?.durationSeconds ?? 6,
             resolution: '720p'
           }
         })
