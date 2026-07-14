@@ -69,31 +69,17 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Helvetica,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},700,0,0,0,100,100,-0.5,0,${borderStyle},${outline},${shadow},5,144,144,0,1
+Style: Default,Helvetica,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},700,0,0,0,100,100,-1,0,${borderStyle},${outline},${shadow},5,72,72,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 `;
 
-  // 1. Group sentences into paragraphs logically (target 2-3 sentences max)
-  const paragraphs: string[][] = [];
-  let currentParagraph: string[] = [];
-  let currentWords = 0;
-
-  for (const sentence of sentences) {
-    const cleanSentence = escapeAssText(sentence);
-    if (!cleanSentence) continue;
-    const words = cleanSentence.split(/\\s+/).length;
-    if (currentParagraph.length >= 3 || currentWords + words > 20) {
-      if (currentParagraph.length > 0) paragraphs.push(currentParagraph);
-      currentParagraph = [cleanSentence];
-      currentWords = words;
-    } else {
-      currentParagraph.push(cleanSentence);
-      currentWords += words;
-    }
-  }
-  if (currentParagraph.length > 0) paragraphs.push(currentParagraph);
+  // 1. Group sentences individually so they appear one by one sequentially
+  const paragraphs: string[][] = sentences.map(s => {
+    const cleanSentence = escapeAssText(s);
+    return cleanSentence ? [cleanSentence] : [];
+  }).filter(p => p.length > 0);
 
   // 2. Format paragraphs with intelligent text wrapping
   const formattedParagraphs = paragraphs.map(p => {
@@ -112,23 +98,28 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   const paragraphWordCounts = formattedParagraphs.map(text => text.replace(/\\\\N/g, ' ').split(/\\s+/).length);
   const totalWords = paragraphWordCounts.reduce((a, b) => a + b, 0);
   
-  let currentTime = 0;
-  let body = '';
+  let currentTimeMs = 0;
+  let eventTextBlocks = [];
   
   for (let i = 0; i < formattedParagraphs.length; i++) {
     const text = formattedParagraphs[i];
-    // Proportion total duration based on word count
-    let pDuration = (paragraphWordCounts[i] / totalWords) * totalDuration;
+    let pDurationMs = (paragraphWordCounts[i] / totalWords) * totalDuration * 1000;
     
-    const start = formatAssTime(currentTime);
-    const end = formatAssTime(currentTime + pDuration);
+    // Inject alpha start (invisible), then animate to visible
+    const fadeStart = Math.round(currentTimeMs);
+    const fadeEnd = fadeStart + 180;
+    const block = `{\\alpha&HFF&\\t(${fadeStart},${fadeEnd},\\alpha&H00&)}${text}`;
+    eventTextBlocks.push(block);
     
-    // Inject fade animation (180ms in/out), blur12 for soft shadow, and explicit vertical centering pos
-    const eventText = `{\\fad(180,180)\\blur12\\pos(360,665)}${text}`;
-    body += `Dialogue: 0,${start},${end},Default,,0,0,0,,${eventText}\\n`;
-    
-    currentTime += pDuration;
+    currentTimeMs += pDurationMs;
   }
+  
+  const finalEventText = `{\\blur12\\pos(360,665)}` + eventTextBlocks.join('\\N\\N\\N');
+  
+  const start = formatAssTime(0);
+  const end = formatAssTime(totalDuration); // Displays until the very end
+  
+  let body = `Dialogue: 0,${start},${end},Default,,0,0,0,,${finalEventText}\\n`;
 
   const assPath = path.join(os.tmpdir(), `veo_subs_${Date.now()}.ass`);
   fs.writeFileSync(assPath, header + body);
@@ -200,9 +191,8 @@ It MUST follow this exact style:
 "Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. ${aestheticInstruction}"
 
 CRITICAL INSTRUCTION: You MUST violently randomize the [environment], [subject/entrepreneur], and lighting for EVERY generation! DO NOT use the same generic room. Use different locations (e.g., modern glass office, cozy hygge living room, minimalist cafe, moody dusk studio), different subtle actions (e.g., pouring matcha, organizing aesthetic notebooks, adjusting a lamp), and unique clothing styles. 
-Also, explicitly end the visual prompt with: "9:16 vertical aspect ratio. Shot on 85mm lens, f/1.8, ISO 200. Do not beautify. No plastic skin, no CGI smoothing. Lighting creates sharp realistic highlights. Raw, unretouched, hyper-realistic candid photography. Movement adheres strictly to physical weight and gravity at real-time natural human speed. Strictly locked tripod camera with zero drift and stable optical depth of field. Absolutely no structural morphing, zero background warping, and no hallucinatory merging. True temporal consistency."
+Ensure the visual prompt matches the tone/subject of the topic, but keep it strictly to the scene description (I will append the technical camera parameters).
 
-Ensure the visual prompt matches the tone/subject of the topic.
 Format your output as a JSON object:
 {
   "script": "Sentence 1. Sentence 2. Sentence 3. Sentence 4. Sentence 5.",
@@ -219,7 +209,10 @@ Format your output as a JSON object:
     });
 
     // 2. Generate a single anchor image for Veo image-to-video.
-    const imagePath = await aiOrchestrator.generateImage(visual_prompt, 0);
+    const imageParameters = "9:16 vertical aspect ratio. Shot on 85mm lens, f/1.8, ISO 200. Do not beautify. No plastic skin, no CGI smoothing. Lighting creates sharp realistic highlights. Raw, unretouched, hyper-realistic candid photography.";
+    const fullImagePrompt = `${visual_prompt}. ${imageParameters}`;
+
+    const imagePath = await aiOrchestrator.generateImage(fullImagePrompt, 0);
     let publicThumbnailUrl = '';
     let generatedImageBase64 = null;
     if (imagePath && fs.existsSync(imagePath)) {
@@ -245,10 +238,12 @@ Format your output as a JSON object:
     });
 
     // 3. Google Veo 3 Video Generation
-    // We now pass the perfectly cropped 9:16 image to Veo so it generates a native 9:16 video.
+    const motionParameters = "Movement adheres strictly to physical weight and gravity at real-time natural human speed. Strictly locked tripod camera with zero drift and stable optical depth of field. Absolutely no structural morphing, zero background warping, and no hallucinatory merging. True temporal consistency.";
+    const fullVideoPrompt = `${visual_prompt}. ${imageParameters} ${motionParameters}`;
+    
     const targetDuration = 8;
     const operationName = await VeoService.initiateGeneration(
-      visual_prompt,
+      fullVideoPrompt,
       generatedImageBase64 || undefined,
       generatedImageBase64 ? 'image/png' : undefined,
       { durationSeconds: targetDuration }
