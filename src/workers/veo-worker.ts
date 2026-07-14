@@ -55,12 +55,12 @@ function buildAssSubtitleFile(
   const BLUE = '&H00FF5500';   // #0055FF
 
   // Style tuning to exactly match Image 2 reference but slightly larger and starting from top
-  let fontSize = 52;
+  let fontSize = 68;
   let borderStyle = 1;
-  let outline = 0.5;
-  let shadow = 2.5;
-  let outlineColour = '&H66000000'; // Semi-transparent black outline
-  let backColour = '&H99000000';    // Dark shadow
+  let outline = 1.5;
+  let shadow = 3.5;
+  let outlineColour = '&H00000000'; // Solid black outline
+  let backColour = '&H40000000';    // Deep shadow for contrast
 
   if (style === 'orange-box') {
     borderStyle = 3; outline = 8; shadow = 0; outlineColour = ORANGE; backColour = ORANGE;
@@ -78,7 +78,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Poppins,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},8,25,25,350,1
+Style: Default,Arial,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},-1,0,0,0,100,100,0,0,${borderStyle},${outline},${shadow},8,25,25,350,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -91,7 +91,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     const start = formatAssTime(i * perGroup);
     const end = formatAssTime(i === lines.length - 1 ? totalDuration : (i + 1) * perGroup);
     if (i > 0) {
-      accumulatedText += '\\N\\N\\N';
+      accumulatedText += '\\N\\N';
     }
     accumulatedText += lines[i];
     body += `Dialogue: 0,${start},${end},Default,,0,0,0,,${accumulatedText}\n`;
@@ -269,7 +269,7 @@ Format your output as a JSON object:
       ffmpeg(localRawVideo)
         .inputOptions(['-stream_loop', '1'])
         .videoFilters([
-          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.2:t=fill'
+          'drawbox=x=0:y=0:w=iw:h=ih:color=black@0.4:t=fill'
         ])
         .outputOptions(['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-c:a', 'copy'])
         .save(processedVideoPath)
