@@ -291,12 +291,10 @@ Format your output as a JSON object:
       rawVideoUrl: publicRawVideoUrl,
       musicPrompt: musicVibePrompt
     });
-    let bgmPath: string | null = path.join(process.cwd(), 'bgm.mp3');
+    let bgmPath: string | null = null;
     try {
-      // Lyria 2 API is currently unavailable in this project, using fallback high-quality lofi track
-      if (!fs.existsSync(bgmPath) || fs.statSync(bgmPath).size === 0) {
-         bgmPath = null;
-      }
+      bgmPath = await aiOrchestrator.generateMusic(musicVibePrompt, []);
+      if (bgmPath) tempFilesToCleanup.push(bgmPath);
     } catch (musicErr: any) {
       logger.warn({ event: 'veo_music_failed', reelId, error: musicErr.message });
     }
