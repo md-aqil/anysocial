@@ -54,7 +54,7 @@ function buildAssSubtitleFile(
   const ORANGE = '&H00006BFF'; // #FF6B00
   const BLUE = '&H00FF5500';   // #0055FF
 
-  let fontSize = 30;
+  let fontSize = 40;
   let borderStyle = 1;
   let outline = 1.5;
   let shadow = 4;
@@ -105,7 +105,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           return words.slice(0, mid).join(' ') + '\\N' + words.slice(mid).join(' ');
        }
        return s;
-    }).join('\\N\\N'); 
+    }).join('\\N\\N\\N'); 
   });
 
   // 3. Calculate timing based on reading speed and proportional duration
