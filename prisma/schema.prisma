@@ -79,13 +79,15 @@ model User {
   webhooks          WebhookSubscription[]
   notifications     Notification[]
   notificationLogs  NotificationLog[]
-  reelSeries        ReelSeries[]
-  reels             Reel[]
-  curatedPosts      CuratedPost[]
-  playgroundImages  PlaygroundImage[]
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
-  AutomatedCampaign AutomatedCampaign[]
+  reelSeries           ReelSeries[]
+  reels                Reel[]
+  curatedPosts         CuratedPost[]
+  playgroundImages     PlaygroundImage[]
+  companyKnowledgeBases CompanyKnowledgeBase[]
+  companyReels         CompanyReel[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  AutomatedCampaign    AutomatedCampaign[]
 
   @@index([email])
   @@index([role])
@@ -148,6 +150,7 @@ model Post {
   media           PostMedia[]
   analytics       PostAnalytics[]
   reels           Reel[]
+  companyReels    CompanyReel[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -501,3 +504,57 @@ model AutomatedProduct {
   @@index([campaignId, status])
   @@map("automated_products")
 }
+
+model CompanyKnowledgeBase {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName    String        @map("company_name")
+  industry       String
+  services       String        // JSON array of services
+  targetAudience String        @map("target_audience")
+  painPoints     String        @map("pain_points")
+  usps           String        // JSON array of unique selling points
+  caseStudies    String?       @map("case_studies")
+  tone           String        @default("Professional")
+  language       String        @default("English")
+  voiceId        String        @default("Puck") @map("voice_id")
+  strategy       Json?         // AI-analyzed strategy metadata
+  socialChannels String        @default("[]") @map("social_channels")
+  scheduleDays   String        @default("[]") @map("schedule_days")
+  scheduleTime   String?       @map("schedule_time")
+  timezoneOffset Int?          @map("timezone_offset")
+  isActive       Boolean       @default(true) @map("is_active")
+  reels          CompanyReel[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([userId])
+  @@map("company_knowledge_bases")
+}
+
+model CompanyReel {
+  id             String               @id @default(uuid())
+  userId         String
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kbId           String               @map("kb_id")
+  kb             CompanyKnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade)
+  topic          String
+  script         String?
+  videoUrl       String?              @map("video_url")
+  thumbnail      String?
+  status         String               @default("PENDING")
+  statusMessage  String?              @map("status_message")
+  scheduledFor   DateTime?            @map("scheduled_for")
+  socialChannels String               @default("[]") @map("social_channels")
+  postId         String?              @map("post_id")
+  post           Post?                @relation(fields: [postId], references: [id], onDelete: SetNull)
+  metadata       Json?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([kbId])
+  @@index([userId])
+  @@map("company_reels")
+}
+

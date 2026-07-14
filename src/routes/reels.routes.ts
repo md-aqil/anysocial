@@ -443,6 +443,9 @@ const generateProductReelSchema = z.object({
   hookText: z.string().optional().nullable(),
   language: z.string().optional().default('English'),
   voiceId: z.string().optional().default('Aoede'),
+  ingredientsToVideo: z.boolean().optional().default(false),
+  imageToVideo: z.boolean().optional().default(false),
+  voicePrompt: z.string().optional().default(''),
 });
 
 /**
@@ -479,6 +482,9 @@ router.post("/generate-product-reel", requireAuth, async (req: any, res: any) =>
       language: validatedData.language,
       voiceId: validatedData.voiceId,
       productDescription: validatedData.productDescription,
+      ingredientsToVideo: validatedData.ingredientsToVideo,
+      imageToVideo: validatedData.imageToVideo,
+      voicePrompt: validatedData.voicePrompt,
     });
 
     res.status(201).json({

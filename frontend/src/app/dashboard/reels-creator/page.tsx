@@ -527,7 +527,7 @@ export default function ReelsDashboard() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as 'series' | 'product' | null;
-  const [activeTab, setActiveTab] = useState<'series' | 'product'>(tabParam || 'product');
+  const [activeTab, setActiveTab] = useState<'product'>('product');
   const [selectedMetadataReel, setSelectedMetadataReel] = useState<any | null>(null);
   const [editedScript, setEditedScript] = useState("");
   const [editedVoiceModel, setEditedVoiceModel] = useState("");
@@ -719,62 +719,22 @@ export default function ReelsDashboard() {
         <div>
           <h1 className="text-3xl font-extrabold text-stone-900 tracking-tight flex items-center gap-2.5">
             <Video className="h-8 w-8 text-violet-600" />
-            Reel Creator
+            AI Product Reels
           </h1>
-          <p className="text-stone-500 mt-2">Scale your short-form video presence with AI-generated automated series or single product clips.</p>
+          <p className="text-stone-500 mt-2">Create AI-powered product reels with Veo animation, voiceover, and auto-posting.</p>
         </div>
         <div className="flex flex-wrap gap-3 flex-nowrap">
           <Button
             onClick={() => router.push('/dashboard/reels-creator/ai-product-reel')}
-            variant="outline"
-            className="border-violet-600 text-violet-600 hover:bg-violet-100 hover:text-violet-700 rounded-xl h-11 px-6 shadow-md font-semibold"
-          >
-            <Sparkles className="mr-2 h-5 w-5 text-violet-600" />
-            AI Product Reel
-          </Button>
-          <Button
-            onClick={() => router.push('/dashboard/reels-creator/new')}
             className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
           >
-            <Plus className="mr-2 h-5 w-5" />
-            Create New Series
+            <Sparkles className="mr-2 h-5 w-5" />
+            New Product Reel
           </Button>
         </div>
       </div>
 
-      <div className="flex mb-8 bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-        <button
-          className={`flex-1 py-3 text-sm font-bold border-b-2 transition-all ${
-            activeTab === 'product'
-              ? 'border-violet-600 text-violet-700 bg-violet-50/50'
-              : 'border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50'
-          }`}
-          onClick={() => setActiveTab('product')}
-        >
-          AI Product Reels
-          {productReels && productReels.length > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full">
-              {productReels.length}
-            </span>
-          )}
-        </button>
-        <div className="w-px bg-stone-200" />
-        <button
-          className={`flex-1 py-3 text-sm font-bold border-b-2 transition-all ${
-            activeTab === 'series'
-              ? 'border-violet-600 text-violet-700 bg-violet-50/50'
-              : 'border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50'
-          }`}
-          onClick={() => setActiveTab('series')}
-        >
-          Automated Series
-          {seriesList && seriesList.length > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full">
-              {seriesList.length}
-            </span>
-          )}
-        </button>
-      </div>
+      {/* No tabs needed — single product reels view */}
 
       {activeTab === 'series' ? (
         <>

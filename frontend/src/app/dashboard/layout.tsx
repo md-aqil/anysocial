@@ -24,6 +24,7 @@ import {
   Wand2,
   Bot,
   Film,
+  Briefcase,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -32,7 +33,8 @@ const navigation = [
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
-  { name: 'Reel Creator', href: '/dashboard/reels-creator', icon: Star },
+  { name: 'AI Product Reels', href: '/dashboard/reels-creator', icon: Star },
+  { name: 'Company Reels', href: '/dashboard/reels-creator/company-reel', icon: Briefcase },
   { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film, adminOnly: true },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'AI Agent', href: '/dashboard/ai-agent', icon: Bot, adminOnly: true, superAdminOnly: true },

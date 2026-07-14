@@ -19,6 +19,8 @@ import { postWorker } from './workers/post-worker.js';
 import { seriesReelWorker } from './workers/series-reel-worker.js';
 import { veoWorker } from './workers/veo-worker.js';
 import { campaignWorker } from './workers/campaign-worker.js';
+import { companyReelWorker } from './workers/company-reel-worker.js';
+import { companyReelScheduler } from './workers/company-reel-scheduler.js';
 import { env } from './config/env.js';
 
 // Initialize Redis client for session store
@@ -121,6 +123,8 @@ app.listen(PORT, () => {
   seriesReelWorker.start().catch(console.error);
   veoWorker.start().catch(console.error);
   campaignWorker.start();
+  companyReelWorker.start().catch(console.error);
+  companyReelScheduler.start();
 });
 
 // Graceful shutdown
@@ -130,6 +134,7 @@ process.on('SIGTERM', async () => {
   await postWorker.shutdown();
   await seriesReelWorker.shutdown();
   await veoWorker.shutdown();
+  await companyReelWorker.shutdown();
   process.exit(0);
 });
 
@@ -139,6 +144,7 @@ process.on('SIGINT', async () => {
   await postWorker.shutdown();
   await seriesReelWorker.shutdown();
   await veoWorker.shutdown();
+  await companyReelWorker.shutdown();
   process.exit(0);
 });
 
