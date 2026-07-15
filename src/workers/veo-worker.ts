@@ -173,15 +173,15 @@ class VeoGenerationWorker {
 
     const scriptPrompt = `You are a viral TikTok and Instagram Reels creator specialist. Write a calm, luxury minimalist faceless script about: ${topic}.
 The video follows the quiet luxury, Scandi minimalist lifestyle aesthetic.
-We need exactly 3 short paragraphs. 
-Paragraph 1: A curiosity-inducing contradiction hook.
-Paragraph 2: The middle section/context.
-Paragraph 3: A short CTA (Call To Action).
+We need 3 to 5 short paragraphs to fully capture the essence of the topic (especially if it includes lists or steps). 
+Paragraph 1: A curiosity-inducing hook.
+Paragraphs 2-4: The core value, steps, or context (adapt based on the topic depth).
+Final Paragraph: A short CTA (Call To Action).
 
 Format requirements:
-- VERY IMPORTANT: The script MUST be extremely short and punchy. Maximum 3 short sentences TOTAL for the entire video. Do not write a long script.
+- IMPORTANT: Ensure you include all the core value from the user's topic provided, but deliver it punchily. Do not arbitrarily truncate the user's main points or list items.
 - Separate each paragraph with a blank line (double newline).
-- Each paragraph should have 1-2 short lines formatted with line breaks.
+- Each paragraph should have 2-4 short lines formatted with line breaks.
 - Keep the sentences/lines very short (maximum 4-6 words per line) so it fits perfectly on a mobile portrait screen without wrapping.
 
 For example:
