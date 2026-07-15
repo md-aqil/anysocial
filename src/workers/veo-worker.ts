@@ -112,15 +112,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   
   for (let i = 0; i < formattedParagraphs.length; i++) {
     const text = formattedParagraphs[i];
-    let pDurationMs = (paragraphWordCounts[i] / totalWords) * totalDuration * 1000;
     
     // Inject alpha start (invisible), then animate to visible
     const fadeStart = Math.round(currentTimeMs);
-    const fadeEnd = fadeStart + 180;
+    const fadeEnd = fadeStart + 200;
     const block = `{\\alpha&HFF&\\t(${fadeStart},${fadeEnd},\\alpha&H00&)}${text}`;
     eventTextBlocks.push(block);
     
-    currentTimeMs += pDurationMs;
+    currentTimeMs += 1000; // 1 second pacing between text groups!
   }
   
   const finalEventText = `{${extraTags}\\pos(360,665)}` + eventTextBlocks.join('\\N\\N\\N\\N\\N');
