@@ -359,6 +359,80 @@ Format your output as a JSON object:
       },
     });
 
+    const finalReel = await prisma.reel.findUnique({ where: { id: reelId } });
+    if (finalReel && finalReel.socialChannels) {
+      const channels: string[] = JSON.parse(finalReel.socialChannels || '[]');
+      if (channels.length > 0) {
+        try {
+          const { postingEngine } = await import('../services/posting-engine.service.js');
+          const videoBuffer = fs.readFileSync(finalVideoPath);
+          
+          const scheduledTime = finalReel.scheduledFor ? new Date(finalReel.scheduledFor) : null;
+          const minDelayMs = 60 * 1000 + 5000;
+          const isSafeFuture = scheduledTime && (scheduledTime.getTime() - Date.now() >= minDelayMs);
+
+          const resolvedPlatforms = new Set<string>();
+          const accountIds: string[] = [];
+          
+          for (const channel of channels) {
+            const trimmed = channel.trim();
+            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) {
+              accountIds.push(trimmed);
+            } else {
+              resolvedPlatforms.add(trimmed.toUpperCase());
+            }
+          }
+          
+          if (accountIds.length > 0) {
+            const dbAccounts = await prisma.socialAccount.findMany({
+              where: { id: { in: accountIds }, userId: finalReel.userId },
+              select: { platform: true }
+            });
+            for (const acc of dbAccounts) {
+              resolvedPlatforms.add(acc.platform.toString().toUpperCase());
+            }
+          }
+          const mappedPlatforms = Array.from(resolvedPlatforms);
+          
+          if (mappedPlatforms.length > 0) {
+            logger.info({ event: 'veo_auto_posting', reelId, platforms: mappedPlatforms });
+            const platformOptions: Record<string, any> = {};
+            for (const plat of mappedPlatforms) {
+              if (plat === 'INSTAGRAM' || plat === 'FACEBOOK') {
+                platformOptions[plat] = { postType: 'REEL', autoFix: true };
+              } else if (plat === 'YOUTUBE') {
+                platformOptions[plat] = { postType: 'SHORTS', autoFix: true };
+              } else {
+                platformOptions[plat] = { autoFix: true };
+              }
+            }
+            
+            const scheduleResult = await postingEngine.schedulePost(finalReel.userId, {
+              content: (finalReel.script || '').substring(0, 2000),
+              media: [{ file: videoBuffer, type: 'video', originalName: finalVideoFilename }],
+              platforms: mappedPlatforms,
+              timezone: 'UTC',
+              scheduledAt: isSafeFuture && scheduledTime ? scheduledTime.toISOString() : undefined,
+              platformOptions
+            });
+
+            await prisma.reel.update({
+              where: { id: reelId },
+              data: {
+                status: isSafeFuture ? 'SCHEDULED' : 'PUBLISHING',
+                postId: scheduleResult.postId,
+                statusMessage: isSafeFuture 
+                  ? `Scheduled for ${scheduledTime.toLocaleString()}` 
+                  : 'Publishing to social media...'
+              }
+            });
+          }
+        } catch (postErr: any) {
+          logger.error({ event: 'veo_auto_post_failed', reelId, error: postErr.message });
+        }
+      }
+    }
+
     logger.info({ event: 'veo_generation_success', reelId });
   } catch (error: any) {
     logger.error({ event: 'veo_generation_failed', reelId, error: error.message });
