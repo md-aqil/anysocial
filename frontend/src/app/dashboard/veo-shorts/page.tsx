@@ -216,20 +216,23 @@ export default function VeoShortsCreator() {
             <label className="block text-sm font-semibold text-slate-700 mb-2">Cinematic Aesthetic</label>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {[
-                { id: 'scandi', name: 'Quiet Luxury', emoji: '🌿' },
-                { id: 'moody', name: 'Dark & Moody', emoji: '🌙' },
-                { id: 'hygge', name: 'Morning Hygge', emoji: '☕' },
-                { id: 'luxury', name: 'Luxury Hotel', emoji: '🥂' },
-                { id: 'vintage', name: 'Warm Vintage', emoji: '🎞️' },
-                { id: 'tech', name: 'Sleek Cyber', emoji: '💻' }
+                { id: 'scandi', name: 'Quiet Luxury', image: '/assets/styles/cinematic.jpg' },
+                { id: 'moody', name: 'Dark & Moody', image: '/assets/styles/gothic.jpg' },
+                { id: 'hygge', name: 'Morning Hygge', image: '/assets/styles/watercolor.jpg' },
+                { id: 'luxury', name: 'Luxury Hotel', image: '/assets/styles/hyper-realistic.jpg' },
+                { id: 'vintage', name: 'Warm Vintage', image: '/assets/styles/vintage-vhs.jpg' },
+                { id: 'tech', name: 'Sleek Cyber', image: '/assets/styles/cyberpunk.jpg' }
               ].map((style) => (
                 <button
                   key={style.id}
                   onClick={() => setVisualStyle(style.id)}
-                  className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${visualStyle === style.id ? 'border-orange-500 bg-orange-50 shadow-sm scale-[1.02]' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                  className={`relative flex flex-col overflow-hidden rounded-xl border transition-all h-24 ${visualStyle === style.id ? 'border-orange-500 shadow-md ring-2 ring-orange-500 ring-offset-1 scale-[1.02]' : 'border-slate-200 hover:border-slate-300'}`}
                 >
-                  <span className="text-xl">{style.emoji}</span>
-                  <span className={`text-sm font-medium ${visualStyle === style.id ? 'text-orange-700' : 'text-slate-600'}`}>{style.name}</span>
+                  <img src={style.image} alt={style.name} className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
+                  <div className="relative z-10 flex h-full w-full items-end p-2 text-left">
+                    <span className="text-[11px] leading-tight font-bold text-white drop-shadow-md">{style.name}</span>
+                  </div>
                 </button>
               ))}
             </div>
