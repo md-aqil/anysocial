@@ -193,12 +193,8 @@ Make sure the output is a valid JSON object.`;
           const generationConfig: any = {
             temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
             maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
-            responseMimeType: "application/json"
+            ...(schema ? { responseMimeType: "application/json", responseSchema: schema } : {})
           };
-
-          if (schema) {
-            generationConfig.responseSchema = schema;
-          }
           
           const res = await client.request({
             url: endpoint,
@@ -254,7 +250,7 @@ Make sure the output is a valid JSON object.`;
         generationConfig: {
           temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
           maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
-          responseMimeType: "application/json"
+          ...(schema ? { responseMimeType: "application/json", responseSchema: schema } : {})
         }
       };
 

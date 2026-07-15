@@ -36,8 +36,25 @@ export default function CalendarPage() {
     queryFn: () => api.reels.list()
   });
 
+  const { data: accountsData } = useQuery({
+    queryKey: ['calendar-accounts'],
+    queryFn: () => api.oauth.getAccounts()
+  });
+
   const posts = data?.posts || [];
   const reels = reelsData?.data || [];
+  const accounts = accountsData?.accounts || [];
+
+  // Helper to map account ID to platform string
+  const getPlatformName = (idOrPlatform: string) => {
+    // If it's already a platform string, return it
+    if (['FACEBOOK', 'INSTAGRAM', 'TWITTER', 'LINKEDIN', 'YOUTUBE', 'TIKTOK', 'THREADS', 'PINTEREST', 'SNAPCHAT'].includes(idOrPlatform)) {
+      return idOrPlatform;
+    }
+    // Otherwise it's an ID, find the account
+    const account = accounts.find((a: any) => a.id === idOrPlatform);
+    return account ? account.platform : idOrPlatform;
+  };
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -55,7 +72,21 @@ export default function CalendarPage() {
       const hour = date.getHours();
       const key = `${dayKey}-${hour}`;
       if (!map[key]) map[key] = [];
-      map[key].push(post);
+      
+      // Map post.platforms if they are IDs
+      let platforms = post.platforms || [];
+      try {
+        if (typeof platforms === 'string') platforms = JSON.parse(platforms);
+      } catch {
+        platforms = [];
+      }
+      if (!Array.isArray(platforms)) platforms = [];
+      const mappedPlatforms = platforms.map(getPlatformName);
+
+      map[key].push({
+        ...post,
+        platforms: mappedPlatforms
+      });
     });
 
     reels.forEach((reel: any) => {
@@ -78,7 +109,7 @@ export default function CalendarPage() {
           id: reel.id,
           title: `🎬 Reel: ${reel.series?.name || 'Standalone'}`,
           content: reel.script || 'No script generated yet',
-          platforms: channels,
+          platforms: channels.map(getPlatformName),
           scheduledAt: reel.scheduledFor,
           status: reel.status, // PENDING, GENERATING, READY, FAILED
           isReel: true
@@ -87,7 +118,7 @@ export default function CalendarPage() {
     });
 
     return map;
-  }, [posts, reels]);
+  }, [posts, reels, accounts]);
 
   const handleCellClick = (day: Date, hour: number) => {
     const scheduledDate = setMinutes(setHours(day, hour), 0);
@@ -251,19 +282,18 @@ export default function CalendarPage() {
                                 ))}
                               </div>
                               <div 
-                                className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded-md border", statusConfig.badge)} 
-                                title={statusConfig.label}
+                                className="text-[10px] font-medium text-[#8D8681] flex items-center"
                               >
-                                {statusConfig.icon}
-                                <span className="font-bold text-[9px] uppercase tracking-wider">
-                                  {format(parseISO(post.scheduledAt!), 'h:mm a')}
-                                </span>
+                                <Clock className="w-2.5 h-2.5 mr-1" />
+                                {format(parseISO(post.scheduledAt!), 'h:mm a')}
                               </div>
                             </div>
-                            <div className="flex flex-col min-w-0 mt-0.5">
-                              <span className="truncate text-[11.5px] font-semibold leading-snug">
-                                {post.title || post.content || 'Untitled Post'}
-                              </span>
+                            <div className="text-xs font-semibold line-clamp-2 pr-1 leading-snug">
+                              {post.title || post.content || 'Untitled Post'}
+                            </div>
+                            <div className={cn("mt-1 self-start inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-medium border", statusConfig.badge)}>
+                              {statusConfig.icon}
+                              {statusConfig.label}
                             </div>
                           </div>
                         )})}
