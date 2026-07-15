@@ -361,7 +361,8 @@ Format your output as a JSON object:
     });
 
     const finalReel = await prisma.reel.findUnique({ where: { id: reelId } });
-    if (finalReel && finalReel.socialChannels) {
+    if (finalReel && finalReel.socialChannels && finalReel.userId) {
+      const userId = finalReel.userId;
       const channels: string[] = JSON.parse(finalReel.socialChannels || '[]');
       if (channels.length > 0) {
         try {
@@ -386,7 +387,7 @@ Format your output as a JSON object:
           
           if (accountIds.length > 0) {
             const dbAccounts = await prisma.socialAccount.findMany({
-              where: { id: { in: accountIds }, userId: finalReel.userId },
+              where: { id: { in: accountIds }, userId },
               select: { platform: true }
             });
             for (const acc of dbAccounts) {
@@ -408,7 +409,7 @@ Format your output as a JSON object:
               }
             }
             
-            const scheduleResult = await postingEngine.schedulePost(finalReel.userId, {
+            const scheduleResult = await postingEngine.schedulePost(userId, {
               content: (finalReel.script || '').substring(0, 2000),
               media: [{ file: videoBuffer, type: 'video', originalName: finalVideoFilename }],
               platforms: mappedPlatforms,
