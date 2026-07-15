@@ -1,11 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 async function run() {
-  const reels = await prisma.reel.findMany({
+  const campaigns = await prisma.automatedCampaign.findMany({
     orderBy: { createdAt: 'desc' },
-    take: 10,
-    select: { id: true, createdAt: true, status: true, statusMessage: true, type: true, metadata: true }
+    select: { id: true, ingredientsToVideo: true, createdAt: true, websiteUrl: true }
   });
-  console.log(JSON.stringify(reels, null, 2));
+  console.log(JSON.stringify(campaigns, null, 2));
 }
 run().catch(console.error).finally(() => prisma.$disconnect());
