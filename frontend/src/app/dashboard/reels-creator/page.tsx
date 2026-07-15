@@ -1343,15 +1343,37 @@ export default function ReelsDashboard() {
 
                                     {renderPostStatus(reel)}
 
-                                    {reel.videoUrl && reel.status === 'READY' && (
-                                      <div className="mt-auto pt-4 border-t border-stone-100">
-                                        <Link
-                                          href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(campaign.socialChannels || '[]')}`}
-                                          className="flex items-center justify-center gap-1.5 w-full py-2 bg-violet-600 border border-transparent rounded-lg text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
-                                        >
-                                          <Send className="h-3.5 w-3.5" />
-                                          Post Now
-                                        </Link>
+                                    {reel.videoUrl && (
+                                      <div className="mt-auto pt-4 space-y-2 border-t border-stone-100">
+                                        <div className="flex gap-2">
+                                          <a
+                                            href={reel.videoUrl}
+                                            download
+                                            className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white border border-stone-200 rounded-lg text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors shadow-sm"
+                                          >
+                                            <Video className="h-3.5 w-3.5 text-violet-600" />
+                                            Download Reel
+                                          </a>
+                                          {hasThumbnail && (
+                                            <a
+                                              href={reel.thumbnail}
+                                              download={`thumb_${reel.videoUrl.split('/').pop() || 'reel'}`}
+                                              className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white border border-stone-200 rounded-lg text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors shadow-sm"
+                                            >
+                                              <FileText className="h-3.5 w-3.5 text-violet-600" />
+                                              Thumbnail
+                                            </a>
+                                          )}
+                                        </div>
+                                        {reel.status === 'READY' && (
+                                          <Link
+                                            href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(campaign.socialChannels || '[]')}`}
+                                            className="flex items-center justify-center gap-1.5 w-full py-2 bg-violet-600 border border-transparent rounded-lg text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
+                                          >
+                                            <Send className="h-3.5 w-3.5" />
+                                            Post Now
+                                          </Link>
+                                        )}
                                       </div>
                                     )}
                                   </div>
