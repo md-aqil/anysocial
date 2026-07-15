@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function VeoShortsCreator() {
@@ -341,10 +342,21 @@ export default function VeoShortsCreator() {
                             </div>
                           )}
                           {reel.status === 'READY' && (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100">
-                              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                              Ready
-                            </div>
+                            <>
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100">
+                                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                Ready
+                              </div>
+                              {reel.videoUrl && (
+                                <Link
+                                  href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}`}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                                >
+                                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                                  Post Now
+                                </Link>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
