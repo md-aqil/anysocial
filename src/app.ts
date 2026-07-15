@@ -120,7 +120,7 @@ app.listen(PORT, () => {
 
   // Start refresh scheduler and workers
   postWorker.start().catch(console.error);
-  // seriesReelWorker.start().catch(console.error);
+  seriesReelWorker.start().catch(console.error);
   veoWorker.start().catch(console.error);
   campaignWorker.start();
   companyReelWorker.start().catch(console.error);
@@ -132,7 +132,7 @@ process.on('SIGTERM', async () => {
   logger.info({ event: 'sigterm_received' });
   refreshScheduler.stop();
   await postWorker.shutdown();
-  // await seriesReelWorker.shutdown();
+  await seriesReelWorker.shutdown();
   await veoWorker.shutdown();
   await companyReelWorker.shutdown();
   process.exit(0);
@@ -142,7 +142,7 @@ process.on('SIGINT', async () => {
   logger.info({ event: 'sigint_received' });
   refreshScheduler.stop();
   await postWorker.shutdown();
-  // await seriesReelWorker.shutdown();
+  await seriesReelWorker.shutdown();
   await veoWorker.shutdown();
   await companyReelWorker.shutdown();
   process.exit(0);

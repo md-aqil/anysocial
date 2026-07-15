@@ -225,6 +225,16 @@ const renderPostStatus = (reel: any) => {
           const isFailed = res.status === 'FAILED';
           const isPending = res.status === 'QUEUED' || res.status === 'PROCESSING';
 
+          let statusText = 'Publishing...';
+          let isFuture = false;
+          if (isPending && reel.post?.scheduledAt) {
+            const schedDate = new Date(reel.post.scheduledAt);
+            if (schedDate > new Date()) {
+              statusText = `Scheduled for ${format(schedDate, 'MMM d, h:mm a')}`;
+              isFuture = true;
+            }
+          }
+
           return (
             <div key={idx} className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5 min-w-0">
@@ -258,8 +268,8 @@ const renderPostStatus = (reel: any) => {
                   </span>
                 )}
                 {isPending && (
-                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold rounded-md animate-pulse font-semibold">
-                    Publishing...
+                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md font-semibold ${isFuture ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200 animate-pulse'}`}>
+                    {statusText}
                   </span>
                 )}
               </div>
