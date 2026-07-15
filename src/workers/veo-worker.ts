@@ -201,6 +201,7 @@ It MUST follow this exact style:
 "Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. ${aestheticInstruction}"
 
 CRITICAL INSTRUCTION: You MUST violently randomize the [environment], [subject/entrepreneur], and lighting for EVERY generation! DO NOT use the same generic room. Use different locations (e.g., modern glass office, cozy hygge living room, minimalist cafe, moody dusk studio), different subtle actions (e.g., pouring matcha, organizing aesthetic notebooks, adjusting a lamp), and unique clothing styles. 
+CRITICAL RULE (AVOID EYE CONTACT): The subject MUST NEVER look at the camera. To maintain an atmospheric faceless vibe, the visual description MUST use creative framing: shoot from behind (over the shoulder), side profile looking away, looking down at a desk, or close-up detail shots of hands/objects only. The subject's eyes must never meet the lens.
 Ensure the visual prompt matches the tone/subject of the topic, but keep it strictly to the scene description (I will append the technical camera parameters).
 
 Format your output as a JSON object:
