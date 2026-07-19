@@ -32,6 +32,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Grid2X2 },
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
+  { name: 'Post Creator', href: '/dashboard/post-creator', icon: Wand2 },
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'AI Product Reels', href: '/dashboard/reels-creator', icon: Star },
   { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film },
