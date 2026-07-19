@@ -197,6 +197,9 @@ export default function PostCreatorPage() {
           if (imageFile) {
             formData.append('image', imageFile);
           }
+          if (referenceFile) {
+            formData.append('referenceImage', referenceFile);
+          }
 
           const res = await fetch('/api/ad-creator/generate', {
             method: 'POST',

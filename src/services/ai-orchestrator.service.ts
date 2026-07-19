@@ -312,7 +312,14 @@ Make sure the output is a valid JSON object.`;
   }
 
   // 1. Gemini image generation. Reel visuals must come from the LLM image model only.
-  async generateImage(prompt: string, seed: number = 0, referenceImageBase64?: string | null, referenceMimeType?: string | null): Promise<string> {
+  async generateImage(
+    prompt: string, 
+    seed: number = 0, 
+    referenceImageBase64?: string | null, 
+    referenceMimeType?: string | null,
+    styleImageBase64?: string | null,
+    styleMimeType?: string | null
+  ): Promise<string> {
     const uniqueId = Math.random().toString(36).substring(7);
     
     if (!process.env.VERTEX_AI_PROJECT_ID) {
@@ -354,14 +361,45 @@ Make sure the output is a valid JSON object.`;
       const modelId = settings.image?.primary || 'gemini-2.5-flash';
       url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
 
-      const requestParts: any[] = [{ text: finalPromptText }];
-      if (referenceImageBase64 && referenceMimeType) {
+      const requestParts: any[] = [];
+      if (referenceImageBase64 && referenceMimeType && styleImageBase64 && styleMimeType) {
+        requestParts.push({ text: `Analyze the following instructions and generate the requested image. Keep the product from the Product Image identical/unaltered, while fully replicating the style/vibe/aesthetic from the Style Reference Image. \n\nInstructions: ${finalPromptText}` });
+        
+        requestParts.push({ text: "Product Image (keep this product/object 100% identical and unchanged in size, shape, text, labels, details, branding, colors):" });
         requestParts.push({
           inlineData: {
             mimeType: referenceMimeType,
             data: referenceImageBase64
           }
         });
+
+        requestParts.push({ text: "Style Reference Image (mimic the overall artistic style, color scheme, background setting, layout composition, lighting, and mood of this image):" });
+        requestParts.push({
+          inlineData: {
+            mimeType: styleMimeType,
+            data: styleImageBase64
+          }
+        });
+      } else if (referenceImageBase64 && referenceMimeType) {
+        requestParts.push({ text: `Analyze the following instructions and generate the requested image featuring the product from the Product Image. \n\nInstructions: ${finalPromptText}` });
+        requestParts.push({ text: "Product Image:" });
+        requestParts.push({
+          inlineData: {
+            mimeType: referenceMimeType,
+            data: referenceImageBase64
+          }
+        });
+      } else if (styleImageBase64 && styleMimeType) {
+        requestParts.push({ text: `Analyze the following instructions and generate the requested image mimicking the style of the Style Reference Image. \n\nInstructions: ${finalPromptText}` });
+        requestParts.push({ text: "Style Reference Image:" });
+        requestParts.push({
+          inlineData: {
+            mimeType: styleMimeType,
+            data: styleImageBase64
+          }
+        });
+      } else {
+        requestParts.push({ text: finalPromptText });
       }
       
       requestBody = {

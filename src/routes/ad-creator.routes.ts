@@ -82,7 +82,7 @@ router.post('/directions', authenticate, upload.fields([{ name: 'image', maxCoun
   }
 });
 
-router.post('/generate', authenticate, upload.single('image'), async (req: any, res: any) => {
+router.post('/generate', authenticate, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'referenceImage', maxCount: 1 }]), async (req: any, res: any) => {
   try {
     let { productName, direction, platform } = req.body;
     
@@ -91,15 +91,30 @@ router.post('/generate', authenticate, upload.single('image'), async (req: any, 
       direction = JSON.parse(direction);
     }
     
-    let referenceImageBase64 = null;
-    let mimeType = null;
-    if (req.file) {
-      referenceImageBase64 = req.file.buffer.toString('base64');
-      mimeType = req.file.mimetype;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const file = files?.['image']?.[0];
+    const referenceFile = files?.['referenceImage']?.[0];
+
+    let productImageBase64 = null;
+    let productMimeType = null;
+    if (file) {
+      productImageBase64 = file.buffer.toString('base64');
+      productMimeType = file.mimetype;
+    }
+
+    let styleImageBase64 = null;
+    let styleMimeType = null;
+    if (referenceFile) {
+      styleImageBase64 = referenceFile.buffer.toString('base64');
+      styleMimeType = referenceFile.mimetype;
     }
 
     const briefPrompt = `You are a world-class advertising creative assistant and art director. Create a full creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
     
+    We are providing:
+    ${file ? '- A Product Image: Use this product exactly in the generated image. Describe its exact visual properties in detail.' : ''}
+    ${referenceFile ? '- A Style Reference Image: The style of the final output image MUST look identical or highly inspired by this image\'s style, color palette, lighting, background, composition, and aesthetic. Describe how to replicate this aesthetic while featuring the product.' : ''}
+
     Output exactly in this JSON format (no markdown blocks, just raw JSON):
     {
       "campaignConcept": "One sentence describing the creative idea",
@@ -119,10 +134,25 @@ router.post('/generate', authenticate, upload.single('image'), async (req: any, 
     It MUST explicitly command the image generator to render the typography (Tagline and CTA) beautifully integrated into the layout, utilizing negative space.
     CRITICAL: The image generator MUST NOT include any fake logos, watermarks, brand icons, or signatures.
     CRITICAL: Do NOT add humans, people, or hands to the scene unless explicitly requested by the product description. If the product is an animal, pet, or cartoon, explicitly enforce "NO HUMANS, NO PEOPLE, NO HANDS" in the prompt.
-    ${req.file ? 'IMPORTANT: We are passing the original product image. Instruct the image generator in the imagePrompt to use the reference image EXACTLY, and explicitly state that the product/dress/model MUST remain 100% identical and unaltered.' : ''}
+    ${file ? 'IMPORTANT: We are passing the original product image. Instruct the image generator in the imagePrompt to use the reference image EXACTLY, and explicitly state that the product/dress/model MUST remain 100% identical and unaltered.' : ''}
+    ${referenceFile ? 'IMPORTANT: We are also passing a style reference image. Instruct the image generator to replicate the visual style, background, lighting, composition, and color theme of the style reference image.' : ''}
     `;
 
-    const briefText = await aiOrchestrator.generateContent(briefPrompt);
+    const briefMediaParts: { data: string; mimeType: string }[] = [];
+    if (file && productImageBase64 && productMimeType) {
+      briefMediaParts.push({
+        data: productImageBase64,
+        mimeType: productMimeType
+      });
+    }
+    if (referenceFile && styleImageBase64 && styleMimeType) {
+      briefMediaParts.push({
+        data: styleImageBase64,
+        mimeType: styleMimeType
+      });
+    }
+
+    const briefText = await aiOrchestrator.generateContent(briefPrompt, briefMediaParts);
     const cleanedBrief = briefText.replace(/```json\n?|```/g, '').trim();
     const briefParsed = JSON.parse(cleanedBrief);
 
@@ -140,7 +170,14 @@ router.post('/generate', authenticate, upload.single('image'), async (req: any, 
       }
     });
 
-    const tempImageUrl = await aiOrchestrator.generateImage(imagePayload, Math.floor(Math.random() * 1000000), referenceImageBase64, mimeType);
+    const tempImageUrl = await aiOrchestrator.generateImage(
+      imagePayload, 
+      Math.floor(Math.random() * 1000000), 
+      productImageBase64, 
+      productMimeType,
+      styleImageBase64,
+      styleMimeType
+    );
     
     // Move the temp file to the public uploads directory
     const fileName = `ad_creative_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
