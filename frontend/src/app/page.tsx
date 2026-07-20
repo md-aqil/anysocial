@@ -87,27 +87,28 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* Hero Grid Content (Exact Editorial Layout from KENTYLE reference) */}
+        {/* Hero Grid Content (Exact Editorial Layout from KENTYLE reference with Exact User Copy) */}
         <div className="container mx-auto max-w-7xl pt-8 pb-4 relative z-20">
           
-          {/* Top Row Grid: Left Small Text + Middle ENDLESS CONTENT + Right Mini Feature Card */}
+          {/* Top Row Grid: Left Subheadline + Middle Headline + Right Mini Feature Card */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start mb-6">
             
-            {/* Left Small Paragraph */}
-            <div className="md:col-span-3 text-left">
-              <p className="text-xs font-medium text-sky-100/90 max-w-xs leading-relaxed">
-                Shatter the Mold, Own the Social Feed. Turn products into multi-channel campaigns automatically.
+            {/* Left Subheadline */}
+            <div className="md:col-span-4 text-left">
+              <p className="text-xs sm:text-sm font-medium text-sky-100/90 max-w-sm leading-relaxed">
+                Stop designing every post from scratch. SocialSched transforms your product into beautiful, on-brand creatives, writes engaging captions, and schedules your content calendar automatically.
               </p>
             </div>
 
-            {/* Middle Giant Headline */}
-            <div className="md:col-span-6 text-center">
-              <h2 className="font-bebas text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight leading-[0.9] text-white uppercase">
-                ENDLESS <br /> CONTENT
-              </h2>
+            {/* Middle Headline */}
+            <div className="md:col-span-5 text-center md:text-left">
+              <h1 className="font-bebas text-4xl sm:text-6xl lg:text-[72px] font-black tracking-tight leading-[0.92] text-white uppercase">
+                AI THAT CREATES, WRITES <br />
+                & SCHEDULES YOUR CONTENT
+              </h1>
             </div>
 
-            {/* Right Top Mini Feature Card with Lime Button (Like Shoe Card in Reference Image) */}
+            {/* Right Top Mini Feature Card */}
             <div className="md:col-span-3 flex justify-start md:justify-end">
               <div className="bg-black/40 backdrop-blur-md border border-white/20 p-4 rounded-3xl max-w-[220px] shadow-xl flex flex-col items-center text-center">
                 <div className="w-12 h-12 rounded-2xl bg-[#CCFF00]/20 flex items-center justify-center border border-[#CCFF00]/40 mb-2">
@@ -139,7 +140,7 @@ export default function HomePage() {
               </span>
             </div>
 
-            {/* Center Floating Pill Badge over Central Media (Experience Social Media That Knows No Boundaries) */}
+            {/* Center Floating Pill Badge over Central Media */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto flex items-center gap-3">
               <span className="hidden sm:inline-block bg-[#CCFF00] text-black font-bebas text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider -rotate-90 origin-center shadow-lg">
                 CURRENT AI IN 2025
@@ -153,7 +154,7 @@ export default function HomePage() {
 
           </div>
 
-          {/* Metadata Bar below Giant Typography (Exact from Reference Image) */}
+          {/* Metadata Bar below Giant Typography */}
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-sky-100/80 mt-2 border-t border-white/20 pt-4">
             <span>TREND</span>
             <span>COLLECTION</span>
@@ -229,7 +230,7 @@ export default function HomePage() {
           </Swiper>
         </div>
 
-        {/* Muted Social Media Channel Logo Bar at Hero Bottom (Exact from Reference Image Bottom Row) */}
+        {/* Muted Social Media Channel Logo Bar at Hero Bottom */}
         <div className="container mx-auto max-w-7xl pt-4 border-t border-white/20 relative z-20">
           <div className="flex items-center justify-between text-sky-100 gap-4 flex-wrap">
             {SOCIAL_PLATFORMS.slice(0, 6).map((p, idx) => (
@@ -419,7 +420,7 @@ export default function HomePage() {
               </div>
 
               {/* Bento Card 4: Dark Obsidian Card */}
-              <div className="bg-[#18181B] text-[#CCFF00] rounded-[2.5rem] p-8 flex items-center justify-between shadow-lg">
+              <div className="bg-[#18181B] text-white rounded-[2.5rem] p-8 flex items-center justify-between shadow-lg">
                 <span className="text-xs font-bold text-stone-400 uppercase tracking-wider font-bebas text-base">From URL to Published</span>
                 <span className="font-bebas text-4xl font-black text-[#CCFF00]">ONE CLICK</span>
               </div>
