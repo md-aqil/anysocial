@@ -232,7 +232,7 @@ export default function HomePage() {
 
       </section>
 
-      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO SECTION (FULL-WIDTH 100VW EDGE-TO-EDGE DIRECTLY AFTER HERO WITH NO WHITE GAP) */}
+      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO SECTION (RE-WRITTEN COPY FOR SOCIALSCHED APP) */}
       <section id="speed-scale" className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#0B0B0C] text-white pt-24 pb-20 px-6 md:px-16 border-t border-b border-stone-800 shadow-2xl bg-grid-pattern-dark -mt-10 z-0">
         
         <div className="max-w-[1400px] mx-auto relative z-10">
@@ -243,21 +243,21 @@ export default function HomePage() {
             {/* Top-Left Headline */}
             <div className="md:col-span-8">
               <h2 className="font-bebas text-4xl sm:text-6xl md:text-8xl font-black tracking-tight leading-[0.93] text-white uppercase">
-                WE PROVIDE FRESH <br />
-                <span className="text-[#CCFF00]">INNOVATIVE_OPTIONS</span> <br />
-                FOR YOU
+                WE PROVIDE 10X FASTER <br />
+                <span className="text-[#CCFF00]">CONTENT_AUTOMATION</span> <br />
+                FOR YOUR BRAND
               </h2>
             </div>
 
             {/* Top-Right Subtitle & Action Link */}
             <div className="md:col-span-4 text-left md:text-right flex flex-col justify-between h-full space-y-5 pt-2">
               <p className="text-stone-400 text-xs sm:text-sm leading-relaxed max-w-sm md:ml-auto font-medium">
-                Discover a wide range of AI tools, thoughtfully designed to meet your social media creation and scheduling needs.
+                Transform raw Shopify products into 5 unique visual directions, AI-written captions, and automated multi-channel posts in seconds.
               </p>
               <div>
                 <Link href="/signup">
                   <span className="font-bebas text-base sm:text-lg tracking-widest text-white hover:text-[#CCFF00] uppercase font-bold inline-flex items-center gap-1.5 transition-colors group cursor-pointer border-b border-white/20 pb-1">
-                    LEARN MORE ↗
+                    EXPLORE PLATFORM ↗
                   </span>
                 </Link>
               </div>
@@ -299,30 +299,30 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Bottom Row: Left Filter Pills + Right "LOVE WHAT WE DELIVER" Headline */}
+          {/* Bottom Row: Left Filter Pills + Right "SCALE WHAT YOU CREATE" Headline */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end pt-8 border-t border-stone-800/80 relative z-20">
             
             {/* Bottom-Left Filter Pills */}
             <div className="md:col-span-6 flex flex-wrap gap-2.5">
               <span className="bg-white text-black px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider">
-                Latest products 2025
+                Shopify Direct Sync
               </span>
               <span className="bg-stone-900 border border-stone-700 text-stone-300 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider">
-                Shopify Sync
+                5 Creative Directions
               </span>
               <span className="bg-stone-900 border border-stone-700 text-stone-300 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider">
-                AI Captions
+                Style Reference Match
               </span>
               <span className="bg-stone-900 border border-stone-700 text-stone-300 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider">
-                5 Directions
+                Multi-Channel Publishing
               </span>
             </div>
 
             {/* Bottom-Right Typography */}
             <div className="md:col-span-6 text-left md:text-right">
               <h3 className="font-bebas text-5xl sm:text-7xl md:text-8xl font-black tracking-tight leading-[0.92] text-white uppercase">
-                LOVE WHAT <br />
-                <span className="text-[#CCFF00]">WE DELIVER</span>
+                SCALE WHAT <br />
+                <span className="text-[#CCFF00]">YOU CREATE</span>
               </h3>
             </div>
 
