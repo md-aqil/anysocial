@@ -232,7 +232,7 @@ export default function HomePage() {
 
       </section>
 
-      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO SECTION (RE-WRITTEN COPY FOR SOCIALSCHED APP) */}
+      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO SECTION */}
       <section id="speed-scale" className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#0B0B0C] text-white pt-24 pb-20 px-6 md:px-16 border-t border-b border-stone-800 shadow-2xl bg-grid-pattern-dark -mt-10 z-0">
         
         <div className="max-w-[1400px] mx-auto relative z-10">
@@ -332,8 +332,8 @@ export default function HomePage() {
 
       </section>
 
-      {/* 💡 WHY SOCIALSCHED - BENTO GRID SECTION (KENTYLE GRID AESTHETIC) */}
-      <section id="about" className="py-24 bg-[#F2F3ED] bg-grid-pattern-light relative z-20">
+      {/* 💡 WHY SOCIALSCHED - BENTO GRID SECTION */}
+      <section id="about" className="py-24 bg-[#F2F3ED] bg-grid-pattern-light relative z-20 border-b border-stone-300/80">
         <div className="container mx-auto px-6 max-w-6xl">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs font-extrabold uppercase tracking-widest text-[#0284C7] mb-3 block font-bebas text-sm">
@@ -419,15 +419,121 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 🔚 FOOTER */}
-      <footer className="border-t border-stone-300/80 bg-white py-12 text-center relative z-20">
-        <div className="container mx-auto px-6 flex flex-col items-center gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="SocialSched Logo" className="h-9 w-auto object-contain" />
-          <p className="text-stone-500 text-xs font-semibold">
-            &copy; {new Date().getFullYear()} SocialSched. All rights reserved.
-          </p>
+      {/* 🌤 CREATIVE WINNING FOOTER (SKY BLUE GRADIENT, CLOUD TEXTURE, WATERMARK & HIGH-IMPACT CTAs) */}
+      <footer className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-20 pb-12 px-6 rounded-t-[3.5rem] shadow-[0_-25px_80px_rgba(2,132,199,0.35)] overflow-hidden z-20">
+        
+        {/* Photorealistic Clouds Background Texture Layer */}
+        <div 
+          className="absolute inset-0 bg-cover bg-top opacity-70 pointer-events-none mix-blend-screen"
+          style={{ backgroundImage: `url('/sky_cloud_hero_bg.jpg')` }}
+        />
+
+        {/* Ambient Radial Glow Accents */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[100%] h-[350px] bg-sky-200/20 blur-[130px] rounded-full pointer-events-none" />
+        <div className="absolute top-10 right-10 w-[300px] h-[300px] bg-[#CCFF00]/15 blur-[100px] rounded-full pointer-events-none" />
+
+        {/* Giant Watermarked Background Text */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full text-center pointer-events-none select-none z-0">
+          <span className="font-bebas text-[18vw] font-black leading-none text-white/10 uppercase tracking-widest block drop-shadow-xs">
+            SOCIALSCHED
+          </span>
         </div>
+
+        <div className="container mx-auto max-w-7xl relative z-10">
+          
+          {/* Top CTA Banner Section */}
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-8 sm:p-14 text-center mb-16 shadow-2xl relative overflow-hidden group">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/30 bg-white/15 text-[#CCFF00] text-xs font-extrabold uppercase tracking-widest mb-4 shadow-xs">
+              ✨ READY TO SCALE YOUR SOCIAL BRAND?
+            </span>
+            <h2 className="font-bebas text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-tight leading-[0.95] uppercase mb-4">
+              START AUTOMATING YOUR SOCIAL MEDIA TODAY
+            </h2>
+            <p className="text-sky-100/90 text-sm sm:text-lg max-w-xl mx-auto mb-8 font-medium leading-relaxed">
+              Transform raw product links into 5 creative directions, AI captions, and multi-network campaigns in under 60 seconds.
+            </p>
+            <Link href="/signup">
+              <Button size="lg" className="rounded-full bg-[#CCFF00] hover:bg-[#bef264] text-black font-black text-sm uppercase tracking-widest px-10 py-7 shadow-[0_10px_35px_rgba(204,255,0,0.5)] border border-[#CCFF00] hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-3">
+                START FREE NOW
+                <ArrowUpRight className="w-5 h-5" />
+              </Button>
+            </Link>
+          </div>
+
+          {/* Footer Grid Links */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/20">
+            
+            {/* Column 1: Brand Info */}
+            <div className="md:col-span-5 space-y-4">
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="SocialSched Logo" className="h-10 w-auto object-contain brightness-0 invert" />
+                <span className="font-bebas text-3xl font-black text-white tracking-widest">SOCIALSCHED</span>
+              </div>
+              <p className="text-sky-100/80 text-xs sm:text-sm font-medium leading-relaxed max-w-sm">
+                The all-in-one AI content engine for brands and creators. Import products, generate visual directions, write captions, and schedule everywhere automatically.
+              </p>
+
+              {/* Social Platform Icons */}
+              <div className="pt-2 flex items-center gap-3 text-sky-100">
+                <InstagramLogo className="w-5 h-5 hover:text-white transition-colors cursor-pointer" />
+                <TiktokLogo className="w-5 h-5 hover:text-white transition-colors cursor-pointer" />
+                <YoutubeLogo className="w-5 h-5 hover:text-white transition-colors cursor-pointer" />
+                <LinkedinLogo className="w-5 h-5 hover:text-white transition-colors cursor-pointer" />
+                <TwitterLogo className="w-5 h-5 hover:text-white transition-colors cursor-pointer" />
+                <FacebookLogo className="w-5 h-5 hover:text-white transition-colors cursor-pointer" />
+              </div>
+            </div>
+
+            {/* Column 2: Platform Links */}
+            <div className="md:col-span-2 space-y-3">
+              <h4 className="font-bebas text-lg tracking-widest text-[#CCFF00] uppercase font-bold">PLATFORM</h4>
+              <ul className="space-y-2 text-xs font-semibold text-sky-100/90">
+                <li><Link href="#speed-scale" className="hover:text-white transition-colors">Shopify Direct Sync</Link></li>
+                <li><Link href="#speed-scale" className="hover:text-white transition-colors">5 AI Directions</Link></li>
+                <li><Link href="#speed-scale" className="hover:text-white transition-colors">Style Reference Match</Link></li>
+                <li><Link href="#speed-scale" className="hover:text-white transition-colors">AI Caption Writer</Link></li>
+                <li><Link href="#speed-scale" className="hover:text-white transition-colors">Auto Multi-Publisher</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Resources */}
+            <div className="md:col-span-2 space-y-3">
+              <h4 className="font-bebas text-lg tracking-widest text-[#CCFF00] uppercase font-bold">RESOURCES</h4>
+              <ul className="space-y-2 text-xs font-semibold text-sky-100/90">
+                <li><Link href="#about" className="hover:text-white transition-colors">Why SocialSched</Link></li>
+                <li><Link href="#speed-scale" className="hover:text-white transition-colors">Platform Showcase</Link></li>
+                <li><Link href="/login" className="hover:text-white transition-colors">Client Portal</Link></li>
+                <li><Link href="/signup" className="hover:text-white transition-colors">Create Account</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 4: Legal & System Status */}
+            <div className="md:col-span-3 space-y-3">
+              <h4 className="font-bebas text-lg tracking-widest text-[#CCFF00] uppercase font-bold">SYSTEM STATUS</h4>
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-xs font-bold text-sky-100">
+                <span className="w-2 h-2 rounded-full bg-[#CCFF00] animate-pulse" />
+                All Systems Operational
+              </div>
+              <p className="text-sky-100/70 text-xs pt-2 font-medium leading-normal">
+                High-performance AI inference pipelines operating at peak speed across global endpoints.
+              </p>
+            </div>
+
+          </div>
+
+          {/* Bottom Bar: Copyright & Terms */}
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs font-semibold text-sky-100/80 gap-4">
+            <p>&copy; {new Date().getFullYear()} SocialSched. All rights reserved.</p>
+            <div className="flex items-center gap-6">
+              <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href="#" className="hover:text-white transition-colors">Cookie Preferences</Link>
+            </div>
+          </div>
+
+        </div>
+
       </footer>
 
     </div>
