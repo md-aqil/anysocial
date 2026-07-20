@@ -7,7 +7,7 @@ import {
   TiktokLogo, YoutubeLogo, ThreadsLogo, PinterestLogo, SnapchatLogo
 } from '@/components/icons/social-icons';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Play, Zap } from 'lucide-react';
+import { ArrowUpRight, Play, Sparkles, Star, Zap } from 'lucide-react';
 
 // Swiper React components & styles
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -49,8 +49,8 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-stone-900 text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
       
-      {/* 🚀 SKY & CLOUD HERO SECTION (EXACT REQUESTED COPY & KENTYLE EDITORIAL GRID LAYOUT) */}
-      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-16 px-4 sm:px-8 rounded-b-[3.5rem] shadow-2xl overflow-hidden min-h-[850px] flex flex-col justify-between z-10">
+      {/* 🚀 HIGH-IMPACT SKY & CLOUD HERO SECTION */}
+      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-20 px-4 sm:px-8 rounded-b-[3.5rem] shadow-[0_25px_80px_rgba(2,132,199,0.35)] overflow-hidden min-h-[880px] flex flex-col justify-between z-10">
         
         {/* Photorealistic Clouds Background Texture Layer */}
         <div 
@@ -58,8 +58,16 @@ export default function HomePage() {
           style={{ backgroundImage: `url('/sky_cloud_hero_bg.jpg')` }}
         />
 
-        {/* Ambient Sky Glow Accent */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[100%] h-[400px] bg-sky-200/20 blur-[130px] rounded-full pointer-events-none" />
+        {/* Ambient Radial Sky Glow Accents */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[100%] h-[450px] bg-sky-200/25 blur-[140px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-10 left-1/4 w-[350px] h-[350px] bg-[#CCFF00]/15 blur-[120px] rounded-full pointer-events-none" />
+
+        {/* Giant Watermarked Background Text */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none select-none z-10">
+          <span className="font-bebas text-[18vw] font-black leading-none text-white/10 uppercase tracking-widest block drop-shadow-xs">
+            SOCIALSCHED
+          </span>
+        </div>
 
         {/* Navigation Header */}
         <header className="container mx-auto max-w-7xl px-4 h-20 flex items-center justify-between relative z-20 border-b border-white/20 pb-4">
@@ -87,83 +95,62 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* Hero Grid Content */}
-        <div className="container mx-auto max-w-7xl pt-8 pb-4 relative z-20">
+        {/* Hero Central Content */}
+        <div className="container mx-auto max-w-5xl text-center pt-8 pb-4 relative z-20">
           
-          {/* Top Row Grid: Left Small Subheadline + Middle Headline + Right Feature Card */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start mb-6">
-            
-            {/* Left Column Subheadline */}
-            <div className="md:col-span-3 text-left">
-              <p className="text-xs font-medium text-sky-100/90 max-w-xs leading-relaxed">
-                Stop designing every post from scratch. SocialSched transforms your product into beautiful, on-brand creatives, writes engaging captions, and schedules your content calendar automatically.
-              </p>
-            </div>
+          {/* Top Pill Eyebrow */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/25 bg-white/10 backdrop-blur-md text-white text-xs font-extrabold uppercase tracking-widest mb-6 shadow-sm"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#CCFF00] animate-pulse" />
+            Shatter the Mold, Own the Social Feed
+          </motion.div>
 
-            {/* Middle Column Headline */}
-            <div className="md:col-span-6 text-center">
-              <motion.h1 
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="font-bebas text-5xl sm:text-7xl lg:text-[96px] font-black tracking-tight leading-[0.92] text-white uppercase"
-              >
-                AI That Creates, Writes <br className="hidden sm:block" /> & Schedules Your Content
-              </motion.h1>
-            </div>
+          {/* Main Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="font-bebas text-5xl sm:text-7xl lg:text-[104px] font-black tracking-tight leading-[0.9] text-white uppercase mb-6 drop-shadow-sm"
+          >
+            AI That Creates, Writes <br className="hidden sm:block" /> & Schedules Your Content
+          </motion.h1>
 
-            {/* Right Mini Feature Card */}
-            <div className="md:col-span-3 flex justify-start md:justify-end">
-              <div className="bg-black/40 backdrop-blur-md border border-white/20 p-4 rounded-3xl max-w-[220px] shadow-xl flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-[#CCFF00]/20 flex items-center justify-center border border-[#CCFF00]/40 mb-2">
-                  <Zap className="w-6 h-6 text-[#CCFF00]" />
-                </div>
-                <span className="text-[11px] font-bold text-sky-100 leading-tight mb-3">
-                  AI Creation & Auto Publisher
-                </span>
-                <Link href="/signup" className="w-full">
-                  <Button className="w-full rounded-full bg-[#CCFF00] hover:bg-[#bef264] text-black font-black text-[11px] uppercase tracking-wider py-2">
-                    Start Free ↗
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Middle Row: Giant URBAN CHIC Style Typography Running Across Background */}
-          <div className="relative my-4 flex items-center justify-center">
-            
-            {/* Giant Background Text Overlay */}
-            <div className="w-full flex justify-between items-center select-none pointer-events-none opacity-90">
-              <span className="font-bebas text-[11vw] sm:text-[13vw] font-black leading-none text-white tracking-tighter">
-                SOCIAL
-              </span>
-              <span className="font-bebas text-[11vw] sm:text-[13vw] font-black leading-none text-white tracking-tighter">
-                SCHED
-              </span>
-            </div>
-
-          </div>
+          {/* Subheadline */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-sky-100/95 text-base sm:text-xl font-medium leading-relaxed max-w-2xl mx-auto mb-8"
+          >
+            Stop designing every post from scratch. SocialSched transforms your product into beautiful, on-brand creatives, writes engaging captions, and schedules your content calendar automatically.
+          </motion.p>
 
           {/* Action CTAs */}
-          <div className="flex flex-wrap items-center justify-center gap-5 mt-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-wrap items-center justify-center gap-5 mb-6"
+          >
             <a href="#speed-scale">
-              <Button size="lg" className="rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/30 text-white font-extrabold px-8 h-12 text-xs tracking-widest uppercase shadow-lg shadow-black/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
-                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
-                  <Play className="w-3 h-3 fill-white text-white ml-0.5" />
+              <Button size="lg" className="rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/30 text-white font-extrabold px-8 h-14 text-xs tracking-widest uppercase shadow-lg shadow-black/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
+                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
+                  <Play className="w-3.5 h-3.5 fill-white text-white ml-0.5" />
                 </div>
                 Watch AI in Action
               </Button>
             </a>
             <Link href="/signup">
-              <Button size="lg" className="rounded-full bg-gradient-to-r from-[#CCFF00] via-[#D9F99D] to-[#CCFF00] hover:bg-[#bef264] text-black font-black px-9 h-12 text-xs tracking-widest uppercase shadow-[0_10px_35px_rgba(204,255,0,0.4)] border border-[#CCFF00] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
+              <Button size="lg" className="rounded-full bg-gradient-to-r from-[#CCFF00] via-[#D9F99D] to-[#CCFF00] hover:bg-[#bef264] text-black font-black px-9 h-14 text-xs tracking-widest uppercase shadow-[0_10px_35px_rgba(204,255,0,0.45)] border border-[#CCFF00] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
                 Start Free
-                <span className="w-6 h-6 rounded-full bg-black text-[#CCFF00] flex items-center justify-center font-bold shadow-sm group-hover:rotate-45 transition-transform duration-300">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
+                <span className="w-7 h-7 rounded-full bg-black text-[#CCFF00] flex items-center justify-center font-bold shadow-sm group-hover:rotate-45 transition-transform duration-300">
+                  <ArrowUpRight className="w-4 h-4" />
                 </span>
               </Button>
             </Link>
-          </div>
+          </motion.div>
 
         </div>
 
@@ -231,12 +218,12 @@ export default function HomePage() {
           </Swiper>
         </div>
 
-        {/* Muted Social Media Channel Logo Bar at Hero Bottom */}
-        <div className="container mx-auto max-w-7xl pt-4 border-t border-white/20 relative z-20">
-          <div className="flex items-center justify-between text-sky-100 gap-4 flex-wrap">
-            {SOCIAL_PLATFORMS.slice(0, 6).map((p, idx) => (
-              <div key={idx} className="flex items-center gap-2 text-sky-100 hover:text-white transition-colors">
-                <p.Icon className="w-4 h-4" />
+        {/* Bottom Social Media Platforms Marquee Ticker */}
+        <div className="w-full overflow-hidden pt-4 border-t border-white/20 relative z-20">
+          <div className="flex w-[200%] animate-marquee">
+            {[...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS].map((p, idx) => (
+              <div key={idx} className="flex items-center gap-2.5 mx-8 shrink-0 text-sky-100 hover:text-white transition-colors">
+                <p.Icon className="w-4 h-4 text-[#CCFF00]" />
                 <span className="font-bebas text-sm font-bold uppercase tracking-wider">{p.name}</span>
               </div>
             ))}
