@@ -52,23 +52,49 @@ function buildAssSubtitleFile(
   const WHITE = '&H00FFFFFF';
   const BLACK = '&H00000000';
   const ORANGE = '&H00006BFF'; // #FF6B00
-  const BLUE = '&H00FF5500';   // #0055FF
+  const YELLOW = '&H0000FFFF'; // #FFFF00
 
-  let fontSize = 35; // Reduced from 40
+  let primaryColour = ORANGE;  // Highlight active color
+  let secondaryColour = WHITE; // Base inactive color
+  let fontSize = 48;           // A nice, legible size for mobile screens (720x1280 layout)
   let borderStyle = 1;
-  let outline = 1.5;
-  let shadow = 1; // Further reduced shadow distance
-  let outlineColour = '&H00000000';
-  let backColour = '&HB3000000'; 
-  let extraTags = '\\blur12';
+  let outline = 3.0;
+  let shadow = 2.0;
+  let outlineColour = BLACK;
+  let backColour = '&H80000000'; // 50% opacity black shadow
 
   if (style === 'solid-dark-box') {
-    borderStyle = 3; outline = 8; shadow = 0; outlineColour = '&H00000000'; backColour = '&H00000000'; extraTags = '';
+    borderStyle = 3; 
+    outline = 6; 
+    shadow = 0; 
+    outlineColour = BLACK; 
+    backColour = BLACK; 
+    primaryColour = YELLOW;
   } else if (style === 'transparent-dark-box') {
-    borderStyle = 3; outline = 8; shadow = 0; outlineColour = '&H66000000'; backColour = '&H66000000'; extraTags = '';
+    borderStyle = 3; 
+    outline = 6; 
+    shadow = 0; 
+    outlineColour = '&H80000000'; 
+    backColour = '&H80000000'; 
+    primaryColour = YELLOW;
   } else if (style === 'classic-outline') {
-    borderStyle = 1; outline = 3.5; shadow = 0; outlineColour = '&H00000000'; extraTags = '';
+    borderStyle = 1; 
+    outline = 4.0; 
+    shadow = 0; 
+    outlineColour = BLACK; 
+    primaryColour = ORANGE;
+  } else {
+    // cinematic-shadow
+    borderStyle = 1;
+    outline = 3.0;
+    shadow = 2.0;
+    outlineColour = BLACK;
+    backColour = '&H80000000';
+    primaryColour = ORANGE;
   }
+
+  const isHindi = /[\u0900-\u097F]/.test(sentences.join(' '));
+  const fontName = isHindi ? 'Arial Black' : 'Poppins';
 
   const header = `[Script Info]
 ScriptType: v4.00+
@@ -78,7 +104,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Helvetica,${fontSize},${WHITE},${WHITE},${outlineColour},${backColour},700,0,0,0,100,100,-1,0,${borderStyle},${outline},${shadow},5,100,100,0,1
+Style: Default,${fontName},${fontSize},${primaryColour},${secondaryColour},${outlineColour},${backColour},700,0,0,0,100,100,-1,0,${borderStyle},${outline},${shadow},5,100,100,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -93,7 +119,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   // 2. Format paragraphs with intelligent text wrapping
   const formattedParagraphs = paragraphs.map(p => {
     return p.map(s => {
-       const words = s.split(/\\s+/);
+       const words = s.split(/\s+/);
        // Balance long sentences by splitting in half
        if (words.length > 6) {
           const mid = Math.floor(words.length / 2);
@@ -104,30 +130,69 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   });
 
   // 3. Calculate timing based on reading speed and proportional duration
-  const paragraphWordCounts = formattedParagraphs.map(text => text.replace(/\\\\N/g, ' ').split(/\\s+/).length);
+  const paragraphWordCounts = formattedParagraphs.map(text => text.replace(/\\N/g, ' ').split(/\s+/).filter(Boolean).length);
   const totalWords = paragraphWordCounts.reduce((a, b) => a + b, 0);
-  
-  let currentTimeMs = 0;
-  let eventTextBlocks = [];
-  
+
+  let currentTime = 0;
+  let body = '';
+
   for (let i = 0; i < formattedParagraphs.length; i++) {
     const text = formattedParagraphs[i];
+    const wordCount = paragraphWordCounts[i];
+    if (wordCount === 0) continue;
+
+    // Proportional duration for this paragraph
+    const duration = (wordCount / totalWords) * totalDuration;
+    const startTime = currentTime;
+    const endTime = startTime + duration;
+    currentTime = endTime;
+
+    const startStr = formatAssTime(startTime);
+    const endStr = formatAssTime(endTime);
+
+    // Split the paragraph into tokens (preserving whitespace and \N newlines)
+    const tokens = text.split(/(\s+|\\N)/);
+    const wordsInTokens = tokens.filter(t => t.trim() !== '' && t !== '\\N');
+    const wordCountInTokens = wordsInTokens.length;
+
+    // Centiseconds for the whole paragraph
+    const durationCs = Math.round(duration * 100);
+    let remainingCs = durationCs;
+
+    // Distribute centiseconds among the words
+    const tokenWordsCs: number[] = [];
+    for (let j = 0; j < wordCountInTokens; j++) {
+      let wordDur = Math.round(durationCs / wordCountInTokens);
+      if (j === wordCountInTokens - 1) {
+        wordDur = remainingCs; // Avoid rounding drift
+      } else {
+        remainingCs -= wordDur;
+      }
+      tokenWordsCs.push(Math.max(wordDur, 1));
+    }
+
+    // Construct the text with pop animation and karaoke tags
+    // Pop animation: start at 90% scale, zoom to 105% in 80ms, settle to 100% at 150ms
+    let textWithKaraoke = `{\\fscx90\\fscy90\\t(0,80,\\fscx105\\fscy105)\\t(80,150,\\fscx100\\fscy100)}`;
     
-    // Inject alpha start (invisible), then animate to visible
-    const fadeStart = Math.round(currentTimeMs);
-    const fadeEnd = fadeStart + 200;
-    const block = `{\\alpha&HFF&\\t(${fadeStart},${fadeEnd},\\alpha&H00&)}${text}`;
-    eventTextBlocks.push(block);
-    
-    currentTimeMs += 1000; // 1 second pacing between text groups!
+    let wordIdx = 0;
+    for (let j = 0; j < tokens.length; j++) {
+      const token = tokens[j];
+      if (token === '\\N') {
+        textWithKaraoke += '\\N';
+      } else if (token.trim() === '') {
+        textWithKaraoke += token;
+      } else {
+        const wordDur = tokenWordsCs[wordIdx++];
+        textWithKaraoke += `{\\kf${wordDur}}${token}`;
+      }
+    }
+
+    // Place the text centered horizontally (PlayResX: 720) and slightly below the middle (PlayResY: 1280)
+    const positionTag = `{\\pos(360,750)}`;
+
+    body += `Dialogue: 0,${startStr},${endStr},Default,,0,0,0,,${positionTag}${textWithKaraoke.trim()}\n`;
   }
-  
-  const finalEventText = `{${extraTags}\\pos(360,665)}` + eventTextBlocks.join('\\N\\N\\N\\N\\N');
-  
-  const start = formatAssTime(0);
-  const end = formatAssTime(totalDuration); // Displays until the very end
-  
-  let body = `Dialogue: 0,${start},${end},Default,,0,0,0,,${finalEventText}\\n`;
 
   const assPath = path.join(os.tmpdir(), `veo_subs_${Date.now()}.ass`);
   fs.writeFileSync(assPath, header + body);

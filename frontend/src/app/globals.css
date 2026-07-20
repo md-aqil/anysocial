@@ -124,3 +124,47 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* ====== 3D Arc Cylinder Carousel CSS ====== */
+.scene-container {
+  display: grid;
+  overflow: hidden;
+  perspective: 45em;
+  mask: linear-gradient(90deg, #0000, #000 15% 85%, #0000);
+  -webkit-mask: linear-gradient(90deg, #0000, #000 15% 85%, #0000);
+}
+
+.a3d-cylinder {
+  display: grid;
+  place-self: center;
+  transform-style: preserve-3d;
+  animation: ry-rotate 36s linear infinite;
+}
+
+.a3d-cylinder:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ry-rotate {
+  to {
+    transform: rotateY(1turn);
+  }
+}
+
+.a3d-card {
+  --w: 15em;
+  --ba: calc(360deg / var(--n));
+  grid-area: 1 / 1;
+  width: var(--w);
+  aspect-ratio: 7 / 10;
+  border-radius: 1.5em;
+  backface-visibility: hidden;
+  transform: rotateY(calc(var(--i) * var(--ba))) translateZ(calc((0.5 * var(--w) + 1em) / 0.4142));
+  transition: transform 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a3d-cylinder {
+    animation-duration: 128s;
+  }
+}
