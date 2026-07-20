@@ -47,41 +47,47 @@ const SOCIAL_PLATFORMS = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#F2F3ED] text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
+    <div className="min-h-screen bg-stone-900 text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
       
-      {/* 🚀 HERO SECTION (MATCHING KENTYLE CREAM GRID EDITORIAL THEME VIBE) */}
-      <section className="relative bg-[#F2F3ED] bg-grid-pattern-light text-stone-900 pt-6 pb-20 px-4 overflow-hidden flex flex-col justify-between z-10">
+      {/* 🚀 SKY & CLOUD HERO SECTION (PRESERVING SIGNATURE SKY BLUE COLOR GRADIENT & CLOUDS) */}
+      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-24 px-4 rounded-b-[3.5rem] shadow-2xl overflow-hidden min-h-[780px] flex flex-col justify-between z-10">
         
-        {/* Ambient Glow Accent */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[90%] h-[350px] bg-[#CCFF00]/15 blur-[120px] rounded-full pointer-events-none" />
+        {/* Photorealistic Clouds Background Texture Layer */}
+        <div 
+          className="absolute inset-0 bg-cover bg-bottom opacity-75 pointer-events-none mix-blend-screen"
+          style={{ backgroundImage: `url('/sky_cloud_hero_bg.jpg')` }}
+        />
+
+        {/* Ambient Sky Glow Accent */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[100%] h-[400px] bg-sky-200/20 blur-[130px] rounded-full pointer-events-none" />
 
         {/* Background Outlined Watermark Text */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none select-none z-0">
-          <span className="font-bebas text-[18vw] font-black leading-none text-stone-900/5 uppercase tracking-widest block">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none select-none z-10">
+          <span className="font-bebas text-[16vw] font-black leading-none text-white/10 uppercase tracking-widest block">
             SOCIALSCHED
           </span>
         </div>
 
         {/* Navigation Header */}
-        <header className="container mx-auto max-w-7xl px-4 h-20 flex items-center justify-between relative z-20 border-b border-stone-300/60 pb-4">
+        <header className="container mx-auto max-w-7xl px-4 h-20 flex items-center justify-between relative z-20">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="SocialSched Logo" className="h-12 w-auto object-contain" />
-            <span className="font-bebas text-3xl font-black text-stone-900 tracking-widest hidden sm:inline-block">SOCIALSCHED</span>
+            <img src="/logo.png" alt="SocialSched Logo" className="h-12 w-auto object-contain brightness-0 invert" />
+            <span className="font-bebas text-3xl font-black text-white tracking-widest hidden sm:inline-block">SOCIALSCHED</span>
           </div>
           
-          <nav className="hidden md:flex items-center gap-8 uppercase tracking-widest text-stone-700 hover:text-black font-bebas text-lg font-bold">
-            <Link href="#" className="hover:text-black transition-colors">Home</Link>
-            <Link href="#speed-scale" className="hover:text-black transition-colors">Platform</Link>
-            <Link href="#about" className="hover:text-black transition-colors">Why SocialSched</Link>
+          <nav className="hidden md:flex items-center gap-8 uppercase tracking-widest text-sky-100/90 font-bebas text-lg font-bold">
+            <Link href="#" className="hover:text-white transition-colors">Home</Link>
+            <Link href="#speed-scale" className="hover:text-white transition-colors">Platform</Link>
+            <Link href="#about" className="hover:text-white transition-colors">Why SocialSched</Link>
           </nav>
 
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-semibold text-stone-700 hover:text-black transition-colors hidden sm:inline-block">
+            <Link href="/login" className="text-sm font-semibold text-sky-100 hover:text-white transition-colors hidden sm:inline-block">
               Log in
             </Link>
             <Link href="/signup">
-              <Button className="rounded-full bg-[#CCFF00] hover:bg-[#bef264] text-black font-extrabold px-6 py-2.5 shadow-md border border-black/80 transition-transform hover:scale-105 active:scale-95 text-xs uppercase tracking-wider">
+              <Button className="rounded-full bg-[#CCFF00] hover:bg-[#bef264] text-black font-extrabold px-6 py-2.5 shadow-[0_4px_20px_rgba(204,255,0,0.3)] transition-transform hover:scale-105 active:scale-95 text-xs uppercase tracking-wider">
                 Start Free ↗
               </Button>
             </Link>
@@ -89,16 +95,16 @@ export default function HomePage() {
         </header>
 
         {/* Hero Copy with Editorial Condensed Typography */}
-        <div className="container mx-auto max-w-5xl text-center pt-10 pb-6 relative z-20">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-stone-500 mb-6 max-w-2xl mx-auto px-4">
+        <div className="container mx-auto max-w-5xl text-center pt-8 pb-4 relative z-20">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-sky-100/80 mb-4 max-w-2xl mx-auto px-4">
             <span>Shatter the Mold, Own the Social Feed</span>
-            <span className="text-[#0284C7] font-bebas text-base uppercase font-extrabold">ENDLESS AUTOMATION</span>
+            <span className="text-[#CCFF00] font-bebas text-base uppercase font-bold">ENDLESS AUTOMATION</span>
           </div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-bebas text-5xl sm:text-7xl lg:text-[104px] font-black tracking-tight leading-[0.92] mb-6 text-stone-900 uppercase"
+            className="font-bebas text-5xl sm:text-7xl lg:text-[100px] font-black tracking-tight leading-[0.92] mb-6 text-white uppercase"
           >
             AI That Creates, Writes <br className="hidden sm:block" /> & Schedules Your Content
           </motion.h1>
@@ -107,12 +113,12 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-base sm:text-xl text-stone-600 max-w-2xl mx-auto mb-8 leading-relaxed font-medium"
+            className="text-base sm:text-lg text-sky-100/90 max-w-2xl mx-auto mb-8 leading-relaxed font-medium"
           >
             Stop designing every post from scratch. SocialSched transforms your product into beautiful, on-brand creatives, writes engaging captions, and schedules your content calendar automatically.
           </motion.p>
 
-          {/* Action CTAs */}
+          {/* Enhanced Action CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -120,7 +126,7 @@ export default function HomePage() {
             className="flex flex-wrap items-center justify-center gap-5 mb-4"
           >
             <a href="#speed-scale">
-              <Button size="lg" className="rounded-full bg-stone-900 hover:bg-black text-white font-extrabold px-8 h-14 text-xs tracking-widest uppercase shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
+              <Button size="lg" className="rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/30 text-white font-extrabold px-8 h-14 text-xs tracking-widest uppercase shadow-lg shadow-black/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
                 <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
                   <Play className="w-3.5 h-3.5 fill-white text-white ml-0.5" />
                 </div>
@@ -128,7 +134,7 @@ export default function HomePage() {
               </Button>
             </a>
             <Link href="/signup">
-              <Button size="lg" className="rounded-full bg-[#CCFF00] hover:bg-[#bef264] text-black font-black px-9 h-14 text-xs tracking-widest uppercase shadow-[0_10px_30px_rgba(204,255,0,0.5)] border border-black hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
+              <Button size="lg" className="rounded-full bg-gradient-to-r from-[#CCFF00] via-[#D9F99D] to-[#CCFF00] hover:bg-[#bef264] text-black font-black px-9 h-14 text-xs tracking-widest uppercase shadow-[0_10px_35px_rgba(204,255,0,0.4)] border border-[#CCFF00] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
                 Start Free
                 <span className="w-7 h-7 rounded-full bg-black text-[#CCFF00] flex items-center justify-center font-bold shadow-sm group-hover:rotate-45 transition-transform duration-300">
                   <ArrowUpRight className="w-4 h-4" />
@@ -176,13 +182,13 @@ export default function HomePage() {
           >
             {[...CAROUSEL_IMAGES, ...CAROUSEL_IMAGES].map((card, idx) => (
               <SwiperSlide key={`${card.id}-${idx}`} className="!w-60 sm:!w-72 md:!w-[280px] select-none py-3">
-                <div className="bg-white p-2.5 rounded-[2rem] shadow-[0_20px_45px_rgba(0,0,0,0.12)] border border-stone-200/90 group hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden mx-auto">
+                <div className="bg-white p-2.5 rounded-[2rem] shadow-[0_20px_45px_rgba(0,0,0,0.25)] border border-white/80 group hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden mx-auto">
                   <div className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden bg-stone-100 mb-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={card.src} alt={card.tag} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     
                     {card.tag && (
-                      <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
+                      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
                         {card.tag}
                       </div>
                     )}
@@ -203,8 +209,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO SECTION (FULL-WIDTH 100VW EDGE-TO-EDGE DIRECTLY AFTER HERO WITH NO GAP) */}
-      <section id="speed-scale" className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#0B0B0C] text-white pt-24 pb-20 px-6 md:px-16 border-t border-b border-stone-800 shadow-2xl bg-grid-pattern-dark z-20">
+      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO SECTION (FULL-WIDTH 100VW EDGE-TO-EDGE DIRECTLY AFTER HERO WITH NO WHITE GAP) */}
+      <section id="speed-scale" className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#0B0B0C] text-white pt-24 pb-20 px-6 md:px-16 border-t border-b border-stone-800 shadow-2xl bg-grid-pattern-dark -mt-10 z-0">
         
         <div className="max-w-[1400px] mx-auto relative z-10">
           
