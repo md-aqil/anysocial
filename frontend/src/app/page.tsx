@@ -49,8 +49,8 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-stone-900 text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
       
-      {/* 🚀 SKY & CLOUD HERO SECTION (CLEAN & CREATIVE EDITORIAL TYPOGRAPHY) */}
-      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-20 px-4 rounded-b-[3.5rem] shadow-2xl overflow-hidden min-h-[820px] flex flex-col justify-between z-10">
+      {/* 🚀 SKY & CLOUD HERO SECTION (EXACT REQUESTED COPY & KENTYLE EDITORIAL GRID LAYOUT) */}
+      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-16 px-4 sm:px-8 rounded-b-[3.5rem] shadow-2xl overflow-hidden min-h-[850px] flex flex-col justify-between z-10">
         
         {/* Photorealistic Clouds Background Texture Layer */}
         <div 
@@ -62,7 +62,7 @@ export default function HomePage() {
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[100%] h-[400px] bg-sky-200/20 blur-[130px] rounded-full pointer-events-none" />
 
         {/* Navigation Header */}
-        <header className="container mx-auto max-w-7xl px-4 h-20 flex items-center justify-between relative z-20">
+        <header className="container mx-auto max-w-7xl px-4 h-20 flex items-center justify-between relative z-20 border-b border-white/20 pb-4">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="SocialSched Logo" className="h-12 w-auto object-contain brightness-0 invert" />
@@ -87,70 +87,84 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* Hero Center Content (Clean, Spacious, High Impact) */}
-        <div className="container mx-auto max-w-5xl text-center pt-8 pb-4 relative z-20">
+        {/* Hero Grid Content */}
+        <div className="container mx-auto max-w-7xl pt-8 pb-4 relative z-20">
           
-          {/* Creative Giant Title (SocialSched Urban Style Background Typography) */}
-          <div className="relative mb-6">
+          {/* Top Row Grid: Left Small Subheadline + Middle Headline + Right Feature Card */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start mb-6">
             
-            {/* Giant Background Outline Text */}
-            <div className="w-full flex justify-between items-center select-none pointer-events-none opacity-20">
-              <span className="font-bebas text-[11vw] sm:text-[14vw] font-black leading-none text-white tracking-tighter">
-                SOCIAL
-              </span>
-              <span className="font-bebas text-[11vw] sm:text-[14vw] font-black leading-none text-white tracking-tighter">
-                SCHED
-              </span>
+            {/* Left Column Subheadline */}
+            <div className="md:col-span-3 text-left">
+              <p className="text-xs font-medium text-sky-100/90 max-w-xs leading-relaxed">
+                Stop designing every post from scratch. SocialSched transforms your product into beautiful, on-brand creatives, writes engaging captions, and schedules your content calendar automatically.
+              </p>
             </div>
 
-            {/* Main Overlay Headline */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
+            {/* Middle Column Headline */}
+            <div className="md:col-span-6 text-center">
+              <motion.h1 
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="font-bebas text-5xl sm:text-7xl lg:text-[95px] font-black tracking-tight leading-[0.92] text-white uppercase drop-shadow-md"
+                className="font-bebas text-5xl sm:text-7xl lg:text-[96px] font-black tracking-tight leading-[0.92] text-white uppercase"
               >
-                AI THAT CREATES, WRITES <br />
-                <span className="text-[#CCFF00]">& SCHEDULES YOUR CONTENT</span>
+                AI That Creates, Writes <br className="hidden sm:block" /> & Schedules Your Content
               </motion.h1>
+            </div>
+
+            {/* Right Mini Feature Card */}
+            <div className="md:col-span-3 flex justify-start md:justify-end">
+              <div className="bg-black/40 backdrop-blur-md border border-white/20 p-4 rounded-3xl max-w-[220px] shadow-xl flex flex-col items-center text-center">
+                <div className="w-12 h-12 rounded-2xl bg-[#CCFF00]/20 flex items-center justify-center border border-[#CCFF00]/40 mb-2">
+                  <Zap className="w-6 h-6 text-[#CCFF00]" />
+                </div>
+                <span className="text-[11px] font-bold text-sky-100 leading-tight mb-3">
+                  AI Creation & Auto Publisher
+                </span>
+                <Link href="/signup" className="w-full">
+                  <Button className="w-full rounded-full bg-[#CCFF00] hover:bg-[#bef264] text-black font-black text-[11px] uppercase tracking-wider py-2">
+                    Start Free ↗
+                  </Button>
+                </Link>
+              </div>
             </div>
 
           </div>
 
-          {/* Clean Subheadline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-base sm:text-xl text-sky-100 max-w-2xl mx-auto mb-8 leading-relaxed font-medium mt-16 sm:mt-24"
-          >
-            Stop designing every post from scratch. SocialSched transforms your product into beautiful, on-brand creatives, writes engaging captions, and schedules your content calendar automatically.
-          </motion.p>
+          {/* Middle Row: Giant URBAN CHIC Style Typography Running Across Background */}
+          <div className="relative my-4 flex items-center justify-center">
+            
+            {/* Giant Background Text Overlay */}
+            <div className="w-full flex justify-between items-center select-none pointer-events-none opacity-90">
+              <span className="font-bebas text-[11vw] sm:text-[13vw] font-black leading-none text-white tracking-tighter">
+                SOCIAL
+              </span>
+              <span className="font-bebas text-[11vw] sm:text-[13vw] font-black leading-none text-white tracking-tighter">
+                SCHED
+              </span>
+            </div>
+
+          </div>
 
           {/* Action CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-wrap items-center justify-center gap-5 mb-4"
-          >
+          <div className="flex flex-wrap items-center justify-center gap-5 mt-4">
             <a href="#speed-scale">
-              <Button size="lg" className="rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/30 text-white font-extrabold px-8 h-14 text-xs tracking-widest uppercase shadow-lg shadow-black/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
-                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
-                  <Play className="w-3.5 h-3.5 fill-white text-white ml-0.5" />
+              <Button size="lg" className="rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/30 text-white font-extrabold px-8 h-12 text-xs tracking-widest uppercase shadow-lg shadow-black/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
+                  <Play className="w-3 h-3 fill-white text-white ml-0.5" />
                 </div>
                 Watch AI in Action
               </Button>
             </a>
             <Link href="/signup">
-              <Button size="lg" className="rounded-full bg-gradient-to-r from-[#CCFF00] via-[#D9F99D] to-[#CCFF00] hover:bg-[#bef264] text-black font-black px-9 h-14 text-xs tracking-widest uppercase shadow-[0_10px_35px_rgba(204,255,0,0.4)] border border-[#CCFF00] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
+              <Button size="lg" className="rounded-full bg-gradient-to-r from-[#CCFF00] via-[#D9F99D] to-[#CCFF00] hover:bg-[#bef264] text-black font-black px-9 h-12 text-xs tracking-widest uppercase shadow-[0_10px_35px_rgba(204,255,0,0.4)] border border-[#CCFF00] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
                 Start Free
-                <span className="w-7 h-7 rounded-full bg-black text-[#CCFF00] flex items-center justify-center font-bold shadow-sm group-hover:rotate-45 transition-transform duration-300">
-                  <ArrowUpRight className="w-4 h-4" />
+                <span className="w-6 h-6 rounded-full bg-black text-[#CCFF00] flex items-center justify-center font-bold shadow-sm group-hover:rotate-45 transition-transform duration-300">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
                 </span>
               </Button>
             </Link>
-          </motion.div>
+          </div>
+
         </div>
 
         {/* 🎡 FULL SCREEN VIEWPORT EDGE-TO-EDGE 3D COVERFLOW INFINITE AUTO-SCROLL CAROUSEL */}
@@ -215,6 +229,18 @@ export default function HomePage() {
               </SwiperSlide>
             ))}
           </Swiper>
+        </div>
+
+        {/* Muted Social Media Channel Logo Bar at Hero Bottom */}
+        <div className="container mx-auto max-w-7xl pt-4 border-t border-white/20 relative z-20">
+          <div className="flex items-center justify-between text-sky-100 gap-4 flex-wrap">
+            {SOCIAL_PLATFORMS.slice(0, 6).map((p, idx) => (
+              <div key={idx} className="flex items-center gap-2 text-sky-100 hover:text-white transition-colors">
+                <p.Icon className="w-4 h-4" />
+                <span className="font-bebas text-sm font-bold uppercase tracking-wider">{p.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
       </section>
