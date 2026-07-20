@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   InstagramLogo, FacebookLogo, LinkedinLogo, TwitterLogo,
   TiktokLogo, YoutubeLogo, ThreadsLogo, PinterestLogo, SnapchatLogo
 } from '@/components/icons/social-icons';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Play, Sparkles, Star, Zap } from 'lucide-react';
+import { ArrowUpRight, Play, Zap } from 'lucide-react';
 
 // Swiper React components & styles
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -34,15 +33,6 @@ const CAROUSEL_IMAGES = [
   { id: 12, src: '/p7.jpg', tag: 'Content Flow', subtitle: 'AI Automation', price: 'Unlimited' },
 ];
 
-const REELS = [
-  { id: 1, video: '/reel_d5ba96a2-cfa4-432a-8858-0b260d165e3f_1779902560345.mp4' },
-  { id: 2, video: '/reel_4355339a-11e4-4a86-ac83-dacacc1094f5_1783164248084.mp4' },
-  { id: 3, video: '/reel_7e469a9b-affc-46df-bc17-eda51f5a5a16_1779904464075.mp4' },
-  { id: 4, video: '/reel-7-july.mp4' },
-  { id: 5, video: '/926b3a94-17c3-45d0-b87a-766b7ee20a21-2.mp4' },
-  { id: 6, video: '/reel-6-july.mp4' },
-];
-
 const SOCIAL_PLATFORMS = [
   { Icon: InstagramLogo, name: 'Instagram' },
   { Icon: TiktokLogo, name: 'TikTok' },
@@ -56,13 +46,11 @@ const SOCIAL_PLATFORMS = [
 ];
 
 export default function HomePage() {
-  const [reels] = useState<any[]>(REELS);
-
   return (
     <div className="min-h-screen bg-white text-stone-900 font-sans selection:bg-[#0284C7]/20 overflow-x-hidden">
       
       {/* 🚀 SKY & CLOUD HERO SECTION WITH REALISTIC BACKGROUND */}
-      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-28 px-4 rounded-b-[3.5rem] shadow-2xl overflow-hidden min-h-[800px] flex flex-col justify-between">
+      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-24 px-4 rounded-b-[3.5rem] shadow-2xl overflow-hidden min-h-[780px] flex flex-col justify-between">
         
         {/* Photorealistic Clouds Background Texture Layer along the bottom */}
         <div 
@@ -82,9 +70,8 @@ export default function HomePage() {
           
           <nav className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-sky-100/90">
             <Link href="#" className="hover:text-white transition-colors">Home</Link>
-            <Link href="#speed-scale" className="hover:text-white transition-colors">Platform</Link>
             <Link href="#about" className="hover:text-white transition-colors">Why SocialSched</Link>
-            <Link href="#demo" className="hover:text-white transition-colors">Demo</Link>
+            <Link href="#speed-scale" className="hover:text-white transition-colors">Platform</Link>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -123,14 +110,14 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex flex-wrap items-center justify-center gap-5 mb-8"
+            className="flex flex-wrap items-center justify-center gap-5 mb-4"
           >
-            <a href="#speed-scale">
+            <a href="#about">
               <Button size="lg" className="rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/30 text-white font-extrabold px-8 h-14 text-xs tracking-widest uppercase shadow-lg shadow-black/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
                 <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
                   <Play className="w-3.5 h-3.5 fill-white text-white ml-0.5" />
                 </div>
-                Watch AI in Action
+                Why SocialSched
               </Button>
             </a>
             <Link href="/signup">
@@ -142,46 +129,30 @@ export default function HomePage() {
               </Button>
             </Link>
           </motion.div>
-
-          {/* Replaced Badge: TRUSTED WORLDWIDE Pill with Integrated Redesigned Social Icons */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="inline-flex items-center gap-3 text-xs font-bold text-sky-100/90 bg-white/15 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/25 shadow-lg"
-          >
-            <div className="flex items-center gap-2 pr-3 border-r border-white/20">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#D9F99D] animate-pulse" />
-              <span className="uppercase tracking-widest text-[11px] font-black text-white">TRUSTED WORLDWIDE</span>
-            </div>
-            
-            <div className="flex items-center gap-3 text-white opacity-95">
-              <InstagramLogo className="w-4 h-4 hover:scale-125 transition-transform cursor-pointer" />
-              <TiktokLogo className="w-4 h-4 hover:scale-125 transition-transform cursor-pointer" />
-              <YoutubeLogo className="w-4 h-4 hover:scale-125 transition-transform cursor-pointer" />
-              <LinkedinLogo className="w-4 h-4 hover:scale-125 transition-transform cursor-pointer" />
-              <TwitterLogo className="w-4 h-4 hover:scale-125 transition-transform cursor-pointer" />
-              <FacebookLogo className="w-4 h-4 hover:scale-125 transition-transform cursor-pointer" />
-            </div>
-          </motion.div>
         </div>
 
-        {/* 🎡 FULL-WIDTH EDGE-TO-EDGE 3D COVERFLOW ARC CAROUSEL */}
-        <div className="w-full max-w-full px-0 pt-2 pb-2 relative z-20 overflow-hidden">
+        {/* 🎡 FULL SCREEN VIEWPORT EDGE-TO-EDGE 3D COVERFLOW INFINITE AUTO-SCROLL CAROUSEL */}
+        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] pt-2 pb-2 z-20 overflow-hidden swiper-linear-motion">
+          <style jsx global>{`
+            .swiper-linear-motion .swiper-wrapper {
+              transition-timing-function: linear !important;
+            }
+          `}</style>
           <Swiper
             effect={'coverflow'}
             grabCursor={true}
             centeredSlides={true}
             slideToClickedSlide={true}
             slidesPerView={'auto'}
-            initialSlide={3}
-            speed={1000}
+            initialSlide={0}
+            speed={2500}
             autoplay={{
-              delay: 2000,
+              delay: 0,
               disableOnInteraction: false,
+              pauseOnMouseEnter: false,
             }}
             loop={true}
-            loopAdditionalSlides={8}
+            loopAdditionalSlides={12}
             coverflowEffect={{
               rotate: 20,
               stretch: -10,
@@ -196,8 +167,8 @@ export default function HomePage() {
             modules={[EffectCoverflow, Keyboard, Autoplay, Navigation, Pagination]}
             className="mySwiper w-full py-8 !overflow-visible"
           >
-            {CAROUSEL_IMAGES.map((card) => (
-              <SwiperSlide key={card.id} className="!w-60 sm:!w-72 md:!w-[280px] select-none py-3">
+            {[...CAROUSEL_IMAGES, ...CAROUSEL_IMAGES].map((card, idx) => (
+              <SwiperSlide key={`${card.id}-${idx}`} className="!w-60 sm:!w-72 md:!w-[280px] select-none py-3">
                 <div className="bg-white p-2.5 rounded-[2rem] shadow-[0_20px_45px_rgba(0,0,0,0.25)] border border-white/80 group hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden mx-auto">
                   <div className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden bg-stone-100 mb-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -215,7 +186,7 @@ export default function HomePage() {
                     )}
                   </div>
                   <div className="px-3 py-1 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-stone-500">{card.subtitle}</span>
+                    <span className="text-[11px] font-bold text-[#0284C7]">{card.subtitle}</span>
                     <span className="text-xs font-black text-stone-900">SocialSched</span>
                   </div>
                 </div>
@@ -225,99 +196,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 🎬 CINEMATIC FULL-WIDTH VIDEO SHOWCASE & COMPACT TRUST MARQUEE */}
-      <section id="speed-scale" className="py-16 px-4 container mx-auto max-w-7xl relative z-20">
-        
-        {/* Compact Glassmorphic Infinite Marquee Bar */}
-        <div className="max-w-4xl mx-auto rounded-full bg-white/90 backdrop-blur-md border border-stone-200/90 shadow-2xs py-2 px-6 flex items-center justify-between gap-4 overflow-hidden mb-12">
-          <div className="flex items-center gap-2 shrink-0 border-r border-stone-200/80 pr-4">
-            <span className="w-2 h-2 rounded-full bg-[#0284C7] animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#0284C7]">
-              TRUSTED WORLDWIDE
-            </span>
-          </div>
-
-          <div className="overflow-hidden w-full relative">
-            <div className="flex w-[200%] animate-marquee">
-              {[...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS].map((p, idx) => (
-                <div key={idx} className="flex items-center gap-2 mx-6 shrink-0 text-stone-600 hover:text-stone-900 transition-colors">
-                  <p.Icon className="w-4 h-4 text-[#0284C7]" />
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider">{p.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Animated Headline: Everything You Need to Scale Social Media */}
-        <div className="text-center max-w-4xl mx-auto mb-12">
-          <motion.h2 
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-black text-stone-900 tracking-tight leading-[1.08] mb-6"
-          >
-            Everything You Need to <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0284C7] via-sky-500 to-[#0284C7]">Scale Social Media</span>
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15, duration: 0.6 }}
-            className="text-stone-600 text-base sm:text-xl max-w-2xl mx-auto font-medium leading-relaxed mb-6"
-          >
-            Designed for <span className="inline-block px-4 py-1 bg-[#D9F99D] text-black font-extrabold rounded-full text-sm sm:text-base align-middle shadow-xs">⚡ Speed</span> & <span className="inline-block px-4 py-1 bg-sky-100 text-[#0284C7] font-extrabold rounded-full text-sm sm:text-base align-middle border border-sky-200/60">📈 Scale</span>.
-          </motion.p>
-        </div>
-
-        {/* Full-Width Cinematic Video Player (/hero.mp4) */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="w-full relative rounded-[2.5rem] sm:rounded-[3.5rem] p-3 bg-stone-900 border border-stone-800 shadow-[0_30px_90px_rgba(0,0,0,0.25)] overflow-hidden group"
-        >
-          <div className="w-full aspect-video rounded-[2rem] sm:rounded-[3rem] overflow-hidden relative bg-black flex items-center justify-center">
-            <video
-              src="/hero.mp4"
-              controls
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-            />
-
-            {/* Floating Top Status Badge */}
-            <div className="absolute top-6 left-6 bg-black/60 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full text-xs font-bold text-white uppercase tracking-wider pointer-events-none flex items-center gap-2 shadow-lg">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#D9F99D] animate-pulse" />
-              AI Showcase Demo Video
-            </div>
-
-            {/* Floating Bottom Action Bar */}
-            <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 pointer-events-auto">
-              <Link href="/signup" className="flex-1 max-w-[220px]">
-                <Button className="w-full rounded-full bg-[#D9F99D] hover:bg-[#bef264] text-black font-black text-xs uppercase tracking-wider py-3.5 px-6 shadow-xl flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95">
-                  Start Free ↗
-                </Button>
-              </Link>
-              <a href="#about" className="flex-1 max-w-[220px]">
-                <Button className="w-full rounded-full bg-black/70 hover:bg-black backdrop-blur-md border border-white/30 text-white font-extrabold text-xs uppercase tracking-wider py-3.5 px-6 shadow-xl flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95">
-                  Explore Platform ↓
-                </Button>
-              </a>
-            </div>
-          </div>
-        </motion.div>
-
-      </section>
-
-      {/* 💡 WHY SOCIALSCHED - BENTO GRID SECTION (EXPLAINING WHY THEY SHOULD USE SOCIALSCHED) */}
-      <section id="about" className="py-20 bg-stone-50/50 border-t border-stone-200">
+      {/* 💡 WHY SOCIALSCHED - BENTO GRID SECTION */}
+      <section id="about" className="py-20 bg-stone-50/50 relative z-20 border-b border-stone-200">
         <div className="container mx-auto px-6 max-w-6xl">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs font-extrabold uppercase tracking-widest text-[#0284C7] mb-3 block">
@@ -331,10 +211,10 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Inspiration Bento Grid (Why SocialSched Value Proposition) */}
+          {/* Inspiration Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             
-            {/* Bento Card 1: Blue Image Card (One URL. Zero Fragmentation.) */}
+            {/* Bento Card 1: Blue Image Card */}
             <div className="md:col-span-4 bg-[#0284C7] text-white rounded-[2.5rem] p-8 flex flex-col justify-between relative overflow-hidden min-h-[380px] shadow-lg group">
               <div className="absolute inset-0 opacity-40 group-hover:scale-105 transition-transform duration-700">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -357,7 +237,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Bento Card 2: Light Gray Testimonial Card (100% Automated Workflow) */}
+            {/* Bento Card 2: Light Gray Testimonial Card */}
             <div className="md:col-span-4 bg-[#F4F4F5] border border-stone-200/80 rounded-[2.5rem] p-8 flex flex-col justify-between min-h-[380px]">
               <div>
                 <span className="text-xs font-bold text-stone-500 uppercase tracking-wider block mb-2">Commitment to efficiency</span>
@@ -403,31 +283,99 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 📢 MARQUEE REELS SHOWCASE */}
-      <section className="py-16 bg-white overflow-hidden relative">
-        <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+      {/* 🎬 CINEMATIC SHOWCASE & CONNECT CHANNELS SECTION (HERO SKY & CLOUD VIBE WITH CURVED BOTTOM EDGE) */}
+      <section id="speed-scale" className="relative bg-gradient-to-b from-sky-50 via-[#0284C7]/15 to-sky-100/40 py-24 px-4 rounded-b-[3.5rem] shadow-xl overflow-hidden mb-12">
+        
+        {/* Cloud Texture Background Overlay matching Hero Vibe */}
+        <div 
+          className="absolute inset-0 bg-cover bg-bottom opacity-25 pointer-events-none mix-blend-multiply"
+          style={{ backgroundImage: `url('/sky_cloud_hero_bg.jpg')` }}
+        />
 
-        <div className="flex w-[200%] animate-marquee">
-          {[...reels, ...reels, ...reels, ...reels].map((reel, idx) => (
-            <div key={idx} className="w-48 md:w-60 shrink-0 px-2.5">
-              <div className="relative aspect-[9/16] rounded-3xl overflow-hidden border border-stone-200 shadow-md group cursor-pointer bg-stone-900">
-                <video src={reel.video} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all" autoPlay muted loop playsInline />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center border border-white/40">
-                    <Play className="w-5 h-5 text-white ml-0.5" />
+        <div className="container mx-auto max-w-7xl relative z-20">
+          
+          {/* Section Header with Top CONNECT & AUTO-PUBLISH Badge */}
+          <div className="text-center max-w-4xl mx-auto mb-10">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#0284C7]/30 bg-[#0284C7]/10 text-[#0284C7] text-xs font-extrabold uppercase tracking-widest mb-4 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#0284C7] animate-pulse" />
+              CONNECT & AUTO-PUBLISH
+            </span>
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-black text-stone-900 tracking-tight leading-[1.08] mb-6">
+              Connect Your Channels & <br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0284C7] via-sky-500 to-[#0284C7]">Publish Instantly</span>
+            </h2>
+            <p className="text-stone-600 text-base sm:text-xl max-w-2xl mx-auto font-medium leading-relaxed">
+              Link Instagram, TikTok, YouTube, LinkedIn, X, and Facebook to generate and schedule campaigns automatically.
+            </p>
+          </div>
+
+          {/* Social Channels Marquee Bar */}
+          <div className="max-w-4xl mx-auto rounded-full bg-white/95 backdrop-blur-md border border-[#0284C7]/20 shadow-sm py-2.5 px-6 flex items-center justify-between gap-4 overflow-hidden mb-12">
+            <div className="flex items-center gap-2 shrink-0 border-r border-stone-200/80 pr-4">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#0284C7]">
+                SUPPORTED CHANNELS
+              </span>
+            </div>
+
+            <div className="overflow-hidden w-full relative">
+              <div className="flex w-[200%] animate-marquee">
+                {[...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS].map((p, idx) => (
+                  <div key={idx} className="flex items-center gap-2 mx-6 shrink-0 text-stone-700 hover:text-[#0284C7] transition-colors">
+                    <p.Icon className="w-4 h-4 text-[#0284C7]" />
+                    <span className="text-[11px] font-black uppercase tracking-wider">{p.name}</span>
                   </div>
-                </div>
-                <div className="absolute bottom-5 left-5 right-5">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#D9F99D]" />
-                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">AI Video Reel</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Video Player Frame with Hero Sky Blue & Cloud Styling */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="w-full relative rounded-[2.5rem] sm:rounded-[3.5rem] p-3.5 bg-gradient-to-br from-[#0284C7] via-[#0369A1] to-[#0284C7] border border-sky-400/40 shadow-[0_30px_90px_rgba(2,132,199,0.3)] overflow-hidden group"
+          >
+            <div 
+              className="absolute inset-0 bg-cover bg-bottom opacity-35 pointer-events-none mix-blend-screen"
+              style={{ backgroundImage: `url('/sky_cloud_hero_bg.jpg')` }}
+            />
+
+            <div className="w-full aspect-video rounded-[2rem] sm:rounded-[3rem] overflow-hidden relative bg-black flex items-center justify-center z-10">
+              <video
+                src="/hero.mp4"
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+              />
+
+              {/* Floating Status Badge */}
+              <div className="absolute top-6 left-6 bg-black/60 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full text-xs font-bold text-white uppercase tracking-wider pointer-events-none flex items-center gap-2 shadow-lg">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#D9F99D] animate-pulse" />
+                AI Multi-Channel Engine
+              </div>
+
+              {/* Floating Bottom Action Bar */}
+              <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-4 pointer-events-auto">
+                <Link href="/signup" className="flex-1 max-w-[220px]">
+                  <Button className="w-full rounded-full bg-[#D9F99D] hover:bg-[#bef264] text-black font-black text-xs uppercase tracking-wider py-3.5 px-6 shadow-xl flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95">
+                    Connect Channels ↗
+                  </Button>
+                </Link>
+                <a href="#about" className="flex-1 max-w-[220px]">
+                  <Button className="w-full rounded-full bg-black/70 hover:bg-black backdrop-blur-md border border-white/30 text-white font-extrabold text-xs uppercase tracking-wider py-3.5 px-6 shadow-xl flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95">
+                    Why SocialSched ↓
+                  </Button>
+                </a>
+              </div>
+            </div>
+
+          </motion.div>
+
         </div>
       </section>
 
