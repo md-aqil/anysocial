@@ -47,10 +47,10 @@ const SOCIAL_PLATFORMS = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#F2F3ED] text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
+    <div className="min-h-screen bg-stone-900 text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
       
       {/* 🚀 SKY & CLOUD HERO SECTION WITH EDITORIAL TYPOGRAPHY */}
-      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-24 px-4 rounded-b-[3.5rem] shadow-2xl overflow-hidden min-h-[780px] flex flex-col justify-between">
+      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-24 px-4 rounded-b-[3.5rem] shadow-2xl overflow-hidden min-h-[780px] flex flex-col justify-between z-10">
         
         {/* Photorealistic Clouds Background Texture Layer */}
         <div 
@@ -76,10 +76,10 @@ export default function HomePage() {
             <span className="font-bebas text-3xl font-black text-white tracking-widest hidden sm:inline-block">SOCIALSCHED</span>
           </div>
           
-          <nav className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-sky-100/90 font-bebas text-base">
+          <nav className="hidden md:flex items-center gap-8 uppercase tracking-widest text-sky-100/90 font-bebas text-lg">
             <Link href="#" className="hover:text-white transition-colors">Home</Link>
-            <Link href="#about" className="hover:text-white transition-colors">Why SocialSched</Link>
             <Link href="#speed-scale" className="hover:text-white transition-colors">Platform</Link>
+            <Link href="#about" className="hover:text-white transition-colors">Why SocialSched</Link>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -125,12 +125,12 @@ export default function HomePage() {
             transition={{ delay: 0.2 }}
             className="flex flex-wrap items-center justify-center gap-5 mb-4"
           >
-            <a href="#about">
+            <a href="#speed-scale">
               <Button size="lg" className="rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-xl border border-white/30 text-white font-extrabold px-8 h-14 text-xs tracking-widest uppercase shadow-lg shadow-black/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
                 <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
                   <Play className="w-3.5 h-3.5 fill-white text-white ml-0.5" />
                 </div>
-                Why SocialSched
+                Watch AI in Action
               </Button>
             </a>
             <Link href="/signup">
@@ -209,17 +209,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO SECTION (EXACT REFERENCE DESIGN) */}
-      <section id="speed-scale" className="py-16 px-4 container mx-auto max-w-7xl relative z-20">
+      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO SECTION (FULL-WIDTH 100VW EDGE-TO-EDGE DIRECTLY AFTER HERO WITH NO WHITE GAP) */}
+      <section id="speed-scale" className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#0B0B0C] text-white pt-24 pb-20 px-6 md:px-16 border-t border-b border-stone-800 shadow-2xl bg-grid-pattern-dark -mt-10 z-0">
         
-        <div className="bg-[#0B0B0C] text-white rounded-[2.5rem] p-8 md:p-14 relative overflow-hidden border border-stone-800 shadow-2xl bg-grid-pattern-dark">
+        <div className="max-w-[1400px] mx-auto relative z-10">
           
           {/* Top Row: Left Headline + Right Subtitle & Action Button */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start mb-10 relative z-20">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start mb-12">
             
             {/* Top-Left Headline */}
             <div className="md:col-span-8">
-              <h2 className="font-bebas text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[0.95] text-white uppercase">
+              <h2 className="font-bebas text-4xl sm:text-6xl md:text-8xl font-black tracking-tight leading-[0.93] text-white uppercase">
                 WE PROVIDE FRESH <br />
                 <span className="text-[#CCFF00]">INNOVATIVE_OPTIONS</span> <br />
                 FOR YOU
@@ -227,13 +227,13 @@ export default function HomePage() {
             </div>
 
             {/* Top-Right Subtitle & Action Link */}
-            <div className="md:col-span-4 text-left md:text-right flex flex-col justify-between h-full space-y-4">
-              <p className="text-stone-400 text-xs sm:text-sm leading-relaxed max-w-sm md:ml-auto">
+            <div className="md:col-span-4 text-left md:text-right flex flex-col justify-between h-full space-y-5 pt-2">
+              <p className="text-stone-400 text-xs sm:text-sm leading-relaxed max-w-sm md:ml-auto font-medium">
                 Discover a wide range of AI tools, thoughtfully designed to meet your social media creation and scheduling needs.
               </p>
               <div>
                 <Link href="/signup">
-                  <span className="font-bebas text-sm sm:text-base tracking-widest text-white hover:text-[#CCFF00] uppercase font-bold inline-flex items-center gap-1.5 transition-colors group cursor-pointer border-b border-white/20 pb-1">
+                  <span className="font-bebas text-base sm:text-lg tracking-widest text-white hover:text-[#CCFF00] uppercase font-bold inline-flex items-center gap-1.5 transition-colors group cursor-pointer border-b border-white/20 pb-1">
                     LEARN MORE ↗
                   </span>
                 </Link>
@@ -243,7 +243,7 @@ export default function HomePage() {
           </div>
 
           {/* Center Video Container with Floating Action Pill */}
-          <div className="relative rounded-[2rem] overflow-hidden bg-black aspect-video max-w-4xl mx-auto my-6 border border-stone-800 shadow-2xl group z-20">
+          <div className="relative rounded-[2.5rem] overflow-hidden bg-black aspect-video max-w-5xl mx-auto my-8 border border-stone-800 shadow-[0_30px_90px_rgba(0,0,0,0.8)] group z-20">
             <video
               src="/hero.mp4"
               controls
@@ -255,9 +255,9 @@ export default function HomePage() {
             />
 
             {/* Floating Center/Bottom Lime Pill Button */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
               <Link href="/signup">
-                <Button className="rounded-full bg-[#CCFF00] hover:bg-[#bef264] text-black font-extrabold text-xs uppercase tracking-widest py-3 px-7 shadow-2xl flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95">
+                <Button className="rounded-full bg-[#CCFF00] hover:bg-[#bef264] text-black font-extrabold text-xs uppercase tracking-widest py-4 px-8 shadow-2xl flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95">
                   Start Free ↗
                 </Button>
               </Link>
@@ -265,10 +265,10 @@ export default function HomePage() {
           </div>
 
           {/* Marquee Social Channels Scrolling Text Animation Behind Video */}
-          <div className="w-full overflow-hidden my-6 opacity-25 pointer-events-none relative z-10">
+          <div className="w-full overflow-hidden my-8 opacity-25 pointer-events-none relative z-10">
             <div className="flex w-[200%] animate-marquee">
               {[...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS].map((p, idx) => (
-                <div key={idx} className="flex items-center gap-3 mx-8 shrink-0 text-white font-bebas text-3xl md:text-5xl tracking-widest uppercase">
+                <div key={idx} className="flex items-center gap-3 mx-8 shrink-0 text-white font-bebas text-4xl md:text-6xl tracking-widest uppercase">
                   <span>{p.name}</span>
                   <span className="text-[#CCFF00]">•</span>
                 </div>
@@ -277,7 +277,7 @@ export default function HomePage() {
           </div>
 
           {/* Bottom Row: Left Filter Pills + Right "LOVE WHAT WE DELIVER" Headline */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end pt-6 border-t border-stone-800/80 relative z-20">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end pt-8 border-t border-stone-800/80 relative z-20">
             
             {/* Bottom-Left Filter Pills */}
             <div className="md:col-span-6 flex flex-wrap gap-2.5">
@@ -297,7 +297,7 @@ export default function HomePage() {
 
             {/* Bottom-Right Typography */}
             <div className="md:col-span-6 text-left md:text-right">
-              <h3 className="font-bebas text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[0.92] text-white uppercase">
+              <h3 className="font-bebas text-5xl sm:text-7xl md:text-8xl font-black tracking-tight leading-[0.92] text-white uppercase">
                 LOVE WHAT <br />
                 <span className="text-[#CCFF00]">WE DELIVER</span>
               </h3>
@@ -310,7 +310,7 @@ export default function HomePage() {
       </section>
 
       {/* 💡 WHY SOCIALSCHED - BENTO GRID SECTION (KENTYLE GRID AESTHETIC) */}
-      <section id="about" className="py-20 bg-[#F2F3ED] bg-grid-pattern-light relative z-20 border-t border-stone-300/80">
+      <section id="about" className="py-24 bg-[#F2F3ED] bg-grid-pattern-light relative z-20">
         <div className="container mx-auto px-6 max-w-6xl">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs font-extrabold uppercase tracking-widest text-[#0284C7] mb-3 block font-bebas text-sm">
@@ -397,7 +397,7 @@ export default function HomePage() {
       </section>
 
       {/* 🔚 FOOTER */}
-      <footer className="border-t border-stone-300/80 bg-white py-12 text-center">
+      <footer className="border-t border-stone-300/80 bg-white py-12 text-center relative z-20">
         <div className="container mx-auto px-6 flex flex-col items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="SocialSched Logo" className="h-9 w-auto object-contain" />
