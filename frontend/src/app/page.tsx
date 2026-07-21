@@ -7,7 +7,7 @@ import {
   TiktokLogo, YoutubeLogo, ThreadsLogo, PinterestLogo, SnapchatLogo
 } from '@/components/icons/social-icons';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Play, Sparkles, Star, Zap } from 'lucide-react';
+import { ArrowUpRight, Play, Zap, Wand2, Calendar, ShoppingBag, Camera, Users, Briefcase } from 'lucide-react';
 
 // Swiper React components & styles
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -20,40 +20,40 @@ import 'swiper/css/pagination';
 
 const CAROUSEL_IMAGES = [
   { id: 1, src: '/p1.jpg', tag: 'Product Ad', subtitle: 'AI Generated', price: '$2,670' },
+  { id: 'v1', src: '/reel-6-july.mp4', tag: 'Video Reel', subtitle: 'Cinematic', price: 'High Impact' },
   { id: 2, src: '/p2.jpg', tag: 'Style Match', subtitle: 'On-Brand', price: '$1,200' },
-  { id: 3, src: '/p4.jpg', tag: 'Visual Concept', subtitle: '520k+ Reach', price: 'High Impact' },
-  { id: 4, src: '/p5.jpg', tag: 'Campaign Reel', subtitle: 'Scheduled', price: '10× Faster' },
+  { id: 3, src: '/p4.jpg', tag: 'Visual Concept', subtitle: '520k+ Reach', price: 'Trending' },
+  { id: 'v2', src: '/926b3a94-17c3-45d0-b87a-766b7ee20a21-2.mp4', tag: 'Campaign Reel', subtitle: 'Automated', price: '10× Faster' },
+  { id: 4, src: '/p5.jpg', tag: 'Social Feed', subtitle: 'Scheduled', price: 'Active' },
   { id: 5, src: '/p6.jpg', tag: 'Shopify Sync', subtitle: 'Catalog Feed', price: 'Automated' },
+  { id: 'v3', src: '/reel-7-july.mp4', tag: 'AI Studio', subtitle: 'One-Click', price: 'High Impact' },
   { id: 6, src: '/p7.jpg', tag: 'Social Creative', subtitle: 'AI Series', price: 'One-Click' },
   { id: 7, src: '/p1.jpg', tag: 'Brand Studio', subtitle: 'Multi-Channel', price: '$3,400' },
   { id: 8, src: '/p2.jpg', tag: 'Style Transfer', subtitle: 'Reference Match', price: 'Instant' },
   { id: 9, src: '/p4.jpg', tag: 'AI Director', subtitle: 'Engagement', price: 'High Impact' },
-  { id: 10, src: '/p5.jpg', tag: 'Auto Publisher', subtitle: 'Scheduled', price: '520k+' },
-  { id: 11, src: '/p6.jpg', tag: 'Visual Brand', subtitle: 'Shopify Sync', price: 'Active' },
-  { id: 12, src: '/p7.jpg', tag: 'Content Flow', subtitle: 'AI Automation', price: 'Unlimited' },
 ];
 
 const SOCIAL_PLATFORMS = [
   { Icon: InstagramLogo, name: 'INSTAGRAM' },
   { Icon: TiktokLogo, name: 'TIKTOK' },
   { Icon: YoutubeLogo, name: 'YOUTUBE' },
-  { Icon: LinkedinLogo, name: 'LINKEDIN' },
-  { Icon: TwitterLogo, name: 'TWITTER' },
   { Icon: FacebookLogo, name: 'FACEBOOK' },
-  { Icon: ThreadsLogo, name: 'THREADS' },
+  { Icon: LinkedinLogo, name: 'LINKEDIN' },
   { Icon: PinterestLogo, name: 'PINTEREST' },
-  { Icon: SnapchatLogo, name: 'SNAPCHAT' }
+  { Icon: ThreadsLogo, name: 'THREADS' },
+  { Icon: SnapchatLogo, name: 'SNAPCHAT' },
+  { Icon: TwitterLogo, name: 'X' }
 ];
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-stone-900 text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
-      
+    <div className="min-h-screen bg-[#F2F3ED] text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
+
       {/* 🚀 HIGH-IMPACT SKY & CLOUD HERO SECTION */}
-      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-20 px-4 sm:px-8 rounded-b-[3.5rem] shadow-[0_25px_80px_rgba(2,132,199,0.35)] overflow-hidden min-h-[880px] flex flex-col justify-between z-10">
-        
+      <section className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-6 pb-12 px-4 sm:px-8 rounded-b-[3.5rem] shadow-[0_25px_80px_rgba(2,132,199,0.35)] overflow-hidden min-h-[880px] flex flex-col justify-between z-20">
+
         {/* Photorealistic Clouds Background Texture Layer */}
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-bottom opacity-75 pointer-events-none mix-blend-screen"
           style={{ backgroundImage: `url('/sky_cloud_hero_bg.jpg')` }}
         />
@@ -76,7 +76,7 @@ export default function HomePage() {
             <img src="/logo.png" alt="SocialSched Logo" className="h-12 w-auto object-contain brightness-0 invert" />
             <span className="font-bebas text-3xl font-black text-white tracking-widest hidden sm:inline-block">SOCIALSCHED</span>
           </div>
-          
+
           <nav className="hidden md:flex items-center gap-8 uppercase tracking-widest text-sky-100/90 font-bebas text-lg font-bold">
             <Link href="#" className="hover:text-white transition-colors">Home</Link>
             <Link href="#speed-scale" className="hover:text-white transition-colors">Platform</Link>
@@ -97,7 +97,7 @@ export default function HomePage() {
 
         {/* Hero Central Content */}
         <div className="container mx-auto max-w-5xl text-center pt-8 pb-4 relative z-20">
-          
+
           {/* Top Pill Eyebrow */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -114,7 +114,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             className="font-bebas text-5xl sm:text-7xl lg:text-[104px] font-black tracking-tight leading-[0.9] text-white uppercase mb-6 drop-shadow-sm"
           >
-            AI That Creates, Writes <br className="hidden sm:block" /> & Schedules Your Content
+            FROM PRODUCT <br className="hidden sm:block" /> TO PUBLISHED CAMPAIGN.
           </motion.h1>
 
           {/* Subheadline */}
@@ -124,7 +124,7 @@ export default function HomePage() {
             transition={{ delay: 0.1 }}
             className="text-sky-100/95 text-base sm:text-xl font-medium leading-relaxed max-w-2xl mx-auto mb-8"
           >
-            Stop designing every post from scratch. SocialSched transforms your product into beautiful, on-brand creatives, writes engaging captions, and schedules your content calendar automatically.
+            Import any product. AI creates premium posts, captions, reels and schedules everything across every major platform—all from one intelligent workflow.
           </motion.p>
 
           {/* Action CTAs */}
@@ -190,57 +190,149 @@ export default function HomePage() {
             modules={[EffectCoverflow, Keyboard, Autoplay, Navigation, Pagination]}
             className="mySwiper w-full py-8 !overflow-visible"
           >
-            {[...CAROUSEL_IMAGES, ...CAROUSEL_IMAGES].map((card, idx) => (
-              <SwiperSlide key={`${card.id}-${idx}`} className="!w-60 sm:!w-72 md:!w-[280px] select-none py-3">
-                <div className="bg-white p-2.5 rounded-[2rem] shadow-[0_20px_45px_rgba(0,0,0,0.25)] border border-white/80 group hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden mx-auto">
-                  <div className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden bg-stone-100 mb-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={card.src} alt={card.tag} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    
-                    {card.tag && (
-                      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
-                        {card.tag}
-                      </div>
-                    )}
-                    {card.price && (
-                      <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-stone-900 shadow-md">
-                        {card.price}
-                      </div>
-                    )}
+            {[...CAROUSEL_IMAGES, ...CAROUSEL_IMAGES].map((card, idx) => {
+              const platform = SOCIAL_PLATFORMS[idx % SOCIAL_PLATFORMS.length];
+              return (
+                <SwiperSlide key={`${card.id}-${idx}`} className="!w-60 sm:!w-72 md:!w-[280px] select-none py-3">
+                  <div className="bg-white p-2.5 rounded-[2rem] shadow-[0_20px_45px_rgba(0,0,0,0.25)] border border-white/80 group hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden mx-auto">
+                    <div className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden bg-stone-100 mb-2">
+                      {card.src.endsWith('.mp4') ? (
+                        <video src={card.src} autoPlay loop muted playsInline className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={card.src} alt={card.tag} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      )}
+
+                      {card.tag && (
+                        <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
+                          {card.tag}
+                        </div>
+                      )}
+                      {card.price && (
+                        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-stone-900 shadow-md">
+                          {card.price}
+                        </div>
+                      )}
+                    </div>
+                    <div className="px-3 py-1 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1.5 tracking-wider">
+                        <platform.Icon className="w-3.5 h-3.5 text-stone-700" />
+                        POSTED ON {platform.name}
+                      </span>
+                      <span className="text-[11px] font-black text-[#0284C7]">SocialSched</span>
+                    </div>
                   </div>
-                  <div className="px-3 py-1 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-[#0284C7]">{card.subtitle}</span>
-                    <span className="text-xs font-black text-stone-900">SocialSched</span>
-                  </div>
-                </div>
-              </SwiperSlide>
-            ))}
+                </SwiperSlide>
+              )
+            })}
           </Swiper>
         </div>
 
-        {/* Bottom Social Media Platforms Marquee Ticker */}
-        <div className="w-full overflow-hidden pt-4 border-t border-white/20 relative z-20">
-          <div className="flex w-[200%] animate-marquee">
-            {[...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS].map((p, idx) => (
-              <div key={idx} className="flex items-center gap-2.5 mx-8 shrink-0 text-sky-100 hover:text-white transition-colors">
-                <p.Icon className="w-4 h-4 text-[#CCFF00]" />
-                <span className="font-bebas text-sm font-bold uppercase tracking-wider">{p.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+
 
       </section>
 
-      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO SECTION */}
+      {/* 🎬 SECOND SCREEN: BLACK THEME VIDEO & STORYTELLING SECTION */}
       <section id="speed-scale" className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#0B0B0C] text-white pt-24 pb-20 px-6 md:px-16 border-t border-b border-stone-800 shadow-2xl bg-grid-pattern-dark -mt-10 z-0">
-        
+
         <div className="max-w-[1400px] mx-auto relative z-10">
-          
-          {/* Top Row: Left Headline + Right Subtitle & Action Button */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start mb-12">
-            
-            {/* Top-Left Headline */}
+
+          {/* --- MERGED "THE PROBLEM" CONTENT --- */}
+          <div className="text-center max-w-4xl mx-auto mb-16">
+            <span className="font-extrabold uppercase tracking-widest text-[#CCFF00] mb-3 block font-bebas text-sm">
+              • THE PROBLEM
+            </span>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="font-bebas text-5xl sm:text-6xl text-white tracking-tight leading-none uppercase"
+            >
+              STOP SWITCHING BETWEEN <br className="hidden sm:block" />
+              <span className="inline-block px-4 py-1 mt-2 bg-[#CCFF00] text-black rounded-full text-3xl sm:text-5xl align-middle font-black shadow-sm">
+                5 DIFFERENT TOOLS
+              </span>
+            </motion.h2>
+          </div>
+
+          {/* Visual Story Flow - Compact Horizontal Layout (Dark Theme) */}
+          <div className="flex flex-col md:flex-row items-center justify-center w-full gap-4 md:gap-6 relative mb-15">
+
+            {/* The Old Way Tools Wrapped */}
+            <div className="flex flex-wrap md:flex-nowrap justify-center items-center gap-3 md:gap-4 w-full md:w-auto relative z-10">
+              {['ChatGPT', 'Midjourney', 'Canva', 'Buffer', 'Meta'].map((tool, index) => (
+                <div key={tool} className="flex items-center">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ delay: index * 0.1 }}
+                    className="bg-[#18181B] border border-stone-800 px-5 py-3 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex justify-center items-center"
+                  >
+                    <span className="font-bebas font-bold text-xl text-stone-300 tracking-wider uppercase">{tool}</span>
+                  </motion.div>
+
+                  {/* Arrow pointing right */}
+                  {index < 4 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true, margin: "-50px" }}
+                      transition={{ delay: (index * 0.1) + 0.1 }}
+                      className="hidden md:block w-6 border-t-2 border-dashed border-stone-600 mx-2 relative"
+                    >
+                      <div className="absolute right-[-6px] top-[-6px] text-stone-600 text-[10px]">▶</div>
+                    </motion.div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Down Arrow for Mobile / Right Arrow for Desktop into SocialSched */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: 0.5 }}
+              className="md:hidden h-8 border-l-2 border-dashed border-[#CCFF00]/50 my-2 relative"
+            >
+              <div className="absolute bottom-[-6px] left-[-6px] text-[#CCFF00]/50 text-[10px]">▼</div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: 0.5 }}
+              className="hidden md:block w-8 border-t-2 border-dashed border-[#CCFF00]/50 mx-2 relative"
+            >
+              <div className="absolute right-[-6px] top-[-6px] text-[#CCFF00]/50 text-[10px]">▶</div>
+            </motion.div>
+
+            {/* The Merge / Solution */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+              className="relative z-20 w-full md:w-auto mt-4 md:mt-0"
+            >
+              <div className="bg-[#0284C7] text-white border border-[#0284C7] px-8 py-5 rounded-[2rem] shadow-xl flex flex-col justify-between relative overflow-hidden group hover:scale-105 transition-transform duration-300">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0284C7] via-[#0284C7]/60 to-transparent" />
+                <h3 className="font-bebas text-4xl font-black tracking-widest uppercase leading-none relative z-10 flex items-center justify-between">
+                  SOCIALSCHED
+                  <span className="w-6 h-6 ml-3 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                    <Zap className="w-3 h-3" />
+                  </span>
+                </h3>
+                <p className="text-sky-100 text-[10px] font-black mt-2 uppercase tracking-widest relative z-10">One Intelligent Dashboard</p>
+              </div>
+            </motion.div>
+
+          </div>
+
+          {/* <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start mb-12">
+
             <div className="md:col-span-8">
               <h2 className="font-bebas text-4xl sm:text-6xl md:text-8xl font-black tracking-tight leading-[0.93] text-white uppercase">
                 WE PROVIDE 10X FASTER <br />
@@ -249,7 +341,6 @@ export default function HomePage() {
               </h2>
             </div>
 
-            {/* Top-Right Subtitle & Action Link */}
             <div className="md:col-span-4 text-left md:text-right flex flex-col justify-between h-full space-y-5 pt-2">
               <p className="text-stone-400 text-xs sm:text-sm leading-relaxed max-w-sm md:ml-auto font-medium">
                 Transform raw Shopify products into 5 unique visual directions, AI-written captions, and automated multi-channel posts in seconds.
@@ -263,7 +354,7 @@ export default function HomePage() {
               </div>
             </div>
 
-          </div>
+          </div> */}
 
           {/* Center Video Container with Floating Action Pill */}
           <div className="relative rounded-[2.5rem] overflow-hidden bg-black aspect-video max-w-5xl mx-auto my-8 border border-stone-800 shadow-[0_30px_90px_rgba(0,0,0,0.8)] group z-20">
@@ -301,7 +392,7 @@ export default function HomePage() {
 
           {/* Bottom Row: Left Filter Pills + Right "SCALE WHAT YOU CREATE" Headline */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end pt-8 border-t border-stone-800/80 relative z-20">
-            
+
             {/* Bottom-Left Filter Pills */}
             <div className="md:col-span-6 flex flex-wrap gap-2.5">
               <span className="bg-white text-black px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider">
@@ -320,9 +411,9 @@ export default function HomePage() {
 
             {/* Bottom-Right Typography */}
             <div className="md:col-span-6 text-left md:text-right">
-              <h3 className="font-bebas text-5xl sm:text-7xl md:text-8xl font-black tracking-tight leading-[0.92] text-white uppercase">
-                SCALE WHAT <br />
-                <span className="text-[#CCFF00]">YOU CREATE</span>
+              <h3 className="font-bebas text-7xl  font-black tracking-tight leading-[0.92] text-white uppercase">
+                ONE PRODUCT. <br />
+                <span className="text-[#CCFF00]">ONE WORKFLOW.</span>
               </h3>
             </div>
 
@@ -332,86 +423,129 @@ export default function HomePage() {
 
       </section>
 
-      {/* 💡 WHY SOCIALSCHED - BENTO GRID SECTION */}
+      {/* 🎯 THIRD SCREEN: AUDIENCE SECTION (BENTO GRID DESIGN) */}
       <section id="about" className="py-24 bg-[#F2F3ED] bg-grid-pattern-light relative z-20 border-b border-stone-300/80">
         <div className="container mx-auto px-6 max-w-6xl">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs font-extrabold uppercase tracking-widest text-[#0284C7] mb-3 block font-bebas text-sm">
-              • WHY SOCIALSCHED
+              • WHO IT&apos;S FOR
             </span>
-            <h2 className="font-bebas text-4xl sm:text-6xl text-stone-900 tracking-tight leading-none uppercase">
-              STOP JUGGLING <span className="inline-block px-4 py-1 bg-[#CCFF00] text-black rounded-full text-3xl sm:text-5xl align-middle font-black">5 DIFFERENT TOOLS</span> FOR ONE POST
-            </h2>
-            <p className="text-stone-600 text-base max-w-xl mx-auto mt-4 font-medium">
-              No need to prompt ChatGPT for copy, generate images on Midjourney, and log into 5 social apps manually. SocialSched does it all in one click.
-            </p>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="font-bebas text-7xl  text-stone-900 leading-[0.92] uppercase"
+            >
+              BUILT FOR <span className="inline-block px-4 py-1 bg-[#CCFF00] text-black rounded-full text-3xl sm:text-5xl align-middle font-black mt-2 md:mt-0">EVERY MODERN</span> MARKETING TEAM.
+            </motion.h2>
           </div>
 
           {/* Inspiration Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            
-            {/* Bento Card 1: Blue Image Card */}
-            <div className="md:col-span-4 bg-[#0284C7] text-white rounded-[2.5rem] p-8 flex flex-col justify-between relative overflow-hidden min-h-[380px] shadow-lg group">
+
+            {/* Bento Card 1: Blue Image Card -> E-commerce Brands */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="md:col-span-4 bg-[#0284C7] text-white rounded-[2.5rem] p-8 flex flex-col justify-between relative overflow-hidden min-h-[380px] shadow-lg group hover:-translate-y-2 transition-transform duration-300"
+            >
               <div className="absolute inset-0 opacity-40 group-hover:scale-105 transition-transform duration-700">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/p1.jpg" alt="AI Brand Feature" className="w-full h-full object-cover" />
+                <img src="/p7.jpg" alt="E-commerce Brands" className="w-full h-full object-cover" />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#0284C7] via-[#0284C7]/60 to-transparent" />
 
               <div className="relative z-10 flex justify-between items-start">
-                <span className="font-bebas text-2xl font-black tracking-widest uppercase">SOCIALSCHED</span>
-                <span className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
-                  <Zap className="w-4 h-4" />
+                <span className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/20 group-hover:scale-110 transition-transform">
+                  <ShoppingBag className="w-6 h-6" />
                 </span>
               </div>
 
               <div className="relative z-10 mt-auto bg-white text-stone-900 rounded-2xl p-6 shadow-xl">
-                <h3 className="font-bebas text-3xl font-black text-stone-900 mb-1 leading-none">ONE URL. ZERO HASSLE.</h3>
+                <h3 className="font-bebas text-3xl font-black text-stone-900 mb-2 leading-none uppercase">E-COMMERCE BRANDS</h3>
                 <p className="text-xs font-semibold text-stone-600 leading-relaxed">
-                  Skip manual image generation and prompt engineering. Just paste your product URL and get on-brand ad creatives, tailored copy, and instant multi-platform scheduling.
+                  Turn your product catalog into a viral, multi-channel social presence instantly.
                 </p>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Bento Card 2: Light Gray Testimonial Card */}
-            <div className="md:col-span-4 bg-white border border-stone-300/80 rounded-[2.5rem] p-8 flex flex-col justify-between min-h-[380px] shadow-xs">
-              <div>
-                <span className="text-xs font-bold text-stone-500 uppercase tracking-wider block mb-2 font-bebas text-sm">Commitment to efficiency</span>
-                <h3 className="font-bebas text-6xl font-black text-stone-900 tracking-tight leading-none">100%</h3>
+            {/* Bento Card 2: Light Gray Testimonial Card -> Content Creators */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="md:col-span-4 bg-white border border-stone-300/80 rounded-[2.5rem] p-8 flex flex-col justify-between relative overflow-hidden min-h-[380px] shadow-sm hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] hover:-translate-y-2 transition-all duration-300 group"
+            >
+              <div className="absolute inset-0 opacity-60 group-hover:scale-105 transition-transform duration-700 pointer-events-none">
+                <video src="/clander.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover" />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/50 to-white/90 pointer-events-none" />
+
+              <div className="relative z-10">
+                <span className="w-12 h-12 rounded-2xl bg-white/80 backdrop-blur-md flex items-center justify-center text-[#0284C7] border border-stone-200/50 mb-6 group-hover:scale-110 transition-transform shadow-sm">
+                  <Camera className="w-6 h-6" />
+                </span>
+                <h3 className="font-bebas text-4xl font-black text-stone-900 tracking-tight leading-none uppercase drop-shadow-sm">CONTENT CREATORS</h3>
               </div>
 
-              <div className="space-y-4 pt-6">
+              <div className="relative z-10 space-y-4 pt-6">
                 <div className="flex -space-x-2">
                   {['/p1.jpg', '/p2.jpg', '/p4.jpg'].map((src, i) => (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img key={i} src={src} alt="User avatar" className="w-9 h-9 rounded-full border-2 border-white object-cover" />
+                    <img key={i} src={src} alt="User avatar" className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" />
                   ))}
                 </div>
-                <p className="text-xs font-semibold text-stone-700 leading-relaxed italic">
-                  "Instead of writing captions on ChatGPT and posting to Instagram, TikTok, and LinkedIn individually, SocialSched creates and schedules everything in seconds."
+                <p className="text-sm font-semibold text-stone-800 leading-relaxed bg-white/60 backdrop-blur-md p-3 rounded-xl border border-white/40 shadow-sm">
+                  Automate your entire distribution pipeline and focus purely on creating.
                 </p>
               </div>
-            </div>
+            </motion.div>
 
             {/* Bento Card 3 & 4 Right Column Stack */}
             <div className="md:col-span-4 flex flex-col gap-6">
-              
-              {/* Bento Card 3: Lime Green Highlight Card */}
-              <div className="bg-[#CCFF00] text-stone-900 rounded-[2.5rem] p-8 flex-1 flex flex-col justify-between min-h-[220px] shadow-sm">
-                <div>
-                  <span className="text-xs font-extrabold text-stone-800 uppercase tracking-wider block mb-1 font-bebas text-sm">ALL-IN-ONE PLATFORM</span>
-                  <h3 className="font-bebas text-4xl font-black text-stone-900 tracking-tight leading-none">REPLACE 5 TOOLS</h3>
-                </div>
-                <p className="text-xs font-bold text-stone-800 leading-snug">
-                  Combines AI image creation, style matching, copy writing, and multi-network publishing into one single workflow.
-                </p>
-              </div>
 
-              {/* Bento Card 4: Dark Obsidian Card */}
-              <div className="bg-[#18181B] text-white rounded-[2.5rem] p-8 flex items-center justify-between shadow-lg">
-                <span className="text-xs font-bold text-stone-400 uppercase tracking-wider font-bebas text-base">From URL to Published</span>
-                <span className="font-bebas text-4xl font-black text-[#CCFF00]">ONE CLICK</span>
-              </div>
+              {/* Bento Card 3: Lime Green Highlight Card -> Marketing Teams */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+                className="bg-[#CCFF00] text-stone-900 rounded-[2.5rem] p-8 flex-1 flex flex-col justify-between min-h-[200px] shadow-sm hover:-translate-y-1 transition-transform duration-300 group"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-bebas text-4xl font-black text-stone-900 tracking-tight leading-none uppercase">MARKETING<br />TEAMS</h3>
+                  </div>
+                  <span className="w-10 h-10 rounded-2xl bg-black/5 flex items-center justify-center text-stone-900 group-hover:scale-110 transition-transform">
+                    <Users className="w-5 h-5" />
+                  </span>
+                </div>
+                <p className="text-sm font-bold text-stone-800 leading-snug">
+                  Unify campaigns across all platforms with a single intelligent workflow.
+                </p>
+              </motion.div>
+
+              {/* Bento Card 4: Dark Obsidian Card -> Agencies */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+                className="bg-[#18181B] text-white rounded-[2.5rem] p-8 flex-1 flex flex-col justify-between min-h-[160px] shadow-lg hover:-translate-y-1 transition-transform duration-300 group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bebas text-3xl font-black text-white uppercase">AGENCIES</h3>
+                  <span className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-[#CCFF00] group-hover:scale-110 transition-transform">
+                    <Briefcase className="w-5 h-5" />
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-stone-400">
+                  Scale client deliverables 10x faster with AI-generated assets and scheduling.
+                </p>
+              </motion.div>
 
             </div>
 
@@ -419,18 +553,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 🌤 CREATIVE WINNING FOOTER (SKY BLUE GRADIENT, CLOUD TEXTURE, WATERMARK & HIGH-IMPACT CTAs) */}
-      <footer className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-20 pb-12 px-6 rounded-t-[3.5rem] shadow-[0_-25px_80px_rgba(2,132,199,0.35)] overflow-hidden z-20">
-        
+      {/* 🌤 CREATIVE WINNING FOOTER (SKY BLUE GRADIENT, CLOUD TEXTURE, WATERMARK & HIGH-CONTRAST READABLE TEXT) */}
+      <footer className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-16 pb-12 px-6 rounded-t-[3.5rem] shadow-[0_-25px_80px_rgba(2,132,199,0.35)] overflow-hidden z-20">
+
         {/* Photorealistic Clouds Background Texture Layer */}
-        <div 
-          className="absolute inset-0 bg-cover bg-top opacity-70 pointer-events-none mix-blend-screen"
+        <div
+          className="absolute inset-0 bg-cover bg-top opacity-75 pointer-events-none mix-blend-screen"
           style={{ backgroundImage: `url('/sky_cloud_hero_bg.jpg')` }}
         />
 
         {/* Ambient Radial Glow Accents */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[100%] h-[350px] bg-sky-200/20 blur-[130px] rounded-full pointer-events-none" />
-        <div className="absolute top-10 right-10 w-[300px] h-[300px] bg-[#CCFF00]/15 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[100%] h-[350px] bg-sky-200/25 blur-[130px] rounded-full pointer-events-none" />
+        <div className="absolute top-10 right-10 w-[300px] h-[300px] bg-[#CCFF00]/20 blur-[100px] rounded-full pointer-events-none" />
 
         {/* Giant Watermarked Background Text */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full text-center pointer-events-none select-none z-0">
@@ -440,29 +574,10 @@ export default function HomePage() {
         </div>
 
         <div className="container mx-auto max-w-7xl relative z-10">
-          
-          {/* Top CTA Banner Section */}
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-8 sm:p-14 text-center mb-16 shadow-2xl relative overflow-hidden group">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/30 bg-white/15 text-[#CCFF00] text-xs font-extrabold uppercase tracking-widest mb-4 shadow-xs">
-              ✨ READY TO SCALE YOUR SOCIAL BRAND?
-            </span>
-            <h2 className="font-bebas text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-tight leading-[0.95] uppercase mb-4">
-              START AUTOMATING YOUR SOCIAL MEDIA TODAY
-            </h2>
-            <p className="text-sky-100/90 text-sm sm:text-lg max-w-xl mx-auto mb-8 font-medium leading-relaxed">
-              Transform raw product links into 5 creative directions, AI captions, and multi-network campaigns in under 60 seconds.
-            </p>
-            <Link href="/signup">
-              <Button size="lg" className="rounded-full bg-[#CCFF00] hover:bg-[#bef264] text-black font-black text-sm uppercase tracking-widest px-10 py-7 shadow-[0_10px_35px_rgba(204,255,0,0.5)] border border-[#CCFF00] hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-3">
-                START FREE NOW
-                <ArrowUpRight className="w-5 h-5" />
-              </Button>
-            </Link>
-          </div>
 
           {/* Footer Grid Links */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/20">
-            
+
             {/* Column 1: Brand Info */}
             <div className="md:col-span-5 space-y-4">
               <div className="flex items-center gap-3">
@@ -470,7 +585,7 @@ export default function HomePage() {
                 <img src="/logo.png" alt="SocialSched Logo" className="h-10 w-auto object-contain brightness-0 invert" />
                 <span className="font-bebas text-3xl font-black text-white tracking-widest">SOCIALSCHED</span>
               </div>
-              <p className="text-sky-100/80 text-xs sm:text-sm font-medium leading-relaxed max-w-sm">
+              <p className="text-sky-100 text-xs sm:text-sm font-semibold leading-relaxed max-w-sm">
                 The all-in-one AI content engine for brands and creators. Import products, generate visual directions, write captions, and schedule everywhere automatically.
               </p>
 
@@ -487,8 +602,8 @@ export default function HomePage() {
 
             {/* Column 2: Platform Links */}
             <div className="md:col-span-2 space-y-3">
-              <h4 className="font-bebas text-lg tracking-widest text-[#CCFF00] uppercase font-bold">PLATFORM</h4>
-              <ul className="space-y-2 text-xs font-semibold text-sky-100/90">
+              <h4 className="font-bebas text-xl tracking-widest text-[#CCFF00] uppercase font-black">PLATFORM</h4>
+              <ul className="space-y-2 text-xs font-bold text-sky-100">
                 <li><Link href="#speed-scale" className="hover:text-white transition-colors">Shopify Direct Sync</Link></li>
                 <li><Link href="#speed-scale" className="hover:text-white transition-colors">5 AI Directions</Link></li>
                 <li><Link href="#speed-scale" className="hover:text-white transition-colors">Style Reference Match</Link></li>
@@ -499,8 +614,8 @@ export default function HomePage() {
 
             {/* Column 3: Resources */}
             <div className="md:col-span-2 space-y-3">
-              <h4 className="font-bebas text-lg tracking-widest text-[#CCFF00] uppercase font-bold">RESOURCES</h4>
-              <ul className="space-y-2 text-xs font-semibold text-sky-100/90">
+              <h4 className="font-bebas text-xl tracking-widest text-[#CCFF00] uppercase font-black">RESOURCES</h4>
+              <ul className="space-y-2 text-xs font-bold text-sky-100">
                 <li><Link href="#about" className="hover:text-white transition-colors">Why SocialSched</Link></li>
                 <li><Link href="#speed-scale" className="hover:text-white transition-colors">Platform Showcase</Link></li>
                 <li><Link href="/login" className="hover:text-white transition-colors">Client Portal</Link></li>
@@ -510,12 +625,12 @@ export default function HomePage() {
 
             {/* Column 4: Legal & System Status */}
             <div className="md:col-span-3 space-y-3">
-              <h4 className="font-bebas text-lg tracking-widest text-[#CCFF00] uppercase font-bold">SYSTEM STATUS</h4>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-xs font-bold text-sky-100">
-                <span className="w-2 h-2 rounded-full bg-[#CCFF00] animate-pulse" />
+              <h4 className="font-bebas text-xl tracking-widest text-[#CCFF00] uppercase font-black">SYSTEM STATUS</h4>
+              <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/25 text-xs font-extrabold text-white">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#CCFF00] animate-pulse" />
                 All Systems Operational
               </div>
-              <p className="text-sky-100/70 text-xs pt-2 font-medium leading-normal">
+              <p className="text-sky-100 text-xs pt-2 font-medium leading-normal">
                 High-performance AI inference pipelines operating at peak speed across global endpoints.
               </p>
             </div>
@@ -523,7 +638,7 @@ export default function HomePage() {
           </div>
 
           {/* Bottom Bar: Copyright & Terms */}
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs font-semibold text-sky-100/80 gap-4">
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs font-bold text-sky-100 gap-4">
             <p>&copy; {new Date().getFullYear()} SocialSched. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>

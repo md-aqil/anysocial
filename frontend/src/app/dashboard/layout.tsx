@@ -33,9 +33,9 @@ const navigation = [
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
   { name: 'Post Creator', href: '/dashboard/post-creator', icon: Wand2 },
+  { name: 'AI Product Reels', href: '/dashboard/reels-creator', icon: Star, adminOnly: true },
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
-  { name: 'AI Product Reels', href: '/dashboard/reels-creator', icon: Star },
-  { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film },
+  { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film, adminOnly: true },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'AI Agent', href: '/dashboard/ai-agent', icon: Bot, adminOnly: true, superAdminOnly: true },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
@@ -182,11 +182,11 @@ export default function DashboardLayout({
             <span className="font-bold text-[#3C342C]">Create New</span>
           </div>
           <div className="ml-auto flex items-center">
-            <Link 
-              href="/privacy-policy" 
-              className="text-sm font-bold text-[#AAA39D] transition-colors hover:text-[#D27D50]"
-            >
-              Privacy Policy
+            <Link href="/dashboard/posts/new">
+              <Button className="rounded-xl bg-[#D27D50] hover:bg-[#C26032] text-white font-bold px-5 shadow-[0_4px_15px_rgba(210,125,80,0.25)] transition-all">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Post
+              </Button>
             </Link>
           </div>
         </div>
