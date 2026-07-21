@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,6 +47,12 @@ const SOCIAL_PLATFORMS = [
 ];
 
 export default function HomePage() {
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const heroVideos = ['/hero.mp4', '/clander.mp4'];
+
+  const handleVideoEnded = () => {
+    setCurrentVideoIndex((prev) => (prev + 1) % heroVideos.length);
+  };
   return (
     <div className="min-h-screen bg-[#F2F3ED] text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
 
@@ -359,13 +366,13 @@ export default function HomePage() {
           {/* Center Video Container with Floating Action Pill */}
           <div className="relative rounded-[2.5rem] overflow-hidden bg-black aspect-video max-w-5xl mx-auto my-8 border border-stone-800 shadow-[0_30px_90px_rgba(0,0,0,0.8)] group z-20">
             <video
-              src="/hero.mp4"
+              src={heroVideos[currentVideoIndex]}
               controls
               autoPlay
               muted
-              loop
               playsInline
-              className="w-full h-full object-cover"
+              onEnded={handleVideoEnded}
+              className="w-full h-full object-cover transition-opacity duration-300"
             />
 
             {/* Floating Center/Bottom Lime Pill Button */}
