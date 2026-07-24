@@ -33,7 +33,7 @@ const navigation = [
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
   { name: 'Post Creator', href: '/dashboard/post-creator', icon: Wand2 },
-  { name: 'AI Product Reels', href: '/dashboard/reels-creator', icon: Star, adminOnly: true },
+  { name: 'AI Product Reels', href: '/dashboard/reels-creator', icon: Star },
   { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film, adminOnly: true },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
