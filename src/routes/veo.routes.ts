@@ -193,4 +193,79 @@ router.post('/cancel/:id', requireAuth, async (req: any, res: any) => {
   }
 });
 
+const animateImageSchema = z.object({
+  imageUrl: z.string().min(1, 'imageUrl is required'),
+  prompt: z.string().min(1, 'Prompt is required'),
+  script: z.string().optional(),
+  subtitleStyle: z.enum(['cinematic-shadow', 'solid-dark-box', 'transparent-dark-box', 'classic-outline']).optional().default('cinematic-shadow'),
+  visualStyle: z.string().optional().default('luxury'),
+  model: z.string().optional().default('veo-3.0-fast-generate-001'),
+  adId: z.string().optional(),
+});
+
+/**
+ * POST /api/veo/animate-image
+ * Create a new Veo Image-to-Video generation job from an existing ad image.
+ */
+router.post('/animate-image', requireAuth, async (req: any, res: any) => {
+  try {
+    const userId = req.userId;
+    const validatedData = animateImageSchema.parse(req.body);
+
+    const reel = await prisma.reel.create({
+      data: {
+        userId,
+        type: 'VEO_SHORT',
+        status: 'PENDING',
+        script: validatedData.prompt,
+        thumbnail: validatedData.imageUrl,
+        metadata: {
+          subtitleStyle: validatedData.subtitleStyle,
+          visualStyle: validatedData.visualStyle,
+          model: validatedData.model,
+          sourceImageUrl: validatedData.imageUrl,
+          adId: validatedData.adId
+        }
+      },
+    });
+
+    const job = await veoQueue.add('generate-veo', {
+      reelId: reel.id,
+      topic: validatedData.prompt,
+      script: validatedData.script,
+      imageUrl: validatedData.imageUrl,
+      subtitleStyle: validatedData.subtitleStyle,
+      visualStyle: validatedData.visualStyle,
+      model: validatedData.model,
+    }, {
+      attempts: 2,
+      backoff: { type: 'exponential', delay: 15_000 },
+      removeOnComplete: 50,
+      removeOnFail: 100,
+    });
+
+    const existingMeta = (reel.metadata as any) || {};
+    await prisma.reel.update({
+      where: { id: reel.id },
+      data: { metadata: { ...existingMeta, jobId: job.id } },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { reel },
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ success: false, errors: error.errors });
+    }
+    console.error('Error starting Veo image-to-video:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error?.message || String(error),
+    });
+  }
+});
+
 export default router;
+

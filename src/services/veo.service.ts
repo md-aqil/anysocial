@@ -34,11 +34,12 @@ export class VeoService {
     prompt: string,
     imageBase64?: string,
     imageMimeType?: string,
-    options?: { durationSeconds?: number }
+    options?: { durationSeconds?: number; model?: string }
   ): Promise<string> {
     const { token, projectId } = await VeoService.getAuth();
     const bucketName = await VeoService.ensureBucket(projectId);
     const outputGcsUri = `gs://${bucketName}/veo_outputs/`;
+    const modelToUse = options?.model || VEO_MODEL;
 
     const instance: any = { prompt };
     if (imageBase64 && imageMimeType) {
@@ -46,7 +47,7 @@ export class VeoService {
     }
 
     const response = await fetch(
-      `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${VEO_MODEL}:predictLongRunning`,
+      `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${modelToUse}:predictLongRunning`,
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },

@@ -204,8 +204,8 @@ class VeoGenerationWorker {
 
   constructor() {
     this.worker = new Worker('veo-generation', async (job: Job) => {
-  const { reelId, topic, subtitleStyle, visualStyle } = job.data;
-  logger.info({ event: 'veo_generation_started', reelId, topic });
+      const { reelId, topic, subtitleStyle, visualStyle, model, imageBase64: inputBase64, imageUrl: inputImageUrl, script: inputScript } = job.data;
+      logger.info({ event: 'veo_generation_started', reelId, topic, model, hasInputImage: !!(inputBase64 || inputImageUrl) });
 
   const tempFilesToCleanup: string[] = [];
 
@@ -225,17 +225,21 @@ class VeoGenerationWorker {
       });
     };
 
-    await updateProgress('📝 Generating AI script & prompt...');
+    await updateProgress('📝 Preparing script & visual prompt...');
 
-    // 1. Generate script + Veo visual prompt (faceless cinematic creator format).
-    let aestheticInstruction = "Vibrant natural colors, premium Scandinavian interior, cinematic shallow depth of field, subtle movement only, no camera movement, realistic motion, quiet luxury aesthetic.";
-    if (visualStyle === 'moody') aestheticInstruction = "Dark wood textures, subtle warm neon ambient lighting, deep cinematic shadows, shallow depth of field, moody atmosphere, ultra-detailed masterpiece, sharp focus.";
-    if (visualStyle === 'hygge') aestheticInstruction = "Soft morning sunlight filtering through sheer linen curtains, casting beautiful shadows. White marble textures, serene, peaceful, light and airy aesthetic, shallow depth of field.";
-    if (visualStyle === 'luxury') aestheticInstruction = "Overcast, diffused natural light, quiet luxury, high-end travel aesthetic, cinematic realism, premium hotel vibe.";
-    if (visualStyle === 'vintage') aestheticInstruction = "Rich golden hour lighting pouring into the room, cinematic film grain, retro aesthetic, nostalgic and incredibly calm atmosphere, warm glowing tones.";
-    if (visualStyle === 'tech') aestheticInstruction = "Sleek modern glass textures, matte black accessories, cool blue-toned natural light mixed with subtle LED rim lighting, ultra-crisp, futuristic yet grounded luxury aesthetic.";
+    let script = inputScript || '';
+    let visual_prompt = topic;
 
-    const scriptPrompt = `You are a viral TikTok and Instagram Reels creator specialist. Write a calm, luxury minimalist faceless script about: ${topic}.
+    if (!script) {
+      // 1. Generate script + Veo visual prompt (faceless cinematic creator format).
+      let aestheticInstruction = "Vibrant natural colors, premium Scandinavian interior, cinematic shallow depth of field, subtle movement only, no camera movement, realistic motion, quiet luxury aesthetic.";
+      if (visualStyle === 'moody') aestheticInstruction = "Dark wood textures, subtle warm neon ambient lighting, deep cinematic shadows, shallow depth of field, moody atmosphere, ultra-detailed masterpiece, sharp focus.";
+      if (visualStyle === 'hygge') aestheticInstruction = "Soft morning sunlight filtering through sheer linen curtains, casting beautiful shadows. White marble textures, serene, peaceful, light and airy aesthetic, shallow depth of field.";
+      if (visualStyle === 'luxury') aestheticInstruction = "Overcast, diffused natural light, quiet luxury, high-end travel aesthetic, cinematic realism, premium hotel vibe.";
+      if (visualStyle === 'vintage') aestheticInstruction = "Rich golden hour lighting pouring into the room, cinematic film grain, retro aesthetic, nostalgic and incredibly calm atmosphere, warm glowing tones.";
+      if (visualStyle === 'tech') aestheticInstruction = "Sleek modern glass textures, matte black accessories, cool blue-toned natural light mixed with subtle LED rim lighting, ultra-crisp, futuristic yet grounded luxury aesthetic.";
+
+      const scriptPrompt = `You are a viral TikTok and Instagram Reels creator specialist. Write a calm, luxury minimalist faceless script about: ${topic}.
 The video follows the quiet luxury, Scandi minimalist lifestyle aesthetic.
 We need exactly 3 short paragraphs. 
 Paragraph 1: A curiosity-inducing contradiction hook.
@@ -248,73 +252,90 @@ Format requirements:
 - Each paragraph should have 1-2 short lines formatted with line breaks.
 - Keep the sentences/lines very short (maximum 4-6 words per line) so it fits perfectly on a mobile portrait screen without wrapping.
 
-For example:
-"I'm Victoria.
-I'm 30 & I'm unemployed but
-last month I cleared $11,371.
-
-I'm not an influencer,
-I don't do UGC,
-and I don't sell Etsy stuff.
-Actually, I don't even show
-my face.
-
-Here is exactly what I did 👇"
 Also, provide a highly detailed 1-sentence visual prompt optimized for Google Veo 3 that represents a premium faceless lifestyle scene.
-It MUST follow this exact style:
-"Locked tripod shot of [environment]. A [subject/entrepreneur] quietly [doing something subtle], reaching for [something], and [something]. ${aestheticInstruction}"
-
-CRITICAL INSTRUCTION: You MUST violently randomize the [environment], [subject/entrepreneur], and lighting for EVERY generation! DO NOT use the same generic room. Use different locations (e.g., modern glass office, cozy hygge living room, minimalist cafe, moody dusk studio), different subtle actions (e.g., pouring matcha, organizing aesthetic notebooks, adjusting a lamp), and unique clothing styles. 
-CRITICAL RULE (AVOID EYE CONTACT): The subject MUST NEVER look at the camera. To maintain an atmospheric faceless vibe, the visual description MUST use creative framing: shoot from behind (over the shoulder), side profile looking away, looking down at a desk, or close-up detail shots of hands/objects only. The subject's eyes must never meet the lens.
-Ensure the visual prompt matches the tone/subject of the topic, but keep it strictly to the scene description (I will append the technical camera parameters).
 
 Format your output as a JSON object:
 {
-  "script": "Sentence 1. Sentence 2. Sentence 3. Sentence 4. Sentence 5.",
-  "visual_prompt": "The detailed visual prompt following the Scandinavian locked-tripod format."
+  "script": "Sentence 1. Sentence 2. Sentence 3.",
+  "visual_prompt": "The detailed visual prompt."
 }`;
 
-    const aiResponse = await aiOrchestrator.generateContent(scriptPrompt);
-    const parsed = typeof aiResponse === 'string' ? JSON.parse(aiResponse.replace(/```json/g, '').replace(/```/g, '')) : aiResponse;
-    const { script, visual_prompt } = parsed;
+      const aiResponse = await aiOrchestrator.generateContent(scriptPrompt);
+      const parsed = typeof aiResponse === 'string' ? JSON.parse(aiResponse.replace(/```json/g, '').replace(/```/g, '')) : aiResponse;
+      script = parsed.script || topic;
+      if (parsed.visual_prompt) visual_prompt = parsed.visual_prompt;
+    }
 
-    await updateProgress('🎨 Generating initial image (Global AI)...', {
+    await updateProgress('🎨 Preparing source image for animation...', {
       generatedScript: script,
       generatedVisualPrompt: visual_prompt
     });
 
-    // 2. Generate a single anchor image for Veo image-to-video.
-    const imageParameters = "9:16 vertical aspect ratio. Shot on 85mm lens, f/1.8, ISO 200. Do not beautify. No plastic skin, no CGI smoothing. Lighting creates sharp realistic highlights. Raw, unretouched, hyper-realistic candid photography.";
-    const fullImagePrompt = `${visual_prompt}. ${imageParameters}`;
+    // 2. Prepare anchor image for Veo image-to-video.
+    let publicThumbnailUrl = inputImageUrl || '';
+    let generatedImageBase64 = inputBase64 || null;
 
-    const imagePath = await aiOrchestrator.generateImage(fullImagePrompt, 0);
-    let publicThumbnailUrl = '';
-    let generatedImageBase64 = null;
-    if (imagePath && fs.existsSync(imagePath)) {
-      // Crop the generated image to exactly 9:16 (720x1280) so Veo generates a native 9:16 video
-      const croppedImagePath = path.join(os.tmpdir(), `veo_thumb_cropped_${Date.now()}.png`);
-      await sharp(imagePath)
-        .resize({ width: 720, height: 1280, fit: 'cover', position: 'center' })
-        .png()
-        .toFile(croppedImagePath);
+    if (!generatedImageBase64 && inputImageUrl) {
+      try {
+        const localImagePath = path.join(process.cwd(), 'frontend', 'public', inputImageUrl.replace(/^\//, ''));
+        if (fs.existsSync(localImagePath)) {
+          const imgBuffer = fs.readFileSync(localImagePath);
+          generatedImageBase64 = imgBuffer.toString('base64');
+        }
+      } catch (err: any) {
+        logger.warn({ event: 'veo_read_input_image_failed', error: err.message });
+      }
+    }
 
-      const thumbFilename = `veo_thumb_${Date.now()}.png`;
-      const thumbDest = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', thumbFilename);
-      if (!fs.existsSync(path.dirname(thumbDest))) fs.mkdirSync(path.dirname(thumbDest), { recursive: true });
-      fs.copyFileSync(croppedImagePath, thumbDest);
-      publicThumbnailUrl = `/uploads/reels/${thumbFilename}`;
-      generatedImageBase64 = fs.readFileSync(croppedImagePath).toString('base64');
-      
-      tempFilesToCleanup.push(croppedImagePath);
+    if (generatedImageBase64) {
+      try {
+        const rawBuf = Buffer.from(generatedImageBase64, 'base64');
+        const croppedImagePath = path.join(os.tmpdir(), `veo_thumb_cropped_${Date.now()}.png`);
+        await sharp(rawBuf)
+          .resize({ width: 720, height: 1280, fit: 'cover', position: 'center' })
+          .png()
+          .toFile(croppedImagePath);
+
+        const thumbFilename = `veo_thumb_${Date.now()}.png`;
+        const thumbDest = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', thumbFilename);
+        if (!fs.existsSync(path.dirname(thumbDest))) fs.mkdirSync(path.dirname(thumbDest), { recursive: true });
+        fs.copyFileSync(croppedImagePath, thumbDest);
+        publicThumbnailUrl = `/uploads/reels/${thumbFilename}`;
+        generatedImageBase64 = fs.readFileSync(croppedImagePath).toString('base64');
+        tempFilesToCleanup.push(croppedImagePath);
+      } catch (cropErr: any) {
+        logger.warn({ event: 'veo_crop_input_image_failed', error: cropErr.message });
+      }
+    } else {
+      // Fallback: Generate a single anchor image if no image provided
+      const imageParameters = "9:16 vertical aspect ratio. Shot on 85mm lens, f/1.8, ISO 200. Lighting creates sharp realistic highlights. Raw, unretouched, hyper-realistic candid photography.";
+      const fullImagePrompt = `${visual_prompt}. ${imageParameters}`;
+      const imagePath = await aiOrchestrator.generateImage(fullImagePrompt, 0);
+
+      if (imagePath && fs.existsSync(imagePath)) {
+        const croppedImagePath = path.join(os.tmpdir(), `veo_thumb_cropped_${Date.now()}.png`);
+        await sharp(imagePath)
+          .resize({ width: 720, height: 1280, fit: 'cover', position: 'center' })
+          .png()
+          .toFile(croppedImagePath);
+
+        const thumbFilename = `veo_thumb_${Date.now()}.png`;
+        const thumbDest = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'reels', thumbFilename);
+        if (!fs.existsSync(path.dirname(thumbDest))) fs.mkdirSync(path.dirname(thumbDest), { recursive: true });
+        fs.copyFileSync(croppedImagePath, thumbDest);
+        publicThumbnailUrl = `/uploads/reels/${thumbFilename}`;
+        generatedImageBase64 = fs.readFileSync(croppedImagePath).toString('base64');
+        tempFilesToCleanup.push(croppedImagePath);
+      }
     }
 
     // 3. Google Veo 3 Video Generation
-    const motionParameters = "Movement adheres strictly to physical weight and gravity at real-time natural human speed. Strictly locked tripod camera with zero drift and stable optical depth of field. Absolutely no structural morphing, zero background warping, and no hallucinatory merging. True temporal consistency.";
+    const imageParameters = "9:16 vertical aspect ratio. Ultra high detail commercial aesthetics.";
+    const motionParameters = "Movement adheres strictly to physical weight and gravity at real-time natural human speed. Dynamic fluid motion, organic lighting reflections, physical realism. True temporal consistency.";
     const fullVideoPrompt = `${visual_prompt}. ${imageParameters} ${motionParameters}`;
     
     await updateProgress('🎬 Submitting to Google Veo 3 (Long Running)...', {
       generatedImage: publicThumbnailUrl,
-      fullImagePrompt: fullImagePrompt,
       fullVideoPrompt: fullVideoPrompt
     });
     
@@ -323,7 +344,7 @@ Format your output as a JSON object:
       fullVideoPrompt,
       generatedImageBase64 || undefined,
       generatedImageBase64 ? 'image/png' : undefined,
-      { durationSeconds: targetDuration }
+      { durationSeconds: targetDuration, model }
     );
 
     await updateProgress('⏳ Veo 3 is rendering video (this takes a few minutes)...');

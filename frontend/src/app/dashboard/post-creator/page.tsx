@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, XCircle, PenSquare, Maximize2 } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, XCircle, PenSquare, Maximize2, Film, Download, X, Video } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export default function PostCreatorPage() {
@@ -41,6 +41,126 @@ export default function PostCreatorPage() {
   // History State
   const [history, setHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+
+  // Animate Image-to-Video State
+  const [animateModalOpen, setAnimateModalOpen] = useState(false);
+  const [selectedAdForAnimate, setSelectedAdForAnimate] = useState<any>(null);
+  const [animatePrompt, setAnimatePrompt] = useState('');
+  const [animateScript, setAnimateScript] = useState('');
+  const [animateSubtitleStyle, setAnimateSubtitleStyle] = useState('cinematic-shadow');
+  const [animateVisualStyle, setAnimateVisualStyle] = useState('luxury');
+  const [animateVideoModel, setAnimateVideoModel] = useState('veo-3.0-fast-generate-001');
+  const [animating, setAnimating] = useState(false);
+  const [activeReelId, setActiveReelId] = useState<string | null>(null);
+  const [animStatus, setAnimStatus] = useState<string | null>(null);
+  const [animStatusMsg, setAnimStatusMsg] = useState('');
+  const [animResultVideoUrl, setAnimResultVideoUrl] = useState<string | null>(null);
+
+  const openAnimateModal = (ad: any) => {
+    setSelectedAdForAnimate(ad);
+    const brief = ad.brief || {};
+    const prodName = ad.productName || 'Product';
+    const dirName = ad.direction || 'Creative Ad';
+    
+    // Extract metadata & image prompt information to synthesize high-quality Veo prompt
+    const imagePromptText = brief.imagePrompt || '';
+    const visualSetup = brief.visualSceneSetup || brief.sceneSetup || brief.campaignConcept || `A commercial visual scene featuring ${prodName}`;
+    const layoutEffects = brief.layoutAndEffects ? ` Visual composition & effects: ${brief.layoutAndEffects}.` : '';
+    const brandIntegration = brief.brandIntegration ? ` Aesthetic styling: ${brief.brandIntegration}.` : '';
+    const taglineText = brief.tagline ? ` Tagline: "${brief.tagline}".` : '';
+
+    let synthesizedPrompt = '';
+    if (imagePromptText) {
+      synthesizedPrompt = `Animate the source ad image of ${prodName} (${dirName}). Generated image prompt reference: "${imagePromptText}". Visual scene: ${visualSetup}.${layoutEffects}${brandIntegration}${taglineText} High-end commercial video with physical temporal consistency, natural organic movement, realistic light reflections, and cinematic 9:16 portrait framing.`;
+    } else {
+      synthesizedPrompt = `Locked tripod shot of ${prodName} (${dirName}). ${visualSetup}.${layoutEffects}${brandIntegration}${taglineText} High quality commercial video, smooth movement, realistic reflections, physical temporal consistency.`;
+    }
+    
+    const scriptText = `${brief.tagline ? brief.tagline + '\n\n' : ''}${brief.supportingCopy || brief.copy || ''}\n\n${brief.callToAction || ''}`.trim();
+    
+    setAnimatePrompt(synthesizedPrompt);
+    setAnimateScript(scriptText);
+    setAnimateSubtitleStyle('cinematic-shadow');
+    setAnimateVisualStyle('luxury');
+    setAnimateVideoModel('veo-3.0-fast-generate-001');
+    setAnimResultVideoUrl(null);
+    setAnimStatus(null);
+    setAnimStatusMsg('');
+    setActiveReelId(null);
+    setAnimateModalOpen(true);
+  };
+
+  const handleStartAnimation = async () => {
+    if (!selectedAdForAnimate || !animatePrompt) return;
+    setAnimating(true);
+    setAnimStatus('PENDING');
+    setAnimStatusMsg('Submitting animation request to Google Veo 3...');
+
+    try {
+      const res = await fetch('/api/veo/animate-image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          imageUrl: selectedAdForAnimate.imageUrl,
+          prompt: animatePrompt,
+          script: animateScript,
+          subtitleStyle: animateSubtitleStyle,
+          visualStyle: animateVisualStyle,
+          model: animateVideoModel,
+          adId: selectedAdForAnimate.id
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to start video animation');
+      }
+
+      const data = await res.json();
+      setActiveReelId(data.data.reel.id);
+    } catch (err: any) {
+      setAnimating(false);
+      setAnimStatus('FAILED');
+      setAnimStatusMsg(err.message || 'Error starting animation');
+    }
+  };
+
+  useEffect(() => {
+    if (!activeReelId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/veo/status/${activeReelId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!res.ok) return;
+        const result = await res.json();
+        const reel = result.data;
+        if (reel) {
+          setAnimStatus(reel.status);
+          setAnimStatusMsg(reel.statusMessage || 'Processing video...');
+          if (reel.status === 'READY') {
+            setAnimResultVideoUrl(reel.videoUrl);
+            setAnimating(false);
+            clearInterval(interval);
+          } else if (reel.status === 'FAILED') {
+            setAnimating(false);
+            clearInterval(interval);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to poll reel status', err);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [activeReelId]);
+
 
   useEffect(() => {
     fetchHistory();
@@ -563,20 +683,303 @@ export default function PostCreatorPage() {
                   <p className="text-base font-black text-stone-800 line-clamp-2 mb-2 leading-tight">"{ad.brief.tagline}"</p>
                   <p className="text-sm font-medium text-stone-500 line-clamp-2 mb-6 flex-1">{ad.brief.supportingCopy || ad.brief.copy}</p>
                   
-                  <Button 
-                    onClick={() => handleComposePost(ad.brief, ad.imageUrl)}
-                    variant="outline"
-                    className="w-full rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors"
-                  >
-                    <PenSquare className="w-4 h-4 mr-2" />
-                    Compose Post
-                  </Button>
+                  <div className="flex gap-2.5 mt-auto pt-2">
+                    <Button 
+                      onClick={() => openAnimateModal(ad)}
+                      className="flex-1 rounded-xl font-bold bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white transition-all duration-300 shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 group/btn overflow-hidden relative"
+                    >
+                      <Film className="w-4 h-4 animate-pulse group-hover/btn:rotate-12 transition-transform" />
+                      <span>Animate</span>
+                    </Button>
+                    <Button 
+                      onClick={() => handleComposePost(ad.brief, ad.imageUrl)}
+                      variant="outline"
+                      className="flex-1 rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <PenSquare className="w-4 h-4" />
+                      Compose
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Animate Modal */}
+      {animateModalOpen && selectedAdForAnimate && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 overflow-y-auto" onClick={() => setAnimateModalOpen(false)}>
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 lg:p-8 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setAnimateModalOpen(false)}
+              className="absolute top-5 right-5 text-stone-400 hover:text-stone-700 p-2 rounded-full hover:bg-stone-100 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-[#D27D50]/10 text-[#D27D50] rounded-2xl">
+                <Film className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-stone-900">Animate Image with Google Veo 3</h3>
+                <p className="text-xs text-stone-500 font-medium">Turn your static ad into a cinematic motion short video</p>
+              </div>
+            </div>
+
+            {/* Source Image & Details */}
+            <div className="flex gap-4 p-4 bg-stone-50 border border-stone-100 rounded-2xl mb-6">
+              <img src={selectedAdForAnimate.imageUrl} alt="Source" className="w-20 h-24 object-cover rounded-xl shadow-sm border border-stone-200 shrink-0" />
+              <div className="flex-1 space-y-1 min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#D27D50]">{selectedAdForAnimate.direction || 'Ad Campaign'}</span>
+                <h4 className="font-bold text-stone-800 text-sm truncate">{selectedAdForAnimate.productName || 'Product'}</h4>
+                <p className="text-xs text-stone-500 line-clamp-2">"{selectedAdForAnimate.brief?.tagline || ''}"</p>
+              </div>
+            </div>
+
+            {/* Active Video Result */}
+            {animResultVideoUrl ? (
+              <div className="space-y-6">
+                <div className="relative w-full aspect-[9/16] max-h-[400px] bg-black rounded-2xl overflow-hidden flex items-center justify-center mx-auto shadow-xl">
+                  <video src={animResultVideoUrl} controls autoPlay className="w-full h-full object-contain" />
+                </div>
+                <div className="flex gap-3">
+                  <a 
+                    href={animResultVideoUrl} 
+                    download={`veo_anim_${Date.now()}.mp4`}
+                    className="flex-1 flex items-center justify-center px-4 py-3 bg-[#3C342C] text-white text-sm font-bold rounded-xl hover:bg-black transition-colors"
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Download Video
+                  </a>
+                  <Button 
+                    onClick={() => {
+                      const postData = {
+                        content: selectedAdForAnimate.brief ? `${selectedAdForAnimate.brief.tagline ? selectedAdForAnimate.brief.tagline + '\n\n' : ''}${selectedAdForAnimate.brief.supportingCopy || selectedAdForAnimate.brief.copy || ''}\n\n${selectedAdForAnimate.brief.callToAction || ''}`.trim() : '',
+                        mediaUrls: [animResultVideoUrl]
+                      };
+                      localStorage.setItem('composeAdData', JSON.stringify(postData));
+                      router.push('/dashboard/posts/new');
+                    }}
+                    className="flex-1 bg-[#D27D50] hover:bg-[#b86d45] text-white font-bold h-11 rounded-xl shadow-sm"
+                  >
+                    <PenSquare className="w-4 h-4 mr-2" /> Compose Post
+                  </Button>
+                </div>
+              </div>
+            ) : animating || animStatus ? (
+              <div className="py-8 space-y-6 bg-stone-50 rounded-2xl border border-stone-200 p-6">
+                {animStatus === 'FAILED' ? (
+                  <div className="text-center space-y-4">
+                    <XCircle className="w-12 h-12 text-red-500 mx-auto" />
+                    <h4 className="font-bold text-stone-800 text-lg">Animation Failed</h4>
+                    <p className="text-sm text-red-600 font-medium">{animStatusMsg}</p>
+                    <Button onClick={() => { setAnimating(false); setAnimStatus(null); }} className="bg-[#D27D50] text-white font-bold rounded-xl px-6 py-2">Try Again</Button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-5 h-5 text-[#D27D50] animate-spin" />
+                        <h4 className="font-bold text-stone-800 text-base">Rendering with Veo 3 Video Model</h4>
+                      </div>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-[#D27D50] border border-orange-200">
+                        {animateVideoModel === 'veo-3.0-generate-001' ? 'Veo 3.0 Ultra' : 'Veo 3.0 Fast'}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-stone-600 font-medium bg-white p-3 rounded-xl border border-stone-200">
+                      {animStatusMsg || 'Processing video generation pipeline...'}
+                    </p>
+
+                    {/* Step-by-step progress cards matching Veo Shorts */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div className="p-3 bg-white rounded-xl border border-stone-200 text-center flex flex-col justify-center">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase">Step 1</span>
+                        <span className="text-xs font-bold text-stone-800 mt-0.5">Script & Prompt</span>
+                        <span className="text-[10px] text-emerald-600 font-medium mt-1">✓ Ready</span>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl border border-stone-200 text-center flex flex-col justify-center">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase">Step 2</span>
+                        <span className="text-xs font-bold text-stone-800 mt-0.5">Ad Image Base</span>
+                        <span className="text-[10px] text-emerald-600 font-medium mt-1">✓ Ready</span>
+                      </div>
+                      <div className="p-3 bg-orange-50 rounded-xl border-2 border-[#D27D50] text-center flex flex-col justify-center shadow-sm">
+                        <span className="text-[10px] font-bold text-[#D27D50] uppercase flex items-center justify-center gap-1">
+                          <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#D27D50]"></span></span>
+                          Step 3
+                        </span>
+                        <span className="text-xs font-bold text-stone-900 mt-0.5">Veo 3 Render</span>
+                        <span className="text-[10px] text-[#D27D50] font-semibold mt-1 animate-pulse">Rendering...</span>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl border border-stone-200 opacity-60 text-center flex flex-col justify-center">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase">Step 4</span>
+                        <span className="text-xs font-bold text-stone-600 mt-0.5">Composition</span>
+                        <span className="text-[10px] text-stone-400 font-medium mt-1">Pending</span>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                      <div className="bg-gradient-to-r from-[#D27D50] to-rose-500 h-full animate-pulse rounded-full w-3/4"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Video Model Selector */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <span>Google Veo Video Model</span>
+                    <span className="text-[10px] text-[#D27D50] font-bold bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+                      Same as Veo Shorts
+                    </span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {[
+                      { id: 'veo-3.0-fast-generate-001', name: 'Veo 3 Fast', badge: 'Recommended', desc: 'Fast render speed with vivid motion' },
+                      { id: 'veo-3.0-generate-001', name: 'Veo 3.0 Ultra', badge: 'Highest Quality', desc: 'Full photorealistic depth & motion' },
+                      { id: 'veo-2.0-generate-001', name: 'Veo 2.0 Pro', badge: 'Standard', desc: 'Balanced camera movement' },
+                    ].map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setAnimateVideoModel(m.id)}
+                        className={`flex flex-col text-left p-3 rounded-xl border-2 transition-all ${
+                          animateVideoModel === m.id
+                            ? 'border-[#D27D50] bg-orange-50/60 shadow-sm ring-1 ring-[#D27D50]'
+                            : 'border-stone-200 hover:border-stone-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-black text-stone-800">{m.name}</span>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                            animateVideoModel === m.id ? 'bg-[#D27D50] text-white' : 'bg-stone-100 text-stone-500'
+                          }`}>
+                            {m.badge}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-stone-500 font-medium leading-tight">{m.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cinematic Aesthetic Grid */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                    Cinematic Aesthetic (Visual Atmosphere)
+                  </label>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {[
+                      { id: 'scandi', name: 'Quiet Luxury', image: '/assets/styles/cinematic.jpg' },
+                      { id: 'moody', name: 'Dark & Moody', image: '/assets/styles/gothic.jpg' },
+                      { id: 'hygge', name: 'Morning Hygge', image: '/assets/styles/watercolor.jpg' },
+                      { id: 'luxury', name: 'Luxury Hotel', image: '/assets/styles/hyper-realistic.jpg' },
+                      { id: 'vintage', name: 'Warm Vintage', image: '/assets/styles/vintage-vhs.jpg' },
+                      { id: 'tech', name: 'Sleek Cyber', image: '/assets/styles/cyberpunk.jpg' }
+                    ].map((style) => (
+                      <button
+                        key={style.id}
+                        type="button"
+                        onClick={() => setAnimateVisualStyle(style.id)}
+                        className={`relative flex flex-col overflow-hidden rounded-xl border transition-all h-20 ${
+                          animateVisualStyle === style.id
+                            ? 'border-[#D27D50] shadow-md ring-2 ring-[#D27D50] scale-[1.02]'
+                            : 'border-stone-200 hover:border-stone-300 opacity-80 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={style.image} alt={style.name} className="absolute inset-0 w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                        <div className="relative z-10 flex h-full w-full items-end p-1.5 text-left">
+                          <span className="text-[10px] leading-tight font-bold text-white drop-shadow">{style.name}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Subtitle Overlay Style */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                    Subtitle Overlay Style
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'cinematic-shadow', name: 'Cinematic Shadow', color: 'bg-stone-800' },
+                      { id: 'solid-dark-box', name: 'Solid Dark Box', color: 'bg-black' },
+                      { id: 'transparent-dark-box', name: 'Transparent Box', color: 'bg-stone-700' },
+                      { id: 'classic-outline', name: 'Classic Outline', color: 'bg-stone-900' }
+                    ].map((style) => (
+                      <button
+                        key={style.id}
+                        type="button"
+                        onClick={() => setAnimateSubtitleStyle(style.id)}
+                        className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${
+                          animateSubtitleStyle === style.id
+                            ? 'border-[#D27D50] bg-orange-50/60 font-bold text-[#D27D50] shadow-sm'
+                            : 'border-stone-200 hover:border-stone-300 text-stone-600 bg-white'
+                        }`}
+                      >
+                        <div className={`w-6 h-6 rounded ${style.color} text-white font-bold text-[9px] flex items-center justify-center shrink-0`}>
+                          Aa
+                        </div>
+                        <span className="text-xs truncate">{style.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Synthesized Veo Prompt Editor */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+                      Synthesized Veo Prompt (Formed from Ad Image Prompt)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedAdForAnimate) openAnimateModal(selectedAdForAnimate);
+                      }}
+                      className="text-[11px] font-semibold text-[#D27D50] hover:underline flex items-center gap-1"
+                    >
+                      <Sparkles className="w-3 h-3" /> Re-synthesize Prompt
+                    </button>
+                  </div>
+                  <textarea 
+                    value={animatePrompt} 
+                    onChange={e => setAnimatePrompt(e.target.value)} 
+                    rows={3} 
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-shadow resize-none" 
+                  />
+                  <p className="text-[10px] text-stone-400 mt-1 italic">
+                    Prompt automatically incorporates image composition, camera setup, and ad brief info for optimal Veo 3 animation output.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex gap-3">
+                  <Button 
+                    onClick={() => setAnimateModalOpen(false)}
+                    variant="outline"
+                    className="flex-1 rounded-xl h-12 font-bold border-stone-200"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleStartAnimation}
+                    disabled={!animatePrompt}
+                    className="flex-1 bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl h-12 font-bold shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Film className="w-4 h-4" />
+                    Generate Veo 3 Video
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
