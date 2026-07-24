@@ -363,8 +363,27 @@ Format your output as a JSON object:
     fs.copyFileSync(veoTempPath, localRawVideo);
     const publicRawVideoUrl = `/uploads/reels/${rawVideoFilename}`;
 
-    // Determine the true rendered duration so caption timing matches the actual video.
-    // We multiply by 2 because we will loop the video once in the next step.
+    // For image-to-video motion graphic requests, return pure motion graphic video directly
+    const isImageToVideo = !!(inputImageUrl || inputBase64);
+    if (isImageToVideo) {
+      await prisma.reel.update({
+        where: { id: reelId },
+        data: {
+          status: 'READY',
+          statusMessage: 'Veo Motion Graphic Video complete!',
+          videoUrl: publicRawVideoUrl,
+          thumbnail: publicThumbnailUrl,
+          metadata: {
+            ...currentMetadata,
+            rawVideoUrl: publicRawVideoUrl
+          }
+        },
+      });
+
+      logger.info({ event: 'veo_motion_graphic_success', reelId, videoUrl: publicRawVideoUrl });
+      return;
+    }
+
     let actualDuration = targetDuration * 2;
     try {
       actualDuration = (await VideoComposerService.getMediaDuration(localRawVideo)) * 2;

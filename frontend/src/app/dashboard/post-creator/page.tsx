@@ -47,9 +47,6 @@ export default function PostCreatorPage() {
   const [selectedAdForAnimate, setSelectedAdForAnimate] = useState<any>(null);
   const [animatePrompt, setAnimatePrompt] = useState('');
   const [animateScript, setAnimateScript] = useState('');
-  const [animateSubtitleStyle, setAnimateSubtitleStyle] = useState('cinematic-shadow');
-  const [animateVisualStyle, setAnimateVisualStyle] = useState('luxury');
-  const [animateVideoModel, setAnimateVideoModel] = useState('veo-3.0-fast-generate-001');
   const [animating, setAnimating] = useState(false);
   const [activeReelId, setActiveReelId] = useState<string | null>(null);
   const [animStatus, setAnimStatus] = useState<string | null>(null);
@@ -62,27 +59,30 @@ export default function PostCreatorPage() {
     const prodName = ad.productName || 'Product';
     const dirName = ad.direction || 'Creative Ad';
     
-    // Extract metadata & image prompt information to synthesize high-quality Veo prompt
+    // Extract metadata & image prompt information
     const imagePromptText = brief.imagePrompt || '';
-    const visualSetup = brief.visualSceneSetup || brief.sceneSetup || brief.campaignConcept || `A commercial visual scene featuring ${prodName}`;
-    const layoutEffects = brief.layoutAndEffects ? ` Visual composition & effects: ${brief.layoutAndEffects}.` : '';
-    const brandIntegration = brief.brandIntegration ? ` Aesthetic styling: ${brief.brandIntegration}.` : '';
-    const taglineText = brief.tagline ? ` Tagline: "${brief.tagline}".` : '';
+    const visualSetup = brief.visualSceneSetup || brief.sceneSetup || brief.campaignConcept || `High impact commercial ad scene featuring ${prodName}`;
+    const taglineText = brief.tagline || '';
+    const copyText = brief.supportingCopy || brief.copy || '';
+    const ctaText = brief.callToAction || '';
+
+    // Synthesize Google Veo 3 Prompt Guide format:
+    // [Subject Details] + [Action & Kinetic Typography Motion] + [Camera Specs] + [Lighting & Environment] + [Style]
+    const kineticTextDirective = taglineText 
+      ? `Kinetic typography animation displaying dynamic animated text "${taglineText}" with snappy kinetic motion graphic transitions.`
+      : `Dynamic kinetic text animation with bold kinetic typography motion graphics.`;
 
     let synthesizedPrompt = '';
     if (imagePromptText) {
-      synthesizedPrompt = `Animate the source ad image of ${prodName} (${dirName}). Generated image prompt reference: "${imagePromptText}". Visual scene: ${visualSetup}.${layoutEffects}${brandIntegration}${taglineText} High-end commercial video with physical temporal consistency, natural organic movement, realistic light reflections, and cinematic 9:16 portrait framing.`;
+      synthesizedPrompt = `Motion graphic video animating source ad image of ${prodName} (${dirName}). Subject & Details: "${imagePromptText}". Visual Action: ${visualSetup}. Motion Graphics & Text: ${kineticTextDirective} Sleek motion design graphic elements, smooth fluid transitions. Camera: Slow push-in tracking shot, locked 9:16 vertical portrait composition. Lighting & Aesthetic: Commercial studio lighting, vibrant reflections, ultra-clean background. High-end motion graphics video, physical temporal consistency, 4k resolution.`;
     } else {
-      synthesizedPrompt = `Locked tripod shot of ${prodName} (${dirName}). ${visualSetup}.${layoutEffects}${brandIntegration}${taglineText} High quality commercial video, smooth movement, realistic reflections, physical temporal consistency.`;
+      synthesizedPrompt = `Motion graphic video of ${prodName} (${dirName}). Subject & Details: ${prodName} hero product. Visual Scene: ${visualSetup}. Motion Graphics & Text: ${kineticTextDirective} Dynamic visual motion, sleek particle highlights. Camera: Smooth orbiting camera movement, 9:16 vertical portrait layout. Lighting & Aesthetic: Vibrant studio lighting, high contrast commercial graphic design. Photorealistic motion graphic video, 4k resolution.`;
     }
     
-    const scriptText = `${brief.tagline ? brief.tagline + '\n\n' : ''}${brief.supportingCopy || brief.copy || ''}\n\n${brief.callToAction || ''}`.trim();
+    const scriptText = `${taglineText ? taglineText + '\n\n' : ''}${copyText}\n\n${ctaText}`.trim();
     
     setAnimatePrompt(synthesizedPrompt);
     setAnimateScript(scriptText);
-    setAnimateSubtitleStyle('cinematic-shadow');
-    setAnimateVisualStyle('luxury');
-    setAnimateVideoModel('veo-3.0-fast-generate-001');
     setAnimResultVideoUrl(null);
     setAnimStatus(null);
     setAnimStatusMsg('');
@@ -94,7 +94,7 @@ export default function PostCreatorPage() {
     if (!selectedAdForAnimate || !animatePrompt) return;
     setAnimating(true);
     setAnimStatus('PENDING');
-    setAnimStatusMsg('Submitting animation request to Google Veo 3...');
+    setAnimStatusMsg('Generating Kinetic Motion Graphic Video with Veo 3 Fast...');
 
     try {
       const res = await fetch('/api/veo/animate-image', {
@@ -107,9 +107,7 @@ export default function PostCreatorPage() {
           imageUrl: selectedAdForAnimate.imageUrl,
           prompt: animatePrompt,
           script: animateScript,
-          subtitleStyle: animateSubtitleStyle,
-          visualStyle: animateVisualStyle,
-          model: animateVideoModel,
+          model: 'veo-3.0-fast-generate-001',
           adId: selectedAdForAnimate.id
         })
       });
@@ -781,43 +779,16 @@ export default function PostCreatorPage() {
                     <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
                       <div className="flex items-center gap-2">
                         <Loader2 className="w-5 h-5 text-[#D27D50] animate-spin" />
-                        <h4 className="font-bold text-stone-800 text-base">Rendering with Veo 3 Video Model</h4>
+                        <h4 className="font-bold text-stone-800 text-base">Rendering Motion Graphic Video</h4>
                       </div>
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-[#D27D50] border border-orange-200">
-                        {animateVideoModel === 'veo-3.0-generate-001' ? 'Veo 3.0 Ultra' : 'Veo 3.0 Fast'}
+                        Veo 3 Fast Engine
                       </span>
                     </div>
 
                     <p className="text-xs text-stone-600 font-medium bg-white p-3 rounded-xl border border-stone-200">
-                      {animStatusMsg || 'Processing video generation pipeline...'}
+                      {animStatusMsg || 'Generating kinetic motion graphic video...'}
                     </p>
-
-                    {/* Step-by-step progress cards matching Veo Shorts */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      <div className="p-3 bg-white rounded-xl border border-stone-200 text-center flex flex-col justify-center">
-                        <span className="text-[10px] font-bold text-stone-400 uppercase">Step 1</span>
-                        <span className="text-xs font-bold text-stone-800 mt-0.5">Script & Prompt</span>
-                        <span className="text-[10px] text-emerald-600 font-medium mt-1">✓ Ready</span>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-stone-200 text-center flex flex-col justify-center">
-                        <span className="text-[10px] font-bold text-stone-400 uppercase">Step 2</span>
-                        <span className="text-xs font-bold text-stone-800 mt-0.5">Ad Image Base</span>
-                        <span className="text-[10px] text-emerald-600 font-medium mt-1">✓ Ready</span>
-                      </div>
-                      <div className="p-3 bg-orange-50 rounded-xl border-2 border-[#D27D50] text-center flex flex-col justify-center shadow-sm">
-                        <span className="text-[10px] font-bold text-[#D27D50] uppercase flex items-center justify-center gap-1">
-                          <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#D27D50]"></span></span>
-                          Step 3
-                        </span>
-                        <span className="text-xs font-bold text-stone-900 mt-0.5">Veo 3 Render</span>
-                        <span className="text-[10px] text-[#D27D50] font-semibold mt-1 animate-pulse">Rendering...</span>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-stone-200 opacity-60 text-center flex flex-col justify-center">
-                        <span className="text-[10px] font-bold text-stone-400 uppercase">Step 4</span>
-                        <span className="text-xs font-bold text-stone-600 mt-0.5">Composition</span>
-                        <span className="text-[10px] text-stone-400 font-medium mt-1">Pending</span>
-                      </div>
-                    </div>
 
                     <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
                       <div className="bg-gradient-to-r from-[#D27D50] to-rose-500 h-full animate-pulse rounded-full w-3/4"></div>
@@ -827,114 +798,11 @@ export default function PostCreatorPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Video Model Selector */}
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2 flex items-center justify-between">
-                    <span>Google Veo Video Model</span>
-                    <span className="text-[10px] text-[#D27D50] font-bold bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
-                      Same as Veo Shorts
-                    </span>
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {[
-                      { id: 'veo-3.0-fast-generate-001', name: 'Veo 3 Fast', badge: 'Recommended', desc: 'Fast render speed with vivid motion' },
-                      { id: 'veo-3.0-generate-001', name: 'Veo 3.0 Ultra', badge: 'Highest Quality', desc: 'Full photorealistic depth & motion' },
-                      { id: 'veo-2.0-generate-001', name: 'Veo 2.0 Pro', badge: 'Standard', desc: 'Balanced camera movement' },
-                    ].map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => setAnimateVideoModel(m.id)}
-                        className={`flex flex-col text-left p-3 rounded-xl border-2 transition-all ${
-                          animateVideoModel === m.id
-                            ? 'border-[#D27D50] bg-orange-50/60 shadow-sm ring-1 ring-[#D27D50]'
-                            : 'border-stone-200 hover:border-stone-300 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-black text-stone-800">{m.name}</span>
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
-                            animateVideoModel === m.id ? 'bg-[#D27D50] text-white' : 'bg-stone-100 text-stone-500'
-                          }`}>
-                            {m.badge}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-stone-500 font-medium leading-tight">{m.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Cinematic Aesthetic Grid */}
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-                    Cinematic Aesthetic (Visual Atmosphere)
-                  </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {[
-                      { id: 'scandi', name: 'Quiet Luxury', image: '/assets/styles/cinematic.jpg' },
-                      { id: 'moody', name: 'Dark & Moody', image: '/assets/styles/gothic.jpg' },
-                      { id: 'hygge', name: 'Morning Hygge', image: '/assets/styles/watercolor.jpg' },
-                      { id: 'luxury', name: 'Luxury Hotel', image: '/assets/styles/hyper-realistic.jpg' },
-                      { id: 'vintage', name: 'Warm Vintage', image: '/assets/styles/vintage-vhs.jpg' },
-                      { id: 'tech', name: 'Sleek Cyber', image: '/assets/styles/cyberpunk.jpg' }
-                    ].map((style) => (
-                      <button
-                        key={style.id}
-                        type="button"
-                        onClick={() => setAnimateVisualStyle(style.id)}
-                        className={`relative flex flex-col overflow-hidden rounded-xl border transition-all h-20 ${
-                          animateVisualStyle === style.id
-                            ? 'border-[#D27D50] shadow-md ring-2 ring-[#D27D50] scale-[1.02]'
-                            : 'border-stone-200 hover:border-stone-300 opacity-80 hover:opacity-100'
-                        }`}
-                      >
-                        <img src={style.image} alt={style.name} className="absolute inset-0 w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                        <div className="relative z-10 flex h-full w-full items-end p-1.5 text-left">
-                          <span className="text-[10px] leading-tight font-bold text-white drop-shadow">{style.name}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Subtitle Overlay Style */}
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-                    Subtitle Overlay Style
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      { id: 'cinematic-shadow', name: 'Cinematic Shadow', color: 'bg-stone-800' },
-                      { id: 'solid-dark-box', name: 'Solid Dark Box', color: 'bg-black' },
-                      { id: 'transparent-dark-box', name: 'Transparent Box', color: 'bg-stone-700' },
-                      { id: 'classic-outline', name: 'Classic Outline', color: 'bg-stone-900' }
-                    ].map((style) => (
-                      <button
-                        key={style.id}
-                        type="button"
-                        onClick={() => setAnimateSubtitleStyle(style.id)}
-                        className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${
-                          animateSubtitleStyle === style.id
-                            ? 'border-[#D27D50] bg-orange-50/60 font-bold text-[#D27D50] shadow-sm'
-                            : 'border-stone-200 hover:border-stone-300 text-stone-600 bg-white'
-                        }`}
-                      >
-                        <div className={`w-6 h-6 rounded ${style.color} text-white font-bold text-[9px] flex items-center justify-center shrink-0`}>
-                          Aa
-                        </div>
-                        <span className="text-xs truncate">{style.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Synthesized Veo Prompt Editor */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
-                      Synthesized Veo Prompt (Formed from Ad Image Prompt)
+                      Kinetic Motion Prompt (Google Veo Guide & Typography Optimized)
                     </label>
                     <button
                       type="button"
@@ -949,11 +817,11 @@ export default function PostCreatorPage() {
                   <textarea 
                     value={animatePrompt} 
                     onChange={e => setAnimatePrompt(e.target.value)} 
-                    rows={3} 
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-shadow resize-none" 
+                    rows={5} 
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-shadow resize-none leading-relaxed" 
                   />
                   <p className="text-[10px] text-stone-400 mt-1 italic">
-                    Prompt automatically incorporates image composition, camera setup, and ad brief info for optimal Veo 3 animation output.
+                    Prompt follows Google DeepMind Veo Prompt Guide (Subject + Action + Kinetic Motion Graphic Text + Camera + Lighting) for direct image-to-motion graphic animation.
                   </p>
                 </div>
 
@@ -971,7 +839,7 @@ export default function PostCreatorPage() {
                     className="flex-1 bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl h-12 font-bold shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                   >
                     <Film className="w-4 h-4" />
-                    Generate Veo 3 Video
+                    Generate Motion Graphic Video
                   </Button>
                 </div>
               </div>
