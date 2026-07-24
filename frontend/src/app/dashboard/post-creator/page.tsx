@@ -46,7 +46,6 @@ export default function PostCreatorPage() {
   const [animateModalOpen, setAnimateModalOpen] = useState(false);
   const [selectedAdForAnimate, setSelectedAdForAnimate] = useState<any>(null);
   const [animatePrompt, setAnimatePrompt] = useState('');
-  const [animateScript, setAnimateScript] = useState('');
   const [animating, setAnimating] = useState(false);
   const [activeReelId, setActiveReelId] = useState<string | null>(null);
   const [animStatus, setAnimStatus] = useState<string | null>(null);
@@ -61,28 +60,22 @@ export default function PostCreatorPage() {
     
     // Extract metadata & image prompt information
     const imagePromptText = brief.imagePrompt || '';
-    const visualSetup = brief.visualSceneSetup || brief.sceneSetup || brief.campaignConcept || `High impact commercial ad scene featuring ${prodName}`;
+    const visualSetup = brief.visualSceneSetup || brief.sceneSetup || brief.campaignConcept || `Commercial ad image of ${prodName}`;
     const taglineText = brief.tagline || '';
-    const copyText = brief.supportingCopy || brief.copy || '';
-    const ctaText = brief.callToAction || '';
 
-    // Synthesize Google Veo 3 Prompt Guide format:
-    // [Subject Details] + [Action & Kinetic Typography Motion] + [Camera Specs] + [Lighting & Environment] + [Style]
-    const kineticTextDirective = taglineText 
-      ? `Kinetic typography animation displaying dynamic animated text "${taglineText}" with snappy kinetic motion graphic transitions.`
-      : `Dynamic kinetic text animation with bold kinetic typography motion graphics.`;
+    // Kinetic typography motion directive inside Veo prompt
+    const kineticDirective = taglineText
+      ? `Kinetic typography motion graphics animating the headline text "${taglineText}" with snappy kinetic text motion.`
+      : `Sleek kinetic typography motion graphics animation on ad typography elements.`;
 
     let synthesizedPrompt = '';
     if (imagePromptText) {
-      synthesizedPrompt = `Motion graphic video animating source ad image of ${prodName} (${dirName}). Subject & Details: "${imagePromptText}". Visual Action: ${visualSetup}. Motion Graphics & Text: ${kineticTextDirective} Sleek motion design graphic elements, smooth fluid transitions. Camera: Slow push-in tracking shot, locked 9:16 vertical portrait composition. Lighting & Aesthetic: Commercial studio lighting, vibrant reflections, ultra-clean background. High-end motion graphics video, physical temporal consistency, 4k resolution.`;
+      synthesizedPrompt = `Transform this generated ad image of ${prodName} (${dirName}) into a dynamic commercial motion graphic video. Image details: "${imagePromptText}". Visual Motion: ${visualSetup}. Text Motion: ${kineticDirective} Camera: Smooth push-in zoom with subtle 3D depth. Graphic Style: High-end motion design, physical temporal consistency, vibrant studio lighting, clean commercial aesthetic, 9:16 portrait.`;
     } else {
-      synthesizedPrompt = `Motion graphic video of ${prodName} (${dirName}). Subject & Details: ${prodName} hero product. Visual Scene: ${visualSetup}. Motion Graphics & Text: ${kineticTextDirective} Dynamic visual motion, sleek particle highlights. Camera: Smooth orbiting camera movement, 9:16 vertical portrait layout. Lighting & Aesthetic: Vibrant studio lighting, high contrast commercial graphic design. Photorealistic motion graphic video, 4k resolution.`;
+      synthesizedPrompt = `Transform this ad image of ${prodName} into a motion graphic video. Visual Motion: ${visualSetup}. Text Motion: ${kineticDirective} Camera: Smooth tracking motion. High quality commercial motion graphics video, physical temporal consistency, 9:16 vertical framing.`;
     }
     
-    const scriptText = `${taglineText ? taglineText + '\n\n' : ''}${copyText}\n\n${ctaText}`.trim();
-    
     setAnimatePrompt(synthesizedPrompt);
-    setAnimateScript(scriptText);
     setAnimResultVideoUrl(null);
     setAnimStatus(null);
     setAnimStatusMsg('');
@@ -106,7 +99,6 @@ export default function PostCreatorPage() {
         body: JSON.stringify({
           imageUrl: selectedAdForAnimate.imageUrl,
           prompt: animatePrompt,
-          script: animateScript,
           model: 'veo-3.0-fast-generate-001',
           adId: selectedAdForAnimate.id
         })
