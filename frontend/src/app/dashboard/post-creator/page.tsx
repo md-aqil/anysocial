@@ -62,24 +62,46 @@ export default function PostCreatorPage() {
     const prodName = ad.productName || 'Product';
     const dirName = ad.direction || 'Creative Ad';
     
-    // Extract metadata & image prompt information
-    const imagePromptText = brief.imagePrompt || '';
-    const visualSetup = brief.visualSceneSetup || brief.sceneSetup || brief.campaignConcept || `Commercial ad image of ${prodName}`;
+    // Extract metadata & image prompt information for deep scene analysis
+    const imagePromptText = brief.imagePrompt || `High-end commercial advertisement featuring ${prodName}`;
+    const visualSetup = brief.visualSceneSetup || brief.sceneSetup || brief.campaignConcept || `Professional studio showcase of ${prodName}`;
+    const layoutEffects = brief.layoutAndEffects || 'Dynamic lighting, subtle motion blur, crisp reflections, premium composition';
     const taglineText = brief.tagline || '';
+    const supportingText = brief.supportingCopy || brief.copy || '';
 
-    // Kinetic typography motion directive inside Veo prompt
-    const kineticDirective = taglineText
-      ? `Kinetic typography motion graphics animating the headline text "${taglineText}" with snappy kinetic text motion.`
-      : `Sleek kinetic typography motion graphics animation on ad typography elements.`;
-
-    let synthesizedPrompt = '';
-    if (imagePromptText) {
-      synthesizedPrompt = `Transform this generated ad image of ${prodName} (${dirName}) into a dynamic commercial motion graphic video. Image details: "${imagePromptText}". Visual Motion: ${visualSetup}. Text Motion: ${kineticDirective} Camera: Smooth push-in zoom with subtle 3D depth. Graphic Style: High-end motion design, physical temporal consistency, vibrant studio lighting, clean commercial aesthetic, 9:16 portrait.`;
-    } else {
-      synthesizedPrompt = `Transform this ad image of ${prodName} into a motion graphic video. Visual Motion: ${visualSetup}. Text Motion: ${kineticDirective} Camera: Smooth tracking motion. High quality commercial motion graphics video, physical temporal consistency, 9:16 vertical framing.`;
-    }
+    // Synthesize Google Veo 3 JSON Prompt Guide structure (veo-3-prompting-guide format)
+    const veo3JsonPrompt = JSON.stringify({
+      "veo_model": "veo-3.0-fast-generate-001",
+      "prompt_type": "image_to_video_motion_graphic",
+      "subject": {
+        "name": prodName,
+        "direction": dirName,
+        "details": imagePromptText,
+        "physical_motion": `Full physical scene animation of ${prodName}. Subject dynamically moves with realistic temporal weight, surface reflections shift across materials, and physical properties animate with 3D depth.`
+      },
+      "environment_and_scene": {
+        "setup": visualSetup,
+        "effects": layoutEffects,
+        "background_motion": "Background lighting shifts gracefully, subtle environmental particle effects float with volumetric depth, ambient light reflections glide across the scene."
+      },
+      "camera": {
+        "movement": "Slow 3D push-in camera tracking shot with natural depth parallax effect",
+        "framing": "9:16 vertical portrait composition"
+      },
+      "kinetic_typography": {
+        "headline_text": taglineText,
+        "supporting_text": supportingText,
+        "animation_style": taglineText 
+          ? `Kinetic typography motion graphics animating text "${taglineText}" with snappy keyframe scaling and entrance motion design.`
+          : `Dynamic kinetic text animation with bold typography motion graphics.`
+      },
+      "cinematography_and_physics": {
+        "lighting": "High-end commercial studio lighting, vibrant rim highlights, sharp focal clarity",
+        "physics_realism": "Adheres strictly to physical weight, gravity, real-time natural human speed, and physical temporal consistency"
+      }
+    }, null, 2);
     
-    setAnimatePrompt(synthesizedPrompt);
+    setAnimatePrompt(veo3JsonPrompt);
     setAnimResultVideoUrl(null);
     setAnimStatus(null);
     setAnimStatusMsg('');
@@ -834,11 +856,12 @@ export default function PostCreatorPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Synthesized Veo Prompt Editor */}
+                {/* Synthesized Veo 3 JSON Prompt Editor */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
-                      Kinetic Motion Prompt (Google Veo Guide & Typography Optimized)
+                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#D27D50]" />
+                      Google Veo 3 JSON Prompt (Full Scene + Kinetic Typography Guide Format)
                     </label>
                     <button
                       type="button"
@@ -847,17 +870,17 @@ export default function PostCreatorPage() {
                       }}
                       className="text-[11px] font-semibold text-[#D27D50] hover:underline flex items-center gap-1"
                     >
-                      <Sparkles className="w-3 h-3" /> Re-synthesize Prompt
+                      <Sparkles className="w-3 h-3" /> Re-synthesize JSON Prompt
                     </button>
                   </div>
                   <textarea 
                     value={animatePrompt} 
                     onChange={e => setAnimatePrompt(e.target.value)} 
-                    rows={5} 
-                    className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-shadow resize-none leading-relaxed" 
+                    rows={8} 
+                    className="w-full bg-stone-900 border border-stone-800 text-amber-300 font-mono rounded-2xl p-4 text-xs focus:outline-none focus:ring-2 focus:ring-[#D27D50]/40 transition-shadow leading-relaxed" 
                   />
-                  <p className="text-[10px] text-stone-400 mt-1 italic">
-                    Prompt follows Google DeepMind Veo Prompt Guide (Subject + Action + Kinetic Motion Graphic Text + Camera + Lighting) for direct image-to-motion graphic animation.
+                  <p className="text-[10px] text-stone-500 mt-1.5 italic">
+                    Structured according to Google Veo 3 Prompting Guide JSON specification. Animates full scene physics (subject rotation, background particles, light reflections, camera tracking) AND kinetic typography.
                   </p>
                 </div>
 

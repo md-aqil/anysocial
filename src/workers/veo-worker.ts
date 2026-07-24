@@ -330,9 +330,14 @@ Format your output as a JSON object:
     }
 
     // 3. Google Veo 3 Video Generation
-    const imageParameters = "9:16 vertical aspect ratio. Ultra high detail commercial aesthetics.";
-    const motionParameters = "Movement adheres strictly to physical weight and gravity at real-time natural human speed. Dynamic fluid motion, organic lighting reflections, physical realism. True temporal consistency.";
-    const fullVideoPrompt = `${visual_prompt}. ${imageParameters} ${motionParameters}`;
+    let fullVideoPrompt = visual_prompt;
+    if (typeof visual_prompt === 'string' && visual_prompt.trim().startsWith('{')) {
+      fullVideoPrompt = visual_prompt;
+    } else {
+      const imageParameters = "9:16 vertical aspect ratio. Ultra high detail commercial aesthetics.";
+      const motionParameters = "Movement adheres strictly to physical weight and gravity at real-time natural human speed. Dynamic fluid motion, organic lighting reflections, physical realism. True temporal consistency.";
+      fullVideoPrompt = `${visual_prompt}. ${imageParameters} ${motionParameters}`;
+    }
     
     await updateProgress('🎬 Submitting to Google Veo 3 (Long Running)...', {
       generatedImage: publicThumbnailUrl,
