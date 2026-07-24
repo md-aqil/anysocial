@@ -51,6 +51,10 @@ export default function PostCreatorPage() {
   const [animStatus, setAnimStatus] = useState<string | null>(null);
   const [animStatusMsg, setAnimStatusMsg] = useState('');
   const [animResultVideoUrl, setAnimResultVideoUrl] = useState<string | null>(null);
+  
+  // Rendered Video Map & View Mode per campaign
+  const [renderedVideoMap, setRenderedVideoMap] = useState<Record<string, string>>({});
+  const [viewModeMap, setViewModeMap] = useState<Record<string, 'image' | 'video'>>({});
 
   const openAnimateModal = (ad: any) => {
     setSelectedAdForAnimate(ad);
@@ -137,6 +141,12 @@ export default function PostCreatorPage() {
           if (reel.status === 'READY') {
             setAnimResultVideoUrl(reel.videoUrl);
             setAnimating(false);
+            if (selectedAdForAnimate?.id) {
+              const adId = selectedAdForAnimate.id;
+              setRenderedVideoMap(prev => ({ ...prev, [adId]: reel.videoUrl }));
+              setViewModeMap(prev => ({ ...prev, [adId]: 'video' }));
+              setHistory(prev => prev.map(item => item.id === adId ? { ...item, videoUrl: reel.videoUrl } : item));
+            }
             clearInterval(interval);
           } else if (reel.status === 'FAILED') {
             setAnimating(false);
@@ -149,7 +159,7 @@ export default function PostCreatorPage() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [activeReelId]);
+  }, [activeReelId, selectedAdForAnimate]);
 
 
   useEffect(() => {
@@ -342,10 +352,10 @@ export default function PostCreatorPage() {
     }
   };
 
-  const handleComposePost = (brief: any, imageUrl: string) => {
+  const handleComposePost = (brief: any, imageUrl: string, videoUrl?: string) => {
     const postData = {
       content: `${brief.tagline ? brief.tagline + '\n\n' : ''}${brief.supportingCopy ? brief.supportingCopy + '\n\n' : ''}${brief.copy || ''}\n\n${brief.callToAction || ''}`.trim(),
-      mediaUrls: imageUrl ? [imageUrl] : []
+      mediaUrls: videoUrl ? [videoUrl] : (imageUrl ? [imageUrl] : [])
     };
     localStorage.setItem('composeAdData', JSON.stringify(postData));
     router.push('/dashboard/posts/new');
@@ -648,51 +658,85 @@ export default function PostCreatorPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {history.map((ad: any) => (
-              <div key={ad.id} className="bg-white rounded-3xl overflow-hidden border border-stone-100 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col">
-                <div className="h-56 w-full bg-stone-100 relative overflow-hidden group/img">
-                  <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
-                    <a href={ad.imageUrl} target="_blank" rel="noopener noreferrer" className="bg-white/90 text-stone-800 hover:bg-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transform translate-y-4 group-hover/img:translate-y-0 transition-all duration-300 shadow-xl">
-                      <Maximize2 className="w-4 h-4" /> View Full Photo
-                    </a>
+            {history.map((ad: any) => {
+              const adVideoUrl = ad.videoUrl || renderedVideoMap[ad.id];
+              const currentViewMode = viewModeMap[ad.id] || (adVideoUrl ? 'video' : 'image');
+
+              return (
+                <div key={ad.id} className="bg-white rounded-3xl overflow-hidden border border-stone-100 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col">
+                  <div className="h-64 w-full bg-black relative overflow-hidden group/img">
+                    {currentViewMode === 'video' && adVideoUrl ? (
+                      <video src={adVideoUrl} controls autoPlay muted loop className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
+                    )}
+
+                    {/* Media Type Switcher Tag */}
+                    {adVideoUrl && (
+                      <div className="absolute top-3 left-3 z-20 flex gap-1 bg-black/70 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'image' })); }}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${currentViewMode === 'image' ? 'bg-[#D27D50] text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
+                        >
+                          Photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'video' })); }}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${currentViewMode === 'video' ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
+                        >
+                          <Film className="w-3 h-3 animate-pulse" /> Motion Video
+                        </button>
+                      </div>
+                    )}
+
+                    {!adVideoUrl && (
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
+                        <a href={ad.imageUrl} target="_blank" rel="noopener noreferrer" className="bg-white/90 text-stone-800 hover:bg-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transform translate-y-4 group-hover/img:translate-y-0 transition-all duration-300 shadow-xl">
+                          <Maximize2 className="w-4 h-4" /> View Full Photo
+                        </a>
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <span className="inline-block px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg text-white text-[10px] font-bold uppercase tracking-wider mb-2">
+                        {ad.platform}
+                      </span>
+                      <h3 className="text-white font-bold text-lg leading-tight truncate">{ad.productName}</h3>
+                    </div>
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <span className="inline-block px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg text-white text-[10px] font-bold uppercase tracking-wider mb-2">
-                      {ad.platform}
-                    </span>
-                    <h3 className="text-white font-bold text-lg leading-tight truncate">{ad.productName}</h3>
+
+                  <div className="p-6 flex-1 flex flex-col">
+                    <div className="mb-4 flex items-center justify-between border-b border-stone-100 pb-4">
+                      <span className="text-xs font-black tracking-wider uppercase text-[#D27D50] truncate pr-4">{ad.direction}</span>
+                      <span className="text-xs font-bold text-stone-400 shrink-0">{new Date(ad.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-base font-black text-stone-800 line-clamp-2 mb-2 leading-tight">"{ad.brief.tagline}"</p>
+                    <p className="text-sm font-medium text-stone-500 line-clamp-2 mb-6 flex-1">{ad.brief.supportingCopy || ad.brief.copy}</p>
+                    
+                    <div className="flex gap-2 mt-auto pt-2">
+                      <Button 
+                        onClick={() => openAnimateModal(ad)}
+                        className="flex-1 rounded-xl font-bold bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white transition-all duration-300 shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-1.5 text-xs py-2.5"
+                      >
+                        <Film className="w-4 h-4 animate-pulse" />
+                        <span>{adVideoUrl ? 'Re-Animate' : 'Animate'}</span>
+                      </Button>
+                      <Button 
+                        onClick={() => handleComposePost(ad.brief, ad.imageUrl, adVideoUrl)}
+                        variant="outline"
+                        className="flex-1 rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1.5 text-xs py-2.5"
+                      >
+                        <PenSquare className="w-4 h-4" />
+                        Compose
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <div className="p-6 flex-1 flex flex-col">
-                  <div className="mb-4 flex items-center justify-between border-b border-stone-100 pb-4">
-                    <span className="text-xs font-black tracking-wider uppercase text-[#D27D50] truncate pr-4">{ad.direction}</span>
-                    <span className="text-xs font-bold text-stone-400 shrink-0">{new Date(ad.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <p className="text-base font-black text-stone-800 line-clamp-2 mb-2 leading-tight">"{ad.brief.tagline}"</p>
-                  <p className="text-sm font-medium text-stone-500 line-clamp-2 mb-6 flex-1">{ad.brief.supportingCopy || ad.brief.copy}</p>
-                  
-                  <div className="flex gap-2.5 mt-auto pt-2">
-                    <Button 
-                      onClick={() => openAnimateModal(ad)}
-                      className="flex-1 rounded-xl font-bold bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white transition-all duration-300 shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 group/btn overflow-hidden relative"
-                    >
-                      <Film className="w-4 h-4 animate-pulse group-hover/btn:rotate-12 transition-transform" />
-                      <span>Animate</span>
-                    </Button>
-                    <Button 
-                      onClick={() => handleComposePost(ad.brief, ad.imageUrl)}
-                      variant="outline"
-                      className="flex-1 rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <PenSquare className="w-4 h-4" />
-                      Compose
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -218,7 +218,32 @@ router.get('/history', authenticate, async (req: any, res: any) => {
       orderBy: { createdAt: 'desc' },
       take: 50
     });
-    res.json(history);
+
+    const reels = await prisma.reel.findMany({
+      where: {
+        userId: req.userId,
+        type: 'VEO_SHORT',
+        status: { in: ['READY', 'PUBLISHED'] }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const enrichedHistory = history.map((ad: any) => {
+      const matchingReel = reels.find((r: any) => {
+        const meta = r.metadata as any;
+        if (meta && meta.adId && meta.adId === ad.id) return true;
+        if (meta && meta.sourceImageUrl && meta.sourceImageUrl === ad.imageUrl) return true;
+        if (r.thumbnail && r.thumbnail === ad.imageUrl) return true;
+        return false;
+      });
+
+      return {
+        ...ad,
+        videoUrl: matchingReel?.videoUrl || null
+      };
+    });
+
+    res.json(enrichedHistory);
   } catch (error: any) {
     logger.error('Ad history fetch error:', error);
     res.status(500).json({ error: error.message });
