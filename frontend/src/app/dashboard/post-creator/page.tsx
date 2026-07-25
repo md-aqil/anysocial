@@ -26,6 +26,7 @@ export default function PostCreatorPage() {
   const [audience, setAudience] = useState('');
   const [platform, setPlatform] = useState('Instagram Feed (4:5)');
   const [mood, setMood] = useState('High energy');
+  const [specialInstructions, setSpecialInstructions] = useState('');
   
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
