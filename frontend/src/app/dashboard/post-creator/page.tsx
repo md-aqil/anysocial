@@ -27,12 +27,12 @@ export default function PostCreatorPage() {
   const [platform, setPlatform] = useState('Instagram Feed (4:5)');
   const [mood, setMood] = useState('High energy');
   
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [referenceFile, setReferenceFile] = useState<File | null>(null);
-  const [referencePreview, setReferencePreview] = useState<string | null>(null);
+  const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
+  const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const refInputRef = useRef<HTMLInputElement>(null);
 
   // Directions State
@@ -274,19 +274,33 @@ export default function PostCreatorPage() {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      const newFiles = [...imageFiles, ...selectedFiles].slice(0, 4);
+      setImageFiles(newFiles);
+      setImagePreviews(newFiles.map(f => URL.createObjectURL(f)));
     }
   };
 
+  const removeImageFile = (index: number) => {
+    const updatedFiles = imageFiles.filter((_, i) => i !== index);
+    setImageFiles(updatedFiles);
+    setImagePreviews(updatedFiles.map(f => URL.createObjectURL(f)));
+  };
+
   const handleReferenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setReferenceFile(file);
-      setReferencePreview(URL.createObjectURL(file));
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      const newFiles = [...referenceFiles, ...selectedFiles].slice(0, 4);
+      setReferenceFiles(newFiles);
+      setReferencePreviews(newFiles.map(f => URL.createObjectURL(f)));
     }
+  };
+
+  const removeReferenceFile = (index: number) => {
+    const updatedFiles = referenceFiles.filter((_, i) => i !== index);
+    setReferenceFiles(updatedFiles);
+    setReferencePreviews(updatedFiles.map(f => URL.createObjectURL(f)));
   };
 
   const handleClearForm = () => {
@@ -296,10 +310,10 @@ export default function PostCreatorPage() {
     setPersonality('');
     setAudience('');
     setMagicLink('');
-    setImageFile(null);
-    setImagePreview(null);
-    setReferenceFile(null);
-    setReferencePreview(null);
+    setImageFiles([]);
+    setImagePreviews([]);
+    setReferenceFiles([]);
+    setReferencePreviews([]);
     setStep(1);
     setDirections([]);
     setSelectedDirections([]);
@@ -317,12 +331,12 @@ export default function PostCreatorPage() {
 
     try {
       const formData = new FormData();
-      if (imageFile) {
-          formData.append('image', imageFile);
-      }
-      if (referenceFile) {
-        formData.append('referenceImage', referenceFile);
-      }
+      imageFiles.forEach(file => {
+        formData.append('images', file);
+      });
+      referenceFiles.forEach(refFile => {
+        formData.append('referenceImages', refFile);
+      });
       formData.append('productName', productName);
       formData.append('description', description);
       formData.append('usp', usp);
@@ -367,12 +381,12 @@ export default function PostCreatorPage() {
           formData.append('productName', productName);
           formData.append('direction', JSON.stringify(direction));
           formData.append('platform', platform);
-          if (imageFile) {
-            formData.append('image', imageFile);
-          }
-          if (referenceFile) {
-            formData.append('referenceImage', referenceFile);
-          }
+          imageFiles.forEach(file => {
+            formData.append('images', file);
+          });
+          referenceFiles.forEach(refFile => {
+            formData.append('referenceImages', refFile);
+          });
 
           const res = await fetch('/api/ad-creator/generate', {
             method: 'POST',
@@ -512,38 +526,124 @@ export default function PostCreatorPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-stone-50 border-2 border-dashed border-stone-200 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-stone-100 hover:border-[#D27D50] transition-all relative min-h-[200px]"
-              >
-                <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover rounded-3xl shadow-sm" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Product Photos (Identity Lock) */}
+              <div className="bg-stone-50 border-2 border-dashed border-stone-200 rounded-3xl p-5 flex flex-col justify-between min-h-[210px] relative">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImageChange} 
+                  className="hidden" 
+                  accept="image/*" 
+                  multiple 
+                />
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-extrabold text-sm text-stone-800 flex items-center gap-1.5">
+                      <span>Product Photos</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#D27D50] bg-orange-100 px-2 py-0.5 rounded-full">Identity Lock</span>
+                    </h4>
+                    <p className="text-xs text-stone-400 font-normal">Original product stays 100% identical ({imagePreviews.length}/4)</p>
+                  </div>
+                  {imagePreviews.length < 4 && (
+                    <Button 
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()} 
+                      className="bg-stone-200 hover:bg-stone-300 text-stone-700 text-xs font-bold rounded-xl h-8 px-3"
+                    >
+                      + Add Photo
+                    </Button>
+                  )}
+                </div>
+
+                {imagePreviews.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    {imagePreviews.map((src, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-sm group">
+                        <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeImageFile(idx); }}
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <>
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
-                      <Upload className="w-5 h-5 text-[#D27D50]" />
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-2xl p-4 hover:bg-stone-100/80 transition-colors"
+                  >
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-xs">
+                      <Upload className="w-4 h-4 text-[#D27D50]" />
                     </div>
-                    <p className="font-bold text-sm text-stone-600 text-center">Product Image<br/><span className="text-stone-400 font-normal">Optional</span></p>
-                  </>
+                    <p className="font-bold text-xs text-stone-600 text-center">
+                      Upload Product Shots<br/>
+                      <span className="text-stone-400 font-normal text-[11px]">Upload front, angle, or fabric close-ups</span>
+                    </p>
+                  </div>
                 )}
               </div>
 
-              <div 
-                onClick={() => refInputRef.current?.click()}
-                className="bg-stone-50 border-2 border-dashed border-stone-200 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-stone-100 hover:border-[#D27D50] transition-all relative min-h-[200px]"
-              >
-                <input type="file" ref={refInputRef} onChange={handleReferenceChange} className="hidden" accept="image/*" />
-                {referencePreview ? (
-                  <img src={referencePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover rounded-3xl shadow-sm" />
+              {/* Pose & Style Reference Photos */}
+              <div className="bg-stone-50 border-2 border-dashed border-stone-200 rounded-3xl p-5 flex flex-col justify-between min-h-[210px] relative">
+                <input 
+                  type="file" 
+                  ref={refInputRef} 
+                  onChange={handleReferenceChange} 
+                  className="hidden" 
+                  accept="image/*" 
+                  multiple 
+                />
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-extrabold text-sm text-stone-800 flex items-center gap-1.5">
+                      <span>Pose & Style References</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Style & Pose Transfer</span>
+                    </h4>
+                    <p className="text-xs text-stone-400 font-normal">Model pose, lighting & graphics inspiration ({referencePreviews.length}/4)</p>
+                  </div>
+                  {referencePreviews.length < 4 && (
+                    <Button 
+                      type="button"
+                      onClick={() => refInputRef.current?.click()} 
+                      className="bg-stone-200 hover:bg-stone-300 text-stone-700 text-xs font-bold rounded-xl h-8 px-3"
+                    >
+                      + Add Ref
+                    </Button>
+                  )}
+                </div>
+
+                {referencePreviews.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    {referencePreviews.map((src, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-sm group">
+                        <img src={src} alt={`Reference ${idx+1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeReferenceFile(idx); }}
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <>
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
-                      <ImageIcon className="w-5 h-5 text-stone-400" />
+                  <div 
+                    onClick={() => refInputRef.current?.click()}
+                    className="flex-1 flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-2xl p-4 hover:bg-stone-100/80 transition-colors"
+                  >
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-xs">
+                      <ImageIcon className="w-4 h-4 text-emerald-600" />
                     </div>
-                    <p className="font-bold text-sm text-stone-600 text-center">Style Reference<br/><span className="text-stone-400 font-normal">Optional</span></p>
-                  </>
+                    <p className="font-bold text-xs text-stone-600 text-center">
+                      Upload Pose / Style References<br/>
+                      <span className="text-stone-400 font-normal text-[11px]">Upload model poses, lighting, or aesthetic inspiration</span>
+                    </p>
+                  </div>
                 )}
               </div>
             </div>

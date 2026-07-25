@@ -14,18 +14,25 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-router.post('/directions', authenticate, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'referenceImage', maxCount: 1 }]), async (req: any, res: any) => {
+const adUploadFields = upload.fields([
+  { name: 'image', maxCount: 4 },
+  { name: 'images', maxCount: 4 },
+  { name: 'referenceImage', maxCount: 4 },
+  { name: 'referenceImages', maxCount: 4 }
+]);
+
+router.post('/directions', authenticate, adUploadFields, async (req: any, res: any) => {
   try {
     const { productName, description, usp, personality, audience, platform, mood } = req.body;
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    const file = files['image']?.[0];
-    const referenceFile = files['referenceImage']?.[0];
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const prodFiles = [...(files?.['image'] || []), ...(files?.['images'] || [])];
+    const refFiles = [...(files?.['referenceImage'] || []), ...(files?.['referenceImages'] || [])];
 
     if (!productName || !description) {
       return res.status(400).json({ error: 'Product name and description are required.' });
     }
 
-    const prompt = `Analyze the provided details${file ? ' and the attached product image' : ''}${referenceFile ? ' and reference image' : ''}. Then propose exactly 5 distinct ad creative directions following the World-Class Ads framework.
+    const prompt = `Analyze the provided details${prodFiles.length > 0 ? ` and the ${prodFiles.length} attached product image(s)` : ''}${refFiles.length > 0 ? ` and ${refFiles.length} pose/style reference image(s)` : ''}. Then propose exactly 5 distinct ad creative directions following the World-Class Ads framework.
     
     Details:
     - Product: ${productName}
@@ -54,19 +61,19 @@ router.post('/directions', authenticate, upload.fields([{ name: 'image', maxCoun
       ]
     }`;
 
-    const mediaParts = [];
+    const mediaParts: { data: string; mimeType: string }[] = [];
     
-    if (file) {
+    for (const f of prodFiles) {
       mediaParts.push({
-        data: file.buffer.toString('base64'),
-        mimeType: file.mimetype
+        data: f.buffer.toString('base64'),
+        mimeType: f.mimetype
       });
     }
 
-    if (referenceFile) {
+    for (const f of refFiles) {
       mediaParts.push({
-        data: referenceFile.buffer.toString('base64'),
-        mimeType: referenceFile.mimetype
+        data: f.buffer.toString('base64'),
+        mimeType: f.mimetype
       });
     }
 
@@ -82,38 +89,33 @@ router.post('/directions', authenticate, upload.fields([{ name: 'image', maxCoun
   }
 });
 
-router.post('/generate', authenticate, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'referenceImage', maxCount: 1 }]), async (req: any, res: any) => {
+router.post('/generate', authenticate, adUploadFields, async (req: any, res: any) => {
   try {
     let { productName, direction, platform } = req.body;
     
-    // Parse direction since it comes from FormData as a string
     if (typeof direction === 'string') {
       direction = JSON.parse(direction);
     }
     
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
-    const file = files?.['image']?.[0];
-    const referenceFile = files?.['referenceImage']?.[0];
+    const prodFiles = [...(files?.['image'] || []), ...(files?.['images'] || [])];
+    const refFiles = [...(files?.['referenceImage'] || []), ...(files?.['referenceImages'] || [])];
 
-    let productImageBase64 = null;
-    let productMimeType = null;
-    if (file) {
-      productImageBase64 = file.buffer.toString('base64');
-      productMimeType = file.mimetype;
-    }
+    const productImagesList: Array<{ data: string; mimeType: string }> = prodFiles.map(f => ({
+      data: f.buffer.toString('base64'),
+      mimeType: f.mimetype
+    }));
 
-    let styleImageBase64 = null;
-    let styleMimeType = null;
-    if (referenceFile) {
-      styleImageBase64 = referenceFile.buffer.toString('base64');
-      styleMimeType = referenceFile.mimetype;
-    }
+    const styleImagesList: Array<{ data: string; mimeType: string }> = refFiles.map(f => ({
+      data: f.buffer.toString('base64'),
+      mimeType: f.mimetype
+    }));
 
     const briefPrompt = `You are a world-class advertising creative assistant and art director. Create a full creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
     
     We are providing:
-    ${file ? '- A Product Image: Use this product exactly in the generated image. Describe its exact visual properties in detail.' : ''}
-    ${referenceFile ? '- A Style Reference Image: The style of the final output image MUST look identical or highly inspired by this image\'s style, color palette, lighting, background, composition, and aesthetic. Describe how to replicate this aesthetic while featuring the product.' : ''}
+    ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s): Use this product/garment/object 100% identically in the generated visual. Keep exact logo, labels, fabric, cuts, color, and pattern unchanged.` : ''}
+    ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s): The pose, model stance, body angle, camera perspective, lighting, 3D environment, and aesthetic style MUST adapt from these reference images while seamlessly featuring the identical product.` : ''}
 
     Output exactly in this JSON format (no markdown blocks, just raw JSON):
     {
@@ -134,23 +136,11 @@ router.post('/generate', authenticate, upload.fields([{ name: 'image', maxCount:
     It MUST explicitly command the image generator to render the typography (Tagline and CTA) beautifully integrated into the layout, utilizing negative space.
     CRITICAL: The image generator MUST NOT include any fake logos, watermarks, brand icons, or signatures.
     CRITICAL: Do NOT add humans, people, or hands to the scene unless explicitly requested by the product description. If the product is an animal, pet, or cartoon, explicitly enforce "NO HUMANS, NO PEOPLE, NO HANDS" in the prompt.
-    ${file ? 'IMPORTANT: We are passing the original product image. Instruct the image generator in the imagePrompt to use the reference image EXACTLY, and explicitly state that the product/dress/model MUST remain 100% identical and unaltered.' : ''}
-    ${referenceFile ? 'IMPORTANT: We are also passing a style reference image. Instruct the image generator to replicate the visual style, background, lighting, composition, and color theme of the style reference image.' : ''}
+    ${productImagesList.length > 0 ? 'IMPORTANT: We are passing original product images. Instruct the image generator in the imagePrompt to keep the product/dress/model 100% identical and unaltered.' : ''}
+    ${styleImagesList.length > 0 ? 'IMPORTANT: We are passing pose and style reference images. Instruct the image generator to adapt the model pose, body posture, lighting, background, composition, and color theme from the style reference images.' : ''}
     `;
 
-    const briefMediaParts: { data: string; mimeType: string }[] = [];
-    if (file && productImageBase64 && productMimeType) {
-      briefMediaParts.push({
-        data: productImageBase64,
-        mimeType: productMimeType
-      });
-    }
-    if (referenceFile && styleImageBase64 && styleMimeType) {
-      briefMediaParts.push({
-        data: styleImageBase64,
-        mimeType: styleMimeType
-      });
-    }
+    const briefMediaParts: { data: string; mimeType: string }[] = [...productImagesList, ...styleImagesList];
 
     const briefText = await aiOrchestrator.generateContent(briefPrompt, briefMediaParts);
     const cleanedBrief = briefText.replace(/```json\n?|```/g, '').trim();
@@ -173,10 +163,10 @@ router.post('/generate', authenticate, upload.fields([{ name: 'image', maxCount:
     const tempImageUrl = await aiOrchestrator.generateImage(
       imagePayload, 
       Math.floor(Math.random() * 1000000), 
-      productImageBase64, 
-      productMimeType,
-      styleImageBase64,
-      styleMimeType
+      productImagesList, 
+      null,
+      styleImagesList,
+      null
     );
     
     // Move the temp file to the public uploads directory
