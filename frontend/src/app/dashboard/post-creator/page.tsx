@@ -1222,24 +1222,6 @@ export default function PostCreatorPage() {
             {/* Phase 0: Live Brainstorming Process State */}
             {activeCampaign.status === 'BRAINSTORMING' && (
               <div className="space-y-6">
-                <GenerationTimeline 
-                  statusMessage={activeCampaign.statusMessage || 'Brainstorming 5 commercial creative directions...'} 
-                  referenceImageUrl={activeCampaign.referenceImageUrl}
-                  referenceImagePreviews={referencePreviews}
-                  productImagePreviews={imagePreviews}
-                />
-
-                {/* Animated Multi-Modal Synthesis Pipeline Visualizer */}
-                <BrainstormingSynthesisVisualizer
-                  productName={activeCampaign.productName}
-                  platform={activeCampaign.platform}
-                  personality={personality}
-                  audience={audience}
-                  referenceImagePreviews={referencePreviews}
-                  productImagePreviews={imagePreviews}
-                  referenceImageUrl={activeCampaign.referenceImageUrl}
-                />
-
                 <div className="space-y-4">
                   <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                     <div>
