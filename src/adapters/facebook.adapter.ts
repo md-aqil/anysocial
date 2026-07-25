@@ -53,6 +53,12 @@ export class FacebookAdapter implements PlatformAdapter {
 
       let publishResponse;
 
+      const getAbsoluteMediaUrl = (url: string) => {
+        if (url.startsWith('http://') || url.startsWith('https://')) return url;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'https://socialsched.vibeship.in';
+        return `${baseUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
+      };
+
       if (payload.mediaUrls.length > 1) {
         // Multi-media (Carousel-style) Feed Post
         const postType = payload.platformSpecificFields.postType || 'FEED';
@@ -63,31 +69,29 @@ export class FacebookAdapter implements PlatformAdapter {
         console.log(`[FB PUBLISH] Handling multi-media post with ${payload.mediaUrls.length} items`);
         const attachedMedia: { media_fbid: string }[] = [];
 
-        const getAbsoluteMediaUrl = (url: string) => {
-          if (url.startsWith('http://') || url.startsWith('https://')) return url;
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'https://socialsched.vibeship.in';
-          return `${baseUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
-        };
-
         for (const mediaUrl of payload.mediaUrls) {
           const fullMediaUrl = getAbsoluteMediaUrl(mediaUrl);
           const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov') || mediaUrl.includes('.webm');
 
           if (isVideo) {
-            console.log(`[FB PUBLISH] Uploading unpublished video for multi-media post: ${fullMediaUrl}`);
-            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/videos`, {
-              file_url: fullMediaUrl,
-              published: false,
-              access_token: accessToken
+            console.log(`[FB PUBLISH] Uploading unpublished video: ${fullMediaUrl}`);
+            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/videos`, null, {
+              params: {
+                file_url: fullMediaUrl,
+                published: 'false',
+                access_token: accessToken
+              }
             });
             attachedMedia.push({ media_fbid: uploadResponse.data.id });
             console.log(`[FB PUBLISH] Uploaded unpublished video ID: ${uploadResponse.data.id}`);
           } else {
-            console.log(`[FB PUBLISH] Uploading unpublished photo for multi-media post: ${fullMediaUrl}`);
-            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photos`, {
-              url: fullMediaUrl,
-              published: false,
-              access_token: accessToken
+            console.log(`[FB PUBLISH] Uploading unpublished photo: ${fullMediaUrl}`);
+            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photos`, null, {
+              params: {
+                url: fullMediaUrl,
+                published: 'false',
+                access_token: accessToken
+              }
             });
             attachedMedia.push({ media_fbid: uploadResponse.data.id });
             console.log(`[FB PUBLISH] Uploaded unpublished photo ID: ${uploadResponse.data.id}`);
@@ -95,27 +99,18 @@ export class FacebookAdapter implements PlatformAdapter {
         }
 
         // Publish feed post with attached media
-        try {
-          publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, {
-            message: payload.caption,
-            attached_media: attachedMedia,
-            access_token: accessToken
-          });
-        } catch (feedErr: any) {
-          console.warn(`[FB PUBLISH] Native JSON attached_media post failed: ${feedErr.response?.data?.error?.message || feedErr.message}. Retrying with URLSearchParams...`);
-          
-          const params = new URLSearchParams();
-          if (payload.caption) params.append('message', payload.caption);
-          params.append('access_token', accessToken);
-          params.append('attached_media', JSON.stringify(attachedMedia));
+        const params = new URLSearchParams();
+        if (payload.caption) params.append('message', payload.caption);
+        params.append('access_token', accessToken);
+        params.append('attached_media', JSON.stringify(attachedMedia));
 
-          publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, params, {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-          });
-        }
+        publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, params, {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
       } else if (payload.mediaUrls.length === 1) {
-        const mediaUrl = payload.mediaUrls[0];
-        const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov');
+        const rawMediaUrl = payload.mediaUrls[0];
+        const mediaUrl = getAbsoluteMediaUrl(rawMediaUrl);
+        const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov') || mediaUrl.includes('.webm');
         const postType = payload.platformSpecificFields.postType || 'FEED';
 
         if (postType === 'REEL') {
@@ -134,7 +129,7 @@ export class FacebookAdapter implements PlatformAdapter {
           }
 
           // Phase 2: Binary Video Upload to Meta's rupload endpoint
-          const fileName = mediaUrl.split('/').pop();
+          const fileName = rawMediaUrl.split('/').pop();
           const filePath = path.join(process.cwd(), 'frontend', 'public', 'uploads', fileName!);
           
           if (!fs.existsSync(filePath)) {
@@ -219,19 +214,21 @@ export class FacebookAdapter implements PlatformAdapter {
         } else {
           // Standard FEED Post (Single)
           if (isVideo) {
-            publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/videos`, {
-              file_url: mediaUrl,
-              description: payload.caption,
-              access_token: accessToken
+            publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/videos`, null, {
+              params: {
+                file_url: mediaUrl,
+                description: payload.caption || undefined,
+                access_token: accessToken
+              }
             });
           } else {
-            const imageResponse = await axios.get(mediaUrl, { responseType: 'arraybuffer' });
-            const imageBuffer = Buffer.from(imageResponse.data);
-            const formData = new FormData();
-            formData.append('caption', payload.caption);
-            formData.append('access_token', accessToken);
-            formData.append('source', new Blob([imageBuffer], { type: 'image/jpeg' }), 'upload.jpg');
-            publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photos`, formData);
+            publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photos`, null, {
+              params: {
+                url: mediaUrl,
+                caption: payload.caption || undefined,
+                access_token: accessToken
+              }
+            });
           }
         }
       } else {
@@ -239,9 +236,11 @@ export class FacebookAdapter implements PlatformAdapter {
         if (payload.platformSpecificFields.postType === 'REEL' || payload.platformSpecificFields.postType === 'STORY') {
            throw new Error("Reels and Stories require media attachments.");
         }
-        publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, {
-          message: payload.caption,
-          access_token: accessToken
+        publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, null, {
+          params: {
+            message: payload.caption,
+            access_token: accessToken
+          }
         });
       }
 
