@@ -361,20 +361,31 @@ Make sure the output is a valid JSON object.`;
       const modelId = settings.image?.primary || 'gemini-2.5-flash';
       url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
 
+      const cleanBase64 = (str: string) => {
+        if (!str) return '';
+        const commaIdx = str.indexOf(',');
+        if (commaIdx !== -1 && str.substring(0, commaIdx).includes('base64')) {
+          return str.substring(commaIdx + 1).trim();
+        }
+        return str.trim();
+      };
+
       // Parse product images array and style images array if provided
       let prodImgList: Array<{ data: string; mimeType: string }> = [];
       if (Array.isArray(referenceImageBase64)) {
-        prodImgList = referenceImageBase64.map((item: any) => typeof item === 'string' ? { data: item, mimeType: referenceMimeType || 'image/jpeg' } : { data: item.data || item.base64 || '', mimeType: item.mimeType || item.mimetype || referenceMimeType || 'image/jpeg' }).filter(i => i.data);
+        prodImgList = referenceImageBase64.map((item: any) => typeof item === 'string' ? { data: cleanBase64(item), mimeType: referenceMimeType || 'image/jpeg' } : { data: cleanBase64(item.data || item.base64 || ''), mimeType: item.mimeType || item.mimetype || referenceMimeType || 'image/jpeg' }).filter(i => i.data);
       } else if (typeof referenceImageBase64 === 'string' && referenceImageBase64.length > 0) {
-        prodImgList = [{ data: referenceImageBase64, mimeType: referenceMimeType || 'image/jpeg' }];
+        prodImgList = [{ data: cleanBase64(referenceImageBase64), mimeType: referenceMimeType || 'image/jpeg' }];
       }
 
       let styleImgList: Array<{ data: string; mimeType: string }> = [];
       if (Array.isArray(styleImageBase64)) {
-        styleImgList = styleImageBase64.map((item: any) => typeof item === 'string' ? { data: item, mimeType: styleMimeType || 'image/jpeg' } : { data: item.data || item.base64 || '', mimeType: item.mimeType || item.mimetype || styleMimeType || 'image/jpeg' }).filter(i => i.data);
+        styleImgList = styleImageBase64.map((item: any) => typeof item === 'string' ? { data: cleanBase64(item), mimeType: styleMimeType || 'image/jpeg' } : { data: cleanBase64(item.data || item.base64 || ''), mimeType: item.mimeType || item.mimetype || styleMimeType || 'image/jpeg' }).filter(i => i.data);
       } else if (typeof styleImageBase64 === 'string' && styleImageBase64.length > 0) {
-        styleImgList = [{ data: styleImageBase64, mimeType: styleMimeType || 'image/jpeg' }];
+        styleImgList = [{ data: cleanBase64(styleImageBase64), mimeType: styleMimeType || 'image/jpeg' }];
       }
+
+      console.log(`[Vertex AI generateImage] 📸 Attached ${prodImgList.length} Product Image(s) and ${styleImgList.length} Style/Pose Reference Image(s) to Gemini Vision.`);
 
       const requestParts: any[] = [];
       if (prodImgList.length > 0 || styleImgList.length > 0) {
@@ -408,10 +419,12 @@ Make sure the output is a valid JSON object.`;
       }
       
       requestBody = {
-        contents: {
-          role: "user",
-          parts: requestParts
-        },
+        contents: [
+          {
+            role: "user",
+            parts: requestParts
+          }
+        ],
         generation_config: {
           response_modalities: ["TEXT", "IMAGE"]
         }
