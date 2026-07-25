@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, 
   XCircle, PenSquare, Maximize2, Film, Download, X, Video, Share2, 
-  Check, ArrowLeft, Layers, Wand2, ExternalLink
+  Check, ArrowLeft, Layers, Wand2, ExternalLink, Cpu, Lock, Zap, ArrowRight, Bot
 } from 'lucide-react';
 
 const renderCompactStep = (title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean) => (
@@ -144,6 +144,174 @@ const GenerationTimeline = ({
       <div className="mt-3 text-xs font-mono text-emerald-400 bg-stone-950 rounded-xl p-3 flex items-center justify-between border border-stone-800 shadow-inner">
         <span className="truncate pr-2">$ {statusMessage}</span>
         <span className="animate-pulse inline-block w-1.5 h-3.5 bg-emerald-400 shrink-0"></span>
+      </div>
+    </div>
+  );
+};
+
+const BrainstormingSynthesisVisualizer = ({
+  productName,
+  platform,
+  personality,
+  audience,
+  referenceImagePreviews = [],
+  productImagePreviews = [],
+  referenceImageUrl
+}: {
+  productName: string;
+  platform: string;
+  personality?: string;
+  audience?: string;
+  referenceImagePreviews?: string[];
+  productImagePreviews?: string[];
+  referenceImageUrl?: string;
+}) => {
+  const refImg = referenceImageUrl || (referenceImagePreviews && referenceImagePreviews[0]);
+  const prodImg = productImagePreviews && productImagePreviews[0];
+
+  return (
+    <div className="my-6 bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 text-white rounded-3xl p-6 border border-stone-800 shadow-2xl relative overflow-hidden">
+      {/* Background Grid Pattern & Ambient Glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none" />
+      <div className="absolute -top-20 -left-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Header Banner */}
+      <div className="flex items-center justify-between border-b border-stone-800/80 pb-4 mb-6 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-stone-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20">
+            <Cpu className="w-5 h-5 animate-pulse" />
+          </div>
+          <div>
+            <h4 className="text-sm font-black text-amber-300 uppercase tracking-widest flex items-center gap-2">
+              <span>Multi-Modal Synthesis Pipeline</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+            </h4>
+            <p className="text-xs text-stone-400 font-medium">Merging visual inputs & creative brief parameters into 5 high-converting post directions...</p>
+          </div>
+        </div>
+        <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-xl hidden sm:inline-block">
+          Active Neural Stream
+        </span>
+      </div>
+
+      {/* Visual Pipeline Nodes Container */}
+      <div className="grid grid-cols-1 lg:grid-cols-11 gap-4 items-center relative z-10">
+        
+        {/* Node 1: Product Identity (3 Cols) */}
+        <div className="lg:col-span-3 bg-stone-900/90 rounded-2xl p-4 border border-amber-500/30 shadow-lg relative group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-transparent opacity-50 animate-pulse pointer-events-none" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <Lock className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase text-amber-300 block tracking-wider">Product Identity</span>
+              <span className="text-[11px] font-bold text-stone-200 truncate block max-w-[150px]">{productName}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-stone-950 p-2.5 rounded-xl border border-stone-800 relative">
+            {prodImg ? (
+              <div className="relative shrink-0">
+                <img src={prodImg} alt="Product" className="w-12 h-12 rounded-lg object-cover border border-amber-400/60 shadow-md" />
+                <div className="absolute inset-0 bg-amber-400/20 animate-pulse rounded-lg" />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-stone-900 border border-stone-800 flex items-center justify-center text-amber-400">
+                <Layers className="w-6 h-6" />
+              </div>
+            )}
+            <div className="text-[10px] space-y-1 text-stone-400 font-medium">
+              <span className="text-emerald-400 font-extrabold flex items-center gap-1">✓ Fabric & Cut Preserved</span>
+              <span className="text-stone-300 block">Logo / Label Lock Active</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Connector 1 (1 Col) */}
+        <div className="lg:col-span-1 flex lg:flex-col items-center justify-center gap-1 my-1 lg:my-0">
+          <div className="h-0.5 lg:h-6 w-full lg:w-0.5 bg-gradient-to-r lg:bg-gradient-to-b from-amber-500 to-orange-500 animate-pulse" />
+          <ArrowRight className="w-4 h-4 text-amber-400 rotate-90 lg:rotate-0 animate-bounce" />
+          <div className="h-0.5 lg:h-6 w-full lg:w-0.5 bg-gradient-to-r lg:bg-gradient-to-b from-orange-500 to-rose-500 animate-pulse" />
+        </div>
+
+        {/* Node 2: Pose & Style Reference Transfer (3 Cols) */}
+        <div className="lg:col-span-3 bg-stone-900/90 rounded-2xl p-4 border border-emerald-500/30 shadow-lg relative group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent opacity-50 animate-pulse pointer-events-none" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase text-emerald-300 block tracking-wider">Style & Pose Transfer</span>
+              <span className="text-[11px] font-bold text-stone-200 block">Aesthetic Vectors</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-stone-950 p-2.5 rounded-xl border border-stone-800 relative">
+            {refImg ? (
+              <div className="relative shrink-0">
+                <img src={refImg} alt="Style Reference" className="w-12 h-12 rounded-lg object-cover border border-emerald-400/60 shadow-md" />
+                <div className="absolute inset-0 bg-emerald-400/20 animate-pulse rounded-lg" />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-stone-900 border border-stone-800 flex items-center justify-center text-emerald-400">
+                <Zap className="w-6 h-6" />
+              </div>
+            )}
+            <div className="text-[10px] space-y-1 text-stone-400 font-medium">
+              <span className="text-emerald-400 font-extrabold flex items-center gap-1">✓ Model Stance Extracted</span>
+              <span className="text-stone-300 block">Lighting Physics Transfer</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Connector 2 (1 Col) */}
+        <div className="lg:col-span-1 flex lg:flex-col items-center justify-center gap-1 my-1 lg:my-0">
+          <div className="h-0.5 lg:h-6 w-full lg:w-0.5 bg-gradient-to-r lg:bg-gradient-to-b from-emerald-500 to-rose-500 animate-pulse" />
+          <ArrowRight className="w-4 h-4 text-emerald-400 rotate-90 lg:rotate-0 animate-bounce" />
+          <div className="h-0.5 lg:h-6 w-full lg:w-0.5 bg-gradient-to-r lg:bg-gradient-to-b from-rose-500 to-orange-500 animate-pulse" />
+        </div>
+
+        {/* Node 3: Brand & Target Brief (3 Cols) */}
+        <div className="lg:col-span-3 bg-stone-900/90 rounded-2xl p-4 border border-rose-500/30 shadow-lg relative group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-rose-500/10 to-transparent opacity-50 animate-pulse pointer-events-none" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-7 h-7 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
+              <Layers className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase text-rose-300 block tracking-wider">Commercial Brief</span>
+              <span className="text-[11px] font-bold text-stone-200 block truncate max-w-[150px]">{platform}</span>
+            </div>
+          </div>
+
+          <div className="bg-stone-950 p-2.5 rounded-xl border border-stone-800 space-y-1.5 text-[10px]">
+            <div className="flex items-center justify-between text-stone-300">
+              <span className="font-bold text-rose-400">Tone:</span>
+              <span className="truncate max-w-[120px] font-semibold">{personality || 'Bold & Premium'}</span>
+            </div>
+            <div className="flex items-center justify-between text-stone-300">
+              <span className="font-bold text-rose-400">Audience:</span>
+              <span className="truncate max-w-[120px] font-semibold">{audience || 'High Intent Buyers'}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Central Neural Synthesis Beam */}
+      <div className="mt-5 pt-4 border-t border-stone-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono relative z-10">
+        <div className="flex items-center gap-2 text-amber-400">
+          <Bot className="w-4 h-4 animate-bounce" />
+          <span className="font-bold">Gemini 2.5 Multi-Modal Brainstorming Active</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <span className="text-[11px] font-semibold text-stone-400">Synthesizing 5 Commercial Post Variations...</span>
+        </div>
       </div>
     </div>
   );
@@ -1059,6 +1227,17 @@ export default function PostCreatorPage() {
                   referenceImageUrl={activeCampaign.referenceImageUrl}
                   referenceImagePreviews={referencePreviews}
                   productImagePreviews={imagePreviews}
+                />
+
+                {/* Animated Multi-Modal Synthesis Pipeline Visualizer */}
+                <BrainstormingSynthesisVisualizer
+                  productName={activeCampaign.productName}
+                  platform={activeCampaign.platform}
+                  personality={personality}
+                  audience={audience}
+                  referenceImagePreviews={referencePreviews}
+                  productImagePreviews={imagePreviews}
+                  referenceImageUrl={activeCampaign.referenceImageUrl}
                 />
 
                 <div className="space-y-4">
