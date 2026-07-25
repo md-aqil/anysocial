@@ -383,6 +383,37 @@ export default function PostCreatorPage() {
     router.push('/dashboard/posts/new');
   };
 
+  const handleComposeEntireCampaign = (items: any[]) => {
+    if (!items || items.length === 0) return;
+
+    const firstItem = items[0];
+    const prodName = firstItem.productName || productName || 'Product Campaign';
+
+    // Gather all media URLs (prefer videoUrl if animated, else imageUrl)
+    const mediaUrls = items
+      .map(item => item.videoUrl || renderedVideoMap[item.id] || item.imageUrl)
+      .filter(Boolean);
+
+    // Combine copy from all variations into a clean multi-slide caption
+    const copyBlocks = items.map((item, idx) => {
+      const brief = item.brief || {};
+      const tagline = brief.tagline ? `✨ ${brief.tagline}` : '';
+      const copy = brief.supportingCopy || brief.copy || '';
+      const cta = brief.callToAction || '';
+      return `--- Post ${idx + 1}: ${item.direction || `Option ${idx + 1}`} ---\n${tagline}\n${copy}\n${cta}`.trim();
+    });
+
+    const fullCaption = `🚀 ${prodName.toUpperCase()} - CAMPAIGN CAROUSEL\n\n` + copyBlocks.join('\n\n');
+
+    const postData = {
+      content: fullCaption,
+      mediaUrls
+    };
+
+    localStorage.setItem('composeAdData', JSON.stringify(postData));
+    router.push('/dashboard/posts/new');
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-6 lg:p-10">
       <div className="mb-8 flex items-center justify-between">
@@ -570,12 +601,27 @@ export default function PostCreatorPage() {
       {/* Step 3: Result */}
       {step === 3 && results.length > 0 && (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-stone-800 flex items-center gap-3 tracking-tight">
-              {loading ? <Loader2 className="w-10 h-10 text-[#D27D50] animate-spin" /> : <CheckCircle2 className="w-10 h-10 text-emerald-500" />}
-              {loading ? `Generating ${results.length} of ${selectedDirections.length}...` : 'Campaigns Generated'}
-            </h2>
-            <Button variant="outline" onClick={handleClearForm} disabled={loading} className="font-bold rounded-xl h-12 px-6">Start New Campaign</Button>
+          {/* Step 3 Campaign Container Header */}
+          <div className="bg-stone-900 text-white rounded-3xl p-6 lg:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-stone-800">
+            <div>
+              <span className="text-[#D27D50] font-black text-xs uppercase tracking-widest block mb-1">
+                Generated Campaign • {results.length} Post Variations
+              </span>
+              <h2 className="text-3xl font-black tracking-tight">{productName}</h2>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <Button 
+                onClick={() => handleComposeEntireCampaign(results)}
+                className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white font-black rounded-xl h-12 px-6 shadow-lg flex items-center gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Compose Entire Campaign ({results.length} Images/Videos)</span>
+              </Button>
+              <Button variant="outline" onClick={handleClearForm} disabled={loading} className="border-stone-700 text-stone-300 hover:bg-stone-800 font-bold rounded-xl h-12 px-5">
+                Start New Campaign
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-16">
@@ -591,7 +637,7 @@ export default function PostCreatorPage() {
                             className="bg-black hover:bg-stone-800 text-white rounded-xl font-bold h-12 px-6 shadow-md transition-transform hover:-translate-y-0.5"
                         >
                             <PenSquare className="w-4 h-4 mr-2" />
-                            Compose Post
+                            Compose This Post
                         </Button>
                     </div>
 
@@ -679,86 +725,143 @@ export default function PostCreatorPage() {
             <p className="text-stone-500 font-medium text-lg">No past campaigns found.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {history.map((ad: any) => {
-              const adVideoUrl = ad.videoUrl || renderedVideoMap[ad.id];
-              const currentViewMode = viewModeMap[ad.id] || (adVideoUrl ? 'video' : 'image');
+          <div className="space-y-12">
+            {(() => {
+              // Group history into separate Campaign Cards
+              const campaignGroups: {
+                campaignId: string;
+                productName: string;
+                platform: string;
+                createdAt: string;
+                items: any[];
+              }[] = [];
 
-              return (
-                <div key={ad.id} className="bg-white rounded-3xl overflow-hidden border border-stone-100 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col">
-                  <div className="h-64 w-full bg-black relative overflow-hidden group/img">
-                    {currentViewMode === 'video' && adVideoUrl ? (
-                      <video src={adVideoUrl} controls autoPlay muted loop className="w-full h-full object-cover" />
-                    ) : (
-                      <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
-                    )}
+              history.forEach((item) => {
+                const itemTime = new Date(item.createdAt).getTime();
+                const existing = campaignGroups.find((g) => {
+                  if ((g.productName || '').toLowerCase() !== (item.productName || '').toLowerCase()) return false;
+                  const groupTime = new Date(g.createdAt).getTime();
+                  return Math.abs(itemTime - groupTime) < 15 * 60 * 1000;
+                });
 
-                    {/* Media Type Switcher Tag */}
-                    {adVideoUrl && (
-                      <div className="absolute top-3 left-3 z-20 flex gap-1 bg-black/70 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'image' })); }}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${currentViewMode === 'image' ? 'bg-[#D27D50] text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
-                        >
-                          Photo
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'video' })); }}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${currentViewMode === 'video' ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
-                        >
-                          <Film className="w-3 h-3 animate-pulse" /> Motion Video
-                        </button>
+                if (existing) {
+                  existing.items.push(item);
+                } else {
+                  campaignGroups.push({
+                    campaignId: item.id,
+                    productName: item.productName || 'Creative Campaign',
+                    platform: item.platform || 'INSTAGRAM',
+                    createdAt: item.createdAt,
+                    items: [item]
+                  });
+                }
+              });
+
+              return campaignGroups.map((group) => (
+                <div key={group.campaignId} className="bg-stone-50/80 rounded-3xl p-6 lg:p-8 border border-stone-200/80 shadow-sm space-y-6">
+                  {/* Separate Campaign Card Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-6">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="text-2xl font-black text-stone-900">{group.productName}</h3>
+                        <span className="px-3 py-1 bg-stone-200 text-stone-700 text-xs font-bold rounded-full uppercase tracking-wider">
+                          {group.platform}
+                        </span>
                       </div>
-                    )}
-
-                    {!adVideoUrl && (
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
-                        <a href={ad.imageUrl} target="_blank" rel="noopener noreferrer" className="bg-white/90 text-stone-800 hover:bg-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transform translate-y-4 group-hover/img:translate-y-0 transition-all duration-300 shadow-xl">
-                          <Maximize2 className="w-4 h-4" /> View Full Photo
-                        </a>
-                      </div>
-                    )}
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <span className="inline-block px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg text-white text-[10px] font-bold uppercase tracking-wider mb-2">
-                        {ad.platform}
-                      </span>
-                      <h3 className="text-white font-bold text-lg leading-tight truncate">{ad.productName}</h3>
+                      <p className="text-xs font-semibold text-stone-500">
+                        {group.items.length} Post Variations • Created {new Date(group.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
+
+                    <Button
+                      onClick={() => handleComposeEntireCampaign(group.items)}
+                      className="bg-black hover:bg-stone-800 text-white rounded-xl font-bold px-6 py-3 shadow-md flex items-center gap-2"
+                    >
+                      <Share2 className="w-4 h-4 text-[#D27D50]" />
+                      <span>Compose Entire Campaign ({group.items.length} Images/Videos)</span>
+                    </Button>
                   </div>
 
-                  <div className="p-6 flex-1 flex flex-col">
-                    <div className="mb-4 flex items-center justify-between border-b border-stone-100 pb-4">
-                      <span className="text-xs font-black tracking-wider uppercase text-[#D27D50] truncate pr-4">{ad.direction}</span>
-                      <span className="text-xs font-bold text-stone-400 shrink-0">{new Date(ad.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <p className="text-base font-black text-stone-800 line-clamp-2 mb-2 leading-tight">"{ad.brief.tagline}"</p>
-                    <p className="text-sm font-medium text-stone-500 line-clamp-2 mb-6 flex-1">{ad.brief.supportingCopy || ad.brief.copy}</p>
-                    
-                    <div className="flex gap-2 mt-auto pt-2">
-                      <Button 
-                        onClick={() => openAnimateModal(ad)}
-                        className="flex-1 rounded-xl font-bold bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white transition-all duration-300 shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-1.5 text-xs py-2.5"
-                      >
-                        <Film className="w-4 h-4 animate-pulse" />
-                        <span>{adVideoUrl ? 'Re-Animate' : 'Animate'}</span>
-                      </Button>
-                      <Button 
-                        onClick={() => handleComposePost(ad.brief, ad.imageUrl, adVideoUrl)}
-                        variant="outline"
-                        className="flex-1 rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1.5 text-xs py-2.5"
-                      >
-                        <PenSquare className="w-4 h-4" />
-                        Compose
-                      </Button>
-                    </div>
+                  {/* Inside Campaign: Separate Post Cards Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {group.items.map((ad: any) => {
+                      const adVideoUrl = ad.videoUrl || renderedVideoMap[ad.id];
+                      const currentViewMode = viewModeMap[ad.id] || (adVideoUrl ? 'video' : 'image');
+
+                      return (
+                        <div key={ad.id} className="bg-white rounded-2xl overflow-hidden border border-stone-200 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col">
+                          <div className="h-56 w-full bg-black relative overflow-hidden group/img">
+                            {currentViewMode === 'video' && adVideoUrl ? (
+                              <video src={adVideoUrl} controls autoPlay muted loop className="w-full h-full object-cover" />
+                            ) : (
+                              <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
+                            )}
+
+                            {/* Media Type Switcher */}
+                            {adVideoUrl && (
+                              <div className="absolute top-3 left-3 z-20 flex gap-1 bg-black/70 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'image' })); }}
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${currentViewMode === 'image' ? 'bg-[#D27D50] text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
+                                >
+                                  Photo
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'video' })); }}
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${currentViewMode === 'video' ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
+                                >
+                                  <Film className="w-3 h-3 animate-pulse" /> Motion Video
+                                </button>
+                              </div>
+                            )}
+
+                            {!adVideoUrl && (
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
+                                <a href={ad.imageUrl} target="_blank" rel="noopener noreferrer" className="bg-white/90 text-stone-800 hover:bg-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transform translate-y-4 group-hover/img:translate-y-0 transition-all duration-300 shadow-xl">
+                                  <Maximize2 className="w-4 h-4" /> View Photo
+                                </a>
+                              </div>
+                            )}
+
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
+                            <div className="absolute bottom-3 left-3 right-3">
+                              <span className="text-white text-xs font-extrabold uppercase tracking-wider block drop-shadow-md">
+                                {ad.direction}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-5 flex-1 flex flex-col">
+                            <p className="text-sm font-black text-stone-800 line-clamp-2 mb-2 leading-tight">"{ad.brief?.tagline || ''}"</p>
+                            <p className="text-xs font-medium text-stone-500 line-clamp-2 mb-4 flex-1">{ad.brief?.supportingCopy || ad.brief?.copy || ''}</p>
+
+                            <div className="flex gap-2 mt-auto pt-2">
+                              <Button 
+                                onClick={() => openAnimateModal(ad)}
+                                className="flex-1 rounded-xl font-bold bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 text-xs py-2"
+                              >
+                                <Film className="w-3.5 h-3.5" />
+                                <span>{adVideoUrl ? 'Re-Animate' : 'Animate'}</span>
+                              </Button>
+                              <Button 
+                                onClick={() => handleComposePost(ad.brief, ad.imageUrl, adVideoUrl)}
+                                variant="outline"
+                                className="flex-1 rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1.5 text-xs py-2"
+                              >
+                                <PenSquare className="w-3.5 h-3.5" />
+                                Compose
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
+              ));
+            })()}
           </div>
         )}
       </div>
