@@ -188,7 +188,7 @@ export default function PostCreatorPage() {
     platform: string;
     createdAt: string;
     referenceImageUrl?: string;
-    status: 'SELECTING_DIRECTIONS' | 'GENERATING' | 'COMPLETED';
+    status: 'BRAINSTORMING' | 'SELECTING_DIRECTIONS' | 'GENERATING' | 'COMPLETED';
     statusMessage?: string;
     directions: any[];
     selectedDirections: any[];
@@ -517,6 +517,30 @@ export default function PostCreatorPage() {
     setLoading(true);
     setError(null);
 
+    const groupRefImg = referencePreviews[0] || imagePreviews[0] || (magicLink ? `/api/scrape/proxy-image?url=${encodeURIComponent(magicLink)}` : undefined);
+
+    const newCampaign = {
+      id: `camp-${Date.now()}`,
+      productName: productName,
+      platform: platform,
+      createdAt: new Date().toISOString(),
+      referenceImageUrl: groupRefImg,
+      status: 'BRAINSTORMING' as const,
+      statusMessage: 'Gemini 2.5 Multi-Modal Engine: Analyzing product brief, pose references & synthesizing 5 directions...',
+      directions: [],
+      selectedDirections: [],
+      items: []
+    };
+
+    setActiveCampaign(newCampaign);
+    localStorage.setItem('postCreator_activeCampaign', JSON.stringify(newCampaign));
+
+    // Smooth scroll to campaign card instantly
+    setTimeout(() => {
+      const campaignEl = document.getElementById('active-campaign-card');
+      if (campaignEl) campaignEl.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+
     try {
       const formData = new FormData();
       imageFiles.forEach(file => {
@@ -553,31 +577,20 @@ export default function PostCreatorPage() {
       setDirections(data.directions);
       setSelectedDirections([...data.directions]);
 
-      const groupRefImg = referencePreviews[0] || imagePreviews[0] || (magicLink ? `/api/scrape/proxy-image?url=${encodeURIComponent(magicLink)}` : undefined);
-
-      const newCampaign = {
-        id: `camp-${Date.now()}`,
-        productName: productName,
-        platform: platform,
-        createdAt: new Date().toISOString(),
-        referenceImageUrl: groupRefImg,
-        status: 'SELECTING_DIRECTIONS' as const,
+      setActiveCampaign(prev => prev ? ({
+        ...prev,
+        status: 'SELECTING_DIRECTIONS',
         statusMessage: '5 Creative Directions Proposed. Select options below to generate campaign.',
         directions: data.directions,
-        selectedDirections: [...data.directions],
-        items: []
-      };
-
-      setActiveCampaign(newCampaign);
-      localStorage.setItem('postCreator_activeCampaign', JSON.stringify(newCampaign));
-
-      setTimeout(() => {
-        const campaignEl = document.getElementById('active-campaign-card');
-        if (campaignEl) campaignEl.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+        selectedDirections: [...data.directions]
+      }) : null);
 
     } catch (err: any) {
       setError(err.message);
+      setActiveCampaign(prev => prev ? ({
+        ...prev,
+        statusMessage: `Brainstorming Error: ${err.message}`
+      }) : null);
     } finally {
       setLoading(false);
     }
@@ -953,11 +966,11 @@ export default function PostCreatorPage() {
             <div className="pt-3">
               <Button 
                 onClick={handleGenerateDirections} 
-                disabled={loading || !productName || !description}
-                className="w-full bg-gradient-to-r from-[#D27D50] via-rose-500 to-[#C26032] hover:from-[#b86d45] hover:to-rose-600 text-white rounded-2xl h-14 font-extrabold text-base transition-all shadow-xl shadow-orange-500/25 hover:scale-[1.005] uppercase tracking-wider"
+                disabled={!productName || !description}
+                className="w-full bg-gradient-to-r from-[#D27D50] via-rose-500 to-[#C26032] hover:from-[#b86d45] hover:to-rose-600 text-white rounded-2xl h-14 font-extrabold text-base transition-all shadow-xl shadow-orange-500/25 hover:scale-[1.005] uppercase tracking-wider flex items-center justify-center gap-2"
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
-                {loading ? 'Brainstorming Directions...' : 'Propose 5 Creative Directions'}
+                <Sparkles className="w-5 h-5" />
+                <span>Propose 5 Creative Directions</span>
               </Button>
             </div>
           </div>
@@ -980,6 +993,12 @@ export default function PostCreatorPage() {
                   <span className="px-3 py-1 bg-stone-100 text-stone-700 text-xs font-black rounded-full uppercase tracking-wider border border-stone-200/60">
                     {activeCampaign.platform}
                   </span>
+                  {activeCampaign.status === 'BRAINSTORMING' && (
+                    <span className="px-3 py-1 bg-amber-100 text-amber-900 text-xs font-extrabold rounded-full uppercase tracking-wider border border-amber-300 flex items-center gap-1.5 animate-pulse">
+                      <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+                      Brainstorming 5 Directions...
+                    </span>
+                  )}
                   {activeCampaign.status === 'SELECTING_DIRECTIONS' && (
                     <span className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-extrabold rounded-full uppercase tracking-wider border border-amber-200">
                       5 Directions Proposed
@@ -1031,6 +1050,48 @@ export default function PostCreatorPage() {
                 )}
               </div>
             </div>
+
+            {/* Phase 0: Live Brainstorming Process State */}
+            {activeCampaign.status === 'BRAINSTORMING' && (
+              <div className="space-y-6">
+                <GenerationTimeline 
+                  statusMessage={activeCampaign.statusMessage || 'Brainstorming 5 commercial creative directions...'} 
+                  referenceImageUrl={activeCampaign.referenceImageUrl}
+                  referenceImagePreviews={referencePreviews}
+                  productImagePreviews={imagePreviews}
+                />
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                    <div>
+                      <h4 className="text-base font-black text-stone-900">Brainstorming Creative Directions...</h4>
+                      <p className="text-xs text-stone-500 font-medium">Gemini 2.5 Multi-Modal Engine is synthesizing 5 high-converting commercial directions.</p>
+                    </div>
+                    <span className="text-xs font-mono font-extrabold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 animate-pulse flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                      Synthesizing Angles (0/5)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <div key={num} className="bg-stone-50/80 rounded-2xl p-5 border-2 border-dashed border-stone-200 animate-pulse space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="bg-stone-200 text-stone-500 font-black text-[10px] uppercase px-2.5 py-1 rounded-lg">Option {num}</span>
+                          <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                        </div>
+                        <div className="h-5 bg-stone-200 rounded-lg w-3/4"></div>
+                        <div className="h-3 bg-stone-200 rounded-lg w-full"></div>
+                        <div className="h-3 bg-stone-200 rounded-lg w-5/6"></div>
+                        <div className="pt-2 text-center text-[10px] font-black text-amber-600 uppercase tracking-wider">
+                          Synthesizing Creative Rationale...
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Phase 1: Direction Options Selection inside Campaign Card */}
             {activeCampaign.status === 'SELECTING_DIRECTIONS' && (
