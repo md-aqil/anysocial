@@ -2,8 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, XCircle, PenSquare, Maximize2, Film, Download, X, Video } from 'lucide-react';
+import { 
+  Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, 
+  XCircle, PenSquare, Maximize2, Film, Download, X, Video, Share2, 
+  Check, ArrowLeft, Layers, Wand2
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export default function PostCreatorPage() {
@@ -604,48 +607,115 @@ export default function PostCreatorPage() {
 
       {/* Step 2: Directions Selection */}
       {step === 2 && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-stone-800">Select Directions</h2>
-            <div className="flex gap-4">
-                <Button variant="outline" onClick={() => setSelectedDirections(directions)} className="font-bold rounded-xl border-stone-200">Select All</Button>
-                <Button variant="ghost" onClick={() => setStep(1)} className="text-stone-500 font-bold">← Back</Button>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
+          {/* Header Bar */}
+          <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-[#D27D50] block mb-0.5">Step 2 of 3</span>
+              <h2 className="text-2xl font-black text-stone-900 tracking-tight">Select Creative Directions</h2>
+              <p className="text-xs font-medium text-stone-500">Choose one or more directions for your final ad assets.</p>
+            </div>
+            
+            <div className="flex items-center gap-2.5">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  if (selectedDirections.length === directions.length) {
+                    setSelectedDirections([]);
+                  } else {
+                    setSelectedDirections([...directions]);
+                  }
+                }} 
+                className="font-bold text-xs rounded-xl border-stone-200 hover:bg-stone-50 h-10 px-4"
+              >
+                {selectedDirections.length === directions.length ? 'Deselect All' : 'Select All (5)'}
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setStep(1)} 
+                className="text-stone-600 hover:text-stone-900 font-bold text-xs h-10 px-3 flex items-center gap-1.5"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Brief</span>
+              </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {/* Compact Directions Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {directions.map((dir, idx) => {
               const isSelected = selectedDirections.some(d => d.id === dir.id);
               return (
                 <div 
                   key={idx}
                   onClick={() => {
-                      if (isSelected) {
-                          setSelectedDirections(selectedDirections.filter(d => d.id !== dir.id));
-                      } else {
-                          setSelectedDirections([...selectedDirections, dir]);
-                      }
+                    if (isSelected) {
+                      setSelectedDirections(selectedDirections.filter(d => d.id !== dir.id));
+                    } else {
+                      setSelectedDirections([...selectedDirections, dir]);
+                    }
                   }}
-                  className={`bg-white rounded-3xl p-6 cursor-pointer border-2 transition-all duration-300 ${isSelected ? 'border-[#D27D50] shadow-[0_8px_30px_rgba(210,125,80,0.15)] bg-[#D27D50]/5 -translate-y-1' : 'border-stone-100 hover:border-stone-300 shadow-sm'}`}
+                  className={`bg-white rounded-2xl p-5 cursor-pointer border-2 transition-all duration-300 flex flex-col justify-between group ${
+                    isSelected 
+                      ? 'border-[#D27D50] shadow-md shadow-[#D27D50]/10 bg-amber-50/20 -translate-y-0.5' 
+                      : 'border-stone-200 hover:border-stone-300 hover:shadow-sm'
+                  }`}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="bg-stone-100 text-stone-600 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">Option {idx + 1}</span>
-                    {isSelected && <CheckCircle2 className="w-6 h-6 text-[#D27D50]" />}
+                  <div>
+                    {/* Header Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                        isSelected 
+                          ? 'bg-[#D27D50] text-white shadow-xs' 
+                          : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'
+                      }`}>
+                        Option {idx + 1}
+                      </span>
+                      {isSelected ? (
+                        <div className="w-6 h-6 rounded-full bg-[#D27D50] text-white flex items-center justify-center shadow-xs">
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-full border-2 border-stone-200 group-hover:border-stone-300" />
+                      )}
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-base font-black text-stone-900 mb-2 leading-snug group-hover:text-[#D27D50] transition-colors">
+                      {dir.title}
+                    </h3>
+                    
+                    {/* Description */}
+                    <p className="text-xs font-medium text-stone-600 leading-relaxed line-clamp-3 mb-4">
+                      {dir.description}
+                    </p>
                   </div>
-                  <h3 className="text-lg font-black text-stone-800 mb-2">{dir.title}</h3>
-                  <p className="text-sm text-stone-500 leading-relaxed">{dir.description}</p>
+
+                  {/* Toggle Status Pill */}
+                  <div className={`mt-auto pt-3 border-t text-center transition-colors ${isSelected ? 'border-amber-200/60' : 'border-stone-100'}`}>
+                    <span className={`text-[11px] font-bold inline-flex items-center gap-1 ${
+                      isSelected ? 'text-[#D27D50]' : 'text-stone-400 group-hover:text-stone-600'
+                    }`}>
+                      {isSelected ? '✓ Direction Selected' : '+ Click to Select'}
+                    </span>
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="pt-8 flex justify-end">
+          {/* Action Footer */}
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+            <span className="text-xs font-bold text-stone-500">
+              {selectedDirections.length} of {directions.length} directions selected
+            </span>
             <Button 
               onClick={handleGenerateAd}
               disabled={loading || selectedDirections.length === 0}
-              className="bg-gradient-to-r from-[#D27D50] to-[#C26032] text-white rounded-xl font-bold px-10 h-14 shadow-[0_8px_20px_rgba(210,125,80,0.2)] hover:-translate-y-1 transition-all text-lg w-full md:w-auto"
+              className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl font-black px-8 h-12 shadow-lg hover:shadow-orange-500/20 transition-all text-sm w-full sm:w-auto flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 className="w-6 h-6 animate-spin mr-3" /> : <ImageIcon className="w-6 h-6 mr-3" />}
-              {loading ? 'Generating Final Ads...' : `Generate Campaigns (${selectedDirections.length})`}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+              <span>{loading ? 'Generating Final Assets...' : `Generate Campaigns (${selectedDirections.length})`}</span>
             </Button>
           </div>
         </div>
