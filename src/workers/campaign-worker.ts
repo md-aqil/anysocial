@@ -9,8 +9,8 @@ export const campaignWorker = {
   start() {
     logger.info('Starting Automated Campaign Worker...');
     
-    // Run every hour to check active campaigns
-    cron.schedule('0 * * * *', async () => {
+    // Check every 15 minutes for active campaign schedule triggers
+    cron.schedule('*/15 * * * *', async () => {
       logger.info('Running Campaign Worker Schedule');
       await this.processCampaigns();
     });
@@ -23,28 +23,31 @@ export const campaignWorker = {
         include: {
           products: {
             where: { status: 'PENDING' },
-            take: 1 // Process one product at a time per campaign run
+            take: 1
           }
         }
       });
 
       const now = new Date();
-      // Look ahead for the next 65 minutes since this cron runs hourly
-      const lookAheadTime = new Date(now.getTime() + 65 * 60 * 1000);
 
       for (const campaign of activeCampaigns) {
         if (!campaign.products || campaign.products.length === 0) continue;
 
         try {
-          const interval = CronExpressionParser.parse(campaign.schedule);
+          // Look at next schedule date from 30 mins ago to catch active windows
+          const interval = CronExpressionParser.parse(campaign.schedule, {
+            currentDate: new Date(now.getTime() - 30 * 60 * 1000)
+          });
           const nextDate = interval.next().toDate();
 
-          // If the next scheduled time is between now and lookAheadTime
-          if (nextDate >= now && nextDate <= lookAheadTime) {
+          // Trigger if scheduled time falls within current window or is past due
+          if (nextDate <= new Date(now.getTime() + 15 * 60 * 1000)) {
             await this.processSingleCampaign(campaign.id, nextDate);
           }
         } catch (err) {
           logger.error(`Error parsing cron for campaign ${campaign.id}: ${err}`);
+          // Fallback: trigger single campaign if pending products exist
+          await this.processSingleCampaign(campaign.id);
         }
       }
     } catch (error: any) {

@@ -665,16 +665,84 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
         fs.copyFileSync(thumbnailPath, thumbnailDestPath);
         const thumbnailDestUrl = `/uploads/reels/${thumbnailFilename}`;
 
-        await prisma.reel.update({
-          where: { id: reelId },
-          data: { 
-            status: 'READY', 
-            videoUrl, 
-            metadata: generationMetadata,
-            script: scriptText,
-            thumbnail: thumbnailDestUrl 
-          },
-        });
+        // Check if social channels are specified for auto-posting
+        const reelRecord = await prisma.reel.findUnique({ where: { id: reelId } });
+        let socialChannels: string[] = [];
+        try {
+          if (typeof reelRecord?.socialChannels === 'string') {
+            socialChannels = JSON.parse(reelRecord.socialChannels);
+          } else if (Array.isArray(reelRecord?.socialChannels)) {
+            socialChannels = reelRecord.socialChannels as string[];
+          }
+        } catch (e) {}
+
+        if (socialChannels.length > 0 && reelRecord?.userId) {
+          logger.info(`[Worker] Auto-publishing Product Reel ${reelId} to social channels: ${JSON.stringify(socialChannels)}`);
+          try {
+            const videoBuffer = fs.readFileSync(publicFilePath);
+            const mappedPlatforms = socialChannels.map(ch => ch.toUpperCase());
+            const platformOptions: Record<string, any> = {};
+            for (const plat of mappedPlatforms) {
+              if (plat === 'INSTAGRAM' || plat === 'FACEBOOK') {
+                platformOptions[plat] = { postType: 'REEL', autoFix: true };
+              } else if (plat === 'YOUTUBE') {
+                platformOptions[plat] = { postType: 'SHORTS', autoFix: true };
+              } else {
+                platformOptions[plat] = { autoFix: true };
+              }
+            }
+
+            const scheduleResult = await postingEngine.schedulePost(reelRecord.userId, {
+              content: (scriptText || '').substring(0, 2000),
+              media: [{
+                file: videoBuffer,
+                type: 'video',
+                originalName: publicFilename
+              }],
+              platforms: mappedPlatforms,
+              timezone: 'UTC',
+              platformOptions
+            });
+
+            await prisma.reel.update({
+              where: { id: reelId },
+              data: {
+                status: 'PUBLISHING',
+                videoUrl,
+                metadata: generationMetadata,
+                script: scriptText,
+                thumbnail: thumbnailDestUrl,
+                postId: scheduleResult.postId,
+                statusMessage: 'Reel is being published to social channels...'
+              }
+            });
+          } catch (postErr: any) {
+            logger.error(`Failed to auto-post product reel ${reelId}: ${postErr.message}`);
+            await prisma.reel.update({
+              where: { id: reelId },
+              data: { 
+                status: 'READY', 
+                videoUrl, 
+                metadata: generationMetadata,
+                script: scriptText,
+                thumbnail: thumbnailDestUrl,
+                statusMessage: `Ready to publish (Auto-post error: ${postErr.message})`
+              }
+            });
+          }
+        } else {
+          await prisma.reel.update({
+            where: { id: reelId },
+            data: { 
+              status: 'READY', 
+              videoUrl, 
+              metadata: generationMetadata,
+              script: scriptText,
+              thumbnail: thumbnailDestUrl,
+              statusMessage: 'Ready to publish'
+            }
+          });
+        }
 
         return { success: true, videoUrl };
       } 

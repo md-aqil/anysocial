@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { 
   Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, 
   XCircle, PenSquare, Maximize2, Film, Download, X, Video, Share2, 
