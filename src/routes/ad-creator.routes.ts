@@ -126,8 +126,8 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
 Create a full commercial creative brief for "${productName}" targeting the "${dirTitle}" direction for ${platform}.
     
     Provided Input:
-    ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s) (IDENTITY LOCK): Use the exact product/garment/object shown in these images 100% identically. Preserve exact logo, labels, fabric, cuts, color, and pattern unaltered.` : ''}
-    ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s) (STYLE TRANSFER ONLY): Adapt ONLY the model pose, body stance, camera perspective, lighting, 3D environment, and visual aesthetic from these reference images. DO NOT use or reproduce any clothing or product present in these reference images—the product must strictly come from the Product Images!` : ''}
+    ${productImagesList.length > 0 ? `- PRIMARY HERO PRODUCT ANCHOR (IMAGE 1): The first attached product image is the SINGLE GROUND TRUTH HERO PRODUCT PHOTO. Reproduce this exact product/garment/object 100% identically with zero feature mutation or hallucination. Preserve exact logos, labels, fabric, cuts, color, and silhouette unaltered.` : ''}
+    ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s) (STYLE TRANSFER ONLY): Adapt ONLY the model pose, body stance, camera perspective, lighting, 3D environment, and visual aesthetic from these style reference images. DO NOT use or reproduce any clothing or product present in these reference images—the product MUST come strictly from the Primary Hero Product Photo!` : ''}
     ${specialInstructions ? `- USER SPECIAL POSE/STYLE INSTRUCTION: "${specialInstructions}". Make sure to explicitly obey this instruction regarding what to look for or adapt from the reference images!` : ''}
 
     Output exactly in this JSON format (no markdown blocks, just raw JSON):
@@ -141,14 +141,14 @@ Create a full commercial creative brief for "${productName}" targeting the "${di
       "layoutAndEffects": "Product placement, negative space composition for text overlays, subtle visual effects (lens flare, motion blur, reflection)",
       "creativeRationale": "Explain which professional advertising category standards and emotional triggers were applied and why",
       "imagePrompt": "A highly-detailed, hyper-realistic dense narrative description for commercial image generation...",
-      "negativePrompt": "Comma-separated list of exclusions (e.g., plastic skin, airbrushed textures, dataset-average anatomy, beautification filters, fake logos, watermarks)"
+      "negativePrompt": "Comma-separated list of exclusions (e.g., plastic skin, airbrushed textures, dataset-average anatomy, beautification filters, fake logos, watermarks, product mutation, feature averaging, hybrid garment)"
     }
     
     CRITICAL GUIDELINES FOR THE IMAGE PROMPT:
     1. COMPLETE COMMERCIAL ADVERTISEMENT: Describe a complete, campaign-ready advertisement with negative space reserved for typography, rather than a plain product shot.
     2. CAMERA MATH & OPTICAL PHYSICS: Include explicit focal length, aperture, lighting behavior, and micro-surface details (e.g., "shot on 85mm f/2.0 lens, ISO 100, natural directional sunlight with soft rim light, micro-texture details").
-    3. PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to keep the original product, garment, labels, colors, and cuts 100% identical and unaltered from the Product Images. Explicitly prohibit replacing the product with any clothing from the style reference photo.' : 'Feature the product as the central hero element.'}
-    4. POSE & STYLE TRANSFER: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo, while keeping the user product 100% identical.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
+    3. PRIMARY HERO PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to treat Image #1 as the SINGLE HERO PRODUCT ANCHOR. Keep the original product, garment, logos, colors, fabric, and cuts 100% identical and unaltered. Prohibit feature averaging or replacing the product with any clothing from style reference photos.' : 'Feature the product as the central hero element.'}
+    4. POSE & STYLE TRANSFER: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo, while keeping the primary hero product 100% identical.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
     ${specialInstructions ? `5. USER SPECIAL DIRECTIVE: "${specialInstructions}". Enforce this instruction strictly in the prompt!` : ''}
     `;
 

@@ -984,7 +984,7 @@ const safeFetchJson = async (url: string, options?: RequestInit) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Product Photos (Identity Lock) - Clean header without extra button */}
+              {/* Product Photos (Primary Hero Identity Lock) */}
               <div className="bg-gradient-to-br from-stone-900/90 via-stone-900/60 to-stone-950/80 border-2 border-dashed border-amber-500/40 rounded-3xl p-5 flex flex-col justify-between min-h-[230px] relative shadow-inner hover:border-amber-400/70 transition-all group/prodCard">
                 <input 
                   type="file" 
@@ -995,18 +995,23 @@ const safeFetchJson = async (url: string, options?: RequestInit) => {
                   multiple 
                 />
                 <div className="mb-3">
-                  <h4 className="font-extrabold text-sm text-white mb-1">Product Photos</h4>
+                  <h4 className="font-extrabold text-sm text-white mb-1">Hero Product Photo</h4>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-400/30">🔒 Identity Lock</span>
-                    <span className="text-[11px] text-stone-400 font-medium">Product stays 100% identical ({imagePreviews.length}/4)</span>
+                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-400/30">🔒 100% Identity Lock</span>
+                    <span className="text-[11px] text-stone-400 font-medium">Image #1 is Primary Hero Anchor ({imagePreviews.length}/4)</span>
                   </div>
                 </div>
 
                 {imagePreviews.length > 0 ? (
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {imagePreviews.map((src, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-800 shadow-sm group">
+                      <div key={idx} className={`relative aspect-square rounded-xl overflow-hidden border ${idx === 0 ? 'border-amber-400 ring-2 ring-amber-400/50 shadow-md' : 'border-stone-800'} group`}>
                         <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
+                        {idx === 0 && (
+                          <span className="absolute bottom-0 left-0 right-0 bg-amber-500/90 text-stone-950 text-[8px] font-black text-center uppercase py-0.5 tracking-wider">
+                            Hero Anchor
+                          </span>
+                        )}
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); removeImageFile(idx); }}
@@ -1026,8 +1031,8 @@ const safeFetchJson = async (url: string, options?: RequestInit) => {
                       <Upload className="w-4 h-4 text-amber-400" />
                     </div>
                     <p className="font-bold text-xs text-stone-200 text-center">
-                      Upload Product Shots<br/>
-                      <span className="text-stone-400 font-normal text-[11px]">Upload front, angle, or close-ups</span>
+                      Upload Hero Product Shot<br/>
+                      <span className="text-stone-400 font-normal text-[11px]">Recommended: 1 main clean product photo</span>
                     </p>
                   </div>
                 )}
