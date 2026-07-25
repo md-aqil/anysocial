@@ -439,16 +439,18 @@ export default function PostCreatorPage() {
       .map(item => item.videoUrl || renderedVideoMap[item.id] || item.imageUrl)
       .filter(Boolean);
 
-    // Combine copy from all variations into a clean multi-slide caption
-    const copyBlocks = items.map((item, idx) => {
-      const brief = item.brief || {};
-      const tagline = brief.tagline ? `✨ ${brief.tagline}` : '';
-      const copy = brief.supportingCopy || brief.copy || '';
-      const cta = brief.callToAction || '';
-      return `--- Post ${idx + 1}: ${item.direction || `Option ${idx + 1}`} ---\n${tagline}\n${copy}\n${cta}`.trim();
-    });
+    const firstBrief = firstItem.brief || {};
+    const mainTagline = firstBrief.tagline ? `✨ ${firstBrief.tagline}\n\n` : '';
+    const mainCopy = firstBrief.supportingCopy || firstBrief.copy || '';
+    const mainCta = firstBrief.callToAction ? `\n\n${firstBrief.callToAction}` : '';
 
-    const fullCaption = `🚀 ${prodName.toUpperCase()} - CAMPAIGN CAROUSEL\n\n` + copyBlocks.join('\n\n');
+    const slideSummaries = items.map((item, idx) => {
+      const b = item.brief || {};
+      const t = b.tagline ? `"${b.tagline}"` : (item.direction || `Option ${idx + 1}`);
+      return `Slide ${idx + 1}: ${t}`;
+    }).join('\n');
+
+    const fullCaption = `🚀 ${prodName.toUpperCase()}\n\n${mainTagline}${mainCopy}${mainCta}\n\n📸 Carousel Collection (${items.length} Variations):\n${slideSummaries}\n\n👉 Swipe to explore all creative styles!`.trim();
 
     const postData = {
       content: fullCaption,

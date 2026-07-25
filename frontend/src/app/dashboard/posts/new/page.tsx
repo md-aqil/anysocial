@@ -467,15 +467,26 @@ export default function NewPostPage() {
         if (parsed.content) {
           setValue('content', parsed.content);
         }
-        if (parsed.mediaUrls && parsed.mediaUrls.length > 0) {
-          // Fetch the first image and convert it to a File object
-          fetch(parsed.mediaUrls[0])
-            .then(res => res.blob())
-            .then(blob => {
-              const file = new File([blob], 'ad-creative.jpg', { type: blob.type });
-              setMediaFiles(prev => [...prev, file]);
+        if (parsed.mediaUrls && Array.isArray(parsed.mediaUrls) && parsed.mediaUrls.length > 0) {
+          Promise.all(
+            parsed.mediaUrls.map(async (url: string, index: number) => {
+              try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                const isVideo = blob.type.startsWith('video') || url.endsWith('.mp4');
+                const ext = isVideo ? 'mp4' : 'jpg';
+                return new File([blob], `carousel-item-${index + 1}.${ext}`, { type: blob.type || (isVideo ? 'video/mp4' : 'image/jpeg') });
+              } catch (err) {
+                console.error(`Failed to load ad media ${url}:`, err);
+                return null;
+              }
             })
-            .catch(err => console.error("Failed to load ad image:", err));
+          ).then(fetchedFiles => {
+            const validFiles = fetchedFiles.filter((f): f is File => f !== null);
+            if (validFiles.length > 0) {
+              setMediaFiles(prev => [...prev, ...validFiles]);
+            }
+          });
         }
         // Clear it so it doesn't persist forever
         localStorage.removeItem('composeAdData');
