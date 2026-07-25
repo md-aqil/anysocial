@@ -145,14 +145,16 @@ export class MediaValidatorService {
     let minWidth = rules.minDimensions.width;
     let minHeight = rules.minDimensions.height;
 
-    // Instagram specific logic for Reels/Stories
+    // Instagram specific logic for Reels/Stories/Feed
     if (platform === 'INSTAGRAM') {
       // Frontend sends options.postType (not instagramPostType)
       const igType = options?.postType || 'FEED';
       if (igType === 'REEL' || igType === 'STORY') {
-        targetAspectRatios = [0.562, 0.5, 0.45, 0.4, 0.8]; // Support ultra-tall vertical
+        targetAspectRatios = [0.562, 0.5625, 0.5, 0.45, 0.4, 0.8]; // Support ultra-tall vertical
         minWidth = 320; 
         minHeight = 480; // Lowered to support more dimensions
+      } else {
+        targetAspectRatios = [1.0, 1.777, 0.8, 0.75, 1.333, 1.91, 0.562, 0.5625];
       }
     }
     

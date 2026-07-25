@@ -102,7 +102,7 @@ export class InstagramAdapter implements PlatformAdapter {
         const containerIds: string[] = [];
 
         for (const mediaUrl of payload.mediaUrls) {
-          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov');
+          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov') || mediaUrl.includes('.webm');
           const containerEndpoint = `https://graph.facebook.com/v21.0/${pageId}/media`;
 
           console.log(`[IG CAROUSEL] Creating item container for: ${mediaUrl}`);
@@ -119,8 +119,32 @@ export class InstagramAdapter implements PlatformAdapter {
             }
           });
 
-          containerIds.push(containerResponse.data.id);
-          console.log(`[IG CAROUSEL] Created item container: ${containerResponse.data.id}`);
+          const itemId = containerResponse.data.id;
+          console.log(`[IG CAROUSEL] Created item container: ${itemId}`);
+
+          // Poll item container until FINISHED (required by Meta Graph API, especially for video carousel items)
+          let itemReady = false;
+          let itemAttempts = 0;
+          while (!itemReady && itemAttempts < 45) {
+            itemAttempts++;
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            try {
+              const itemStatusRes = await axios.get(`https://graph.facebook.com/v21.0/${itemId}`, {
+                params: { fields: 'status_code,status', access_token: accessToken }
+              });
+              const code = itemStatusRes.data.status_code;
+              if (code === 'FINISHED') {
+                itemReady = true;
+              } else if (code === 'ERROR') {
+                throw new Error(`Carousel item container failed processing: ${itemStatusRes.data.status || 'ERROR'}`);
+              }
+            } catch (err: any) {
+              if (err.message?.includes('Carousel item container failed')) throw err;
+              console.warn(`[IG CAROUSEL] Item polling attempt ${itemAttempts} error:`, err.message);
+            }
+          }
+
+          containerIds.push(itemId);
         }
 
         console.log(`[IG CAROUSEL] Creating parent container with ${containerIds.length} items`);

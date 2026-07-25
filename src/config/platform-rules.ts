@@ -27,7 +27,7 @@ export const PLATFORM_RULES: Record<string, PlatformRule> = {
     maxChars: 2200,
     maxMediaCount: 10, // Carousel
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'],
-    aspectRatios: [1.0, 1.777, 0.8, 0.75, 1.333, 1.91], // 1:1, 16:9, 4:5, 3:4, 4:3, 1.91:1
+    aspectRatios: [1.0, 1.777, 0.8, 0.75, 1.333, 1.91, 0.562, 0.5625], // 1:1, 16:9, 4:5, 3:4, 4:3, 1.91:1, 9:16
     minDimensions: { width: 600, height: 600 },
     hashtagLimit: 30,
     mentionFormat: '@username',

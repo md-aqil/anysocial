@@ -64,23 +64,36 @@ export class FacebookAdapter implements PlatformAdapter {
         const attachedMedia: any[] = [];
 
         for (const mediaUrl of payload.mediaUrls) {
-          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov');
-          if (isVideo) {
-            throw new Error("Facebook carousels currently only support images in this pipeline.");
-          }
+          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.mov') || mediaUrl.includes('.webm');
 
-          // Upload as unpublished photo
-          const imageResponse = await axios.get(mediaUrl, { responseType: 'arraybuffer' });
-          const imageBuffer = Buffer.from(imageResponse.data);
-          
-          const formData = new FormData();
-          formData.append('published', 'false');
-          formData.append('access_token', accessToken);
-          formData.append('source', new Blob([imageBuffer], { type: 'image/jpeg' }), 'upload.jpg');
-          
-          const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photos`, formData);
-          attachedMedia.push({ media_fbid: uploadResponse.data.id });
-          console.log(`[FB PUBLISH] Uploaded unpublished photo: ${uploadResponse.data.id}`);
+          if (isVideo) {
+            console.log(`[FB PUBLISH] Uploading unpublished video for multi-media post: ${mediaUrl}`);
+            const videoResponse = await axios.get(mediaUrl, { responseType: 'arraybuffer' });
+            const videoBuffer = Buffer.from(videoResponse.data);
+
+            const formData = new FormData();
+            formData.append('published', 'false');
+            formData.append('access_token', accessToken);
+            formData.append('source', new Blob([videoBuffer], { type: 'video/mp4' }), 'upload.mp4');
+
+            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/videos`, formData);
+            attachedMedia.push({ media_fbid: uploadResponse.data.id });
+            console.log(`[FB PUBLISH] Uploaded unpublished video: ${uploadResponse.data.id}`);
+          } else {
+            // Upload as unpublished photo
+            const imageResponse = await axios.get(mediaUrl, { responseType: 'arraybuffer' });
+            const imageBuffer = Buffer.from(imageResponse.data);
+
+            const formData = new Blob([imageBuffer], { type: 'image/jpeg' });
+            const uploadFormData = new FormData();
+            uploadFormData.append('published', 'false');
+            uploadFormData.append('access_token', accessToken);
+            uploadFormData.append('source', formData, 'upload.jpg');
+
+            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photos`, uploadFormData);
+            attachedMedia.push({ media_fbid: uploadResponse.data.id });
+            console.log(`[FB PUBLISH] Uploaded unpublished photo: ${uploadResponse.data.id}`);
+          }
         }
 
         // Publish feed post with attached media
