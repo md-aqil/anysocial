@@ -145,7 +145,7 @@ Create a full commercial creative brief for "${productName}" targeting the "${di
     }
     
     CRITICAL GUIDELINES FOR THE IMAGE PROMPT:
-    1. COMPLETE COMMERCIAL ADVERTISEMENT: Describe a complete, campaign-ready advertisement with negative space reserved for typography, rather than a plain product shot.
+    1. COMPLETE COMMERCIAL ADVERTISEMENT WITH TEXT OVERLAY: Describe a complete, campaign-ready advertisement with bold, high-contrast commercial tagline typography overlay rendered directly on the image graphic.
     2. CAMERA MATH & OPTICAL PHYSICS: Include explicit focal length, aperture, lighting behavior, and micro-surface details (e.g., "shot on 85mm f/2.0 lens, ISO 100, natural directional sunlight with soft rim light, micro-texture details").
     3. PRIMARY HERO PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to treat Image #1 as the SINGLE HERO PRODUCT ANCHOR. Keep the original product, garment, logos, colors, fabric, and cuts 100% identical and unaltered. Prohibit feature averaging or replacing the product with any clothing from style reference photos.' : 'Feature the product as the central hero element.'}
     4. POSE & STYLE TRANSFER: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo, while keeping the primary hero product 100% identical.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
@@ -176,8 +176,10 @@ Create a full commercial creative brief for "${productName}" targeting the "${di
 
     const nanoBananaNegativeStack = "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces";
 
+    const promptWithTypography = `${briefParsed.imagePrompt}${briefParsed.tagline ? `\n\nCOMMERCIAL ADVERTISEMENT OVERLAY TYPOGRAPHY DIRECTIVE: Render the exact headline text "${briefParsed.tagline.toUpperCase()}" as bold, ultra-crisp, high-contrast graphic typography overlay directly onto the commercial advertisement graphic visual.` : ''}`;
+
     const imagePayload = JSON.stringify({
-      prompt: briefParsed.imagePrompt,
+      prompt: promptWithTypography,
       negative_prompt: (briefParsed.negativePrompt ? briefParsed.negativePrompt + ", " : "") + nanoBananaNegativeStack,
       api_parameters: {
         resolution: "1K",
