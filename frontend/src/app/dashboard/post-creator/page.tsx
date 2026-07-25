@@ -136,13 +136,35 @@ export default function PostCreatorPage() {
       }
 
       const data = await res.json();
-      setActiveReelId(data.data.reel.id);
+      const reelId = data.data.reel.id;
+      setActiveReelId(reelId);
+      localStorage.setItem('postCreator_activeReelId', reelId);
+      if (selectedAdForAnimate) {
+        localStorage.setItem('postCreator_activeAd', JSON.stringify(selectedAdForAnimate));
+      }
     } catch (err: any) {
       setAnimating(false);
       setAnimStatus('FAILED');
       setAnimStatusMsg(err.message || 'Error starting animation');
     }
   };
+
+  // Restore in-flight active reel animation from localStorage on mount
+  useEffect(() => {
+    const savedReelId = localStorage.getItem('postCreator_activeReelId');
+    const savedAdStr = localStorage.getItem('postCreator_activeAd');
+    if (savedReelId) {
+      setActiveReelId(savedReelId);
+      setAnimating(true);
+      setAnimStatus('GENERATING');
+      setAnimStatusMsg('Resuming Google Veo 3 video rendering...');
+      if (savedAdStr) {
+        try {
+          setSelectedAdForAnimate(JSON.parse(savedAdStr));
+        } catch (e) {}
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!activeReelId) return;
@@ -163,6 +185,9 @@ export default function PostCreatorPage() {
           if (reel.status === 'READY') {
             setAnimResultVideoUrl(reel.videoUrl);
             setAnimating(false);
+            localStorage.removeItem('postCreator_activeReelId');
+            localStorage.removeItem('postCreator_activeAd');
+
             if (selectedAdForAnimate?.id) {
               const adId = selectedAdForAnimate.id;
               setRenderedVideoMap(prev => ({ ...prev, [adId]: reel.videoUrl }));
@@ -172,6 +197,8 @@ export default function PostCreatorPage() {
             clearInterval(interval);
           } else if (reel.status === 'FAILED') {
             setAnimating(false);
+            localStorage.removeItem('postCreator_activeReelId');
+            localStorage.removeItem('postCreator_activeAd');
             clearInterval(interval);
           }
         }
@@ -425,6 +452,32 @@ export default function PostCreatorPage() {
           <p className="text-[#AAA39D] font-medium text-lg">Generate world-class creative campaigns using Advanced AI realism.</p>
         </div>
       </div>
+
+      {/* Active Motion Graphic Video Progress Banner (Survives Refresh & Tab Switching) */}
+      {activeReelId && animating && (
+        <div className="mb-8 p-5 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white rounded-2xl border border-stone-700 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-500">
+          <div className="flex items-center gap-3.5">
+            <div className="bg-orange-500/20 p-2.5 rounded-xl border border-orange-500/30 shrink-0">
+              <Loader2 className="w-6 h-6 text-[#D27D50] animate-spin" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-xs font-black uppercase tracking-wider text-[#D27D50]">Google Veo 3 Motion Video Engine</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">In Progress</span>
+              </div>
+              <p className="text-sm font-bold text-stone-200">{animStatusMsg || 'Rendering video in background...'}</p>
+            </div>
+          </div>
+          
+          <Button
+            onClick={() => setAnimateModalOpen(true)}
+            className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white font-bold rounded-xl px-5 py-2.5 shadow-md flex items-center gap-2 text-xs shrink-0"
+          >
+            <Film className="w-4 h-4 text-white" />
+            <span>Open Motion Graphic Live Preview</span>
+          </Button>
+        </div>
+      )}
 
       {error && (
         <div className="mb-8 p-4 bg-red-50 text-red-600 rounded-2xl font-medium border border-red-100 flex items-center gap-3 shadow-sm">
