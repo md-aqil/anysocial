@@ -389,23 +389,41 @@ Make sure the output is a valid JSON object.`;
 
       const requestParts: any[] = [];
       if (prodImgList.length > 0 || styleImgList.length > 0) {
-        requestParts.push({ text: `You are an expert commercial fashion & advertising photographer and AI art director.\n\nHIGHEST PRIORITY POSE & STYLE SYNTHESIS DIRECTIVE:\n1. REPLICATE REFERENCE POSE & STYLE: The generated image MUST closely match and adapt the model pose, body position, camera perspective, lighting setup, 3D background scene, and visual aesthetic from the attached Style & Pose Reference Image(s).\n2. PRODUCT IDENTITY LOCK: Feature the exact product/garment/object from the Product Image(s) with 100% precision. Keep logos, fabric pattern, colors, labels, cuts, and branding completely unchanged and unaltered.\n\nPrompt Instructions: ${finalPromptText}` });
+        requestParts.push({ 
+          text: `CRITICAL SEAMLESS IMAGE COMBINATION DIRECTIVE:\n` +
+                `1. HIGHLY RESPECT REFERENCE IMAGE SCENE & POSE: Faithfully replicate the exact model pose, body posture, stance, camera angle, optical perspective, lighting setup, background environment, and artistic aesthetic from the attached STYLE & POSE REFERENCE IMAGE.\n` +
+                `2. SEAMLESS HERO PRODUCT FUSION: Feature the EXACT, unaltered product/garment/object from the PRIMARY HERO PRODUCT ANCHOR IMAGE inside that reference scene. Replace the clothing/product in the reference photo with the user's hero product.\n` +
+                `3. STRICT PRODUCT IDENTITY LOCK: Preserve all logos, branding, color, fabric weave, cuts, silhouette, and visual details from the Hero Product Image with 100% precision (zero mutation or distortion).\n\n` +
+                `PROMPT INSTRUCTIONS: ${finalPromptText}`
+        });
 
-        if (styleImgList.length > 0) {
-          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (Replicate the model pose, body posture, lighting, background scene, and visual style from these images):" });
-          for (const item of styleImgList) {
-            requestParts.push({
-              inlineData: {
-                mimeType: item.mimeType || 'image/jpeg',
-                data: item.data
-              }
-            });
+        // 1. PRIMARY HERO PRODUCT ANCHOR ATTACHED FIRST
+        if (prodImgList.length > 0) {
+          requestParts.push({ text: `PRIMARY HERO PRODUCT ANCHOR IMAGE (GROUND TRUTH PRODUCT - PRESERVE ALL LOGOS, CUTS, FABRIC, AND COLORS 100% IDENTICALLY):` });
+          requestParts.push({
+            inlineData: {
+              mimeType: prodImgList[0].mimeType || 'image/jpeg',
+              data: prodImgList[0].data
+            }
+          });
+
+          if (prodImgList.length > 1) {
+            requestParts.push({ text: "ADDITIONAL PRODUCT ANGLE IMAGES:" });
+            for (let i = 1; i < prodImgList.length; i++) {
+              requestParts.push({
+                inlineData: {
+                  mimeType: prodImgList[i].mimeType || 'image/jpeg',
+                  data: prodImgList[i].data
+                }
+              });
+            }
           }
         }
 
-        if (prodImgList.length > 0) {
-          requestParts.push({ text: "PRODUCT IMAGES (Keep the product/object in these images 100% identical, preserving exact shape, fabric, details, branding, and colors):" });
-          for (const item of prodImgList) {
+        // 2. STYLE & POSE REFERENCE ATTACHED SECOND
+        if (styleImgList.length > 0) {
+          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (HIGHLY RESPECT MODEL POSE, BODY ANGLE, LIGHTING, AND ENVIRONMENT FROM THESE IMAGES):" });
+          for (const item of styleImgList) {
             requestParts.push({
               inlineData: {
                 mimeType: item.mimeType || 'image/jpeg',

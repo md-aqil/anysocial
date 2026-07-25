@@ -133,14 +133,12 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
       "negativePrompt": "Comma-separated list of things to exclude (e.g., humans, people, hands, if the product is an animal/cartoon and no humans are needed)"
     }
     
-    CRITICAL INSTRUCTION FOR IMAGE PROMPT:
-    The imagePrompt MUST describe a COMPLETE, PROFESSIONALLY DESIGNED ADVERTISEMENT, not just a product photo. 
-    It MUST explicitly command the image generator to render the typography (Tagline and CTA) beautifully integrated into the layout, utilizing negative space.
-    CRITICAL: The image generator MUST NOT include any fake logos, watermarks, brand icons, or signatures.
-    CRITICAL: Do NOT add humans, people, or hands to the scene unless explicitly requested by the product description. If the product is an animal, pet, or cartoon, explicitly enforce "NO HUMANS, NO PEOPLE, NO HANDS" in the prompt.
-    ${productImagesList.length > 0 ? 'IMPORTANT: We are passing original product images. Instruct the image generator in the imagePrompt to keep the product/dress/model 100% identical and unaltered.' : ''}
-    ${styleImagesList.length > 0 ? 'IMPORTANT: We are passing pose and style reference images. Instruct the image generator to adapt the model pose, body posture, lighting, background, composition, and color theme from the style reference images.' : ''}
-    ${specialInstructions ? `IMPORTANT: Strict User Preference: "${specialInstructions}".` : ''}
+    CRITICAL GUIDELINES FOR THE IMAGE PROMPT:
+    1. HIGHLY RESPECT REFERENCE IMAGE SCENE & POSE: ${styleImagesList.length > 0 ? 'Faithfully replicate the model pose, body posture, stance, camera angle, optical perspective, lighting setup, background environment, and visual aesthetic from the attached style reference image.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
+    2. SEAMLESS HERO PRODUCT FUSION: Instruct the image generator to feature the exact product, garment, logo, fabric, cuts, color, and silhouette from Image #1 inside that reference scene 100% identically without feature blending or distortion.
+    3. COMPLETE COMMERCIAL ADVERTISEMENT WITH TYPOGRAPHY: Describe a complete, campaign-ready advertisement featuring the tagline headline "${direction.title || ''}" and CTA button clearly integrated into the layout.
+    4. OPTICAL CAMERA PHYSICS: Include explicit focal length (85mm f/1.8 lens, ISO 100), natural directional lighting, rim lights, soft shadow falloff, and unretouched micro-surface texture details.
+    ${specialInstructions ? `5. USER SPECIAL DIRECTIVE: "${specialInstructions}". Enforce this instruction strictly in the prompt!` : ''}
     `;
 
     const briefMediaParts: { data: string; mimeType: string }[] = [...productImagesList, ...styleImagesList];
