@@ -1238,6 +1238,19 @@ const safeFetchJson = async (url: string, options?: RequestInit) => {
                     <span>Compose Entire Campaign ({activeCampaign.items.length} Variations)</span>
                   </Button>
                 )}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setActiveCampaign(null);
+                    localStorage.removeItem('postCreator_activeCampaign');
+                  }}
+                  className="w-9 h-9 rounded-2xl p-0 text-stone-400 hover:text-stone-700 hover:bg-stone-100 border border-stone-200 shadow-xs flex items-center justify-center transition-all shrink-0"
+                  title="Hide Campaign Card"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
             </div>
 
@@ -1488,6 +1501,20 @@ const safeFetchJson = async (url: string, options?: RequestInit) => {
                             >
                               <PenSquare className="w-3.5 h-3.5" />
                               Compose
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setActiveCampaign(prev => prev ? ({
+                                  ...prev,
+                                  items: prev.items.filter(item => item.id !== ad.id)
+                                }) : null);
+                              }}
+                              className="rounded-xl border border-stone-200 text-stone-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors px-2.5 py-2.5"
+                              title="Hide Variation"
+                            >
+                              <X className="w-3.5 h-3.5" />
                             </Button>
                           </div>
                         </div>
