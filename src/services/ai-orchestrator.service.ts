@@ -389,11 +389,11 @@ Make sure the output is a valid JSON object.`;
 
       const requestParts: any[] = [];
       if (prodImgList.length > 0 || styleImgList.length > 0) {
-        requestParts.push({ text: `You are an expert commercial fashion & advertising photographer and AI art director.\n\nHIGHEST PRIORITY POSE & STYLE SYNTHESIS DIRECTIVE:\n1. PRIMARY HERO PRODUCT IDENTITY LOCK (ZERO MUTATION): Image #1 in Product Images is the SINGLE HERO GROUND TRUTH ANCHOR. The generated commercial ad MUST feature the exact product/garment/object from Image #1 with 100% pixel precision. Preserve exact logos, labels, fabric pattern, texture, cuts, silhouette, branding, and color palette. DO NOT average features across multiple images or substitute the product with any garment shown inside the Style Reference Images.\n2. REPLICATE POSE, LIGHTING & SCENE FROM STYLE REFERENCE: Adapt ONLY the model pose, body posture, camera perspective, lighting setup, studio background, and overall aesthetic from the attached STYLE & POSE REFERENCE IMAGES. IGNORE and DO NOT COPY any product or clothing worn in the Style Reference Images—use them exclusively for model pose and environment transfer.\n\nPrompt Instructions: ${finalPromptText}` });
+        requestParts.push({ text: `You are a world-class commercial advertising photographer and AI art director.\n\nCRITICAL PRODUCT IDENTITY LOCK: Keep the product/garment/object from the Product Images 100% identical and unaltered in design, pattern, color, logo, and texture.\n\nCRITICAL POSE & STYLE TRANSFER: Adapt the model pose, body posture, camera angle, lighting, 3D environment, and visual aesthetics from the Style/Pose Reference Images to seamlessly feature the identical product.\n\nInstructions: ${finalPromptText}` });
 
-        if (styleImgList.length > 0) {
-          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (Transfer model pose, body posture, lighting, background scene, and visual aesthetic ONLY - DO NOT copy any product/garment from these images):" });
-          for (const item of styleImgList) {
+        if (prodImgList.length > 0) {
+          requestParts.push({ text: "PRODUCT IMAGES (IDENTITY LOCK - Keep the product/object in these images 100% identical, preserving exact shape, fabric, details, branding, and colors):" });
+          for (const item of prodImgList) {
             requestParts.push({
               inlineData: {
                 mimeType: item.mimeType || 'image/jpeg',
@@ -403,27 +403,15 @@ Make sure the output is a valid JSON object.`;
           }
         }
 
-        if (prodImgList.length > 0) {
-          requestParts.push({ text: `PRIMARY HERO PRODUCT ANCHOR IMAGE (IMAGE #1 IS THE SINGLE GROUND TRUTH PRODUCT PHOTO - Keep this exact product 100% identical, preserving exact shape, fabric, details, branding, and colors):` });
-          // Primary Hero Image (first image)
-          requestParts.push({
-            inlineData: {
-              mimeType: prodImgList[0].mimeType || 'image/jpeg',
-              data: prodImgList[0].data
-            }
-          });
-
-          // Any supplementary images
-          if (prodImgList.length > 1) {
-            requestParts.push({ text: "SUPPLEMENTARY PRODUCT ANGLE IMAGES (Use ONLY for secondary angle reference if needed, but Image #1 remains the primary hero product anchor):" });
-            for (let i = 1; i < prodImgList.length; i++) {
-              requestParts.push({
-                inlineData: {
-                  mimeType: prodImgList[i].mimeType || 'image/jpeg',
-                  data: prodImgList[i].data
-                }
-              });
-            }
+        if (styleImgList.length > 0) {
+          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (Replicate and adapt the model pose, body position, background scene, camera angle, lighting setup, and visual style from these images):" });
+          for (const item of styleImgList) {
+            requestParts.push({
+              inlineData: {
+                mimeType: item.mimeType || 'image/jpeg',
+                data: item.data
+              }
+            });
           }
         }
       } else {
