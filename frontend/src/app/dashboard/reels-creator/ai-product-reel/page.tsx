@@ -71,7 +71,7 @@ const VOICE_EMOTION_PRESETS = [
 ];
 
 export default function AIProductReelPage() {
-  const [creationMode, setCreationMode] = useState<'single' | 'automation'>('single');
+  const [creationMode, setCreationMode] = useState<'single' | 'automation'>('automation');
   const [assetType, setAssetType] = useState<'magiclink' | 'upload'>('magiclink');
   
   // Single Reel State

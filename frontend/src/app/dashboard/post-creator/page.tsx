@@ -483,7 +483,10 @@ export default function PostCreatorPage() {
   return (
     <div className="max-w-7xl mx-auto p-6 lg:p-10 space-y-8">
       {/* Header & Step Indicator */}
-      <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white rounded-3xl p-8 shadow-xl border border-stone-800 relative overflow-hidden">
+      <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 text-white rounded-[32px] p-8 lg:p-10 shadow-2xl border border-stone-800/80 relative overflow-hidden">
+        {/* Ambient Glow Backdrop */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-black uppercase tracking-widest">
             <Wand2 className="w-3.5 h-3.5" /> AI Ad Studio & Art Director
@@ -497,7 +500,7 @@ export default function PostCreatorPage() {
         </div>
 
         {/* Step Progress Pills */}
-        <div className="flex items-center gap-2 z-10 shrink-0 bg-stone-800/80 p-2 rounded-2xl border border-stone-700/80">
+        <div className="flex items-center gap-2 z-10 shrink-0 bg-stone-900/90 backdrop-blur-md p-2 rounded-2xl border border-stone-800/90 shadow-inner">
           <div className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 1 ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-md' : 'text-stone-400'}`}>
             <span>1. Brief & Assets</span>
           </div>
@@ -545,28 +548,35 @@ export default function PostCreatorPage() {
 
       {/* Step 1: Input */}
       {step === 1 && (
-        <div className="bg-gradient-to-br from-white via-stone-50/50 to-amber-50/20 backdrop-blur-2xl rounded-[32px] p-8 lg:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-stone-200/90 grid grid-cols-1 lg:grid-cols-2 gap-10 relative overflow-hidden">
-          <div className="space-y-6">
-            <h2 className="text-xl font-extrabold text-stone-900 border-b border-stone-200/80 pb-4 flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-[#D27D50]" />
+        <div className="bg-gradient-to-br from-[#1C1814] via-[#241F1A] to-[#171310] text-white rounded-[36px] p-8 lg:p-10 shadow-[0_25px_70px_rgba(0,0,0,0.3)] border border-amber-500/20 grid grid-cols-1 lg:grid-cols-2 gap-10 relative overflow-hidden">
+          {/* Ambient Lighting Accents */}
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-amber-500/10 blur-[90px] rounded-full pointer-events-none"></div>
+          <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-rose-500/10 blur-[90px] rounded-full pointer-events-none"></div>
+
+          <div className="space-y-6 relative z-10">
+            <h2 className="text-xl font-extrabold text-white border-b border-stone-800 pb-4 flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-amber-400" />
               <span>1. Visual Assets & Inspiration</span>
             </h2>
             
             {/* Magic Link Box */}
-            <div className="bg-white border border-stone-200/90 rounded-2xl p-4 shadow-xs hover:border-amber-300 transition-colors">
-              <label className="block text-xs font-black text-stone-600 uppercase tracking-wider mb-2 flex items-center justify-between">
-                <span>Magic Link Import</span>
-                <span className="text-[10px] text-[#D27D50] bg-orange-50 font-bold px-2 py-0.5 rounded-md border border-orange-200/60">Auto-Extract Photos</span>
+            <div className="bg-stone-900/90 border border-amber-500/30 rounded-2xl p-4 shadow-lg backdrop-blur-md hover:border-amber-400/50 transition-colors">
+              <label className="block text-xs font-black text-amber-200 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Wand2 className="w-3.5 h-3.5 text-amber-400" />
+                  Magic Link Import
+                </span>
+                <span className="text-[10px] text-amber-300 bg-amber-500/20 font-bold px-2.5 py-0.5 rounded-md border border-amber-400/30">Auto-Extract Photos</span>
               </label>
               <div className="flex gap-2">
                 <input 
                   type="text" 
                   value={magicLink} 
                   onChange={e => setMagicLink(e.target.value)} 
-                  className="flex-1 bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-all" 
+                  className="flex-1 bg-stone-950 border border-stone-800 text-stone-100 placeholder-stone-500 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all font-medium" 
                   placeholder="Paste Shopify, Amazon, or store product URL..." 
                 />
-                <Button onClick={handleMagicLink} disabled={scraping || !magicLink} className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl px-6 transition-all shadow-md font-bold text-sm">
+                <Button onClick={handleMagicLink} disabled={scraping || !magicLink} className="bg-gradient-to-r from-[#D27D50] via-amber-600 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl px-6 transition-all shadow-md font-bold text-sm">
                   {scraping ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Import'}
                 </Button>
               </div>
@@ -574,7 +584,7 @@ export default function PostCreatorPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Product Photos (Identity Lock) */}
-              <div className="bg-gradient-to-br from-amber-50/40 via-white to-stone-50 border-2 border-dashed border-amber-300/80 rounded-3xl p-5 flex flex-col justify-between min-h-[220px] relative shadow-2xs hover:border-amber-400 transition-all">
+              <div className="bg-gradient-to-br from-stone-900/90 via-stone-900/60 to-stone-950/80 border-2 border-dashed border-amber-500/40 rounded-3xl p-5 flex flex-col justify-between min-h-[230px] relative shadow-inner hover:border-amber-400/70 transition-all group/prodCard">
                 <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -585,17 +595,17 @@ export default function PostCreatorPage() {
                 />
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h4 className="font-extrabold text-sm text-stone-900 flex items-center gap-1.5">
+                    <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
                       <span>Product Photos</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-[#D27D50] bg-orange-100 px-2 py-0.5 rounded-full border border-orange-200">🔒 Identity Lock</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30">🔒 Identity Lock</span>
                     </h4>
-                    <p className="text-[11px] text-stone-500 font-medium">Original product stays 100% identical ({imagePreviews.length}/4)</p>
+                    <p className="text-[11px] text-stone-400 font-medium">Original product stays 100% identical ({imagePreviews.length}/4)</p>
                   </div>
                   {imagePreviews.length < 4 && (
                     <Button 
                       type="button"
                       onClick={() => fileInputRef.current?.click()} 
-                      className="bg-stone-900 hover:bg-black text-white text-xs font-bold rounded-xl h-8 px-3 shadow-xs"
+                      className="bg-amber-500 hover:bg-amber-600 text-stone-950 text-xs font-black rounded-xl h-8 px-3 shadow-xs"
                     >
                       + Add Photo
                     </Button>
@@ -605,12 +615,12 @@ export default function PostCreatorPage() {
                 {imagePreviews.length > 0 ? (
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {imagePreviews.map((src, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-sm group">
+                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-800 shadow-sm group">
                         <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); removeImageFile(idx); }}
-                          className="absolute top-1 right-1 w-5 h-5 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -620,12 +630,12 @@ export default function PostCreatorPage() {
                 ) : (
                   <div 
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-2xl p-4 hover:bg-stone-100/80 transition-colors"
+                    className="flex-1 flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-800 rounded-2xl p-4 hover:bg-stone-900/80 transition-colors"
                   >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-xs border border-amber-200">
-                      <Upload className="w-4 h-4 text-[#D27D50]" />
+                    <div className="w-10 h-10 bg-stone-900 rounded-full flex items-center justify-center mb-2 shadow-xs border border-amber-500/30">
+                      <Upload className="w-4 h-4 text-amber-400" />
                     </div>
-                    <p className="font-bold text-xs text-stone-700 text-center">
+                    <p className="font-bold text-xs text-stone-200 text-center">
                       Upload Product Shots<br/>
                       <span className="text-stone-400 font-normal text-[11px]">Upload front, angle, or fabric close-ups</span>
                     </p>
@@ -634,7 +644,7 @@ export default function PostCreatorPage() {
               </div>
 
               {/* Pose & Style Reference Photos */}
-              <div className="bg-gradient-to-br from-emerald-50/40 via-white to-stone-50 border-2 border-dashed border-emerald-300/80 rounded-3xl p-5 flex flex-col justify-between min-h-[220px] relative shadow-2xs hover:border-emerald-400 transition-all">
+              <div className="bg-gradient-to-br from-stone-900/90 via-stone-900/60 to-stone-950/80 border-2 border-dashed border-emerald-500/40 rounded-3xl p-5 flex flex-col justify-between min-h-[230px] relative shadow-inner hover:border-emerald-400/70 transition-all group/refCard">
                 <input 
                   type="file" 
                   ref={refInputRef} 
@@ -645,17 +655,17 @@ export default function PostCreatorPage() {
                 />
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h4 className="font-extrabold text-sm text-stone-900 flex items-center gap-1.5">
+                    <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
                       <span>Pose & Style References</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">🎨 Style Transfer</span>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30">🎨 Style Transfer</span>
                     </h4>
-                    <p className="text-[11px] text-stone-500 font-medium">Model pose, lighting & aesthetic ({referencePreviews.length}/4)</p>
+                    <p className="text-[11px] text-stone-400 font-medium">Model pose, lighting & aesthetic ({referencePreviews.length}/4)</p>
                   </div>
                   {referencePreviews.length < 4 && (
                     <Button 
                       type="button"
                       onClick={() => refInputRef.current?.click()} 
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl h-8 px-3 shadow-xs"
+                      className="bg-emerald-500 hover:bg-emerald-600 text-stone-950 text-xs font-black rounded-xl h-8 px-3 shadow-xs"
                     >
                       + Add Ref
                     </Button>
@@ -665,12 +675,12 @@ export default function PostCreatorPage() {
                 {referencePreviews.length > 0 ? (
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {referencePreviews.map((src, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-sm group">
+                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-800 shadow-sm group">
                         <img src={src} alt={`Reference ${idx+1}`} className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); removeReferenceFile(idx); }}
-                          className="absolute top-1 right-1 w-5 h-5 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -680,12 +690,12 @@ export default function PostCreatorPage() {
                 ) : (
                   <div 
                     onClick={() => refInputRef.current?.click()}
-                    className="flex-1 flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-2xl p-4 hover:bg-stone-100/80 transition-colors"
+                    className="flex-1 flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-800 rounded-2xl p-4 hover:bg-stone-900/80 transition-colors"
                   >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-xs border border-emerald-200">
-                      <ImageIcon className="w-4 h-4 text-emerald-600" />
+                    <div className="w-10 h-10 bg-stone-900 rounded-full flex items-center justify-center mb-2 shadow-xs border border-emerald-500/30">
+                      <ImageIcon className="w-4 h-4 text-emerald-400" />
                     </div>
-                    <p className="font-bold text-xs text-stone-700 text-center">
+                    <p className="font-bold text-xs text-stone-200 text-center">
                       Upload Pose / Style References<br/>
                       <span className="text-stone-400 font-normal text-[11px]">Upload model poses, lighting, or aesthetic inspiration</span>
                     </p>
@@ -695,7 +705,7 @@ export default function PostCreatorPage() {
             </div>
 
             {/* Special Style & Pose Instructions Input */}
-            <div className="bg-stone-900 text-white rounded-2xl p-5 shadow-lg border border-stone-800 space-y-2">
+            <div className="bg-stone-950/90 border border-amber-500/30 rounded-2xl p-5 shadow-xl backdrop-blur-md space-y-2">
               <label className="block text-xs font-black text-white tracking-wider flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -707,34 +717,34 @@ export default function PostCreatorPage() {
                 value={specialInstructions}
                 onChange={e => setSpecialInstructions(e.target.value)}
                 rows={2}
-                className="w-full bg-stone-950/80 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-amber-200 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none transition-shadow"
+                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-amber-200 placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 resize-none transition-shadow font-medium"
                 placeholder='e.g. "Focus on model posture and warm sunset studio lighting from Reference #1, keep the model on a luxury marble balcony overlooking the ocean."'
               />
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-stone-200/80 pb-4">
-              <h2 className="text-xl font-extrabold text-stone-900 flex items-center gap-2">
-                <Target className="w-5 h-5 text-[#D27D50]" />
+          <div className="space-y-6 relative z-10">
+            <div className="flex items-center justify-between border-b border-stone-800 pb-4">
+              <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
+                <Target className="w-5 h-5 text-amber-400" />
                 <span>2. Campaign Brief & Specs</span>
               </h2>
-              <Button onClick={handleClearForm} variant="ghost" className="text-stone-400 hover:text-red-500 font-semibold h-8 px-3 rounded-lg text-xs">Clear Form</Button>
+              <Button onClick={handleClearForm} variant="ghost" className="text-stone-400 hover:text-red-400 font-semibold h-8 px-3 rounded-lg text-xs">Clear Form</Button>
             </div>
             
             <div>
-              <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1.5">Product Name <span className="text-red-500">*</span></label>
-              <input type="text" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-shadow shadow-xs font-medium" placeholder="e.g. Aura Smart Mug" />
+              <label className="block text-xs font-black text-stone-300 uppercase tracking-wider mb-1.5">Product Name <span className="text-red-400">*</span></label>
+              <input type="text" value={productName} onChange={e => setProductName(e.target.value)} className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-shadow shadow-xs font-medium" placeholder="e.g. Aura Smart Mug" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1.5">Core USP</label>
-                <input type="text" value={usp} onChange={e => setUsp(e.target.value)} className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-shadow shadow-xs font-medium" placeholder="Keeps coffee hot all day" />
+                <label className="block text-xs font-black text-stone-300 uppercase tracking-wider mb-1.5">Core USP</label>
+                <input type="text" value={usp} onChange={e => setUsp(e.target.value)} className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-shadow shadow-xs font-medium" placeholder="Keeps coffee hot all day" />
               </div>
               <div>
-                <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1.5">Platform</label>
-                <select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-shadow shadow-xs font-medium">
+                <label className="block text-xs font-black text-stone-300 uppercase tracking-wider mb-1.5">Platform</label>
+                <select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-shadow shadow-xs font-medium">
                   <option>Instagram Feed (4:5)</option>
                   <option>Instagram Stories (9:16)</option>
                   <option>Landscape Post (16:9)</option>
@@ -745,25 +755,25 @@ export default function PostCreatorPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1.5">Personality</label>
-                <input type="text" value={personality} onChange={e => setPersonality(e.target.value)} className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-shadow shadow-xs font-medium" placeholder="Bold, premium, tech" />
+                <label className="block text-xs font-black text-stone-300 uppercase tracking-wider mb-1.5">Personality</label>
+                <input type="text" value={personality} onChange={e => setPersonality(e.target.value)} className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-shadow shadow-xs font-medium" placeholder="Bold, premium, tech" />
               </div>
               <div>
-                <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1.5">Target Audience</label>
-                <input type="text" value={audience} onChange={e => setAudience(e.target.value)} className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-shadow shadow-xs font-medium" placeholder="Remote workers, creatives" />
+                <label className="block text-xs font-black text-stone-300 uppercase tracking-wider mb-1.5">Target Audience</label>
+                <input type="text" value={audience} onChange={e => setAudience(e.target.value)} className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-shadow shadow-xs font-medium" placeholder="Remote workers, creatives" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1.5">Brief Description <span className="text-red-500">*</span></label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-shadow shadow-xs font-medium" placeholder="A matte black smart mug with a glowing LED ring at the base..." />
+              <label className="block text-xs font-black text-stone-300 uppercase tracking-wider mb-1.5">Brief Description <span className="text-red-400">*</span></label>
+              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 resize-none transition-shadow shadow-xs font-medium" placeholder="A matte black smart mug with a glowing LED ring at the base..." />
             </div>
 
             <div className="pt-3">
               <Button 
                 onClick={handleGenerateDirections} 
                 disabled={loading || !productName || !description}
-                className="w-full bg-gradient-to-r from-[#D27D50] via-rose-500 to-[#C26032] hover:from-[#b86d45] hover:to-rose-600 text-white rounded-2xl h-14 font-extrabold text-base transition-all shadow-xl shadow-orange-500/20 hover:scale-[1.005]"
+                className="w-full bg-gradient-to-r from-[#D27D50] via-rose-500 to-[#C26032] hover:from-[#b86d45] hover:to-rose-600 text-white rounded-2xl h-14 font-extrabold text-base transition-all shadow-xl shadow-orange-500/25 hover:scale-[1.005] uppercase tracking-wider"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
                 {loading ? 'Brainstorming Directions...' : 'Propose 5 Creative Directions'}
