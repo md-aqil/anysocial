@@ -71,6 +71,19 @@ const VOICE_EMOTION_PRESETS = [
 ];
 
 export default function AIProductReelPage() {
+  const [creationMode, setCreationMode] = useState<'single' | 'automation'>('single');
+  const [assetType, setAssetType] = useState<'magiclink' | 'upload'>('magiclink');
+  
+  // Single Reel State
+  const [productName, setProductName] = useState('');
+  const [productDescription, setProductDescription] = useState('');
+  const [singleImageUrl, setSingleImageUrl] = useState('');
+  const [magicLinkInput, setMagicLinkInput] = useState('');
+  const [scraping, setScraping] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFilePreview, setUploadedFilePreview] = useState('');
+
+  // Automation State
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [schedule, setSchedule] = useState(SCHEDULE_PRESETS[0].value);
   const [socialChannels, setSocialChannels] = useState<string[]>([]);
@@ -81,7 +94,7 @@ export default function AIProductReelPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [ingredientsToVideo, setIngredientsToVideo] = useState(false);
-  const [imageToVideo, setImageToVideo] = useState(false);
+  const [imageToVideo, setImageToVideo] = useState(true);
   const [animateImageCount, setAnimateImageCount] = useState(3);
 
   const router = useRouter();
@@ -90,6 +103,110 @@ export default function AIProductReelPage() {
     queryKey: ['accounts'],
     queryFn: () => api.oauth.getAccounts(),
   });
+
+  // Magic Link Import for Single Product Image
+  const handleScrapeMagicLink = async () => {
+    if (!magicLinkInput) return;
+    setScraping(true);
+    try {
+      const res = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: magicLinkInput })
+      });
+      const data = await res.json();
+      if (data.productName && !productName) setProductName(data.productName);
+      if (data.description && !productDescription) setProductDescription(data.description);
+      if (data.images && data.images.length > 0) {
+        setSingleImageUrl(data.images[0]);
+      }
+    } catch (e) {
+      console.error('Magic link scrape error:', e);
+      alert('Failed to extract product image. You can manually upload a photo instead.');
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadedFile(file);
+    setUploadedFilePreview(URL.createObjectURL(file));
+  };
+
+  const handleCreateSingleReel = async () => {
+    if (!productName) {
+      alert("Please enter a product name");
+      return;
+    }
+    
+    setIsCreating(true);
+    setStatusMessage("Creating your single product reel...");
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token found');
+
+      let finalAssetUrl = singleImageUrl;
+      let assetKind = 'IMAGE';
+
+      if (assetType === 'upload' && uploadedFile) {
+        // Upload manual file
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        const uploadRes = await fetch('/api/reels/upload', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(uploadData.error || 'Failed to upload file');
+        finalAssetUrl = uploadData.url;
+        assetKind = uploadedFile.type.startsWith('video/') ? 'VIDEO' : 'IMAGE';
+      }
+
+      if (!finalAssetUrl) {
+        alert("Please import or upload a product photo/video");
+        setIsCreating(false);
+        return;
+      }
+
+      const res = await fetch('/api/reels/generate-product-reel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prompt: `${productName}: ${productDescription}`,
+          productDescription,
+          assets: [{ url: finalAssetUrl, type: assetKind }],
+          language,
+          voiceId,
+          voicePrompt,
+          imageToVideo: true,
+          enableMusic: true,
+          enableVoice: true,
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to generate single product reel");
+
+      setIsSuccess(true);
+      setStatusMessage("Single Product Reel generation started!");
+      
+      setTimeout(() => {
+        router.push('/dashboard/reels-creator');
+      }, 1500);
+
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Failed to create reel. Please try again.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const handleCreateCampaign = async () => {
     if (!websiteUrl) {
@@ -152,7 +269,7 @@ export default function AIProductReelPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 relative pb-24">
-      {/* Header */}
+      {/* Header & Mode Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <button
@@ -164,9 +281,37 @@ export default function AIProductReelPage() {
           </button>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-violet-600" />
-            Product Reel Automation
+            AI Product Reel Creator
           </h1>
-          <p className="text-stone-500 text-sm mt-1 font-medium">Configure hands-free auto-posting from your store.</p>
+          <p className="text-stone-500 text-sm mt-1 font-medium">Generate single instant reels or configure automated store campaigns.</p>
+        </div>
+
+        {/* Creation Mode Segmented Switcher */}
+        <div className="flex items-center gap-1.5 bg-stone-100 p-1.5 rounded-2xl border border-stone-200 shrink-0">
+          <button
+            type="button"
+            onClick={() => setCreationMode('single')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+              creationMode === 'single'
+                ? 'bg-violet-600 text-white shadow-md'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Single Instant Reel</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setCreationMode('automation')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+              creationMode === 'automation'
+                ? 'bg-violet-600 text-white shadow-md'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Store Automation</span>
+          </button>
         </div>
       </div>
 
@@ -175,8 +320,8 @@ export default function AIProductReelPage() {
           <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-5">
             <CheckCircle2 className="w-10 h-10" />
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Automation Active!</h2>
-          <p className="text-stone-500 font-medium max-w-sm">We are discovering your products and will start auto-posting based on your schedule.</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Reel Creation Started!</h2>
+          <p className="text-stone-500 font-medium max-w-sm">{statusMessage}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -184,22 +329,142 @@ export default function AIProductReelPage() {
           {/* Left Column: Configuration */}
           <div className="lg:col-span-8 space-y-6">
             
-            {/* Store URL */}
-            <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 text-violet-600">
-                <Link2 className="h-5 w-5" />
-                <h3 className="text-sm font-bold uppercase tracking-wider">Connect Store</h3>
+            {creationMode === 'single' ? (
+              /* Single Instant Reel Configuration Card */
+              <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                  <div className="flex items-center gap-2 text-violet-600">
+                    <Video className="h-5 w-5" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider">1. Import Product Asset</h3>
+                  </div>
+                  
+                  {/* Asset Source Switcher */}
+                  <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setAssetType('magiclink')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                        assetType === 'magiclink' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500'
+                      }`}
+                    >
+                      Magic Link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAssetType('upload')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                        assetType === 'upload' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                  </div>
+                </div>
+
+                {assetType === 'magiclink' ? (
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold text-stone-500 uppercase">Paste Product URL (Shopify, Amazon, Store)</label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="https://yourstore.com/products/sample-product"
+                        className="flex-1 h-11 rounded-xl border-stone-200 bg-stone-50 text-sm"
+                        value={magicLinkInput}
+                        onChange={(e) => setMagicLinkInput(e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleScrapeMagicLink}
+                        disabled={scraping || !magicLinkInput}
+                        className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-5 font-bold h-11"
+                      >
+                        {scraping ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Import'}
+                      </Button>
+                    </div>
+
+                    {singleImageUrl && (
+                      <div className="mt-3 flex items-center gap-3 p-3 bg-violet-50/60 border border-violet-100 rounded-xl">
+                        <img src={singleImageUrl} alt="Scraped Product" className="w-14 h-14 object-cover rounded-lg border border-violet-200 shadow-xs" />
+                        <div>
+                          <span className="text-[10px] font-black uppercase text-violet-700 block">Product Photo Extracted</span>
+                          <span className="text-xs text-stone-600 font-medium truncate block max-w-xs">{singleImageUrl}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold text-stone-500 uppercase">Upload Image (.jpg, .png) or Video (.mp4, .mov)</label>
+                    <div className="border-2 border-dashed border-stone-200 rounded-2xl p-6 text-center hover:border-violet-400 transition-colors cursor-pointer bg-stone-50/50">
+                      <input
+                        type="file"
+                        onChange={handleFileUpload}
+                        accept="image/*,video/*"
+                        className="hidden"
+                        id="single-reel-file"
+                      />
+                      <label htmlFor="single-reel-file" className="cursor-pointer block space-y-2">
+                        {uploadedFilePreview ? (
+                          <div className="flex flex-col items-center gap-2">
+                            {uploadedFile?.type.startsWith('video/') ? (
+                              <video src={uploadedFilePreview} controls className="max-h-36 rounded-xl border border-stone-200 shadow-sm" />
+                            ) : (
+                              <img src={uploadedFilePreview} alt="Preview" className="max-h-36 object-cover rounded-xl border border-stone-200 shadow-sm" />
+                            )}
+                            <span className="text-xs font-bold text-violet-600">{uploadedFile?.name}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="w-10 h-10 bg-white text-violet-600 rounded-full flex items-center justify-center mx-auto shadow-xs">
+                              <Video className="w-5 h-5" />
+                            </div>
+                            <p className="text-xs font-bold text-stone-700">Click to upload photo or video file</p>
+                            <p className="text-[11px] text-stone-400">Supports JPG, PNG, WEBP, MP4, MOV</p>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-stone-100">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-500 uppercase mb-1.5">Product Name <span className="text-red-500">*</span></label>
+                    <Input
+                      placeholder="e.g. Classic Silk Shirt"
+                      value={productName}
+                      onChange={(e) => setProductName(e.target.value)}
+                      className="h-11 rounded-xl border-stone-200 bg-stone-50 text-sm font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-500 uppercase mb-1.5">Core Benefit / Description</label>
+                    <Input
+                      placeholder="e.g. 100% Mulberry silk, breathable luxury fit"
+                      value={productDescription}
+                      onChange={(e) => setProductDescription(e.target.value)}
+                      className="h-11 rounded-xl border-stone-200 bg-stone-50 text-sm font-medium"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="relative">
-                <Input
-                  placeholder="https://www.yourstore.com"
-                  className="pl-4 h-12 rounded-xl border-stone-200 bg-stone-50 focus:bg-white focus:ring-violet-300 focus:border-violet-400 text-sm font-medium w-full"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  disabled={isCreating}
-                />
+            ) : (
+              /* Store URL Automation Card */
+              <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 text-violet-600">
+                  <Link2 className="h-5 w-5" />
+                  <h3 className="text-sm font-bold uppercase tracking-wider">Connect Store</h3>
+                </div>
+                <div className="relative">
+                  <Input
+                    placeholder="https://www.yourstore.com"
+                    className="pl-4 h-12 rounded-xl border-stone-200 bg-stone-50 focus:bg-white focus:ring-violet-300 focus:border-violet-400 text-sm font-medium w-full"
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    disabled={isCreating}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Language & Voice Grid */}
             <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm space-y-5">
@@ -430,15 +695,26 @@ export default function AIProductReelPage() {
           {/* Right Column: Summary & Confirmation */}
           <div className="lg:col-span-4">
             <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl sticky top-6 space-y-6">
-              <h3 className="text-lg font-black tracking-tight border-b border-slate-800 pb-4">Automation Summary</h3>
+              <h3 className="text-lg font-black tracking-tight border-b border-slate-800 pb-4">
+                {creationMode === 'single' ? 'Single Reel Summary' : 'Automation Summary'}
+              </h3>
               
               <div className="space-y-4">
-                <div>
-                  <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Target Store</span>
-                  <div className="text-sm font-medium bg-slate-800 rounded-lg p-2 truncate">
-                    {websiteUrl || <span className="text-slate-500 italic">Not set</span>}
+                {creationMode === 'single' ? (
+                  <div>
+                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Product Name</span>
+                    <div className="text-sm font-bold text-violet-300 bg-slate-800 rounded-lg p-2.5 truncate">
+                      {productName || <span className="text-slate-500 italic">Not set</span>}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div>
+                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Target Store</span>
+                    <div className="text-sm font-medium bg-slate-800 rounded-lg p-2 truncate">
+                      {websiteUrl || <span className="text-slate-500 italic">Not set</span>}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -453,9 +729,11 @@ export default function AIProductReelPage() {
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Schedule</span>
+                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                      {creationMode === 'single' ? 'Motion Engine' : 'Schedule'}
+                    </span>
                     <div className="text-sm font-medium text-emerald-400">
-                      {selectedSchedule?.short}
+                      {creationMode === 'single' ? 'Veo 3 Motion' : selectedSchedule?.short}
                     </div>
                   </div>
                 </div>
@@ -481,19 +759,38 @@ export default function AIProductReelPage() {
               </div>
 
               <div className="pt-4 border-t border-slate-800">
-                <p className="text-xs text-slate-400 mb-4">Reels will be automatically generated prior to the scheduled time so they post instantly.</p>
-                <Button
-                  onClick={handleCreateCampaign}
-                  disabled={isCreating || !websiteUrl || selectedAccounts.length === 0}
-                  className="w-full h-12 bg-violet-500 hover:bg-violet-600 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 text-xs uppercase tracking-widest gap-2"
-                >
-                  {isCreating ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
-                  )}
-                  {isCreating ? 'Processing...' : 'Start Automation'}
-                </Button>
+                <p className="text-xs text-slate-400 mb-4">
+                  {creationMode === 'single'
+                    ? 'AI will animate your single product asset, write script copy, synthesize voiceover, and prepare your reel.'
+                    : 'Reels will be automatically generated prior to the scheduled time so they post instantly.'}
+                </p>
+                {creationMode === 'single' ? (
+                  <Button
+                    onClick={handleCreateSingleReel}
+                    disabled={isCreating || !productName || (!singleImageUrl && !uploadedFile)}
+                    className="w-full h-12 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 text-xs uppercase tracking-widest gap-2 shadow-lg"
+                  >
+                    {isCreating ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    {isCreating ? 'Creating Reel...' : 'Generate Instant Reel'}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleCreateCampaign}
+                    disabled={isCreating || !websiteUrl || selectedAccounts.length === 0}
+                    className="w-full h-12 bg-violet-500 hover:bg-violet-600 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 text-xs uppercase tracking-widest gap-2"
+                  >
+                    {isCreating ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    {isCreating ? 'Processing...' : 'Start Automation'}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
