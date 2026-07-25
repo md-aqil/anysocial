@@ -117,8 +117,8 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
 Create a full commercial creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
     
     Provided Input:
-    ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s): Use this product/garment/object 100% identically in the generated visual. Keep exact logo, labels, fabric, cuts, color, and pattern unchanged.` : ''}
-    ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s): The pose, model stance, body angle, camera perspective, lighting, 3D environment, and aesthetic style MUST adapt from these reference images while seamlessly featuring the identical product.` : ''}
+    ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s) (IDENTITY LOCK): Use the exact product/garment/object shown in these images 100% identically. Preserve exact logo, labels, fabric, cuts, color, and pattern unaltered.` : ''}
+    ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s) (STYLE TRANSFER ONLY): Adapt ONLY the model pose, body stance, camera perspective, lighting, 3D environment, and visual aesthetic from these reference images. DO NOT use or reproduce any clothing or product present in these reference images—the product must strictly come from the Product Images!` : ''}
     ${specialInstructions ? `- USER SPECIAL POSE/STYLE INSTRUCTION: "${specialInstructions}". Make sure to explicitly obey this instruction regarding what to look for or adapt from the reference images!` : ''}
 
     Output exactly in this JSON format (no markdown blocks, just raw JSON):
@@ -138,8 +138,8 @@ Create a full commercial creative brief for "${productName}" targeting the "${di
     CRITICAL GUIDELINES FOR THE IMAGE PROMPT:
     1. COMPLETE COMMERCIAL ADVERTISEMENT: Describe a complete, campaign-ready advertisement with negative space reserved for typography, rather than a plain product shot.
     2. CAMERA MATH & OPTICAL PHYSICS: Include explicit focal length, aperture, lighting behavior, and micro-surface details (e.g., "shot on 85mm f/2.0 lens, ISO 100, natural directional sunlight with soft rim light, micro-texture details").
-    3. PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to keep the original product, garment, labels, colors, and cuts 100% identical and unaltered.' : 'Feature the product as the central hero element.'}
-    4. POSE & STYLE TRANSFER: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
+    3. PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to keep the original product, garment, labels, colors, and cuts 100% identical and unaltered from the Product Images. Explicitly prohibit replacing the product with any clothing from the style reference photo.' : 'Feature the product as the central hero element.'}
+    4. POSE & STYLE TRANSFER: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo, while keeping the user product 100% identical.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
     ${specialInstructions ? `5. USER SPECIAL DIRECTIVE: "${specialInstructions}". Enforce this instruction strictly in the prompt!` : ''}
     `;
 

@@ -38,7 +38,19 @@ const renderCompactStep = (title: string, content: React.ReactNode, isComplete: 
   </div>
 );
 
-const GenerationTimeline = ({ statusMessage, isCompleted = false }: { statusMessage: string, isCompleted?: boolean }) => {
+const GenerationTimeline = ({ 
+  statusMessage, 
+  isCompleted = false, 
+  referenceImageUrl,
+  referenceImagePreviews = [],
+  productImagePreviews = [] 
+}: { 
+  statusMessage: string; 
+  isCompleted?: boolean;
+  referenceImageUrl?: string;
+  referenceImagePreviews?: string[];
+  productImagePreviews?: string[];
+}) => {
   const msg = (statusMessage || '').toLowerCase();
   
   let currentStep = 1;
@@ -50,8 +62,11 @@ const GenerationTimeline = ({ statusMessage, isCompleted = false }: { statusMess
     else if (msg.includes('finalizing') || msg.includes('completed') || msg.includes('assembling')) currentStep = 4;
   }
 
+  const hasRefImg = referenceImageUrl || (referenceImagePreviews && referenceImagePreviews.length > 0);
+  const refThumb = referenceImageUrl || referenceImagePreviews[0];
+
   return (
-    <div className="mb-6 bg-stone-900 text-white p-5 rounded-2xl border border-stone-800 shadow-lg space-y-3">
+    <div className="mb-6 bg-stone-900 text-white p-5 rounded-2xl border border-stone-800 shadow-lg space-y-4">
       <div className="flex items-center justify-between border-b border-stone-800 pb-2.5">
         <div className="flex items-center gap-2">
           {isCompleted ? (
@@ -61,8 +76,44 @@ const GenerationTimeline = ({ statusMessage, isCompleted = false }: { statusMess
           )}
           <span className="text-xs font-black text-amber-300 uppercase tracking-widest">Generation Process Engine</span>
         </div>
-        <span className="text-[10px] font-bold text-stone-400">Gemini 2.5 Realism</span>
+        <span className="text-[10px] font-bold text-stone-400">Gemini 2.5 Realism + Style Transfer</span>
       </div>
+
+      {/* Visual Reference & Product Previews Banner inside Process Engine */}
+      {(hasRefImg || (productImagePreviews && productImagePreviews.length > 0)) && (
+        <div className="bg-stone-950 p-3 rounded-xl border border-stone-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {hasRefImg && (
+              <div className="flex items-center gap-2 bg-emerald-950/60 p-1.5 pr-3 rounded-lg border border-emerald-500/30">
+                <img src={refThumb} alt="Pose Reference" className="w-8 h-8 rounded object-cover border border-emerald-400/60 shadow-xs" />
+                <div>
+                  <span className="text-[9px] font-black uppercase text-emerald-300 block tracking-wider">🎨 Pose & Style Ref</span>
+                  <span className="text-[9px] font-semibold text-stone-400">Pose & Lighting Vectors Injected</span>
+                </div>
+              </div>
+            )}
+
+            {productImagePreviews && productImagePreviews.length > 0 && (
+              <div className="flex items-center gap-2 bg-amber-950/60 p-1.5 pr-3 rounded-lg border border-amber-500/30">
+                <div className="flex -space-x-1.5">
+                  {productImagePreviews.slice(0, 2).map((img, idx) => (
+                    <img key={idx} src={img} alt="Product" className="w-8 h-8 rounded object-cover border border-amber-400/60 shadow-xs" />
+                  ))}
+                </div>
+                <div>
+                  <span className="text-[9px] font-black uppercase text-amber-300 block tracking-wider">🔒 Identity Lock</span>
+                  <span className="text-[9px] font-semibold text-stone-400">Exact Product Preserved 100%</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <span className="text-[9px] font-extrabold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20 shrink-0">
+            Multi-Modal Active
+          </span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {renderCompactStep(
           "1. Analysis",
@@ -1082,7 +1133,12 @@ export default function PostCreatorPage() {
             {/* Phase 2: Live Generation Process Details & Timeline */}
             {activeCampaign.status === 'GENERATING' && (
               <div className="space-y-6">
-                <GenerationTimeline statusMessage={activeCampaign.statusMessage || 'Processing campaign assets...'} />
+                <GenerationTimeline 
+                  statusMessage={activeCampaign.statusMessage || 'Processing campaign assets...'} 
+                  referenceImageUrl={activeCampaign.referenceImageUrl}
+                  referenceImagePreviews={referencePreviews}
+                  productImagePreviews={imagePreviews}
+                />
 
                 {activeCampaign.items.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">

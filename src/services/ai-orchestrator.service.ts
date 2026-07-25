@@ -389,10 +389,10 @@ Make sure the output is a valid JSON object.`;
 
       const requestParts: any[] = [];
       if (prodImgList.length > 0 || styleImgList.length > 0) {
-        requestParts.push({ text: `You are an expert commercial fashion & advertising photographer and AI art director.\n\nHIGHEST PRIORITY POSE & STYLE SYNTHESIS DIRECTIVE:\n1. REPLICATE REFERENCE POSE & STYLE: The generated image MUST closely match and adapt the model pose, body position, camera perspective, lighting setup, 3D background scene, and visual aesthetic from the attached Style & Pose Reference Image(s).\n2. PRODUCT IDENTITY LOCK: Feature the exact product/garment/object from the Product Image(s) with 100% precision. Keep logos, fabric pattern, colors, labels, cuts, and branding completely unchanged and unaltered.\n\nPrompt Instructions: ${finalPromptText}` });
+        requestParts.push({ text: `You are an expert commercial fashion & advertising photographer and AI art director.\n\nHIGHEST PRIORITY POSE & STYLE SYNTHESIS DIRECTIVE:\n1. PRODUCT IDENTITY LOCK (STRICT UNALTERED REPRODUCTION): The generated image MUST feature the exact product/garment/object from the attached PRODUCT IMAGES with 100% precision. Preserve exact logos, fabric pattern, texture, cuts, silhouette, branding, and color palette. DO NOT replace or substitute the user's product with any garment shown inside the Style Reference Images.\n2. REPLICATE POSE, LIGHTING & SCENE FROM STYLE REFERENCE: Adapt ONLY the model pose, body posture, camera perspective, lighting setup, studio background, and overall aesthetic from the attached STYLE & POSE REFERENCE IMAGES. IGNORE and DO NOT COPY any product or clothing worn in the Style Reference Images—use them exclusively for model pose and environment transfer.\n\nPrompt Instructions: ${finalPromptText}` });
 
         if (styleImgList.length > 0) {
-          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (Replicate the model pose, body posture, lighting, background scene, and visual style from these images):" });
+          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (Transfer model pose, body posture, lighting, background scene, and visual aesthetic ONLY - DO NOT copy any product/garment from these images):" });
           for (const item of styleImgList) {
             requestParts.push({
               inlineData: {
@@ -404,7 +404,7 @@ Make sure the output is a valid JSON object.`;
         }
 
         if (prodImgList.length > 0) {
-          requestParts.push({ text: "PRODUCT IMAGES (Keep the product/object in these images 100% identical, preserving exact shape, fabric, details, branding, and colors):" });
+          requestParts.push({ text: "PRODUCT IMAGES (IDENTITY LOCK - Keep this exact product/garment/object 100% identical, preserving exact shape, fabric, details, branding, and colors):" });
           for (const item of prodImgList) {
             requestParts.push({
               inlineData: {
