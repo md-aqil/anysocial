@@ -389,7 +389,7 @@ Make sure the output is a valid JSON object.`;
 
       const requestParts: any[] = [];
       if (prodImgList.length > 0 || styleImgList.length > 0) {
-        requestParts.push({ text: `You are a world-class commercial advertising photographer and AI art director.\n\nCRITICAL PRODUCT IDENTITY LOCK: Keep the product/garment/object from the Product Images 100% identical and unaltered in design, pattern, color, logo, and texture.\n\nCRITICAL POSE & STYLE TRANSFER: Adapt the model pose, body posture, camera angle, lighting, 3D environment, and visual aesthetics from the Style/Pose Reference Images to seamlessly feature the identical product.\n\nInstructions: ${finalPromptText}` });
+        requestParts.push({ text: `You are a world-class commercial advertising photographer and AI art director.\n\nCRITICAL PRODUCT IDENTITY LOCK: Keep the product/garment/object from the Product Images 100% identical and unaltered in design, pattern, color, logo, and texture.\n\nCRITICAL CAMERA ANGLE & POSE MATCH: Replicate and match the exact camera angle, optical perspective, camera elevation, shot framing, model pose, stance, body posture, lighting setup, 3D environment, and visual aesthetics from the attached Style/Pose Reference Images to seamlessly feature the identical product.\n\nInstructions: ${finalPromptText}` });
 
         if (prodImgList.length > 0) {
           requestParts.push({ text: "PRODUCT IMAGES (IDENTITY LOCK - Keep the product/object in these images 100% identical, preserving exact shape, fabric, details, branding, and colors):" });
@@ -404,7 +404,7 @@ Make sure the output is a valid JSON object.`;
         }
 
         if (styleImgList.length > 0) {
-          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (Replicate and adapt the model pose, body position, background scene, camera angle, lighting setup, and visual style from these images):" });
+          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (MATCH EXACT CAMERA ANGLE & MODEL POSE - Replicate and match the camera perspective, camera angle, elevation, model pose, body posture, background scene, lighting setup, and visual style from these images):" });
           for (const item of styleImgList) {
             requestParts.push({
               inlineData: {
