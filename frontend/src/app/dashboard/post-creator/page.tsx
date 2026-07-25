@@ -182,6 +182,33 @@ export default function PostCreatorPage() {
     fetchHistory();
   }, []);
 
+  // Restore active campaign from localStorage on mount / page refresh
+  useEffect(() => {
+    const savedActiveCampaign = localStorage.getItem('postCreator_activeCampaign');
+    if (savedActiveCampaign) {
+      try {
+        const parsed = JSON.parse(savedActiveCampaign);
+        if (parsed && parsed.id) {
+          setActiveCampaign(parsed);
+          if (parsed.status === 'GENERATING') {
+            setTimeout(() => {
+              handleGenerateAd(parsed);
+            }, 300);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved active campaign', e);
+      }
+    }
+  }, []);
+
+  // Sync activeCampaign state to localStorage whenever updated
+  useEffect(() => {
+    if (activeCampaign) {
+      localStorage.setItem('postCreator_activeCampaign', JSON.stringify(activeCampaign));
+    }
+  }, [activeCampaign]);
+
   // Restore in-flight active reel animation from localStorage on mount
   useEffect(() => {
     const savedReelId = localStorage.getItem('postCreator_activeReelId');
@@ -427,6 +454,7 @@ export default function PostCreatorPage() {
     setDirections([]);
     setSelectedDirections([]);
     setActiveCampaign(null);
+    localStorage.removeItem('postCreator_activeCampaign');
     setError(null);
   };
 
@@ -476,18 +504,21 @@ export default function PostCreatorPage() {
 
       const groupRefImg = referencePreviews[0] || imagePreviews[0] || (magicLink ? `/api/scrape/proxy-image?url=${encodeURIComponent(magicLink)}` : undefined);
 
-      setActiveCampaign({
+      const newCampaign = {
         id: `camp-${Date.now()}`,
         productName: productName,
         platform: platform,
         createdAt: new Date().toISOString(),
         referenceImageUrl: groupRefImg,
-        status: 'SELECTING_DIRECTIONS',
+        status: 'SELECTING_DIRECTIONS' as const,
         statusMessage: '5 Creative Directions Proposed. Select options below to generate campaign.',
         directions: data.directions,
         selectedDirections: [...data.directions],
         items: []
-      });
+      };
+
+      setActiveCampaign(newCampaign);
+      localStorage.setItem('postCreator_activeCampaign', JSON.stringify(newCampaign));
 
       setTimeout(() => {
         const campaignEl = document.getElementById('active-campaign-card');
@@ -515,13 +546,24 @@ export default function PostCreatorPage() {
     }) : null);
 
     try {
-      const generatedResults = [];
+      const generatedResults = [...(campaignToRun.items || [])];
       let stepIndex = 0;
+
       for (const direction of campaignToRun.selectedDirections) {
+        const dirTitle = direction.title || direction;
+        const alreadyGenerated = generatedResults.some((it: any) => 
+          (it.direction?.title || it.direction) === dirTitle
+        );
+
+        if (alreadyGenerated) {
+          continue;
+        }
+
         stepIndex++;
         setActiveCampaign(prev => prev ? ({
           ...prev,
-          statusMessage: `Synthesizing Direction ${stepIndex} of ${campaignToRun.selectedDirections.length}: "${direction.title}"...`
+          status: 'GENERATING',
+          statusMessage: `Synthesizing Direction ${stepIndex} of ${campaignToRun.selectedDirections.length}: "${dirTitle}"...`
         }) : null);
 
         const formData = new FormData();
@@ -558,12 +600,13 @@ export default function PostCreatorPage() {
         setActiveCampaign(prev => prev ? ({
           ...prev,
           items: [...generatedResults],
-          statusMessage: `Completed ${stepIndex} of ${campaignToRun.selectedDirections.length} variations.`
+          statusMessage: `Completed ${generatedResults.length} of ${campaignToRun.selectedDirections.length} variations.`
         }) : null);
       }
 
       setActiveCampaign(prev => prev ? ({
         ...prev,
+        items: [...generatedResults],
         status: 'COMPLETED',
         statusMessage: `Successfully generated ${generatedResults.length} post variations!`
       }) : null);
