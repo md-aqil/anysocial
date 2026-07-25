@@ -121,9 +121,9 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
       mimeType: f.mimetype
     }));
 
-    const briefPrompt = `You are a world-class advertising creative director and master commercial photographer combining the "world-class-ads" creative framework with the "nano-banana-images" hyper-realism engine.
+    const briefPrompt = `You are an elite advertising creative director and master commercial photographer combining the "world-class-ads" creative framework with the "nano-banana-images" hyper-realism engine.
 
-Create a full commercial creative brief for "${productName}" targeting the "${dirTitle}" direction for ${platform}.
+Create a full, high-converting commercial creative brief for "${productName}" targeting the "${dirTitle}" direction for ${platform}.
     
     Provided Input:
     ${productImagesList.length > 0 ? `- PRIMARY HERO PRODUCT ANCHOR (IMAGE 1): The first attached product image is the SINGLE GROUND TRUTH HERO PRODUCT PHOTO. Reproduce this exact product/garment/object 100% identically with zero feature mutation or hallucination. Preserve exact logos, labels, fabric, cuts, color, and silhouette unaltered.` : ''}
@@ -136,17 +136,17 @@ Create a full commercial creative brief for "${productName}" targeting the "${di
       "tagline": "Memorable, high-impact headline (2-6 words)",
       "supportingCopy": "One crisp line highlighting the core product benefit",
       "callToAction": "Action-oriented CTA phrase (e.g., 'Shop Now', 'Discover the Collection')",
-      "visualSceneSetup": "Detailed description of the setting, camera physics (e.g. 85mm f/1.8 lens), lighting behavior (rim light, soft shadow falloff), and mood",
+      "visualSceneSetup": "Detailed description of setting, camera physics (85mm f/1.8 lens, ISO 100), category-specific lighting (backlit translucency for drinks, specular marble light for luxury, macro fabric movement for fashion), and mood",
       "brandIntegration": "Logo placement ratio, typography style hierarchy, color palette integration",
-      "layoutAndEffects": "Product placement, negative space composition for text overlays, subtle visual effects (lens flare, motion blur, reflection)",
+      "layoutAndEffects": "Product placement, negative space safe zone composition for typography overlays, visual effects (lens flare, light streak, motion blur, reflection)",
       "creativeRationale": "Explain which professional advertising category standards and emotional triggers were applied and why",
       "imagePrompt": "A highly-detailed, hyper-realistic dense narrative description for commercial image generation...",
       "negativePrompt": "Comma-separated list of exclusions (e.g., plastic skin, airbrushed textures, dataset-average anatomy, beautification filters, fake logos, watermarks, product mutation, feature averaging, hybrid garment)"
     }
     
     CRITICAL GUIDELINES FOR THE IMAGE PROMPT:
-    1. COMPLETE COMMERCIAL ADVERTISEMENT WITH TEXT OVERLAY: Describe a complete, campaign-ready advertisement with bold, high-contrast commercial tagline typography overlay rendered directly on the image graphic.
-    2. CAMERA MATH & OPTICAL PHYSICS: Include explicit focal length, aperture, lighting behavior, and micro-surface details (e.g., "shot on 85mm f/2.0 lens, ISO 100, natural directional sunlight with soft rim light, micro-texture details").
+    1. COMPLETE COMMERCIAL ADVERTISEMENT WITH TYPOGRAPHY: Describe a complete, campaign-ready advertisement featuring the tagline headline "${dirTitle}" and CTA button clearly integrated into the layout.
+    2. CAMERA MATH & OPTICAL PHYSICS: Include explicit focal length (85mm f/1.8 lens, ISO 100), natural directional lighting, rim lights, soft shadow falloff, and unretouched micro-surface texture details.
     3. PRIMARY HERO PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to treat Image #1 as the SINGLE HERO PRODUCT ANCHOR. Keep the original product, garment, logos, colors, fabric, and cuts 100% identical and unaltered. Prohibit feature averaging or replacing the product with any clothing from style reference photos.' : 'Feature the product as the central hero element.'}
     4. POSE & STYLE TRANSFER: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo, while keeping the primary hero product 100% identical.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
     ${specialInstructions ? `5. USER SPECIAL DIRECTIVE: "${specialInstructions}". Enforce this instruction strictly in the prompt!` : ''}
@@ -176,7 +176,13 @@ Create a full commercial creative brief for "${productName}" targeting the "${di
 
     const nanoBananaNegativeStack = "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces";
 
-    const promptWithTypography = `${briefParsed.imagePrompt}${briefParsed.tagline ? `\n\nCOMMERCIAL ADVERTISEMENT OVERLAY TYPOGRAPHY DIRECTIVE: Render the exact headline text "${briefParsed.tagline.toUpperCase()}" as bold, ultra-crisp, high-contrast graphic typography overlay directly onto the commercial advertisement graphic visual.` : ''}`;
+    const taglineText = briefParsed.tagline ? briefParsed.tagline.toUpperCase() : productName.toUpperCase();
+    const ctaText = briefParsed.callToAction ? briefParsed.callToAction.toUpperCase() : 'SHOP NOW';
+    const subCopyText = briefParsed.supportingCopy || '';
+
+    const typographyDirective = `\n\nWORLD-CLASS ADVERTISING GRAPHIC LAYOUT & TYPOGRAPHY DIRECTIVE:\n1. HEADLINE OVERLAY: Render the exact tagline headline "${taglineText}" as bold, ultra-crisp, high-contrast commercial advertising typography overlaid on the graphic visual.\n2. SUPPORTING COPY: Render "${subCopyText}" in clean, modern secondary typography below the headline.\n3. CALL TO ACTION: Render a clean, modern CTA button pill with text "${ctaText}" in the bottom safe zone.`;
+
+    const promptWithTypography = `${briefParsed.imagePrompt}${typographyDirective}`;
 
     const imagePayload = JSON.stringify({
       prompt: promptWithTypography,
