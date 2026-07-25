@@ -390,16 +390,15 @@ Make sure the output is a valid JSON object.`;
       const requestParts: any[] = [];
       if (prodImgList.length > 0 || styleImgList.length > 0) {
         requestParts.push({ 
-          text: `CRITICAL SEAMLESS IMAGE COMBINATION DIRECTIVE:\n` +
-                `1. HIGHLY RESPECT REFERENCE IMAGE SCENE & POSE: Faithfully replicate the exact model pose, body posture, stance, camera angle, optical perspective, lighting setup, background environment, and artistic aesthetic from the attached STYLE & POSE REFERENCE IMAGE.\n` +
-                `2. SEAMLESS HERO PRODUCT FUSION: Feature the EXACT, unaltered product/garment/object from the PRIMARY HERO PRODUCT ANCHOR IMAGE inside that reference scene. Replace the clothing/product in the reference photo with the user's hero product.\n` +
-                `3. STRICT PRODUCT IDENTITY LOCK: Preserve all logos, branding, color, fabric weave, cuts, silhouette, and visual details from the Hero Product Image with 100% precision (zero mutation or distortion).\n\n` +
-                `PROMPT INSTRUCTIONS: ${finalPromptText}`
+          text: `CRITICAL MANDATORY DIRECTIVE — PRODUCT IDENTITY IS PRIORITY #1:\n` +
+                `1. EXACT PRODUCT REPRODUCTION: You MUST feature the EXACT product/garment/object from the PRIMARY HERO PRODUCT ANCHOR IMAGE below. Preserve all logos, branding, color, fabric texture, cuts, silhouette, and visual details with 100% precision. Zero alteration, zero hallucination, zero feature blending.\n` +
+                `2. IGNORE CLOTHING IN STYLE REFERENCES: The style reference images are provided ONLY for human model pose, body posture, camera angle, lighting, and background composition. You MUST IGNORE and DISCARD any clothing, outfit, or product shown inside the style reference photos. All clothing/product in the generated image MUST BE THE PRIMARY HERO PRODUCT.\n\n` +
+                `PROMPT: ${finalPromptText}`
         });
 
         // 1. PRIMARY HERO PRODUCT ANCHOR ATTACHED FIRST
         if (prodImgList.length > 0) {
-          requestParts.push({ text: `PRIMARY HERO PRODUCT ANCHOR IMAGE (GROUND TRUTH PRODUCT - PRESERVE ALL LOGOS, CUTS, FABRIC, AND COLORS 100% IDENTICALLY):` });
+          requestParts.push({ text: `PRIMARY HERO PRODUCT ANCHOR IMAGE (GROUND TRUTH - PRESERVE THIS EXACT PRODUCT 100% IDENTICALLY WITH ZERO MUTATION):` });
           requestParts.push({
             inlineData: {
               mimeType: prodImgList[0].mimeType || 'image/jpeg',
@@ -422,7 +421,7 @@ Make sure the output is a valid JSON object.`;
 
         // 2. STYLE & POSE REFERENCE ATTACHED SECOND
         if (styleImgList.length > 0) {
-          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (HIGHLY RESPECT MODEL POSE, BODY ANGLE, LIGHTING, AND ENVIRONMENT FROM THESE IMAGES):" });
+          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (TRANSFER MODEL POSE, CAMERA ANGLE & LIGHTING ONLY - DISCARD ALL CLOTHING/PRODUCTS FROM THESE IMAGES):" });
           for (const item of styleImgList) {
             requestParts.push({
               inlineData: {

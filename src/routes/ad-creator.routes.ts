@@ -134,10 +134,10 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
     }
     
     CRITICAL GUIDELINES FOR THE IMAGE PROMPT:
-    1. HIGHLY RESPECT REFERENCE IMAGE SCENE & POSE: ${styleImagesList.length > 0 ? 'Faithfully replicate the model pose, body posture, stance, camera angle, optical perspective, lighting setup, background environment, and visual aesthetic from the attached style reference image.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
-    2. SEAMLESS HERO PRODUCT FUSION: Instruct the image generator to feature the exact product, garment, logo, fabric, cuts, color, and silhouette from Image #1 inside that reference scene 100% identically without feature blending or distortion.
-    3. COMPLETE COMMERCIAL ADVERTISEMENT WITH TYPOGRAPHY: Describe a complete, campaign-ready advertisement featuring the tagline headline "${direction.title || ''}" and CTA button clearly integrated into the layout.
-    4. OPTICAL CAMERA PHYSICS: Include explicit focal length (85mm f/1.8 lens, ISO 100), natural directional lighting, rim lights, soft shadow falloff, and unretouched micro-surface texture details.
+    1. PRIORITY #1 — MANDATORY PRODUCT PRESERVATION: The primary hero product image (Image #1) is the absolute ground truth. Instruct the image generator to reproduce the exact product, garment, logo, fabric, cuts, color, and silhouette 100% identically without feature blending or hallucination.
+    2. COMPLETE COMMERCIAL ADVERTISEMENT WITH TYPOGRAPHY: Describe a complete, campaign-ready advertisement featuring the tagline headline "${direction.title || ''}" and CTA button clearly integrated into the layout.
+    3. OPTICAL CAMERA PHYSICS: Include explicit focal length (85mm f/1.8 lens, ISO 100), natural directional lighting, rim lights, soft shadow falloff, and unretouched micro-surface texture details.
+    4. POSE & STYLE TRANSFER ONLY: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo, while keeping the primary hero product 100% identical. EXPLICITLY PROHIBIT replacing or blending the product with any clothing worn in style reference photos.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
     ${specialInstructions ? `5. USER SPECIAL DIRECTIVE: "${specialInstructions}". Enforce this instruction strictly in the prompt!` : ''}
     `;
 
