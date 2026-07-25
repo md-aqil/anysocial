@@ -112,35 +112,35 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
       mimeType: f.mimetype
     }));
 
-    const briefPrompt = `You are a world-class advertising creative assistant and art director. Create a full creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
+    const briefPrompt = `You are a world-class advertising creative director and master commercial photographer combining the "world-class-ads" creative framework with the "nano-banana-images" hyper-realism engine.
+
+Create a full commercial creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
     
-    We are providing:
+    Provided Input:
     ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s): Use this product/garment/object 100% identically in the generated visual. Keep exact logo, labels, fabric, cuts, color, and pattern unchanged.` : ''}
     ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s): The pose, model stance, body angle, camera perspective, lighting, 3D environment, and aesthetic style MUST adapt from these reference images while seamlessly featuring the identical product.` : ''}
     ${specialInstructions ? `- USER SPECIAL POSE/STYLE INSTRUCTION: "${specialInstructions}". Make sure to explicitly obey this instruction regarding what to look for or adapt from the reference images!` : ''}
 
     Output exactly in this JSON format (no markdown blocks, just raw JSON):
     {
-      "campaignConcept": "One sentence describing the creative idea",
-      "tagline": "Memorable headline (2-6 words)",
-      "supportingCopy": "One descriptive line about the product benefit",
-      "callToAction": "Action phrase like 'Shop Now'",
-      "visualSceneSetup": "Detailed description of the photography/visual setup, lighting, and mood",
-      "brandIntegration": "Logo placement, color overlays, typography style",
-      "layoutAndEffects": "Product placement, negative space, special effects like glow/motion blur",
-      "creativeRationale": "Explain which professional creative standards were applied and why",
-      "imagePrompt": "A highly-detailed, hyper-realistic ad visual...",
-      "negativePrompt": "Comma-separated list of things to exclude (e.g., humans, people, hands, if the product is an animal/cartoon and no humans are needed)"
+      "campaignConcept": "One sentence describing the creative idea and emotional hook",
+      "tagline": "Memorable, high-impact headline (2-6 words)",
+      "supportingCopy": "One crisp line highlighting the core product benefit",
+      "callToAction": "Action-oriented CTA phrase (e.g., 'Shop Now', 'Discover the Collection')",
+      "visualSceneSetup": "Detailed description of the setting, camera physics (e.g. 85mm f/1.8 lens), lighting behavior (rim light, soft shadow falloff), and mood",
+      "brandIntegration": "Logo placement ratio, typography style hierarchy, color palette integration",
+      "layoutAndEffects": "Product placement, negative space composition for text overlays, subtle visual effects (lens flare, motion blur, reflection)",
+      "creativeRationale": "Explain which professional advertising category standards and emotional triggers were applied and why",
+      "imagePrompt": "A highly-detailed, hyper-realistic dense narrative description for commercial image generation...",
+      "negativePrompt": "Comma-separated list of exclusions (e.g., plastic skin, airbrushed textures, dataset-average anatomy, beautification filters, fake logos, watermarks)"
     }
     
-    CRITICAL INSTRUCTION FOR IMAGE PROMPT:
-    The imagePrompt MUST describe a COMPLETE, PROFESSIONALLY DESIGNED ADVERTISEMENT, not just a product photo. 
-    It MUST explicitly command the image generator to render the typography (Tagline and CTA) beautifully integrated into the layout, utilizing negative space.
-    CRITICAL: The image generator MUST NOT include any fake logos, watermarks, brand icons, or signatures.
-    CRITICAL: Do NOT add humans, people, or hands to the scene unless explicitly requested by the product description. If the product is an animal, pet, or cartoon, explicitly enforce "NO HUMANS, NO PEOPLE, NO HANDS" in the prompt.
-    ${productImagesList.length > 0 ? 'IMPORTANT: We are passing original product images. Instruct the image generator in the imagePrompt to keep the product/dress/model 100% identical and unaltered.' : ''}
-    ${styleImagesList.length > 0 ? 'IMPORTANT: We are passing pose and style reference images. Instruct the image generator to adapt the model pose, body posture, lighting, background, composition, and color theme from the style reference images.' : ''}
-    ${specialInstructions ? `IMPORTANT: Strict User Preference: "${specialInstructions}".` : ''}
+    CRITICAL GUIDELINES FOR THE IMAGE PROMPT:
+    1. COMPLETE COMMERCIAL ADVERTISEMENT: Describe a complete, campaign-ready advertisement with negative space reserved for typography, rather than a plain product shot.
+    2. CAMERA MATH & OPTICAL PHYSICS: Include explicit focal length, aperture, lighting behavior, and micro-surface details (e.g., "shot on 85mm f/2.0 lens, ISO 100, natural directional sunlight with soft rim light, micro-texture details").
+    3. PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to keep the original product, garment, labels, colors, and cuts 100% identical and unaltered.' : 'Feature the product as the central hero element.'}
+    4. POSE & STYLE TRANSFER: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
+    ${specialInstructions ? `5. USER SPECIAL DIRECTIVE: "${specialInstructions}". Enforce this instruction strictly in the prompt!` : ''}
     `;
 
     const briefMediaParts: { data: string; mimeType: string }[] = [...productImagesList, ...styleImagesList];
@@ -149,9 +149,11 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
     const cleanedBrief = briefText.replace(/```json\n?|```/g, '').trim();
     const briefParsed = JSON.parse(cleanedBrief);
 
+    const nanoBananaNegativeStack = "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces";
+
     const imagePayload = JSON.stringify({
       prompt: briefParsed.imagePrompt,
-      negative_prompt: (briefParsed.negativePrompt ? briefParsed.negativePrompt + ", " : "") + "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces",
+      negative_prompt: (briefParsed.negativePrompt ? briefParsed.negativePrompt + ", " : "") + nanoBananaNegativeStack,
       api_parameters: {
         resolution: "1K",
         output_format: "jpg",
@@ -159,7 +161,8 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
       },
       settings: {
         resolution: "1K",
-        quality: "high detail, commercial photography"
+        style: "documentary commercial realism",
+        quality: "high detail, unretouched skin, optical camera physics"
       }
     });
 
