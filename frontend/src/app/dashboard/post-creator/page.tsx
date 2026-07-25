@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, 
   XCircle, PenSquare, Maximize2, Film, Download, X, Video, Share2, 
-  Check, ArrowLeft, Layers, Wand2
+  Check, ArrowLeft, Layers, Wand2, ExternalLink
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
