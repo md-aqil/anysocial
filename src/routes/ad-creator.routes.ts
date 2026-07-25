@@ -23,7 +23,7 @@ const adUploadFields = upload.fields([
 
 router.post('/directions', authenticate, adUploadFields, async (req: any, res: any) => {
   try {
-    const { productName, description, usp, personality, audience, platform, mood } = req.body;
+    const { productName, description, usp, personality, audience, platform, mood, specialInstructions } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
     const prodFiles = [...(files?.['image'] || []), ...(files?.['images'] || [])];
     const refFiles = [...(files?.['referenceImage'] || []), ...(files?.['referenceImages'] || [])];
@@ -42,6 +42,7 @@ router.post('/directions', authenticate, adUploadFields, async (req: any, res: a
     - Audience: ${audience}
     - Platform: ${platform}
     - Mood: ${mood}
+    ${specialInstructions ? `- USER SPECIAL INSTRUCTIONS: "${specialInstructions}"` : ''}
     
     Propose exactly 5 distinct ad creative directions. Use these 5 fixed directions:
     1. Hero Lifestyle Integration
@@ -91,7 +92,7 @@ router.post('/directions', authenticate, adUploadFields, async (req: any, res: a
 
 router.post('/generate', authenticate, adUploadFields, async (req: any, res: any) => {
   try {
-    let { productName, direction, platform } = req.body;
+    let { productName, direction, platform, specialInstructions } = req.body;
     
     if (typeof direction === 'string') {
       direction = JSON.parse(direction);
@@ -116,6 +117,7 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
     We are providing:
     ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s): Use this product/garment/object 100% identically in the generated visual. Keep exact logo, labels, fabric, cuts, color, and pattern unchanged.` : ''}
     ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s): The pose, model stance, body angle, camera perspective, lighting, 3D environment, and aesthetic style MUST adapt from these reference images while seamlessly featuring the identical product.` : ''}
+    ${specialInstructions ? `- USER SPECIAL POSE/STYLE INSTRUCTION: "${specialInstructions}". Make sure to explicitly obey this instruction regarding what to look for or adapt from the reference images!` : ''}
 
     Output exactly in this JSON format (no markdown blocks, just raw JSON):
     {
@@ -138,6 +140,7 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
     CRITICAL: Do NOT add humans, people, or hands to the scene unless explicitly requested by the product description. If the product is an animal, pet, or cartoon, explicitly enforce "NO HUMANS, NO PEOPLE, NO HANDS" in the prompt.
     ${productImagesList.length > 0 ? 'IMPORTANT: We are passing original product images. Instruct the image generator in the imagePrompt to keep the product/dress/model 100% identical and unaltered.' : ''}
     ${styleImagesList.length > 0 ? 'IMPORTANT: We are passing pose and style reference images. Instruct the image generator to adapt the model pose, body posture, lighting, background, composition, and color theme from the style reference images.' : ''}
+    ${specialInstructions ? `IMPORTANT: Strict User Preference: "${specialInstructions}".` : ''}
     `;
 
     const briefMediaParts: { data: string; mimeType: string }[] = [...productImagesList, ...styleImagesList];

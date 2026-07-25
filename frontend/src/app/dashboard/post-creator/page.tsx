@@ -256,14 +256,25 @@ export default function PostCreatorPage() {
       if (data.description) setDescription(data.description);
       
       if (data.images && data.images.length > 0) {
-        try {
-          const imgRes = await fetch(data.images[0]);
-          const blob = await imgRes.blob();
-          const file = new File([blob], 'scraped-image.jpg', { type: blob.type });
-          setImageFile(file);
-          setImagePreview(URL.createObjectURL(file));
-        } catch (e) {
-          console.error('Failed to load image from URL', e);
+        const fetchedFiles: File[] = [];
+        const fetchedPreviews: string[] = [];
+        for (let i = 0; i < Math.min(data.images.length, 4); i++) {
+          try {
+            const proxyUrl = `/api/scrape/proxy-image?url=${encodeURIComponent(data.images[i])}`;
+            const imgRes = await fetch(proxyUrl);
+            if (imgRes.ok) {
+              const blob = await imgRes.blob();
+              const file = new File([blob], `imported-product-${i + 1}.jpg`, { type: blob.type || 'image/jpeg' });
+              fetchedFiles.push(file);
+              fetchedPreviews.push(URL.createObjectURL(file));
+            }
+          } catch (e) {
+            console.warn('Failed to proxy scraped image', e);
+          }
+        }
+        if (fetchedFiles.length > 0) {
+          setImageFiles(prev => [...prev, ...fetchedFiles].slice(0, 4));
+          setImagePreviews(prev => [...prev, ...fetchedPreviews].slice(0, 4));
         }
       }
     } catch (err: any) {
@@ -310,6 +321,7 @@ export default function PostCreatorPage() {
     setPersonality('');
     setAudience('');
     setMagicLink('');
+    setSpecialInstructions('');
     setImageFiles([]);
     setImagePreviews([]);
     setReferenceFiles([]);
@@ -344,6 +356,9 @@ export default function PostCreatorPage() {
       formData.append('audience', audience);
       formData.append('platform', platform);
       formData.append('mood', mood);
+      if (specialInstructions) {
+        formData.append('specialInstructions', specialInstructions);
+      }
 
       const res = await fetch('/api/ad-creator/directions', {
         method: 'POST',
@@ -381,6 +396,9 @@ export default function PostCreatorPage() {
           formData.append('productName', productName);
           formData.append('direction', JSON.stringify(direction));
           formData.append('platform', platform);
+          if (specialInstructions) {
+            formData.append('specialInstructions', specialInstructions);
+          }
           imageFiles.forEach(file => {
             formData.append('images', file);
           });
@@ -648,6 +666,21 @@ export default function PostCreatorPage() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Special Style & Pose Instructions Input */}
+            <div className="bg-gradient-to-r from-amber-50/60 to-orange-50/40 border border-amber-200/80 rounded-2xl p-4 shadow-xs">
+              <label className="block text-xs font-extrabold text-stone-800 tracking-wider mb-1.5 flex items-center justify-between">
+                <span>Special Style & Pose Instructions <span className="text-stone-400 font-normal lowercase">(optional)</span></span>
+                <span className="text-[10px] text-[#D27D50] font-black uppercase tracking-wider bg-white px-2 py-0.5 rounded-md border border-amber-200/80 shadow-2xs">AI Guidance</span>
+              </label>
+              <textarea
+                value={specialInstructions}
+                onChange={e => setSpecialInstructions(e.target.value)}
+                rows={2}
+                className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-shadow"
+                placeholder='e.g. "Focus on model posture and warm sunset studio lighting from Reference #1, keep the model on a luxury marble balcony overlooking the ocean."'
+              />
             </div>
           </div>
 
