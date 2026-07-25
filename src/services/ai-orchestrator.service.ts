@@ -364,40 +364,40 @@ Make sure the output is a valid JSON object.`;
       // Parse product images array and style images array if provided
       let prodImgList: Array<{ data: string; mimeType: string }> = [];
       if (Array.isArray(referenceImageBase64)) {
-        prodImgList = referenceImageBase64;
-      } else if (typeof referenceImageBase64 === 'string' && referenceMimeType) {
-        prodImgList = [{ data: referenceImageBase64, mimeType: referenceMimeType }];
+        prodImgList = referenceImageBase64.map((item: any) => typeof item === 'string' ? { data: item, mimeType: referenceMimeType || 'image/jpeg' } : { data: item.data || item.base64 || '', mimeType: item.mimeType || item.mimetype || referenceMimeType || 'image/jpeg' }).filter(i => i.data);
+      } else if (typeof referenceImageBase64 === 'string' && referenceImageBase64.length > 0) {
+        prodImgList = [{ data: referenceImageBase64, mimeType: referenceMimeType || 'image/jpeg' }];
       }
 
       let styleImgList: Array<{ data: string; mimeType: string }> = [];
       if (Array.isArray(styleImageBase64)) {
-        styleImgList = styleImageBase64;
-      } else if (typeof styleImageBase64 === 'string' && styleMimeType) {
-        styleImgList = [{ data: styleImageBase64, mimeType: styleMimeType }];
+        styleImgList = styleImageBase64.map((item: any) => typeof item === 'string' ? { data: item, mimeType: styleMimeType || 'image/jpeg' } : { data: item.data || item.base64 || '', mimeType: item.mimeType || item.mimetype || styleMimeType || 'image/jpeg' }).filter(i => i.data);
+      } else if (typeof styleImageBase64 === 'string' && styleImageBase64.length > 0) {
+        styleImgList = [{ data: styleImageBase64, mimeType: styleMimeType || 'image/jpeg' }];
       }
 
       const requestParts: any[] = [];
       if (prodImgList.length > 0 || styleImgList.length > 0) {
-        requestParts.push({ text: `Analyze the following instructions and generate the requested commercial ad visual.\n\nCRITICAL PRODUCT IDENTITY LOCK: Keep the product/garment/object from the Product Images 100% identical and unaltered in design, pattern, color, logo, and texture.\n\nCRITICAL POSE & STYLE TRANSFER: Adapt the model pose, body posture, camera angle, lighting, 3D environment, and visual aesthetics from the Style/Pose Reference Images to seamlessly feature the identical product.\n\nInstructions: ${finalPromptText}` });
+        requestParts.push({ text: `You are an expert commercial fashion & advertising photographer and AI art director.\n\nHIGHEST PRIORITY POSE & STYLE SYNTHESIS DIRECTIVE:\n1. REPLICATE REFERENCE POSE & STYLE: The generated image MUST closely match and adapt the model pose, body position, camera perspective, lighting setup, 3D background scene, and visual aesthetic from the attached Style & Pose Reference Image(s).\n2. PRODUCT IDENTITY LOCK: Feature the exact product/garment/object from the Product Image(s) with 100% precision. Keep logos, fabric pattern, colors, labels, cuts, and branding completely unchanged and unaltered.\n\nPrompt Instructions: ${finalPromptText}` });
 
-        if (prodImgList.length > 0) {
-          requestParts.push({ text: "PRODUCT IMAGES (Keep the product/object in these images 100% identical, preserving exact shape, fabric, details, branding, and colors):" });
-          for (const item of prodImgList) {
+        if (styleImgList.length > 0) {
+          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (Replicate the model pose, body posture, lighting, background scene, and visual style from these images):" });
+          for (const item of styleImgList) {
             requestParts.push({
               inlineData: {
-                mimeType: item.mimeType,
+                mimeType: item.mimeType || 'image/jpeg',
                 data: item.data
               }
             });
           }
         }
 
-        if (styleImgList.length > 0) {
-          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (Replicate and adapt the model pose, body position, background scene, camera angle, lighting setup, and visual style from these images):" });
-          for (const item of styleImgList) {
+        if (prodImgList.length > 0) {
+          requestParts.push({ text: "PRODUCT IMAGES (Keep the product/object in these images 100% identical, preserving exact shape, fabric, details, branding, and colors):" });
+          for (const item of prodImgList) {
             requestParts.push({
               inlineData: {
-                mimeType: item.mimeType,
+                mimeType: item.mimeType || 'image/jpeg',
                 data: item.data
               }
             });
