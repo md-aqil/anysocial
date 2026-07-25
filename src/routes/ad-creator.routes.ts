@@ -94,9 +94,18 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
   try {
     let { productName, direction, platform, specialInstructions } = req.body;
     
-    if (typeof direction === 'string') {
-      direction = JSON.parse(direction);
+    if (direction) {
+      if (typeof direction === 'string') {
+        try {
+          direction = JSON.parse(direction);
+        } catch (e) {
+          direction = { title: direction };
+        }
+      }
+    } else {
+      direction = { title: 'Creative Direction' };
     }
+    const dirTitle = direction.title || direction.name || (typeof direction === 'string' ? direction : 'Creative Direction');
     
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
     const prodFiles = [...(files?.['image'] || []), ...(files?.['images'] || [])];
@@ -114,7 +123,7 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
 
     const briefPrompt = `You are a world-class advertising creative director and master commercial photographer combining the "world-class-ads" creative framework with the "nano-banana-images" hyper-realism engine.
 
-Create a full commercial creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
+Create a full commercial creative brief for "${productName}" targeting the "${dirTitle}" direction for ${platform}.
     
     Provided Input:
     ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s) (IDENTITY LOCK): Use the exact product/garment/object shown in these images 100% identically. Preserve exact logo, labels, fabric, cuts, color, and pattern unaltered.` : ''}
@@ -147,7 +156,23 @@ Create a full commercial creative brief for "${productName}" targeting the "${di
 
     const briefText = await aiOrchestrator.generateContent(briefPrompt, briefMediaParts);
     const cleanedBrief = briefText.replace(/```json\n?|```/g, '').trim();
-    const briefParsed = JSON.parse(cleanedBrief);
+    let briefParsed: any;
+    try {
+      briefParsed = JSON.parse(cleanedBrief);
+    } catch (e) {
+      briefParsed = {
+        campaignConcept: briefText.substring(0, 120),
+        tagline: productName,
+        supportingCopy: "High-impact commercial campaign",
+        callToAction: "Shop Now",
+        visualSceneSetup: "Commercial studio setting with directional lighting",
+        brandIntegration: "Hero placement",
+        layoutAndEffects: "Clean dynamic layout",
+        creativeRationale: "Standard advertising benchmark",
+        imagePrompt: briefText,
+        negativePrompt: "low quality, blur, distortion"
+      };
+    }
 
     const nanoBananaNegativeStack = "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces";
 

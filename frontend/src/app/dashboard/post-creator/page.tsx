@@ -677,6 +677,35 @@ export default function PostCreatorPage() {
     setError(null);
   };
 
+const safeFetchJson = async (url: string, options?: RequestInit) => {
+  const res = await fetch(url, options);
+  const contentType = res.headers.get('content-type') || '';
+
+  if (!res.ok) {
+    if (contentType.includes('application/json')) {
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch (e) {}
+      throw new Error(data.error || data.message || `Server request failed with status ${res.status}`);
+    } else {
+      const htmlText = await res.text();
+      if (res.status === 504) {
+        throw new Error("Server Timeout (504 Gateway Timeout): Image generation took longer than proxy limit. Please try again.");
+      }
+      const cleanText = htmlText.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().substring(0, 140);
+      throw new Error(`Server Error (${res.status}): ${cleanText || 'Unexpected gateway error'}`);
+    }
+  }
+
+  if (contentType.includes('application/json')) {
+    return await res.json();
+  }
+
+  const text = await res.text();
+  throw new Error(`Invalid response format from server (${res.status}): ${text.substring(0, 100)}`);
+};
+
   const handleGenerateDirections = async () => {
     if (!productName || !description) {
         setError("Product Name and Description are required to brainstorm directions.");
@@ -728,7 +757,7 @@ export default function PostCreatorPage() {
         formData.append('specialInstructions', specialInstructions);
       }
 
-      const res = await fetch('/api/ad-creator/directions', {
+      const data = await safeFetchJson('/api/ad-creator/directions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -736,12 +765,6 @@ export default function PostCreatorPage() {
         body: formData
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to generate directions');
-      }
-
-      const data = await res.json();
       setDirections(data.directions);
       setSelectedDirections([...data.directions]);
 
@@ -812,7 +835,7 @@ export default function PostCreatorPage() {
           formData.append('referenceImages', refFile);
         });
 
-        const res = await fetch('/api/ad-creator/generate', {
+        const data = await safeFetchJson('/api/ad-creator/generate', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -820,12 +843,6 @@ export default function PostCreatorPage() {
           body: formData
         });
 
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to generate ad');
-        }
-
-        const data = await res.json();
         const newItem = { brief: data.brief, imageUrl: data.imageUrl, direction, id: data.brief?.id || `ad-${Date.now()}-${stepIndex}` };
         generatedResults.push(newItem);
 

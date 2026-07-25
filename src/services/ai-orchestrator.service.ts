@@ -248,8 +248,8 @@ Make sure the output is a valid JSON object.`;
       const request = {
         contents: [{ role: 'user', parts }],
         generationConfig: {
-          temperature: parseFloat(process.env.CONTENT_TEMPERATURE || '0.9'),
-          maxOutputTokens: parseInt(process.env.CONTENT_MAX_TOKENS || '8192'),
+          temperature: 0.7,
+          maxOutputTokens: 2048,
           ...(schema ? { responseMimeType: "application/json", responseSchema: schema } : {})
         }
       };
