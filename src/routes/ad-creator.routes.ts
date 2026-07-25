@@ -190,8 +190,8 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
         fs.writeFileSync(refPublicPath, refFiles[0].buffer);
         referenceImageUrl = `/uploads/ai-images/${refFileName}`;
         briefParsed.referenceImageUrl = referenceImageUrl;
-      } catch (e) {
-        logger.warn('Failed to save reference image copy:', e);
+      } catch (e: any) {
+        logger.warn(`Failed to save reference image copy: ${e.message || e}`);
       }
     }
 
