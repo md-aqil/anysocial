@@ -8,7 +8,95 @@ import {
   XCircle, PenSquare, Maximize2, Film, Download, X, Video, Share2, 
   Check, ArrowLeft, Layers, Wand2, ExternalLink
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+
+const renderCompactStep = (title: string, content: React.ReactNode, isComplete: boolean, isActive: boolean) => (
+  <div 
+    className={`rounded-xl overflow-hidden transition-all duration-200 flex flex-col justify-between ${
+      isComplete 
+        ? 'bg-white border border-stone-200 shadow-2xs' 
+        : isActive 
+          ? 'bg-white border-2 border-[#D27D50] shadow-sm' 
+          : 'bg-transparent border border-dashed border-stone-200 opacity-60'
+    }`}
+  >
+    <div className={`px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider flex items-center justify-between border-b ${
+      isComplete 
+        ? 'text-stone-700 border-stone-100' 
+        : isActive 
+          ? 'text-[#D27D50] border-orange-100 bg-orange-50/50' 
+          : 'text-stone-400 border-stone-200/50'
+    }`}>
+      <span className="flex items-center gap-1.5">
+        {isActive && <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#D27D50]"></span></span>}
+        {isComplete && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+        {title}
+      </span>
+    </div>
+    <div className="p-2.5 flex-1 flex flex-col justify-center text-center bg-stone-50/30">
+      {content}
+    </div>
+  </div>
+);
+
+const GenerationTimeline = ({ statusMessage, isCompleted = false }: { statusMessage: string, isCompleted?: boolean }) => {
+  const msg = (statusMessage || '').toLowerCase();
+  
+  let currentStep = 1;
+  if (isCompleted) {
+    currentStep = 5;
+  } else {
+    if (msg.includes('generating photo') || msg.includes('photo realism') || msg.includes('sdxl') || msg.includes('gemini')) currentStep = 2;
+    else if (msg.includes('copy') || msg.includes('synthesizing') || msg.includes('brief') || msg.includes('rationale')) currentStep = 3;
+    else if (msg.includes('finalizing') || msg.includes('completed') || msg.includes('assembling')) currentStep = 4;
+  }
+
+  return (
+    <div className="mb-6 bg-stone-900 text-white p-5 rounded-2xl border border-stone-800 shadow-lg space-y-3">
+      <div className="flex items-center justify-between border-b border-stone-800 pb-2.5">
+        <div className="flex items-center gap-2">
+          {isCompleted ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+          ) : (
+            <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+          )}
+          <span className="text-xs font-black text-amber-300 uppercase tracking-widest">Generation Process Engine</span>
+        </div>
+        <span className="text-[10px] font-bold text-stone-400">Gemini 2.5 Realism</span>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {renderCompactStep(
+          "1. Analysis",
+          <span className="text-[10px] font-extrabold text-stone-700">Multi-Modal Brief</span>,
+          currentStep > 1,
+          currentStep === 1
+        )}
+        {renderCompactStep(
+          "2. AI Photo Realism",
+          <span className="text-[10px] font-extrabold text-stone-700">Identity Lock & Style</span>,
+          currentStep > 2,
+          currentStep === 2
+        )}
+        {renderCompactStep(
+          "3. Copy Synthesis",
+          <span className="text-[10px] font-extrabold text-stone-700">Tagline & Rationale</span>,
+          currentStep > 3,
+          currentStep === 3
+        )}
+        {renderCompactStep(
+          "4. Assembly",
+          <span className="text-[10px] font-extrabold text-stone-700">Campaign Variations</span>,
+          currentStep > 4,
+          currentStep === 4
+        )}
+      </div>
+
+      <div className="mt-3 text-xs font-mono text-emerald-400 bg-stone-950 rounded-xl p-3 flex items-center justify-between border border-stone-800 shadow-inner">
+        <span className="truncate pr-2">$ {statusMessage}</span>
+        <span className="animate-pulse inline-block w-1.5 h-3.5 bg-emerald-400 shrink-0"></span>
+      </div>
+    </div>
+  );
+};
 
 export default function PostCreatorPage() {
   const router = useRouter();
@@ -36,16 +124,28 @@ export default function PostCreatorPage() {
   const [referencePreviews, setReferencePreviews] = useState<string[]>([]);
   const refInputRef = useRef<HTMLInputElement>(null);
 
-  // Directions State
+  // Directions & History State
   const [directions, setDirections] = useState<any[]>([]);
   const [selectedDirections, setSelectedDirections] = useState<any[]>([]);
-
-  // Result State
-  const [results, setResults] = useState<any[]>([]);
-
-  // History State
   const [history, setHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+
+  // Active Campaign State (Reels Creator UX pattern)
+  const [activeCampaign, setActiveCampaign] = useState<{
+    id: string;
+    productName: string;
+    platform: string;
+    createdAt: string;
+    referenceImageUrl?: string;
+    status: 'SELECTING_DIRECTIONS' | 'GENERATING' | 'COMPLETED';
+    statusMessage?: string;
+    directions: any[];
+    selectedDirections: any[];
+    items: any[];
+  } | null>(null);
+
+  // Brief Details Modal State
+  const [selectedBriefDetail, setSelectedBriefDetail] = useState<any | null>(null);
 
   // Animate Image-to-Video State
   const [animateModalOpen, setAnimateModalOpen] = useState(false);
@@ -61,20 +161,100 @@ export default function PostCreatorPage() {
   const [renderedVideoMap, setRenderedVideoMap] = useState<Record<string, string>>({});
   const [viewModeMap, setViewModeMap] = useState<Record<string, 'image' | 'video'>>({});
 
+  const fetchHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const res = await fetch('/api/ad-creator/history', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data.history || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  // Restore in-flight active reel animation from localStorage on mount
+  useEffect(() => {
+    const savedReelId = localStorage.getItem('postCreator_activeReelId');
+    const savedAdStr = localStorage.getItem('postCreator_activeAd');
+    if (savedReelId) {
+      setActiveReelId(savedReelId);
+      setAnimating(true);
+      setAnimStatus('GENERATING');
+      setAnimStatusMsg('Resuming Google Veo 3 video rendering...');
+      if (savedAdStr) {
+        try {
+          setSelectedAdForAnimate(JSON.parse(savedAdStr));
+        } catch (e) {}
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!activeReelId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/veo/status/${activeReelId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!res.ok) return;
+        const result = await res.json();
+        const reel = result.data;
+        if (reel) {
+          setAnimStatus(reel.status);
+          setAnimStatusMsg(reel.statusMessage || 'Processing video...');
+          if (reel.status === 'READY') {
+            setAnimResultVideoUrl(reel.videoUrl);
+            setAnimating(false);
+            localStorage.removeItem('postCreator_activeReelId');
+            localStorage.removeItem('postCreator_activeAd');
+
+            if (selectedAdForAnimate?.id) {
+              const adId = selectedAdForAnimate.id;
+              setRenderedVideoMap(prev => ({ ...prev, [adId]: reel.videoUrl }));
+              setViewModeMap(prev => ({ ...prev, [adId]: 'video' }));
+              setHistory(prev => prev.map(item => item.id === adId ? { ...item, videoUrl: reel.videoUrl } : item));
+            }
+            clearInterval(interval);
+          } else if (reel.status === 'FAILED') {
+            setAnimating(false);
+            localStorage.removeItem('postCreator_activeReelId');
+            localStorage.removeItem('postCreator_activeAd');
+            clearInterval(interval);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to poll reel status', err);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [activeReelId, selectedAdForAnimate]);
+
   const openAnimateModal = (ad: any) => {
     setSelectedAdForAnimate(ad);
     const brief = ad.brief || {};
-    const prodName = ad.productName || 'Product';
+    const prodName = ad.productName || productName || 'Product';
     const dirName = ad.direction || 'Creative Ad';
     
-    // Extract metadata & image prompt information for deep scene analysis
     const imagePromptText = brief.imagePrompt || `High-end commercial advertisement featuring ${prodName}`;
     const visualSetup = brief.visualSceneSetup || brief.sceneSetup || brief.campaignConcept || `Professional studio showcase of ${prodName}`;
     const layoutEffects = brief.layoutAndEffects || 'Dynamic lighting, subtle motion blur, crisp reflections, premium composition';
     const taglineText = brief.tagline || '';
     const supportingText = brief.supportingCopy || brief.copy || '';
 
-    // Synthesize Google Veo 3 JSON Prompt Guide structure (veo-3-prompting-guide format)
     const veo3JsonPrompt = JSON.stringify({
       "veo_model": "veo-3.0-fast-generate-001",
       "prompt_type": "image_to_video_motion_graphic",
@@ -151,90 +331,6 @@ export default function PostCreatorPage() {
       setAnimating(false);
       setAnimStatus('FAILED');
       setAnimStatusMsg(err.message || 'Error starting animation');
-    }
-  };
-
-  // Restore in-flight active reel animation from localStorage on mount
-  useEffect(() => {
-    const savedReelId = localStorage.getItem('postCreator_activeReelId');
-    const savedAdStr = localStorage.getItem('postCreator_activeAd');
-    if (savedReelId) {
-      setActiveReelId(savedReelId);
-      setAnimating(true);
-      setAnimStatus('GENERATING');
-      setAnimStatusMsg('Resuming Google Veo 3 video rendering...');
-      if (savedAdStr) {
-        try {
-          setSelectedAdForAnimate(JSON.parse(savedAdStr));
-        } catch (e) {}
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!activeReelId) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/veo/status/${activeReelId}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        if (!res.ok) return;
-        const result = await res.json();
-        const reel = result.data;
-        if (reel) {
-          setAnimStatus(reel.status);
-          setAnimStatusMsg(reel.statusMessage || 'Processing video...');
-          if (reel.status === 'READY') {
-            setAnimResultVideoUrl(reel.videoUrl);
-            setAnimating(false);
-            localStorage.removeItem('postCreator_activeReelId');
-            localStorage.removeItem('postCreator_activeAd');
-
-            if (selectedAdForAnimate?.id) {
-              const adId = selectedAdForAnimate.id;
-              setRenderedVideoMap(prev => ({ ...prev, [adId]: reel.videoUrl }));
-              setViewModeMap(prev => ({ ...prev, [adId]: 'video' }));
-              setHistory(prev => prev.map(item => item.id === adId ? { ...item, videoUrl: reel.videoUrl } : item));
-            }
-            clearInterval(interval);
-          } else if (reel.status === 'FAILED') {
-            setAnimating(false);
-            localStorage.removeItem('postCreator_activeReelId');
-            localStorage.removeItem('postCreator_activeAd');
-            clearInterval(interval);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to poll reel status', err);
-      }
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [activeReelId, selectedAdForAnimate]);
-
-
-  useEffect(() => {
-    fetchHistory();
-  }, []);
-
-  const fetchHistory = async () => {
-    try {
-      const res = await fetch('/api/ad-creator/history', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setHistory(data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingHistory(false);
     }
   };
 
@@ -330,7 +426,7 @@ export default function PostCreatorPage() {
     setStep(1);
     setDirections([]);
     setSelectedDirections([]);
-    setResults([]);
+    setActiveCampaign(null);
     setError(null);
   };
 
@@ -376,7 +472,28 @@ export default function PostCreatorPage() {
 
       const data = await res.json();
       setDirections(data.directions);
-      setStep(2);
+      setSelectedDirections([...data.directions]);
+
+      const groupRefImg = referencePreviews[0] || imagePreviews[0] || (magicLink ? `/api/scrape/proxy-image?url=${encodeURIComponent(magicLink)}` : undefined);
+
+      setActiveCampaign({
+        id: `camp-${Date.now()}`,
+        productName: productName,
+        platform: platform,
+        createdAt: new Date().toISOString(),
+        referenceImageUrl: groupRefImg,
+        status: 'SELECTING_DIRECTIONS',
+        statusMessage: '5 Creative Directions Proposed. Select options below to generate campaign.',
+        directions: data.directions,
+        selectedDirections: [...data.directions],
+        items: []
+      });
+
+      setTimeout(() => {
+        const campaignEl = document.getElementById('active-campaign-card');
+        if (campaignEl) campaignEl.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -384,55 +501,80 @@ export default function PostCreatorPage() {
     }
   };
 
-  const handleGenerateAd = async () => {
-    if (selectedDirections.length === 0) return;
+  const handleGenerateAd = async (targetCampaign?: any) => {
+    const campaignToRun = targetCampaign || activeCampaign;
+    if (!campaignToRun || !campaignToRun.selectedDirections || campaignToRun.selectedDirections.length === 0) return;
+
     setLoading(true);
     setError(null);
-    setResults([]);
+
+    setActiveCampaign(prev => prev ? ({
+      ...prev,
+      status: 'GENERATING',
+      statusMessage: 'Initializing AI photo realism engine & prompt analysis...'
+    }) : null);
 
     try {
       const generatedResults = [];
-      for (const direction of selectedDirections) {
-          const formData = new FormData();
-          formData.append('productName', productName);
-          formData.append('direction', JSON.stringify(direction));
-          formData.append('platform', platform);
-          if (specialInstructions) {
-            formData.append('specialInstructions', specialInstructions);
-          }
-          imageFiles.forEach(file => {
-            formData.append('images', file);
-          });
-          referenceFiles.forEach(refFile => {
-            formData.append('referenceImages', refFile);
-          });
+      let stepIndex = 0;
+      for (const direction of campaignToRun.selectedDirections) {
+        stepIndex++;
+        setActiveCampaign(prev => prev ? ({
+          ...prev,
+          statusMessage: `Synthesizing Direction ${stepIndex} of ${campaignToRun.selectedDirections.length}: "${direction.title}"...`
+        }) : null);
 
-          const res = await fetch('/api/ad-creator/generate', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: formData
-          });
+        const formData = new FormData();
+        formData.append('productName', productName || campaignToRun.productName);
+        formData.append('direction', JSON.stringify(direction));
+        formData.append('platform', platform || campaignToRun.platform);
+        if (specialInstructions) {
+          formData.append('specialInstructions', specialInstructions);
+        }
+        imageFiles.forEach(file => {
+          formData.append('images', file);
+        });
+        referenceFiles.forEach(refFile => {
+          formData.append('referenceImages', refFile);
+        });
 
-          if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || 'Failed to generate ad');
-          }
+        const res = await fetch('/api/ad-creator/generate', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formData
+        });
 
+        if (!res.ok) {
           const data = await res.json();
-          generatedResults.push({ brief: data.brief, imageUrl: data.imageUrl, direction });
-          // Update the UI progressively
-          setResults([...generatedResults]);
-          
-          if (generatedResults.length === 1) {
-            setStep(3); // Move to results view as soon as first ad is ready
-          }
+          throw new Error(data.error || 'Failed to generate ad');
+        }
+
+        const data = await res.json();
+        const newItem = { brief: data.brief, imageUrl: data.imageUrl, direction, id: data.brief?.id || `ad-${Date.now()}-${stepIndex}` };
+        generatedResults.push(newItem);
+
+        setActiveCampaign(prev => prev ? ({
+          ...prev,
+          items: [...generatedResults],
+          statusMessage: `Completed ${stepIndex} of ${campaignToRun.selectedDirections.length} variations.`
+        }) : null);
       }
-      
+
+      setActiveCampaign(prev => prev ? ({
+        ...prev,
+        status: 'COMPLETED',
+        statusMessage: `Successfully generated ${generatedResults.length} post variations!`
+      }) : null);
+
       fetchHistory();
     } catch (err: any) {
       setError(err.message);
+      setActiveCampaign(prev => prev ? ({
+        ...prev,
+        statusMessage: `Generation Error: ${err.message}`
+      }) : null);
     } finally {
       setLoading(false);
     }
@@ -451,25 +593,24 @@ export default function PostCreatorPage() {
     if (!items || items.length === 0) return;
 
     const firstItem = items[0];
-    const prodName = firstItem.productName || productName || 'Product Campaign';
+    const prodName = (firstItem.productName || productName || 'Product Campaign').toUpperCase();
 
-    // Gather all media URLs (prefer videoUrl if animated, else imageUrl)
     const mediaUrls = items
       .map(item => item.videoUrl || renderedVideoMap[item.id] || item.imageUrl)
       .filter(Boolean);
 
     const firstBrief = firstItem.brief || {};
-    const mainTagline = firstBrief.tagline ? `✨ ${firstBrief.tagline}\n\n` : '';
+    const mainTagline = firstBrief.tagline ? '✨ ' + firstBrief.tagline + '\n\n' : '';
     const mainCopy = firstBrief.supportingCopy || firstBrief.copy || '';
-    const mainCta = firstBrief.callToAction ? `\n\n${firstBrief.callToAction}` : '';
+    const mainCta = firstBrief.callToAction ? '\n\n' + firstBrief.callToAction : '';
 
     const slideSummaries = items.map((item, idx) => {
       const b = item.brief || {};
-      const t = b.tagline ? `"${b.tagline}"` : (item.direction || `Option ${idx + 1}`);
-      return `Slide ${idx + 1}: ${t}`;
+      const t = b.tagline ? '"' + b.tagline + '"' : (item.direction || ('Option ' + (idx + 1)));
+      return 'Slide ' + (idx + 1) + ': ' + t;
     }).join('\n');
 
-    const fullCaption = `🚀 ${prodName.toUpperCase()}\n\n${mainTagline}${mainCopy}${mainCta}\n\n📸 Carousel Collection (${items.length} Variations):\n${slideSummaries}\n\n👉 Swipe to explore all creative styles!`.trim();
+    const fullCaption = ('🚀 ' + prodName + '\n\n' + mainTagline + mainCopy + mainCta + '\n\n📸 Carousel Collection (' + items.length + ' Variations):\n' + slideSummaries + '\n\n👉 Swipe to explore all creative styles!').trim();
 
     const postData = {
       content: fullCaption,
@@ -482,7 +623,7 @@ export default function PostCreatorPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-6 lg:p-10 space-y-8">
-      {/* Active Motion Graphic Video Progress Banner (Survives Refresh & Tab Switching) */}
+      {/* Motion Graphic In-Progress Banner */}
       {activeReelId && animating && (
         <div className="mb-8 p-5 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white rounded-2xl border border-stone-700 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-500">
           <div className="flex items-center gap-3.5">
@@ -515,10 +656,9 @@ export default function PostCreatorPage() {
         </div>
       )}
 
-      {/* Step 1: Input */}
+      {/* Step 1: Brief & Assets Container */}
       {step === 1 && (
         <div className="bg-gradient-to-br from-[#1C1814] via-[#241F1A] to-[#171310] text-white rounded-[36px] p-8 lg:p-10 shadow-[0_25px_70px_rgba(0,0,0,0.3)] border border-amber-500/20 grid grid-cols-1 lg:grid-cols-2 gap-10 relative overflow-hidden">
-          {/* Ambient Lighting Accents */}
           <div className="absolute top-0 left-1/4 w-72 h-72 bg-amber-500/10 blur-[90px] rounded-full pointer-events-none"></div>
           <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-rose-500/10 blur-[90px] rounded-full pointer-events-none"></div>
 
@@ -552,7 +692,7 @@ export default function PostCreatorPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Product Photos (Identity Lock) */}
+              {/* Product Photos (Identity Lock) - Clean header without extra button */}
               <div className="bg-gradient-to-br from-stone-900/90 via-stone-900/60 to-stone-950/80 border-2 border-dashed border-amber-500/40 rounded-3xl p-5 flex flex-col justify-between min-h-[230px] relative shadow-inner hover:border-amber-400/70 transition-all group/prodCard">
                 <input 
                   type="file" 
@@ -563,21 +703,10 @@ export default function PostCreatorPage() {
                   multiple 
                 />
                 <div className="mb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-extrabold text-sm text-white">Product Photos</h4>
-                    {imagePreviews.length < 4 && (
-                      <Button 
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()} 
-                        className="bg-amber-500 hover:bg-amber-600 text-stone-950 text-xs font-black rounded-xl h-8 px-3 shadow-xs shrink-0"
-                      >
-                        + Add Photo
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  <h4 className="font-extrabold text-sm text-white mb-1">Product Photos</h4>
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[9px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-400/30">🔒 Identity Lock</span>
-                    <span className="text-[11px] text-stone-400 font-medium">Original product stays 100% identical ({imagePreviews.length}/4)</span>
+                    <span className="text-[11px] text-stone-400 font-medium">Product stays 100% identical ({imagePreviews.length}/4)</span>
                   </div>
                 </div>
 
@@ -606,13 +735,13 @@ export default function PostCreatorPage() {
                     </div>
                     <p className="font-bold text-xs text-stone-200 text-center">
                       Upload Product Shots<br/>
-                      <span className="text-stone-400 font-normal text-[11px]">Upload front, angle, or fabric close-ups</span>
+                      <span className="text-stone-400 font-normal text-[11px]">Upload front, angle, or close-ups</span>
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Pose & Style Reference Photos */}
+              {/* Pose & Style Reference Photos - Clean header without extra button */}
               <div className="bg-gradient-to-br from-stone-900/90 via-stone-900/60 to-stone-950/80 border-2 border-dashed border-emerald-500/40 rounded-3xl p-5 flex flex-col justify-between min-h-[230px] relative shadow-inner hover:border-emerald-400/70 transition-all group/refCard">
                 <input 
                   type="file" 
@@ -623,21 +752,10 @@ export default function PostCreatorPage() {
                   multiple 
                 />
                 <div className="mb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-extrabold text-sm text-white">Pose & Style References</h4>
-                    {referencePreviews.length < 4 && (
-                      <Button 
-                        type="button"
-                        onClick={() => refInputRef.current?.click()} 
-                        className="bg-emerald-500 hover:bg-emerald-600 text-stone-950 text-xs font-black rounded-xl h-8 px-3 shadow-xs shrink-0"
-                      >
-                        + Add Ref
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  <h4 className="font-extrabold text-sm text-white mb-1">Pose & Style References</h4>
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[9px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-400/30">🎨 Style Transfer</span>
-                    <span className="text-[11px] text-stone-400 font-medium">Model pose, lighting & aesthetic ({referencePreviews.length}/4)</span>
+                    <span className="text-[11px] text-stone-400 font-medium">Model pose & lighting ({referencePreviews.length}/4)</span>
                   </div>
                 </div>
 
@@ -666,14 +784,14 @@ export default function PostCreatorPage() {
                     </div>
                     <p className="font-bold text-xs text-stone-200 text-center">
                       Upload Pose / Style References<br/>
-                      <span className="text-stone-400 font-normal text-[11px]">Upload model poses, lighting, or aesthetic inspiration</span>
+                      <span className="text-stone-400 font-normal text-[11px]">Upload model poses or lighting</span>
                     </p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Special Style & Pose Instructions Input */}
+            {/* Special Instructions Input */}
             <div className="bg-stone-950/90 border border-amber-500/30 rounded-2xl p-5 shadow-xl backdrop-blur-md space-y-2">
               <label className="block text-xs font-black text-white tracking-wider flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
@@ -752,233 +870,359 @@ export default function PostCreatorPage() {
         </div>
       )}
 
-      {/* Step 2: Directions Selection */}
-      {step === 2 && (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
-          {/* Header Bar */}
-          <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="text-xs font-black uppercase tracking-wider text-[#D27D50] block mb-0.5">Step 2 of 3</span>
-              <h2 className="text-2xl font-black text-stone-900 tracking-tight">Select Creative Directions</h2>
-              <p className="text-xs font-medium text-stone-500">Choose one or more directions for your final ad assets.</p>
-            </div>
+      {/* Active Campaign Card (Same UX pattern as reels-creator) */}
+      {activeCampaign && (
+        <div id="active-campaign-card" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto pt-6">
+          <div className="bg-white rounded-[32px] p-6 lg:p-8 border border-stone-200/90 shadow-md space-y-6">
             
-            <div className="flex items-center gap-2.5">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  if (selectedDirections.length === directions.length) {
-                    setSelectedDirections([]);
-                  } else {
-                    setSelectedDirections([...directions]);
-                  }
-                }} 
-                className="font-bold text-xs rounded-xl border-stone-200 hover:bg-stone-50 h-10 px-4"
-              >
-                {selectedDirections.length === directions.length ? 'Deselect All' : 'Select All (5)'}
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => setStep(1)} 
-                className="text-stone-600 hover:text-stone-900 font-bold text-xs h-10 px-3 flex items-center gap-1.5"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back to Brief</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Compact Directions Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {directions.map((dir, idx) => {
-              const isSelected = selectedDirections.some(d => d.id === dir.id);
-              return (
-                <div 
-                  key={idx}
-                  onClick={() => {
-                    if (isSelected) {
-                      setSelectedDirections(selectedDirections.filter(d => d.id !== dir.id));
-                    } else {
-                      setSelectedDirections([...selectedDirections, dir]);
-                    }
-                  }}
-                  className={`bg-white rounded-2xl p-5 cursor-pointer border-2 transition-all duration-300 flex flex-col justify-between group ${
-                    isSelected 
-                      ? 'border-[#D27D50] shadow-md shadow-[#D27D50]/10 bg-amber-50/20 -translate-y-0.5' 
-                      : 'border-stone-200 hover:border-stone-300 hover:shadow-sm'
-                  }`}
-                >
-                  <div>
-                    {/* Header Badge */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                        isSelected 
-                          ? 'bg-[#D27D50] text-white shadow-xs' 
-                          : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'
-                      }`}>
-                        Option {idx + 1}
-                      </span>
-                      {isSelected ? (
-                        <div className="w-6 h-6 rounded-full bg-[#D27D50] text-white flex items-center justify-center shadow-xs">
-                          <Check className="w-3.5 h-3.5 stroke-[3]" />
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 rounded-full border-2 border-stone-200 group-hover:border-stone-300" />
-                      )}
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="text-base font-black text-stone-900 mb-2 leading-snug group-hover:text-[#D27D50] transition-colors">
-                      {dir.title}
-                    </h3>
-                    
-                    {/* Description */}
-                    <p className="text-xs font-medium text-stone-600 leading-relaxed line-clamp-3 mb-4">
-                      {dir.description}
-                    </p>
+            {/* Campaign Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-6">
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-orange-100/80 text-[#D27D50] flex items-center justify-center font-bold">
+                    <Sparkles className="w-4 h-4" />
                   </div>
-
-                  {/* Toggle Status Pill */}
-                  <div className={`mt-auto pt-3 border-t text-center transition-colors ${isSelected ? 'border-amber-200/60' : 'border-stone-100'}`}>
-                    <span className={`text-[11px] font-bold inline-flex items-center gap-1 ${
-                      isSelected ? 'text-[#D27D50]' : 'text-stone-400 group-hover:text-stone-600'
-                    }`}>
-                      {isSelected ? '✓ Direction Selected' : '+ Click to Select'}
+                  <h3 className="text-2xl font-black text-stone-900 tracking-tight">{activeCampaign.productName}</h3>
+                  <span className="px-3 py-1 bg-stone-100 text-stone-700 text-xs font-black rounded-full uppercase tracking-wider border border-stone-200/60">
+                    {activeCampaign.platform}
+                  </span>
+                  {activeCampaign.status === 'SELECTING_DIRECTIONS' && (
+                    <span className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-extrabold rounded-full uppercase tracking-wider border border-amber-200">
+                      5 Directions Proposed
                     </span>
+                  )}
+                  {activeCampaign.status === 'GENERATING' && (
+                    <span className="px-3 py-1 bg-orange-100 text-[#D27D50] text-xs font-extrabold rounded-full uppercase tracking-wider border border-orange-200 animate-pulse">
+                      Generating Assets...
+                    </span>
+                  )}
+                  {activeCampaign.status === 'COMPLETED' && (
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-extrabold rounded-full uppercase tracking-wider border border-emerald-200">
+                      Campaign Ready
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-semibold text-stone-500 pl-11 flex items-center gap-2">
+                  <span>Created {new Date(activeCampaign.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                {activeCampaign.referenceImageUrl && (
+                  <a 
+                    href={activeCampaign.referenceImageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 bg-stone-900 text-white p-1.5 pr-3.5 rounded-2xl border border-stone-800 shadow-md hover:scale-105 transition-all group/refHead"
+                    title="View Style Reference"
+                  >
+                    <img src={activeCampaign.referenceImageUrl} alt="Target Reference" className="w-9 h-9 rounded-xl object-cover border border-amber-400/80 shadow-xs" />
+                    <div className="text-left">
+                      <span className="text-[9px] font-black uppercase text-amber-300 block tracking-wider">Style Ref</span>
+                      <span className="text-[10px] font-extrabold text-stone-200 flex items-center gap-1">
+                        View <ExternalLink className="w-3 h-3 text-amber-300" />
+                      </span>
+                    </div>
+                  </a>
+                )}
+
+                {activeCampaign.status === 'COMPLETED' && activeCampaign.items.length > 0 && (
+                  <Button
+                    onClick={() => handleComposeEntireCampaign(activeCampaign.items)}
+                    className="bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 hover:from-stone-800 hover:to-stone-700 text-white rounded-2xl font-bold px-6 py-3 shadow-md flex items-center gap-2 text-xs"
+                  >
+                    <Share2 className="w-4 h-4 text-[#D27D50]" />
+                    <span>Compose Entire Campaign ({activeCampaign.items.length} Variations)</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Phase 1: Direction Options Selection inside Campaign Card */}
+            {activeCampaign.status === 'SELECTING_DIRECTIONS' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-base font-black text-stone-900">Select Creative Directions for Campaign</h4>
+                    <p className="text-xs text-stone-500 font-medium">Click to select which direction options to generate for this campaign card.</p>
                   </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      const allSelected = activeCampaign.selectedDirections.length === activeCampaign.directions.length;
+                      setActiveCampaign(prev => prev ? ({
+                        ...prev,
+                        selectedDirections: allSelected ? [] : [...prev.directions]
+                      }) : null);
+                    }} 
+                    className="font-bold text-xs rounded-xl border-stone-200 hover:bg-stone-50 h-9 px-3.5"
+                  >
+                    {activeCampaign.selectedDirections.length === activeCampaign.directions.length ? 'Deselect All' : 'Select All (5)'}
+                  </Button>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Action Footer */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-            <span className="text-xs font-bold text-stone-500">
-              {selectedDirections.length} of {directions.length} directions selected
-            </span>
-            <Button 
-              onClick={handleGenerateAd}
-              disabled={loading || selectedDirections.length === 0}
-              className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl font-black px-8 h-12 shadow-lg hover:shadow-orange-500/20 transition-all text-sm w-full sm:w-auto flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-              <span>{loading ? 'Generating Final Assets...' : `Generate Campaigns (${selectedDirections.length})`}</span>
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: Result */}
-      {step === 3 && results.length > 0 && (
-        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          {/* Step 3 Campaign Container Header */}
-          <div className="bg-stone-900 text-white rounded-3xl p-6 lg:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-stone-800">
-            <div>
-              <span className="text-[#D27D50] font-black text-xs uppercase tracking-widest block mb-1">
-                Generated Campaign • {results.length} Post Variations
-              </span>
-              <h2 className="text-3xl font-black tracking-tight">{productName}</h2>
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-3">
-              <Button 
-                onClick={() => handleComposeEntireCampaign(results)}
-                className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white font-black rounded-xl h-12 px-6 shadow-lg flex items-center gap-2"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Compose Entire Campaign ({results.length} Images/Videos)</span>
-              </Button>
-              <Button variant="outline" onClick={handleClearForm} disabled={loading} className="border-stone-700 text-stone-300 hover:bg-stone-800 font-bold rounded-xl h-12 px-5">
-                Start New Campaign
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-16">
-            {results.map((result, idx) => (
-                <div key={idx} className="bg-white rounded-3xl p-8 shadow-[0_8px_40px_rgba(0,0,0,0.04)] border border-stone-100 overflow-hidden">
-                    <div className="mb-8 flex items-center justify-between border-b border-stone-100 pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {activeCampaign.directions.map((dir, idx) => {
+                    const isSelected = activeCampaign.selectedDirections.some(d => d.id === dir.id || d.title === dir.title);
+                    return (
+                      <div 
+                        key={idx}
+                        onClick={() => {
+                          const exists = activeCampaign.selectedDirections.some(d => d.id === dir.id || d.title === dir.title);
+                          setActiveCampaign(prev => prev ? ({
+                            ...prev,
+                            selectedDirections: exists
+                              ? prev.selectedDirections.filter(d => d.id !== dir.id && d.title !== dir.title)
+                              : [...prev.selectedDirections, dir]
+                          }) : null);
+                        }}
+                        className={`bg-white rounded-2xl p-5 cursor-pointer border-2 transition-all duration-300 flex flex-col justify-between group ${
+                          isSelected 
+                            ? 'border-[#D27D50] shadow-md shadow-[#D27D50]/10 bg-amber-50/20 -translate-y-0.5' 
+                            : 'border-stone-200 hover:border-stone-300 hover:shadow-sm'
+                        }`}
+                      >
                         <div>
-                            <span className="text-[#D27D50] font-bold text-sm tracking-widest uppercase mb-1 block">Direction {idx + 1}</span>
-                            <h3 className="text-2xl font-black text-stone-900">{result.direction.title}</h3>
-                        </div>
-                        <Button 
-                            onClick={() => handleComposePost(result.brief, result.imageUrl)}
-                            className="bg-black hover:bg-stone-800 text-white rounded-xl font-bold h-12 px-6 shadow-md transition-transform hover:-translate-y-0.5"
-                        >
-                            <PenSquare className="w-4 h-4 mr-2" />
-                            Compose This Post
-                        </Button>
-                    </div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                              isSelected 
+                                ? 'bg-[#D27D50] text-white shadow-xs' 
+                                : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'
+                            }`}>
+                              Option {idx + 1}
+                            </span>
+                            {isSelected ? (
+                              <div className="w-6 h-6 rounded-full bg-[#D27D50] text-white flex items-center justify-center shadow-xs">
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              </div>
+                            ) : (
+                              <div className="w-6 h-6 rounded-full border-2 border-stone-200 group-hover:border-stone-300" />
+                            )}
+                          </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                        <div className="flex flex-col group">
-                            <div className="relative w-full aspect-[4/5] max-h-[600px] bg-stone-50 rounded-2xl overflow-hidden flex items-center justify-center p-4 border border-stone-100 shadow-inner">
-                                {result.imageUrl ? (
-                                    <img src={result.imageUrl} alt="Generated Ad" className="w-full h-full object-contain drop-shadow-2xl rounded-lg" />
-                                ) : (
-                                    <p className="text-stone-500 font-medium">Image Generation Failed</p>
-                                )}
-                            </div>
-                            <div className="mt-4">
-                                <a 
-                                    href={result.imageUrl || '#'} 
-                                    download={`ad_${productName.replace(/\s+/g, '_')}_${Date.now()}.jpg`}
-                                    className="w-full flex items-center justify-center px-4 py-4 bg-stone-50 border-2 border-stone-200 text-stone-700 text-sm font-black rounded-xl hover:bg-stone-100 transition-colors uppercase tracking-widest"
-                                >
-                                    Download High-Res Image
-                                </a>
-                            </div>
+                          <h3 className="text-base font-black text-stone-900 mb-2 leading-snug group-hover:text-[#D27D50] transition-colors">
+                            {dir.title}
+                          </h3>
+                          <p className="text-xs font-medium text-stone-600 leading-relaxed line-clamp-3 mb-4">
+                            {dir.description}
+                          </p>
                         </div>
 
-                        <div className="overflow-y-auto max-h-[650px] pr-4 space-y-8">
-                            <div>
-                                <h4 className="text-xs font-bold text-[#D27D50] uppercase tracking-wider mb-2">Campaign Concept</h4>
-                                <p className="text-stone-700 font-medium whitespace-pre-wrap">{result.brief.campaignConcept}</p>
-                            </div>
-                            
-                            <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100">
-                                <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-3">Tagline</h4>
-                                <p className="text-3xl font-black text-stone-900 leading-tight">"{result.brief.tagline}"</p>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Supporting Copy</h4>
-                                    <p className="text-stone-700 font-medium whitespace-pre-wrap leading-relaxed">{result.brief.supportingCopy || result.brief.copy}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Call to Action</h4>
-                                    <p className="text-stone-700 font-medium whitespace-pre-wrap leading-relaxed">{result.brief.callToAction}</p>
-                                </div>
-                            </div>
-
-                            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-6">
-                                <div>
-                                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Visual Scene Setup</h4>
-                                    <p className="text-sm text-stone-600 leading-relaxed">{result.brief.visualSceneSetup || result.brief.sceneSetup}</p>
-                                </div>
-                                
-                                <div>
-                                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Layout & Brand Integration</h4>
-                                    <p className="text-sm text-stone-600 mb-2"><span className="font-bold text-stone-700">Layout & Effects:</span> {result.brief.layoutAndEffects}</p>
-                                    <p className="text-sm text-stone-600"><span className="font-bold text-stone-700">Brand Integration:</span> {result.brief.brandIntegration}</p>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h4 className="text-xs font-bold text-[#D27D50] uppercase tracking-wider mb-2">Creative Rationale</h4>
-                                <p className="text-sm text-stone-600 italic leading-relaxed">{result.brief.creativeRationale}</p>
-                            </div>
+                        <div className={`mt-auto pt-3 border-t text-center transition-colors ${isSelected ? 'border-amber-200/60' : 'border-stone-100'}`}>
+                          <span className={`text-[11px] font-bold inline-flex items-center gap-1 ${
+                            isSelected ? 'text-[#D27D50]' : 'text-stone-400 group-hover:text-stone-600'
+                          }`}>
+                            {isSelected ? '✓ Direction Selected' : '+ Click to Select'}
+                          </span>
                         </div>
-                    </div>
+                      </div>
+                    );
+                  })}
                 </div>
-            ))}
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 bg-stone-50 p-4 rounded-2xl border border-stone-200">
+                  <span className="text-xs font-bold text-stone-600">
+                    {activeCampaign.selectedDirections.length} of {activeCampaign.directions.length} directions selected
+                  </span>
+                  <Button 
+                    onClick={() => handleGenerateAd(activeCampaign)}
+                    disabled={loading || activeCampaign.selectedDirections.length === 0}
+                    className="bg-gradient-to-r from-[#D27D50] via-rose-500 to-[#C26032] hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl font-black px-8 h-12 shadow-lg transition-all text-sm w-full sm:w-auto flex items-center justify-center gap-2"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    <span>{loading ? 'Generating Assets...' : `Generate Selected Campaigns (${activeCampaign.selectedDirections.length})`}</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Phase 2: Live Generation Process Details & Timeline */}
+            {activeCampaign.status === 'GENERATING' && (
+              <div className="space-y-6">
+                <GenerationTimeline statusMessage={activeCampaign.statusMessage || 'Processing campaign assets...'} />
+
+                {activeCampaign.items.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                    {activeCampaign.items.map((ad: any) => (
+                      <div key={ad.id} className="bg-stone-50/50 rounded-2xl overflow-hidden border border-stone-200/80 shadow-2xs flex flex-col">
+                        <div className="h-56 w-full bg-stone-950 relative overflow-hidden">
+                          <img src={ad.imageUrl} alt={ad.direction?.title} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <span className="text-white text-xs font-black uppercase block">{ad.direction?.title}</span>
+                          </div>
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col bg-white">
+                          <p className="text-xs font-black text-stone-900 line-clamp-2 mb-2">"{ad.brief?.tagline || ''}"</p>
+                          <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 self-start">Variation Ready</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Phase 3: Generated Post Variations Grid inside Campaign Card */}
+            {activeCampaign.status === 'COMPLETED' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {activeCampaign.items.map((ad: any) => {
+                    const adVideoUrl = ad.videoUrl || renderedVideoMap[ad.id];
+                    const currentViewMode = viewModeMap[ad.id] || (adVideoUrl ? 'video' : 'image');
+
+                    return (
+                      <div key={ad.id} className="bg-stone-50/50 rounded-2xl overflow-hidden border border-stone-200/80 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col group/card">
+                        <div className="h-56 w-full bg-stone-950 relative overflow-hidden group/img">
+                          {currentViewMode === 'video' && adVideoUrl ? (
+                            <video src={adVideoUrl} controls autoPlay muted loop className="w-full h-full object-cover" />
+                          ) : (
+                            <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
+                          )}
+
+                          {adVideoUrl && (
+                            <div className="absolute top-3 left-3 z-20 flex gap-1 bg-black/75 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'image' })); }}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all ${currentViewMode === 'image' ? 'bg-[#D27D50] text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
+                              >
+                                Photo
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'video' })); }}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all flex items-center gap-1 ${currentViewMode === 'video' ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
+                              >
+                                <Film className="w-3 h-3 animate-pulse" /> Motion Video
+                              </button>
+                            </div>
+                          )}
+
+                          {!adVideoUrl && (
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
+                              <a href={ad.imageUrl} target="_blank" rel="noopener noreferrer" className="bg-white/95 text-stone-900 hover:bg-white px-4 py-2 rounded-xl font-extrabold flex items-center gap-2 transform translate-y-4 group-hover/img:translate-y-0 transition-all duration-300 shadow-xl text-xs">
+                                <Maximize2 className="w-3.5 h-3.5" /> View High-Res
+                              </a>
+                            </div>
+                          )}
+
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none"></div>
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <span className="text-white text-xs font-black uppercase tracking-wider block drop-shadow-md">
+                              {ad.direction?.title || ad.direction}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-5 flex-1 flex flex-col bg-white">
+                          <p className="text-sm font-black text-stone-900 line-clamp-2 mb-1.5 leading-tight">"{ad.brief?.tagline || ''}"</p>
+                          <p className="text-xs font-medium text-stone-500 line-clamp-2 mb-3 flex-1">{ad.brief?.supportingCopy || ad.brief?.copy || ''}</p>
+
+                          {ad.brief && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedBriefDetail(ad.brief)}
+                              className="mb-3 flex w-full items-center justify-center gap-1.5 bg-[#F2F6F2] hover:bg-[#E8EDE8] border border-emerald-100/50 text-emerald-700 font-semibold text-xs py-2 rounded-lg transition-colors shadow-2xs"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              View Generation Details
+                            </button>
+                          )}
+
+                          <div className="flex gap-2 mt-auto pt-3 border-t border-stone-100">
+                            <Button 
+                              onClick={() => openAnimateModal(ad)}
+                              className="flex-1 rounded-xl font-extrabold bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 text-xs py-2.5"
+                            >
+                              <Film className="w-3.5 h-3.5" />
+                              <span>{adVideoUrl ? 'Re-Animate' : 'Animate'}</span>
+                            </Button>
+                            <Button 
+                              onClick={() => handleComposePost(ad.brief, ad.imageUrl, adVideoUrl)}
+                              variant="outline"
+                              className="flex-1 rounded-xl font-extrabold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1.5 text-xs py-2.5"
+                            >
+                              <PenSquare className="w-3.5 h-3.5" />
+                              Compose
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       )}
 
-      {/* History Section */}
+      {/* Brief Details Modal */}
+      {selectedBriefDetail && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 lg:p-8 shadow-2xl border border-stone-200 relative space-y-6">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#D27D50] block">AI Brief Details & Rationale</span>
+                <h3 className="text-xl font-black text-stone-900">{selectedBriefDetail.tagline || selectedBriefDetail.campaignConcept || 'Campaign Brief Specs'}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedBriefDetail(null)}
+                className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 hover:text-stone-900 flex items-center justify-center font-bold"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {selectedBriefDetail.tagline && (
+                <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
+                  <span className="text-[10px] font-black uppercase text-stone-400 block mb-1">Tagline</span>
+                  <p className="text-lg font-black text-stone-900">"{selectedBriefDetail.tagline}"</p>
+                </div>
+              )}
+
+              {selectedBriefDetail.supportingCopy && (
+                <div>
+                  <span className="text-[10px] font-black uppercase text-stone-400 block mb-1">Supporting Copy</span>
+                  <p className="text-stone-700 font-medium leading-relaxed bg-stone-50 p-3 rounded-xl border border-stone-100">{selectedBriefDetail.supportingCopy}</p>
+                </div>
+              )}
+
+              {selectedBriefDetail.visualSceneSetup && (
+                <div>
+                  <span className="text-[10px] font-black uppercase text-stone-400 block mb-1">Visual Scene Setup</span>
+                  <p className="text-stone-700 font-medium leading-relaxed bg-stone-50 p-3 rounded-xl border border-stone-100">{selectedBriefDetail.visualSceneSetup}</p>
+                </div>
+              )}
+
+              {selectedBriefDetail.layoutAndEffects && (
+                <div>
+                  <span className="text-[10px] font-black uppercase text-stone-400 block mb-1">Layout & Special Effects</span>
+                  <p className="text-stone-700 font-medium leading-relaxed bg-stone-50 p-3 rounded-xl border border-stone-100">{selectedBriefDetail.layoutAndEffects}</p>
+                </div>
+              )}
+
+              {selectedBriefDetail.creativeRationale && (
+                <div>
+                  <span className="text-[10px] font-black uppercase text-[#D27D50] block mb-1">Creative Rationale</span>
+                  <p className="text-stone-600 italic leading-relaxed bg-orange-50/50 p-3 rounded-xl border border-orange-100">{selectedBriefDetail.creativeRationale}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-stone-100 flex justify-end">
+              <Button onClick={() => setSelectedBriefDetail(null)} className="bg-stone-900 text-white rounded-xl font-bold px-6 py-2.5 text-xs">
+                Close Details
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* History / Campaign Archive Section */}
       <div className="mt-24 border-t border-stone-200 pt-16">
         <h2 className="text-3xl font-black text-stone-800 mb-8 flex items-center gap-3 tracking-tight">
           <Sparkles className="w-8 h-8 text-[#D27D50]" />
@@ -997,7 +1241,6 @@ export default function PostCreatorPage() {
         ) : (
           <div className="space-y-12">
             {(() => {
-              // Group history into separate Campaign Cards
               const campaignGroups: {
                 campaignId: string;
                 productName: string;
@@ -1033,7 +1276,6 @@ export default function PostCreatorPage() {
 
                 return (
                   <div key={group.campaignId} className="bg-white rounded-[28px] p-6 lg:p-8 border border-stone-200/90 shadow-sm hover:shadow-md transition-all space-y-6">
-                    {/* Separate Campaign Card Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-6">
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
@@ -1053,7 +1295,6 @@ export default function PostCreatorPage() {
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
-                        {/* Small Floating Reference Image Thumbnail in Top Right of Series Card Header */}
                         {groupRefImg && (
                           <a 
                             href={groupRefImg}
@@ -1082,7 +1323,6 @@ export default function PostCreatorPage() {
                       </div>
                     </div>
 
-                    {/* Inside Campaign: Separate Post Cards Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {group.items.map((ad: any) => {
                         const adVideoUrl = ad.videoUrl || renderedVideoMap[ad.id];
@@ -1097,7 +1337,6 @@ export default function PostCreatorPage() {
                                 <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
                               )}
 
-                              {/* Media Type Switcher */}
                               {adVideoUrl && (
                                 <div className="absolute top-3 left-3 z-20 flex gap-1 bg-black/75 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
                                   <button
@@ -1128,14 +1367,25 @@ export default function PostCreatorPage() {
                               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none"></div>
                               <div className="absolute bottom-3 left-3 right-3">
                                 <span className="text-white text-xs font-black uppercase tracking-wider block drop-shadow-md">
-                                  {ad.direction}
+                                  {ad.direction?.title || ad.direction}
                                 </span>
                               </div>
                             </div>
 
                             <div className="p-5 flex-1 flex flex-col bg-white">
                               <p className="text-sm font-black text-stone-900 line-clamp-2 mb-1.5 leading-tight">"{ad.brief?.tagline || ''}"</p>
-                              <p className="text-xs font-medium text-stone-500 line-clamp-2 mb-4 flex-1">{ad.brief?.supportingCopy || ad.brief?.copy || ''}</p>
+                              <p className="text-xs font-medium text-stone-500 line-clamp-2 mb-3 flex-1">{ad.brief?.supportingCopy || ad.brief?.copy || ''}</p>
+
+                              {ad.brief && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedBriefDetail(ad.brief)}
+                                  className="mb-3 flex w-full items-center justify-center gap-1.5 bg-[#F2F6F2] hover:bg-[#E8EDE8] border border-emerald-100/50 text-emerald-700 font-semibold text-xs py-2 rounded-lg transition-colors shadow-2xs"
+                                >
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                  View Generation Details
+                                </button>
+                              )}
 
                               <div className="flex gap-2 mt-auto pt-3 border-t border-stone-100">
                                 <Button 
@@ -1167,150 +1417,81 @@ export default function PostCreatorPage() {
         )}
       </div>
 
-      {/* Animate Modal */}
+      {/* Animation Modal */}
       {animateModalOpen && selectedAdForAnimate && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 overflow-y-auto" onClick={() => setAnimateModalOpen(false)}>
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 lg:p-8 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <button 
-              onClick={() => setAnimateModalOpen(false)}
-              className="absolute top-5 right-5 text-stone-400 hover:text-stone-700 p-2 rounded-full hover:bg-stone-100 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-[#D27D50]/10 text-[#D27D50] rounded-2xl">
-                <Film className="w-6 h-6" />
-              </div>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-stone-950 text-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 lg:p-8 shadow-2xl border border-stone-800 relative space-y-6">
+            <div className="flex items-center justify-between border-b border-stone-800 pb-4">
               <div>
-                <h3 className="text-xl font-black text-stone-900">Animate Image with Google Veo 3</h3>
-                <p className="text-xs text-stone-500 font-medium">Turn your static ad into a cinematic motion short video</p>
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#D27D50] block">Google Veo 3 Motion Video Engine</span>
+                <h3 className="text-xl font-black text-white">Animate Photo to Motion Graphic</h3>
               </div>
+              <button
+                onClick={() => setAnimateModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-stone-900 text-stone-400 hover:text-white flex items-center justify-center font-bold"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Source Image & Details */}
-            <div className="flex gap-4 p-4 bg-stone-50 border border-stone-100 rounded-2xl mb-6">
-              <img src={selectedAdForAnimate.imageUrl} alt="Source" className="w-20 h-24 object-cover rounded-xl shadow-sm border border-stone-200 shrink-0" />
-              <div className="flex-1 space-y-1 min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#D27D50]">{selectedAdForAnimate.direction || 'Ad Campaign'}</span>
-                <h4 className="font-bold text-stone-800 text-sm truncate">{selectedAdForAnimate.productName || 'Product'}</h4>
-                <p className="text-xs text-stone-500 line-clamp-2">"{selectedAdForAnimate.brief?.tagline || ''}"</p>
-              </div>
-            </div>
-
-            {/* Active Video Result */}
-            {animResultVideoUrl ? (
-              <div className="space-y-6">
-                <div className="relative w-full aspect-[9/16] max-h-[400px] bg-black rounded-2xl overflow-hidden flex items-center justify-center mx-auto shadow-xl">
-                  <video src={animResultVideoUrl} controls autoPlay className="w-full h-full object-contain" />
-                </div>
-                <div className="flex gap-3">
-                  <a 
-                    href={animResultVideoUrl} 
-                    download={`veo_anim_${Date.now()}.mp4`}
-                    className="flex-1 flex items-center justify-center px-4 py-3 bg-[#3C342C] text-white text-sm font-bold rounded-xl hover:bg-black transition-colors"
-                  >
-                    <Download className="w-4 h-4 mr-2" /> Download Video
-                  </a>
-                  <Button 
-                    onClick={() => {
-                      const postData = {
-                        content: selectedAdForAnimate.brief ? `${selectedAdForAnimate.brief.tagline ? selectedAdForAnimate.brief.tagline + '\n\n' : ''}${selectedAdForAnimate.brief.supportingCopy || selectedAdForAnimate.brief.copy || ''}\n\n${selectedAdForAnimate.brief.callToAction || ''}`.trim() : '',
-                        mediaUrls: [animResultVideoUrl]
-                      };
-                      localStorage.setItem('composeAdData', JSON.stringify(postData));
-                      router.push('/dashboard/posts/new');
-                    }}
-                    className="flex-1 bg-[#D27D50] hover:bg-[#b86d45] text-white font-bold h-11 rounded-xl shadow-sm"
-                  >
-                    <PenSquare className="w-4 h-4 mr-2" /> Compose Post
-                  </Button>
-                </div>
-              </div>
-            ) : animating || animStatus ? (
-              <div className="py-8 space-y-6 bg-stone-50 rounded-2xl border border-stone-200 p-6">
-                {animStatus === 'FAILED' ? (
-                  <div className="text-center space-y-4">
-                    <XCircle className="w-12 h-12 text-red-500 mx-auto" />
-                    <h4 className="font-bold text-stone-800 text-lg">Animation Failed</h4>
-                    <p className="text-sm text-red-600 font-medium">{animStatusMsg}</p>
-                    <Button onClick={() => { setAnimating(false); setAnimStatus(null); }} className="bg-[#D27D50] text-white font-bold rounded-xl px-6 py-2">Try Again</Button>
-                  </div>
+            <div className="space-y-4">
+              <div className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-stone-800">
+                {animResultVideoUrl ? (
+                  <video src={animResultVideoUrl} controls autoPlay loop className="w-full h-full object-contain" />
                 ) : (
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-5 h-5 text-[#D27D50] animate-spin" />
-                        <h4 className="font-bold text-stone-800 text-base">Rendering Motion Graphic Video</h4>
-                      </div>
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-[#D27D50] border border-orange-200">
-                        Veo 3 Fast Engine
-                      </span>
-                    </div>
+                  <img src={selectedAdForAnimate.imageUrl} alt="Source Photo" className="w-full h-full object-contain opacity-80" />
+                )}
 
-                    <p className="text-xs text-stone-600 font-medium bg-white p-3 rounded-xl border border-stone-200">
-                      {animStatusMsg || 'Generating kinetic motion graphic video...'}
-                    </p>
-
-                    <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
-                      <div className="bg-gradient-to-r from-[#D27D50] to-rose-500 h-full animate-pulse rounded-full w-3/4"></div>
-                    </div>
+                {animating && (
+                  <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center space-y-3">
+                    <Loader2 className="w-10 h-10 text-[#D27D50] animate-spin" />
+                    <p className="font-extrabold text-sm text-amber-300">{animStatusMsg || 'Synthesizing 3D Motion Graphics...'}</p>
+                    <span className="text-xs text-stone-400">Powered by Google Veo 3.0 Fast Engine</span>
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Synthesized Veo 3 JSON Prompt Editor */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#D27D50]" />
-                      Google Veo 3 JSON Prompt (Full Scene + Kinetic Typography Guide Format)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selectedAdForAnimate) openAnimateModal(selectedAdForAnimate);
-                      }}
-                      className="text-[11px] font-semibold text-[#D27D50] hover:underline flex items-center gap-1"
-                    >
-                      <Sparkles className="w-3 h-3" /> Re-synthesize JSON Prompt
-                    </button>
-                  </div>
-                  <textarea 
-                    value={animatePrompt} 
-                    onChange={e => setAnimatePrompt(e.target.value)} 
-                    rows={8} 
+
+              {!animating && !animResultVideoUrl && (
+                <div className="space-y-3">
+                  <label className="block text-xs font-black uppercase tracking-wider text-amber-300">
+                    Veo 3 JSON Motion Prompt Specification
+                  </label>
+                  <textarea
+                    value={animatePrompt}
+                    onChange={e => setAnimatePrompt(e.target.value)}
+                    rows={6}
                     className="w-full bg-stone-900 border border-stone-800 text-amber-300 font-mono rounded-2xl p-4 text-xs focus:outline-none focus:ring-2 focus:ring-[#D27D50]/40 transition-shadow leading-relaxed" 
                   />
-                  <p className="text-[10px] text-stone-500 mt-1.5 italic">
+                  <p className="text-[10px] text-stone-500 italic">
                     Structured according to Google Veo 3 Prompting Guide JSON specification. Animates full scene physics (subject rotation, background particles, light reflections, camera tracking) AND kinetic typography.
                   </p>
                 </div>
+              )}
 
-                <div className="pt-2 flex gap-3">
-                  <Button 
-                    onClick={() => setAnimateModalOpen(false)}
-                    variant="outline"
-                    className="flex-1 rounded-xl h-12 font-bold border-stone-200"
-                  >
-                    Cancel
-                  </Button>
+              <div className="pt-2 flex gap-3">
+                <Button 
+                  onClick={() => setAnimateModalOpen(false)}
+                  variant="outline"
+                  className="flex-1 rounded-xl h-12 font-bold border-stone-800 text-stone-300 hover:bg-stone-900"
+                >
+                  Close
+                </Button>
+                {!animResultVideoUrl && (
                   <Button 
                     onClick={handleStartAnimation}
-                    disabled={!animatePrompt}
-                    className="flex-1 bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl h-12 font-bold shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                    disabled={animating || !animatePrompt}
+                    className="flex-1 bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl h-12 font-bold shadow-md flex items-center justify-center gap-2 text-xs"
                   >
-                    <Film className="w-4 h-4" />
-                    Generate Motion Graphic Video
+                    {animating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Film className="w-4 h-4" />}
+                    <span>{animating ? 'Rendering Video...' : 'Generate Motion Graphic Video'}</span>
                   </Button>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
-
