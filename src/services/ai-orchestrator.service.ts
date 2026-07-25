@@ -389,22 +389,39 @@ Make sure the output is a valid JSON object.`;
 
       const requestParts: any[] = [];
       if (prodImgList.length > 0 || styleImgList.length > 0) {
-        requestParts.push({ text: `You are a world-class commercial advertising photographer and AI art director.\n\nCRITICAL PRODUCT IDENTITY LOCK: Keep the product/garment/object from the Product Images 100% identical and unaltered in design, pattern, color, logo, and texture.\n\nCRITICAL POSE & STYLE TRANSFER: Adapt the model pose, body posture, camera angle, lighting, 3D environment, and visual aesthetics from the Style/Pose Reference Images to seamlessly feature the identical product.\n\nInstructions: ${finalPromptText}` });
+        requestParts.push({ 
+          text: `CRITICAL MANDATORY DIRECTIVE — PRODUCT IDENTITY IS PRIORITY #1:\n` +
+                `1. EXACT PRODUCT REPRODUCTION: You MUST feature the EXACT product/garment/object from the PRIMARY HERO PRODUCT ANCHOR IMAGE below. Preserve all logos, branding, color, fabric texture, cuts, silhouette, and visual details with 100% precision. Zero alteration, zero hallucination, zero feature blending.\n` +
+                `2. IGNORE CLOTHING IN STYLE REFERENCES: The style reference images are provided ONLY for human model pose, body posture, camera angle, lighting, and background composition. You MUST IGNORE and DISCARD any clothing, outfit, or product shown inside the style reference photos. All clothing/product in the generated image MUST BE THE PRIMARY HERO PRODUCT.\n\n` +
+                `PROMPT: ${finalPromptText}`
+        });
 
+        // 1. PRIMARY HERO PRODUCT ANCHOR ATTACHED FIRST
         if (prodImgList.length > 0) {
-          requestParts.push({ text: "PRODUCT IMAGES (IDENTITY LOCK - Keep the product/object in these images 100% identical, preserving exact shape, fabric, details, branding, and colors):" });
-          for (const item of prodImgList) {
-            requestParts.push({
-              inlineData: {
-                mimeType: item.mimeType || 'image/jpeg',
-                data: item.data
-              }
-            });
+          requestParts.push({ text: `PRIMARY HERO PRODUCT ANCHOR IMAGE (GROUND TRUTH - PRESERVE THIS EXACT PRODUCT 100% IDENTICALLY WITH ZERO MUTATION):` });
+          requestParts.push({
+            inlineData: {
+              mimeType: prodImgList[0].mimeType || 'image/jpeg',
+              data: prodImgList[0].data
+            }
+          });
+
+          if (prodImgList.length > 1) {
+            requestParts.push({ text: "ADDITIONAL PRODUCT ANGLE IMAGES:" });
+            for (let i = 1; i < prodImgList.length; i++) {
+              requestParts.push({
+                inlineData: {
+                  mimeType: prodImgList[i].mimeType || 'image/jpeg',
+                  data: prodImgList[i].data
+                }
+              });
+            }
           }
         }
 
+        // 2. STYLE & POSE REFERENCE ATTACHED SECOND
         if (styleImgList.length > 0) {
-          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (Replicate and adapt the model pose, body position, background scene, camera angle, lighting setup, and visual style from these images):" });
+          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (TRANSFER MODEL POSE, CAMERA ANGLE & LIGHTING ONLY - DISCARD ALL CLOTHING/PRODUCTS FROM THESE IMAGES):" });
           for (const item of styleImgList) {
             requestParts.push({
               inlineData: {

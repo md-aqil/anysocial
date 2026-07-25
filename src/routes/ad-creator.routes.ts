@@ -145,10 +145,10 @@ Create a full, high-converting commercial creative brief for "${productName}" ta
     }
     
     CRITICAL GUIDELINES FOR THE IMAGE PROMPT:
-    1. COMPLETE COMMERCIAL ADVERTISEMENT WITH TYPOGRAPHY: Describe a complete, campaign-ready advertisement featuring the tagline headline "${dirTitle}" and CTA button clearly integrated into the layout.
-    2. CAMERA MATH & OPTICAL PHYSICS: Include explicit focal length (85mm f/1.8 lens, ISO 100), natural directional lighting, rim lights, soft shadow falloff, and unretouched micro-surface texture details.
-    3. PRIMARY HERO PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to treat Image #1 as the SINGLE HERO PRODUCT ANCHOR. Keep the original product, garment, logos, colors, fabric, and cuts 100% identical and unaltered. Prohibit feature averaging or replacing the product with any clothing from style reference photos.' : 'Feature the product as the central hero element.'}
-    4. POSE & STYLE TRANSFER: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo, while keeping the primary hero product 100% identical.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
+    1. PRIORITY #1 — MANDATORY PRODUCT PRESERVATION: The primary hero product image (Image #1) is the absolute ground truth. Instruct the image generator to reproduce the exact product, garment, logo, fabric, cuts, color, and silhouette 100% identically without feature blending or hallucination.
+    2. COMPLETE COMMERCIAL ADVERTISEMENT WITH TYPOGRAPHY: Describe a complete, campaign-ready advertisement featuring the tagline headline "${dirTitle}" and CTA button clearly integrated into the layout.
+    3. OPTICAL CAMERA PHYSICS: Include explicit focal length (85mm f/1.8 lens, ISO 100), natural directional lighting, rim lights, soft shadow falloff, and unretouched micro-surface texture details.
+    4. POSE & STYLE TRANSFER ONLY: ${styleImagesList.length > 0 ? 'Instruct the generator to closely replicate the model pose, posture, body angle, lighting, background scene, and visual aesthetic from the style reference photo, while keeping the primary hero product 100% identical. EXPLICITLY PROHIBIT replacing or blending the product with any clothing worn in style reference photos.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
     ${specialInstructions ? `5. USER SPECIAL DIRECTIVE: "${specialInstructions}". Enforce this instruction strictly in the prompt!` : ''}
     `;
 
