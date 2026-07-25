@@ -60,6 +60,16 @@ const SCHEDULE_PRESETS = [
   { label: 'Night Owl (9:00 PM)', value: '0 21 * * *', short: '9 PM Daily' }
 ];
 
+const VOICE_EMOTION_PRESETS = [
+  { label: '🔥 Energetic & Hype', prompt: 'Speak in an energetic, hype commercial tone with fast-paced excitement' },
+  { label: '✨ Soft & Luxury', prompt: 'Speak in a smooth, quiet, luxurious aesthetic whisper with calm confidence' },
+  { label: '🎙️ Professional Narrator', prompt: 'Speak in a clear, authoritative, highly professional documentary narration tone' },
+  { label: '😊 Friendly & Warm', prompt: 'Speak in a warm, welcoming, friendly conversational tone' },
+  { label: '⚡ Bold & Urgent', prompt: 'Speak in a fast, urgent, attention-grabbing promo tone' },
+  { label: '🧘 Calm & Relaxing', prompt: 'Speak slowly in a calm, soothing, relaxing voice' },
+  { label: '🎭 Dramatic Storyteller', prompt: 'Speak dramatically with expressive storytelling emotion and pauses' },
+];
+
 export default function AIProductReelPage() {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [schedule, setSchedule] = useState(SCHEDULE_PRESETS[0].value);
@@ -236,20 +246,53 @@ export default function AIProductReelPage() {
                   </div>
                 </div>
 
-                <div className="md:col-span-4 space-y-2 pt-2 border-t border-stone-100">
-                  <label className="text-xs font-bold text-stone-500 uppercase flex items-center gap-1.5">
-                    <span>Voice Style / Emotion</span>
-                    <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200">Gemini TTS Exclusive</span>
+                <div className="md:col-span-4 space-y-3 pt-2 border-t border-stone-100">
+                  <label className="text-xs font-bold text-stone-500 uppercase flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <span>Voice Style / Emotion</span>
+                      <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200">Gemini TTS Exclusive</span>
+                    </span>
+                    {voicePrompt && (
+                      <button
+                        type="button"
+                        onClick={() => setVoicePrompt('')}
+                        className="text-[10px] text-stone-400 hover:text-stone-600 underline font-semibold"
+                      >
+                        Clear Custom Style
+                      </button>
+                    )}
                   </label>
+
+                  {/* Preset Emotion Chips */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {VOICE_EMOTION_PRESETS.map((preset, idx) => {
+                      const isActive = voicePrompt === preset.prompt;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setVoicePrompt(isActive ? '' : preset.prompt)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                            isActive
+                              ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20 scale-[1.02]'
+                              : 'bg-stone-50 hover:bg-amber-50 text-stone-700 hover:text-amber-900 border-stone-200 hover:border-amber-300'
+                          }`}
+                        >
+                          <span>{preset.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <input
                     type="text"
                     value={voicePrompt}
                     onChange={(e) => setVoicePrompt(e.target.value)}
                     placeholder="e.g. Say in a spooky whisper, Make it sound very excited, Speak slowly and dynamically..."
-                    className="w-full h-10 px-3 border border-stone-200 rounded-lg bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-stone-400"
+                    className="w-full h-10 px-3 border border-stone-200 rounded-lg bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-stone-400"
                   />
                   <p className="text-[10px] text-stone-400 font-medium leading-relaxed">
-                    Direct natural language control over style, tone, and pacing. Prepend details to shape how the speaker sounds.
+                    Click a preset chip above or type natural language instructions to control style, tone, and pacing.
                   </p>
                 </div>
               </div>

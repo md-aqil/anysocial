@@ -305,13 +305,74 @@ export class VideoComposerService {
   }
 
   static transliterateHindiToRoman(text: string): string {
+    const exactDictionary: Record<string, string> = {
+      'फैब्रिक': 'fabric', 'फैब्रिक्स': 'fabrics',
+      'ड्रेस': 'dress', 'ड्रेसेस': 'dresses',
+      'डिजाइन': 'design', 'डिजाइंस': 'designs', 'डिजाइनर': 'designer',
+      'स्टाइल': 'style', 'स्टाइल्स': 'styles', 'स्टाइलिश': 'stylish',
+      'लुक': 'look', 'लुक्स': 'looks',
+      'फैशन': 'fashion',
+      'कलेक्शन': 'collection',
+      'क्वालिटी': 'quality',
+      'शॉपिंग': 'shopping',
+      'ऑर्डर': 'order', 'ऑर्डर्स': 'orders',
+      'वेबसाइट': 'website',
+      'डिलीवरी': 'delivery',
+      'डिस्काउंट': 'discount', 'डिस्काउंट्स': 'discounts',
+      'साइज': 'size', 'साइजेश': 'sizes',
+      'फिटिंग': 'fitting',
+      'स्लीव': 'sleeve', 'स्लीव्स': 'sleeves',
+      'कलर': 'color', 'कलर्स': 'colors',
+      'ट्रेंडी': 'trendy',
+      'ऑफर': 'offer', 'ऑफर्स': 'offers',
+      'प्राइस': 'price', 'प्राइसेस': 'prices',
+      'सर्विस': 'service',
+      'ब्रांड': 'brand', 'ब्रांड्स': 'brands',
+      'प्रोडक्ट': 'product', 'प्रोडक्ट्स': 'products',
+      'प्रीमियम': 'premium',
+      'न्यू': 'new',
+      'बेस्ट': 'best',
+      'कस्टमर': 'customer', 'कस्टमर्स': 'customers',
+      'रेंज': 'range',
+      'अमेजिंग': 'amazing',
+      'परफेक्ट': 'perfect',
+      'स्मार्ट': 'smart',
+      'सुपर': 'super',
+      'गारंटी': 'guarantee',
+      'फ्री': 'free',
+      'शिपिंग': 'shipping',
+      'स्टॉक': 'stock',
+      'लिमिटेड': 'limited',
+      'व्हाट्सएप': 'whatsapp',
+      'लिंक': 'link',
+      'बायो': 'bio',
+      'क्लिक': 'click',
+      'वीडियो': 'video',
+      'रील': 'reel', 'रील्स': 'reels',
+      'स्पेशल': 'special',
+      'वैरायटी': 'variety',
+      'आपका': 'aapka', 'आपकी': 'aapki', 'आपके': 'aapke', 'आप': 'aap',
+      'हमारा': 'hamara', 'हमारी': 'hamari', 'हमारे': 'hamare', 'हम': 'hum',
+      'बड़ी': 'badi', 'बड़ा': 'bada', 'बड़े': 'bade',
+      'सुंदर': 'sundar', 'खूबसूरत': 'khoobsurat',
+      'शुरू': 'shuru', 'शुरुआत': 'shuruaat',
+      'बनाएं': 'banaye', 'बनाया': 'banaya',
+      'खरीदें': 'khareede', 'खरीदना': 'khareedna',
+      'मिलेंगे': 'milenge', 'मिलेगा': 'milega', 'मिलेगी': 'milegi',
+      'देखें': 'dekhe', 'देखो': 'dekho',
+      'करें': 'kare', 'करो': 'karo', 'करिए': 'kariye',
+      'होगा': 'hoga', 'होगी': 'hogi', 'होंगे': 'honge',
+      'सबसे': 'sabse', 'आज': 'aaj', 'ही': 'hi', 'अभी': 'abhi', 'तुरंत': 'turant',
+      'कॉल': 'call'
+    };
+
     const charMap: Record<string, string> = {
-      'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'i', 'उ': 'u', 'ऊ': 'u', 'ऋ': 'ri', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
+      'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ऋ': 'ri', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
       'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng', 'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
       'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n', 'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
       'प': 'p', 'फ': 'f', 'ब': 'b', 'भ': 'bh', 'म': 'm', 'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
       'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy', 'ड़': 'd', 'ढ़': 'dh',
-      'ा': 'a', 'ि': 'i', 'ी': 'i', 'ु': 'u', 'ू': 'u', 'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
+      'ा': 'a', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
       'ं': 'n', 'ँ': 'n', 'ः': 'h', '्': '', '़': '', 'ऽ': 'a', 'ॐ': 'om', '।': '.', '॥': '.'
     };
 
@@ -326,71 +387,63 @@ export class VideoComposerService {
       'ा', 'ि', 'ी', 'ु', 'ू', 'ृ', 'े', 'ै', 'ो', 'ौ', 'ं', 'ँ', 'ः', '्'
     ]);
 
-    // Normalize Unicode nuktas for ड़ and ढ़
     let cleanText = text.replace(/ड\u093c/g, 'ड़').replace(/ढ\u093c/g, 'ढ़');
-
     const words = cleanText.split(/(\s+)/);
     const transliteratedWords = words.map(word => {
       if (/^\s+$/.test(word)) return word;
 
-      // Keep original spelling if word is already written in English/Roman script
-      if (/^[a-zA-Z0-9\-\.,!?'"’]+$/.test(word)) {
+      // Extract core word without punctuation for dictionary check
+      const core = word.replace(/^[^\w\u0900-\u097F]+|[^\w\u0900-\u097F]+$/g, '');
+      const prefix = word.slice(0, word.indexOf(core) >= 0 ? word.indexOf(core) : 0);
+      const suffix = word.slice(prefix.length + core.length);
+
+      // Keep original spelling if word is already in English/Roman script
+      if (/^[a-zA-Z0-9\-\.']+$/.test(core)) {
         return word;
       }
 
+      // Check exact dictionary match
+      if (exactDictionary[core]) {
+        return prefix + exactDictionary[core] + suffix;
+      }
+
       let romanWord = '';
-      for (let i = 0; i < word.length; i++) {
-        const char = word[i];
+      for (let i = 0; i < core.length; i++) {
+        const char = core[i];
         let romanChar = charMap[char] !== undefined ? charMap[char] : char;
         romanWord += romanChar;
 
-        // Schwa insertion rule
-        if (consonants.has(char) && i < word.length - 1) {
-          const nextChar = word[i + 1];
+        // Schwa insertion rule (skip for trailing consonant)
+        if (consonants.has(char) && i < core.length - 1) {
+          const nextChar = core[i + 1];
           if (!vowelSigns.has(nextChar) && nextChar !== '़') {
             romanWord += 'a';
           }
         }
       }
 
-      // Normalise punctuation and check common loanwords
       const lower = romanWord.toLowerCase().replace(/[^a-z]/g, '');
       const replacements: Record<string, string> = {
-        'faibrik': 'fabric',
-        'febrik': 'fabric',
-        'dres': 'dress',
-        'dizein': 'design',
-        'dizain': 'design',
-        'dizayn': 'design',
-        'stail': 'style',
-        'luk': 'look',
-        'faishn': 'fashion',
-        'kolekshn': 'collection',
-        'kuwaliti': 'quality',
-        'kwaliti': 'quality',
-        'shoping': 'shopping',
-        'ordr': 'order',
-        'websait': 'website',
-        'diliveri': 'delivery',
-        'diskaunt': 'discount',
-        'saiz': 'size',
-        'fitig': 'fitting',
-        'silv': 'sleeve',
-        'silvs': 'sleeves',
-        'bdi': 'badi',
-        'kalar': 'colour',
-        'trenadi': 'trendy',
-        'trendi': 'trendy'
+        'faibrik': 'fabric', 'febrik': 'fabric',
+        'dres': 'dress', 'dresses': 'dresses',
+        'dizein': 'design', 'dizain': 'design', 'dizayn': 'design',
+        'stail': 'style', 'luk': 'look', 'faishn': 'fashion',
+        'kolekshn': 'collection', 'kuwaliti': 'quality', 'kwaliti': 'quality',
+        'shoping': 'shopping', 'ordr': 'order', 'websait': 'website',
+        'diliveri': 'delivery', 'diskaunt': 'discount', 'saiz': 'size',
+        'fitig': 'fitting', 'silv': 'sleeve', 'silvs': 'sleeves',
+        'bdi': 'badi', 'kalar': 'color', 'trenadi': 'trendy', 'trendi': 'trendy',
+        'subtile': 'subtitle', 'subtiles': 'subtitles'
       };
 
       if (replacements[lower]) {
         const rep = replacements[lower];
-        if (romanWord === romanWord.toUpperCase()) return rep.toUpperCase();
-        if (romanWord[0] === romanWord[0].toUpperCase()) return rep[0].toUpperCase() + rep.slice(1);
-        return rep;
+        if (romanWord === romanWord.toUpperCase()) return prefix + rep.toUpperCase() + suffix;
+        if (romanWord[0] === romanWord[0].toUpperCase()) return prefix + (rep[0].toUpperCase() + rep.slice(1)) + suffix;
+        return prefix + rep + suffix;
       }
 
-      return romanWord;
+      return prefix + romanWord + suffix;
     });
 
     return transliteratedWords.join('');
