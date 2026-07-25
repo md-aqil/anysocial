@@ -75,23 +75,19 @@ export class FacebookAdapter implements PlatformAdapter {
 
           if (isVideo) {
             console.log(`[FB PUBLISH] Uploading unpublished video: ${fullMediaUrl}`);
-            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/videos`, null, {
-              params: {
-                file_url: fullMediaUrl,
-                published: 'false',
-                access_token: accessToken
-              }
+            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/videos`, {
+              file_url: fullMediaUrl,
+              published: false,
+              access_token: accessToken
             });
             attachedMedia.push({ media_fbid: uploadResponse.data.id });
             console.log(`[FB PUBLISH] Uploaded unpublished video ID: ${uploadResponse.data.id}`);
           } else {
             console.log(`[FB PUBLISH] Uploading unpublished photo: ${fullMediaUrl}`);
-            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photos`, null, {
-              params: {
-                url: fullMediaUrl,
-                published: 'false',
-                access_token: accessToken
-              }
+            const uploadResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/photos`, {
+              url: fullMediaUrl,
+              published: false,
+              access_token: accessToken
             });
             attachedMedia.push({ media_fbid: uploadResponse.data.id });
             console.log(`[FB PUBLISH] Uploaded unpublished photo ID: ${uploadResponse.data.id}`);
@@ -100,6 +96,7 @@ export class FacebookAdapter implements PlatformAdapter {
 
         // Publish feed post with attached media (Try JSON format first, then form-urlencoded fallback)
         try {
+          console.log(`[FB PUBLISH] Publishing feed post with ${attachedMedia.length} attached media items...`);
           publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, {
             message: payload.caption || undefined,
             attached_media: attachedMedia,
@@ -111,7 +108,9 @@ export class FacebookAdapter implements PlatformAdapter {
           const params = new URLSearchParams();
           if (payload.caption) params.append('message', payload.caption);
           params.append('access_token', accessToken);
-          params.append('attached_media', JSON.stringify(attachedMedia));
+          attachedMedia.forEach((item, index) => {
+            params.append(`attached_media[${index}]`, JSON.stringify(item));
+          });
 
           publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, params, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
