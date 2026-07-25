@@ -679,6 +679,7 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
         if (socialChannels.length > 0 && reelRecord?.userId) {
           logger.info(`[Worker] Auto-publishing Product Reel ${reelId} to social channels: ${JSON.stringify(socialChannels)}`);
           try {
+            const { postingEngine } = await import('../services/posting-engine.service.js');
             const videoBuffer = fs.readFileSync(publicFilePath);
             const mappedPlatforms = socialChannels.map(ch => ch.toUpperCase());
             const platformOptions: Record<string, any> = {};
