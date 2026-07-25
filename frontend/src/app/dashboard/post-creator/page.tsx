@@ -1057,7 +1057,7 @@ export default function PostCreatorPage() {
                               <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
                             )}
 
-                            {/* Media Type Switcher */}
+                             {/* Media Type Switcher */}
                             {adVideoUrl && (
                               <div className="absolute top-3 left-3 z-20 flex gap-1 bg-black/70 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
                                 <button
@@ -1074,6 +1074,28 @@ export default function PostCreatorPage() {
                                 >
                                   <Film className="w-3 h-3 animate-pulse" /> Motion Video
                                 </button>
+                              </div>
+                            )}
+
+                            {/* Small Floating Reference Image Thumbnail in Top Right Corner */}
+                            {(ad.referenceImageUrl || ad.brief?.referenceImageUrl || (referencePreviews && referencePreviews[0])) && (
+                              <div className="absolute top-3 right-3 z-30 group/ref shadow-xl">
+                                <a 
+                                  href={ad.referenceImageUrl || ad.brief?.referenceImageUrl || referencePreviews[0]} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="block w-12 h-12 rounded-xl overflow-hidden border-2 border-white bg-stone-900 transition-transform group-hover/ref:scale-110 shadow-lg"
+                                  title="View Style & Pose Reference Image"
+                                >
+                                  <img 
+                                    src={ad.referenceImageUrl || ad.brief?.referenceImageUrl || referencePreviews[0]} 
+                                    alt="Reference Style" 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                </a>
+                                <span className="absolute right-0 -bottom-5 bg-black/90 text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded-md opacity-0 group-hover/ref:opacity-100 transition-opacity border border-amber-400/30 whitespace-nowrap shadow-md">
+                                  Style Ref
+                                </span>
                               </div>
                             )}
 

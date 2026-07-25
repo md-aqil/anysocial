@@ -180,8 +180,21 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
     }
     const publicPath = path.join(publicDir, fileName);
     fs.copyFileSync(tempImageUrl, publicPath);
-    
     const imageUrl = `/uploads/ai-images/${fileName}`;
+
+    let referenceImageUrl: string | null = null;
+    if (refFiles.length > 0) {
+      try {
+        const refFileName = `ref_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
+        const refPublicPath = path.join(publicDir, refFileName);
+        fs.writeFileSync(refPublicPath, refFiles[0].buffer);
+        referenceImageUrl = `/uploads/ai-images/${refFileName}`;
+        briefParsed.referenceImageUrl = referenceImageUrl;
+      } catch (e) {
+        logger.warn('Failed to save reference image copy:', e);
+      }
+    }
+
     const adCreative = await prisma.adCreative.create({
       data: {
         userId: req.userId,
@@ -196,7 +209,8 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
     res.json({
       id: adCreative.id,
       brief: briefParsed,
-      imageUrl
+      imageUrl,
+      referenceImageUrl
     });
   } catch (error: any) {
     logger.error('Ad generation error:', error);
