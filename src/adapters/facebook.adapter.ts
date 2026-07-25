@@ -98,15 +98,25 @@ export class FacebookAdapter implements PlatformAdapter {
           }
         }
 
-        // Publish feed post with attached media
-        const params = new URLSearchParams();
-        if (payload.caption) params.append('message', payload.caption);
-        params.append('access_token', accessToken);
-        params.append('attached_media', JSON.stringify(attachedMedia));
+        // Publish feed post with attached media (Try JSON format first, then form-urlencoded fallback)
+        try {
+          publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, {
+            message: payload.caption || undefined,
+            attached_media: attachedMedia,
+            access_token: accessToken
+          });
+        } catch (jsonErr: any) {
+          console.warn(`[FB PUBLISH] JSON attached_media post failed: ${jsonErr.response?.data?.error?.message || jsonErr.message}. Retrying with URLSearchParams...`);
+          
+          const params = new URLSearchParams();
+          if (payload.caption) params.append('message', payload.caption);
+          params.append('access_token', accessToken);
+          params.append('attached_media', JSON.stringify(attachedMedia));
 
-        publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, params, {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-        });
+          publishResponse = await axios.post(`https://graph.facebook.com/v21.0/${accountId}/feed`, params, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+          });
+        }
       } else if (payload.mediaUrls.length === 1) {
         const rawMediaUrl = payload.mediaUrls[0];
         const mediaUrl = getAbsoluteMediaUrl(rawMediaUrl);
@@ -251,11 +261,18 @@ export class FacebookAdapter implements PlatformAdapter {
       };
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error';
+      const errorCode = error.response?.data?.error?.code;
+
+      let formattedError = `Facebook publish failed: ${errorMessage}`;
+      if (errorCode === 10 || errorMessage.includes('permission') || errorMessage.includes('Application does not have permission')) {
+        formattedError = `Facebook Publish Error (#10): Meta App lacks 'pages_manage_posts' permission or is in Development Mode. Solution: 1) Go to developers.facebook.com -> App Dashboard -> App Mode and set it to 'Live' (or add your Facebook user as a Tester). 2) In Social Accounts, reconnect your Facebook Page and ensure 'pages_manage_posts' scope is allowed. (Meta error: ${errorMessage})`;
+      }
+
       return {
         success: false,
         platformPostId: '',
         url: '',
-        error: `Facebook publish failed: ${errorMessage}`
+        error: formattedError
       };
     }
   }
