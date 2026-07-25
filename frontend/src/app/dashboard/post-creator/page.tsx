@@ -482,37 +482,6 @@ export default function PostCreatorPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-6 lg:p-10 space-y-8">
-      {/* Header & Step Indicator */}
-      <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 text-white rounded-[32px] p-8 lg:p-10 shadow-2xl border border-stone-800/80 relative overflow-hidden">
-        {/* Ambient Glow Backdrop */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 blur-[100px] rounded-full pointer-events-none"></div>
-
-        <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-black uppercase tracking-widest">
-            <Wand2 className="w-3.5 h-3.5" /> AI Ad Studio & Art Director
-          </div>
-          <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-white">
-            Create High-Converting Visual Campaigns
-          </h1>
-          <p className="text-stone-300 text-sm max-w-xl font-medium">
-            Generate product-identical commercial ads with AI model pose, camera angle, and aesthetic style transfer.
-          </p>
-        </div>
-
-        {/* Step Progress Pills */}
-        <div className="flex items-center gap-2 z-10 shrink-0 bg-stone-900/90 backdrop-blur-md p-2 rounded-2xl border border-stone-800/90 shadow-inner">
-          <div className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 1 ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-md' : 'text-stone-400'}`}>
-            <span>1. Brief & Assets</span>
-          </div>
-          <div className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 2 ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-md' : 'text-stone-400'}`}>
-            <span>2. Directions</span>
-          </div>
-          <div className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 3 ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-md' : 'text-stone-400'}`}>
-            <span>3. Studio</span>
-          </div>
-        </div>
-      </div>
-
       {/* Active Motion Graphic Video Progress Banner (Survives Refresh & Tab Switching) */}
       {activeReelId && animating && (
         <div className="mb-8 p-5 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white rounded-2xl border border-stone-700 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-500">
@@ -593,23 +562,23 @@ export default function PostCreatorPage() {
                   accept="image/*" 
                   multiple 
                 />
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
-                      <span>Product Photos</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30">🔒 Identity Lock</span>
-                    </h4>
-                    <p className="text-[11px] text-stone-400 font-medium">Original product stays 100% identical ({imagePreviews.length}/4)</p>
+                <div className="mb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-extrabold text-sm text-white">Product Photos</h4>
+                    {imagePreviews.length < 4 && (
+                      <Button 
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()} 
+                        className="bg-amber-500 hover:bg-amber-600 text-stone-950 text-xs font-black rounded-xl h-8 px-3 shadow-xs shrink-0"
+                      >
+                        + Add Photo
+                      </Button>
+                    )}
                   </div>
-                  {imagePreviews.length < 4 && (
-                    <Button 
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()} 
-                      className="bg-amber-500 hover:bg-amber-600 text-stone-950 text-xs font-black rounded-xl h-8 px-3 shadow-xs"
-                    >
-                      + Add Photo
-                    </Button>
-                  )}
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-400/30">🔒 Identity Lock</span>
+                    <span className="text-[11px] text-stone-400 font-medium">Original product stays 100% identical ({imagePreviews.length}/4)</span>
+                  </div>
                 </div>
 
                 {imagePreviews.length > 0 ? (
@@ -653,23 +622,23 @@ export default function PostCreatorPage() {
                   accept="image/*" 
                   multiple 
                 />
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
-                      <span>Pose & Style References</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30">🎨 Style Transfer</span>
-                    </h4>
-                    <p className="text-[11px] text-stone-400 font-medium">Model pose, lighting & aesthetic ({referencePreviews.length}/4)</p>
+                <div className="mb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-extrabold text-sm text-white">Pose & Style References</h4>
+                    {referencePreviews.length < 4 && (
+                      <Button 
+                        type="button"
+                        onClick={() => refInputRef.current?.click()} 
+                        className="bg-emerald-500 hover:bg-emerald-600 text-stone-950 text-xs font-black rounded-xl h-8 px-3 shadow-xs shrink-0"
+                      >
+                        + Add Ref
+                      </Button>
+                    )}
                   </div>
-                  {referencePreviews.length < 4 && (
-                    <Button 
-                      type="button"
-                      onClick={() => refInputRef.current?.click()} 
-                      className="bg-emerald-500 hover:bg-emerald-600 text-stone-950 text-xs font-black rounded-xl h-8 px-3 shadow-xs"
-                    >
-                      + Add Ref
-                    </Button>
-                  )}
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-400/30">🎨 Style Transfer</span>
+                    <span className="text-[11px] text-stone-400 font-medium">Model pose, lighting & aesthetic ({referencePreviews.length}/4)</span>
+                  </div>
                 </div>
 
                 {referencePreviews.length > 0 ? (
