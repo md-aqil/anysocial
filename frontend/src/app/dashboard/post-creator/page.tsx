@@ -40,8 +40,9 @@ export default function PostCreatorPage() {
   const [directions, setDirections] = useState<any[]>([]);
   const [selectedDirections, setSelectedDirections] = useState<any[]>([]);
 
-  // Result State
+  // Result & Detail Modal State
   const [results, setResults] = useState<any[]>([]);
+  const [selectedDetailAd, setSelectedDetailAd] = useState<any | null>(null);
 
   // Active Campaign Generation State (Series / Cinematic Post Spawn Pattern)
   const [activeCampaign, setActiveCampaign] = useState<{
@@ -840,243 +841,80 @@ export default function PostCreatorPage() {
                 <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-stone-50/70 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-all font-semibold text-stone-900" placeholder="A sky blue malmal top with straight pants designed for active, chic confidence..." />
               </div>
 
-              <div className="pt-2">
-                <Button 
-                  onClick={handleGenerateDirections} 
-                  disabled={loading || !productName || !description}
-                  className="w-full bg-stone-900 hover:bg-black text-white rounded-2xl h-14 font-black text-base transition-all shadow-lg hover:scale-[1.005] flex items-center justify-center gap-2"
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-[#D27D50]" />}
-                  {loading ? 'Brainstorming Directions...' : 'Propose 5 Creative Directions'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: Directions Selection */}
-      {step === 2 && (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
-          {/* Header Bar */}
-          <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="text-xs font-black uppercase tracking-wider text-[#D27D50] block mb-0.5">Step 2 of 3</span>
-              <h2 className="text-2xl font-black text-stone-900 tracking-tight">Select Creative Directions</h2>
-              <p className="text-xs font-medium text-stone-500">Choose one or more directions for your final ad assets.</p>
-            </div>
-            
-            <div className="flex items-center gap-2.5">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  if (selectedDirections.length === directions.length) {
-                    setSelectedDirections([]);
-                  } else {
-                    setSelectedDirections([...directions]);
-                  }
-                }} 
-                className="font-bold text-xs rounded-xl border-stone-200 hover:bg-stone-50 h-10 px-4"
-              >
-                {selectedDirections.length === directions.length ? 'Deselect All' : 'Select All (5)'}
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => setStep(1)} 
-                className="text-stone-600 hover:text-stone-900 font-bold text-xs h-10 px-3 flex items-center gap-1.5"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back to Brief</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Compact Directions Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {directions.map((dir, idx) => {
-              const isSelected = selectedDirections.some(d => d.id === dir.id);
-              return (
-                <div 
-                  key={idx}
-                  onClick={() => {
-                    if (isSelected) {
-                      setSelectedDirections(selectedDirections.filter(d => d.id !== dir.id));
-                    } else {
-                      setSelectedDirections([...selectedDirections, dir]);
-                    }
-                  }}
-                  className={`bg-white rounded-2xl p-5 cursor-pointer border-2 transition-all duration-300 flex flex-col justify-between group ${
-                    isSelected 
-                      ? 'border-[#D27D50] shadow-md shadow-[#D27D50]/10 bg-amber-50/20 -translate-y-0.5' 
-                      : 'border-stone-200 hover:border-stone-300 hover:shadow-sm'
-                  }`}
-                >
-                  <div>
-                    {/* Header Badge */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                        isSelected 
-                          ? 'bg-[#D27D50] text-white shadow-xs' 
-                          : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'
-                      }`}>
-                        Option {idx + 1}
-                      </span>
-                      {isSelected ? (
-                        <div className="w-6 h-6 rounded-full bg-[#D27D50] text-white flex items-center justify-center shadow-xs">
-                          <Check className="w-3.5 h-3.5 stroke-[3]" />
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 rounded-full border-2 border-stone-200 group-hover:border-stone-300" />
-                      )}
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="text-base font-black text-stone-900 mb-2 leading-snug group-hover:text-[#D27D50] transition-colors">
-                      {dir.title}
-                    </h3>
-                    
-                    {/* Description */}
-                    <p className="text-xs font-medium text-stone-600 leading-relaxed line-clamp-3 mb-4">
-                      {dir.description}
-                    </p>
-                  </div>
-
-                  {/* Toggle Status Pill */}
-                  <div className={`mt-auto pt-3 border-t text-center transition-colors ${isSelected ? 'border-amber-200/60' : 'border-stone-100'}`}>
-                    <span className={`text-[11px] font-bold inline-flex items-center gap-1 ${
-                      isSelected ? 'text-[#D27D50]' : 'text-stone-400 group-hover:text-stone-600'
-                    }`}>
-                      {isSelected ? '✓ Direction Selected' : '+ Click to Select'}
+              {/* Proposed Creative Directions Inline Box */}
+              {directions.length > 0 && (
+                <div className="bg-amber-50/40 border border-amber-200 rounded-2xl p-4 space-y-3 animate-in fade-in duration-300">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-[#D27D50] uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" /> 5 Proposed Directions
+                    </span>
+                    <span className="text-[10px] font-bold text-stone-500">
+                      {selectedDirections.length} of {directions.length} selected
                     </span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
 
-          {/* Action Footer */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-            <span className="text-xs font-bold text-stone-500">
-              {selectedDirections.length} of {directions.length} directions selected
-            </span>
-            <Button 
-              onClick={handleGenerateAd}
-              disabled={loading || selectedDirections.length === 0}
-              className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl font-black px-8 h-12 shadow-lg hover:shadow-orange-500/20 transition-all text-sm w-full sm:w-auto flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-              <span>{loading ? 'Generating Final Assets...' : `Generate Campaigns (${selectedDirections.length})`}</span>
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: Result */}
-      {step === 3 && results.length > 0 && (
-        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          {/* Step 3 Campaign Container Header */}
-          <div className="bg-stone-900 text-white rounded-3xl p-6 lg:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-stone-800">
-            <div>
-              <span className="text-[#D27D50] font-black text-xs uppercase tracking-widest block mb-1">
-                Generated Campaign • {results.length} Post Variations
-              </span>
-              <h2 className="text-3xl font-black tracking-tight">{productName}</h2>
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-3">
-              <Button 
-                onClick={() => handleComposeEntireCampaign(results)}
-                className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white font-black rounded-xl h-12 px-6 shadow-lg flex items-center gap-2"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Compose Entire Campaign ({results.length} Images/Videos)</span>
-              </Button>
-              <Button variant="outline" onClick={handleClearForm} disabled={loading} className="border-stone-700 text-stone-300 hover:bg-stone-800 font-bold rounded-xl h-12 px-5">
-                Start New Campaign
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-16">
-            {results.map((result, idx) => (
-                <div key={idx} className="bg-white rounded-3xl p-8 shadow-[0_8px_40px_rgba(0,0,0,0.04)] border border-stone-100 overflow-hidden">
-                    <div className="mb-8 flex items-center justify-between border-b border-stone-100 pb-6">
-                        <div>
-                            <span className="text-[#D27D50] font-bold text-sm tracking-widest uppercase mb-1 block">Direction {idx + 1}</span>
-                            <h3 className="text-2xl font-black text-stone-900">{result.direction.title}</h3>
-                        </div>
-                        <Button 
-                            onClick={() => handleComposePost(result.brief, result.imageUrl)}
-                            className="bg-black hover:bg-stone-800 text-white rounded-xl font-bold h-12 px-6 shadow-md transition-transform hover:-translate-y-0.5"
+                  <div className="space-y-2">
+                    {directions.map((dir, idx) => {
+                      const isSel = selectedDirections.some(d => d.title === dir.title);
+                      return (
+                        <div 
+                          key={idx}
+                          onClick={() => {
+                            if (isSel) {
+                              setSelectedDirections(selectedDirections.filter(d => d.title !== dir.title));
+                            } else {
+                              setSelectedDirections([...selectedDirections, dir]);
+                            }
+                          }}
+                          className={`p-3 rounded-xl border text-left cursor-pointer transition-all flex items-center justify-between ${
+                            isSel 
+                              ? 'bg-stone-900 text-white border-stone-900 shadow-xs' 
+                              : 'bg-white text-stone-700 border-stone-200 hover:border-amber-300'
+                          }`}
                         >
-                            <PenSquare className="w-4 h-4 mr-2" />
-                            Compose This Post
-                        </Button>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                        <div className="flex flex-col group">
-                            <div className="relative w-full aspect-[4/5] max-h-[600px] bg-stone-50 rounded-2xl overflow-hidden flex items-center justify-center p-4 border border-stone-100 shadow-inner">
-                                {result.imageUrl ? (
-                                    <img src={result.imageUrl} alt="Generated Ad" className="w-full h-full object-contain drop-shadow-2xl rounded-lg" />
-                                ) : (
-                                    <p className="text-stone-500 font-medium">Image Generation Failed</p>
-                                )}
+                          <div className="flex-1 pr-3">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] font-black uppercase ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
+                                #{idx + 1}
+                              </span>
+                              <h5 className="font-extrabold text-xs">{dir.title}</h5>
                             </div>
-                            <div className="mt-4">
-                                <a 
-                                    href={result.imageUrl || '#'} 
-                                    download={`ad_${productName.replace(/\s+/g, '_')}_${Date.now()}.jpg`}
-                                    className="w-full flex items-center justify-center px-4 py-4 bg-stone-50 border-2 border-stone-200 text-stone-700 text-sm font-black rounded-xl hover:bg-stone-100 transition-colors uppercase tracking-widest"
-                                >
-                                    Download High-Res Image
-                                </a>
-                            </div>
+                            <p className={`text-[11px] line-clamp-1 mt-0.5 ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
+                              {dir.description || dir.visualSceneSetup}
+                            </p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${isSel ? 'bg-amber-400 text-stone-950 font-bold text-xs' : 'border border-stone-300'}`}>
+                            {isSel ? '✓' : ''}
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
 
-                        <div className="overflow-y-auto max-h-[650px] pr-4 space-y-8">
-                            <div>
-                                <h4 className="text-xs font-bold text-[#D27D50] uppercase tracking-wider mb-2">Campaign Concept</h4>
-                                <p className="text-stone-700 font-medium whitespace-pre-wrap">{result.brief.campaignConcept}</p>
-                            </div>
-                            
-                            <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100">
-                                <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-3">Tagline</h4>
-                                <p className="text-3xl font-black text-stone-900 leading-tight">"{result.brief.tagline}"</p>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Supporting Copy</h4>
-                                    <p className="text-stone-700 font-medium whitespace-pre-wrap leading-relaxed">{result.brief.supportingCopy || result.brief.copy}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Call to Action</h4>
-                                    <p className="text-stone-700 font-medium whitespace-pre-wrap leading-relaxed">{result.brief.callToAction}</p>
-                                </div>
-                            </div>
-
-                            <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100 space-y-6">
-                                <div>
-                                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Visual Scene Setup</h4>
-                                    <p className="text-sm text-stone-600 leading-relaxed">{result.brief.visualSceneSetup || result.brief.sceneSetup}</p>
-                                </div>
-                                
-                                <div>
-                                    <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Layout & Brand Integration</h4>
-                                    <p className="text-sm text-stone-600 mb-2"><span className="font-bold text-stone-700">Layout & Effects:</span> {result.brief.layoutAndEffects}</p>
-                                    <p className="text-sm text-stone-600"><span className="font-bold text-stone-700">Brand Integration:</span> {result.brief.brandIntegration}</p>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h4 className="text-xs font-bold text-[#D27D50] uppercase tracking-wider mb-2">Creative Rationale</h4>
-                                <p className="text-sm text-stone-600 italic leading-relaxed">{result.brief.creativeRationale}</p>
-                            </div>
-                        </div>
-                    </div>
+                  <Button 
+                    onClick={handleGenerateAd} 
+                    disabled={loading || selectedDirections.length === 0}
+                    className="w-full bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl h-12 font-extrabold text-sm shadow-md flex items-center justify-center gap-2"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {loading ? 'Generating Commercial Visuals...' : `Generate Visuals (${selectedDirections.length})`}
+                  </Button>
                 </div>
-            ))}
+              )}
+
+              {directions.length === 0 && (
+                <div className="pt-2">
+                  <Button 
+                    onClick={handleGenerateDirections} 
+                    disabled={loading || !productName || !description}
+                    className="w-full bg-stone-900 hover:bg-black text-white rounded-2xl h-14 font-black text-base transition-all shadow-lg hover:scale-[1.005] flex items-center justify-center gap-2"
+                  >
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-[#D27D50]" />}
+                    {loading ? 'Brainstorming Directions...' : 'Propose 5 Creative Directions'}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1375,10 +1213,10 @@ export default function PostCreatorPage() {
                               <p className="text-sm font-black text-stone-800 line-clamp-2 mb-2 leading-tight">"{ad.brief?.tagline || ''}"</p>
                               <p className="text-xs font-medium text-stone-500 line-clamp-2 mb-4 flex-1">{ad.brief?.supportingCopy || ad.brief?.copy || ''}</p>
 
-                              <div className="flex gap-2 mt-auto pt-2">
+                              <div className="flex gap-1.5 mt-auto pt-2">
                                 <Button 
                                   onClick={() => openAnimateModal(ad)}
-                                  className="flex-1 rounded-xl font-bold bg-gradient-to-r from-[#D27D50] via-orange-500 to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 text-xs py-2"
+                                  className="flex-1 rounded-xl font-bold bg-[#D27D50] hover:bg-[#b86d45] text-white transition-all shadow-2xs flex items-center justify-center gap-1 text-xs py-2 px-2"
                                 >
                                   <Film className="w-3.5 h-3.5" />
                                   <span>{adVideoUrl ? 'Re-Animate' : 'Animate'}</span>
@@ -1386,10 +1224,18 @@ export default function PostCreatorPage() {
                                 <Button 
                                   onClick={() => handleComposePost(ad.brief, ad.imageUrl, adVideoUrl)}
                                   variant="outline"
-                                  className="flex-1 rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1.5 text-xs py-2"
+                                  className="flex-1 rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1 text-xs py-2 px-2"
                                 >
                                   <PenSquare className="w-3.5 h-3.5" />
                                   Compose
+                                </Button>
+                                <Button
+                                  onClick={() => setSelectedDetailAd(ad)}
+                                  variant="ghost"
+                                  className="rounded-xl font-bold text-stone-500 hover:text-stone-900 border border-stone-200 hover:bg-stone-100 flex items-center justify-center gap-1 text-xs py-2 px-2.5 shrink-0"
+                                  title="See Full Post Brief Details"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-[#D27D50]" />
                                 </Button>
                               </div>
                             </div>
@@ -1404,6 +1250,82 @@ export default function PostCreatorPage() {
           </div>
         )}
       </div>
+
+      {/* See Details Modal */}
+      {selectedDetailAd && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedDetailAd(null)}>
+          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-stone-200 flex flex-col animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/80">
+              <div>
+                <span className="text-[10px] font-black uppercase text-[#D27D50] tracking-wider block">Campaign Post Details</span>
+                <h3 className="text-lg font-extrabold text-stone-900">{selectedDetailAd.productName || selectedDetailAd.brief?.productName || 'Post Details'}</h3>
+              </div>
+              <button 
+                onClick={() => setSelectedDetailAd(null)}
+                className="w-8 h-8 rounded-full bg-stone-200 text-stone-700 flex items-center justify-center hover:bg-stone-300 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="aspect-[4/5] bg-stone-100 rounded-2xl overflow-hidden border border-stone-200 shadow-sm relative">
+                  <img src={selectedDetailAd.imageUrl} alt="Ad Visual" className="w-full h-full object-cover" />
+                </div>
+                <a 
+                  href={selectedDetailAd.imageUrl} 
+                  download="ad_visual.jpg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 bg-stone-900 hover:bg-black text-white text-xs font-extrabold py-3 rounded-xl shadow-2xs transition-colors"
+                >
+                  <Download className="w-4 h-4 text-[#D27D50]" /> Download High-Res Image
+                </a>
+              </div>
+
+              <div className="space-y-4 text-left">
+                {selectedDetailAd.brief?.tagline && (
+                  <div>
+                    <h4 className="text-[11px] font-black text-stone-400 uppercase tracking-wider mb-1">Tagline</h4>
+                    <p className="text-xl font-black text-stone-900 leading-snug">"{selectedDetailAd.brief.tagline}"</p>
+                  </div>
+                )}
+
+                {(selectedDetailAd.brief?.supportingCopy || selectedDetailAd.brief?.copy) && (
+                  <div>
+                    <h4 className="text-[11px] font-black text-stone-400 uppercase tracking-wider mb-1">Supporting Copy</h4>
+                    <p className="text-xs font-medium text-stone-700 leading-relaxed">{selectedDetailAd.brief?.supportingCopy || selectedDetailAd.brief?.copy}</p>
+                  </div>
+                )}
+
+                {selectedDetailAd.brief?.callToAction && (
+                  <div>
+                    <h4 className="text-[11px] font-black text-stone-400 uppercase tracking-wider mb-1">Call To Action</h4>
+                    <span className="inline-block bg-amber-100 text-amber-900 font-extrabold text-xs px-3 py-1 rounded-lg border border-amber-200">
+                      {selectedDetailAd.brief.callToAction}
+                    </span>
+                  </div>
+                )}
+
+                {(selectedDetailAd.brief?.visualSceneSetup || selectedDetailAd.brief?.sceneSetup) && (
+                  <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200 space-y-1">
+                    <h4 className="text-[11px] font-black text-stone-500 uppercase tracking-wider">Visual Scene Setup</h4>
+                    <p className="text-xs text-stone-600 leading-relaxed">{selectedDetailAd.brief?.visualSceneSetup || selectedDetailAd.brief?.sceneSetup}</p>
+                  </div>
+                )}
+
+                {selectedDetailAd.brief?.creativeRationale && (
+                  <div>
+                    <h4 className="text-[11px] font-black text-[#D27D50] uppercase tracking-wider mb-1">Creative Rationale</h4>
+                    <p className="text-xs text-stone-600 italic leading-relaxed">{selectedDetailAd.brief.creativeRationale}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Animate Modal */}
       {animateModalOpen && selectedAdForAnimate && (
