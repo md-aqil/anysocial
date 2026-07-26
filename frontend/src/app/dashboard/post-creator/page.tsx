@@ -43,6 +43,22 @@ export default function PostCreatorPage() {
   // Result State
   const [results, setResults] = useState<any[]>([]);
 
+  // Active Campaign Generation State (Series / Cinematic Post Spawn Pattern)
+  const [activeCampaign, setActiveCampaign] = useState<{
+    id: string;
+    productName: string;
+    platform: string;
+    createdAt: string;
+    referenceImageUrl: string | null;
+    status: 'brainstorming' | 'directions_ready' | 'generating_ads' | 'completed';
+    progressMessage: string;
+    directions: any[];
+    selectedDirections: any[];
+    items: any[];
+  } | null>(null);
+
+  const archiveRef = useRef<HTMLDivElement>(null);
+
   // History State
   const [history, setHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -342,6 +358,27 @@ export default function PostCreatorPage() {
     setLoading(true);
     setError(null);
 
+    const refImgUrl = referencePreviews[0] || imagePreviews[0] || null;
+
+    const newCamp = {
+      id: 'camp_' + Date.now(),
+      productName,
+      platform,
+      createdAt: new Date().toISOString(),
+      referenceImageUrl: refImgUrl,
+      status: 'brainstorming' as const,
+      progressMessage: 'AI Art Director is analyzing product identity & style references...',
+      directions: [],
+      selectedDirections: [],
+      items: []
+    };
+
+    setActiveCampaign(newCamp);
+
+    setTimeout(() => {
+      archiveRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+
     try {
       const formData = new FormData();
       imageFiles.forEach(file => {
@@ -376,23 +413,41 @@ export default function PostCreatorPage() {
 
       const data = await res.json();
       setDirections(data.directions);
+      setSelectedDirections(data.directions);
+      
+      setActiveCampaign(prev => prev ? {
+        ...prev,
+        status: 'directions_ready',
+        progressMessage: '5 Creative Directions proposed! Select directions below to generate visual assets.',
+        directions: data.directions,
+        selectedDirections: data.directions
+      } : null);
+
       setStep(2);
     } catch (err: any) {
       setError(err.message);
+      setActiveCampaign(null);
     } finally {
       setLoading(false);
     }
   };
 
   const handleGenerateAd = async () => {
-    if (selectedDirections.length === 0) return;
+    const dirsToUse = activeCampaign?.selectedDirections?.length ? activeCampaign.selectedDirections : (selectedDirections.length ? selectedDirections : directions);
+    if (dirsToUse.length === 0) return;
     setLoading(true);
     setError(null);
     setResults([]);
 
+    setActiveCampaign(prev => prev ? {
+      ...prev,
+      status: 'generating_ads',
+      progressMessage: `Generating commercial visual assets for ${dirsToUse.length} creative directions...`
+    } : null);
+
     try {
       const generatedResults = [];
-      for (const direction of selectedDirections) {
+      for (const direction of dirsToUse) {
           const formData = new FormData();
           formData.append('productName', productName);
           formData.append('direction', JSON.stringify(direction));
@@ -421,15 +476,35 @@ export default function PostCreatorPage() {
           }
 
           const data = await res.json();
-          generatedResults.push({ brief: data.brief, imageUrl: data.imageUrl, direction });
-          // Update the UI progressively
+          const newItem = { 
+            brief: data.brief, 
+            imageUrl: data.imageUrl, 
+            direction, 
+            id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substring(7),
+            productName,
+            platform,
+            createdAt: new Date().toISOString()
+          };
+          generatedResults.push(newItem);
           setResults([...generatedResults]);
+
+          setActiveCampaign(prev => prev ? {
+            ...prev,
+            items: [...generatedResults],
+            progressMessage: `Generated ${generatedResults.length} of ${dirsToUse.length} creative visual variations...`
+          } : null);
           
           if (generatedResults.length === 1) {
-            setStep(3); // Move to results view as soon as first ad is ready
+            setStep(3);
           }
       }
       
+      setActiveCampaign(prev => prev ? {
+        ...prev,
+        status: 'completed',
+        progressMessage: 'Campaign generation complete! All visual assets ready for export.'
+      } : null);
+
       fetchHistory();
     } catch (err: any) {
       setError(err.message);
@@ -1006,12 +1081,152 @@ export default function PostCreatorPage() {
         </div>
       )}
 
-      {/* History Section */}
-      <div className="mt-24 border-t border-stone-200 pt-16">
-        <h2 className="text-3xl font-black text-stone-800 mb-8 flex items-center gap-3 tracking-tight">
-          <Sparkles className="w-8 h-8 text-[#D27D50]" />
-          Campaign Archive
-        </h2>
+      {/* History & Active Campaign Section */}
+      <div ref={archiveRef} className="mt-20 border-t border-stone-200 pt-12 space-y-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-stone-900 flex items-center gap-3 tracking-tight">
+            <Sparkles className="w-6 h-6 text-[#D27D50]" />
+            <span>Campaign Archive</span>
+          </h2>
+        </div>
+
+        {/* Spawning Active Campaign Card (Series & Cinematic Reels Pattern) */}
+        {activeCampaign && (
+          <div className="bg-gradient-to-br from-amber-50/20 via-white to-stone-50 rounded-3xl p-6 lg:p-8 border-2 border-[#D27D50]/40 shadow-xl space-y-6 animate-in fade-in duration-500 relative">
+            {/* Active Campaign Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-6">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <h3 className="text-2xl font-black text-stone-900">{activeCampaign.productName}</h3>
+                  <span className="px-3 py-1 bg-stone-900 text-amber-300 text-xs font-black rounded-full uppercase tracking-wider">
+                    {activeCampaign.platform}
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-orange-100 text-[#D27D50] text-[10px] font-black rounded-md border border-orange-200 uppercase tracking-widest animate-pulse">
+                    ⚡ Live Generation
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-stone-500">
+                  {activeCampaign.items.length} Post Variations • Started Just Now
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Reference Style Thumbnail in Top-Right */}
+                {activeCampaign.referenceImageUrl && (
+                  <div className="flex items-center gap-2 bg-stone-900 text-white p-1.5 pr-3.5 rounded-2xl border border-stone-800 shadow-md">
+                    <img src={activeCampaign.referenceImageUrl} alt="Target Reference" className="w-10 h-10 rounded-xl object-cover border border-amber-400/60 shadow-xs" />
+                    <div className="text-left">
+                      <span className="text-[9px] font-black uppercase text-amber-300 block tracking-wider">Style Ref</span>
+                      <span className="text-[11px] font-bold text-stone-200">Active Pose</span>
+                    </div>
+                  </div>
+                )}
+
+                {activeCampaign.items.length > 0 && (
+                  <Button
+                    onClick={() => handleComposeEntireCampaign(activeCampaign.items)}
+                    className="bg-black hover:bg-stone-800 text-white rounded-xl font-bold px-5 py-2.5 text-xs shadow-md flex items-center gap-2"
+                  >
+                    <Share2 className="w-4 h-4 text-[#D27D50]" />
+                    <span>Compose Campaign ({activeCampaign.items.length})</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Live Progress Preloader Bar inside the Card */}
+            {activeCampaign.status !== 'completed' && (
+              <div className="bg-stone-900 text-white p-4 rounded-2xl border border-stone-800 shadow-md flex items-center justify-between gap-4 animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="bg-amber-500/20 p-2.5 rounded-xl border border-amber-400/30">
+                    <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-amber-400 tracking-widest block">AI Art Director Engine</span>
+                    <p className="text-xs font-bold text-stone-200">{activeCampaign.progressMessage}</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 border border-amber-400/30 px-3 py-1 rounded-full">Processing</span>
+              </div>
+            )}
+
+            {/* Brainstormed Creative Directions inside the spawned Campaign Card */}
+            {activeCampaign.directions.length > 0 && activeCampaign.status === 'directions_ready' && (
+              <div className="bg-stone-50 rounded-2xl p-5 border border-stone-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-extrabold text-stone-900 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#D27D50]" />
+                    <span>5 Proposed Creative Directions</span>
+                  </h4>
+                  <span className="text-xs font-bold text-stone-500">Select directions to render</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                  {activeCampaign.directions.map((dir: any, idx: number) => {
+                    const isSel = activeCampaign.selectedDirections.some((d: any) => d.title === dir.title);
+                    return (
+                      <div 
+                        key={idx}
+                        onClick={() => {
+                          const updated = isSel 
+                            ? activeCampaign.selectedDirections.filter((d: any) => d.title !== dir.title)
+                            : [...activeCampaign.selectedDirections, dir];
+                          setActiveCampaign({ ...activeCampaign, selectedDirections: updated });
+                        }}
+                        className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${isSel ? 'bg-stone-900 text-white border-stone-900 shadow-md scale-[1.02]' : 'bg-white text-stone-700 border-stone-200 hover:border-amber-300'}`}
+                      >
+                        <span className={`text-[10px] font-black uppercase tracking-wider block mb-1 ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
+                          Dir #{idx+1}
+                        </span>
+                        <h5 className="font-extrabold text-xs mb-1 line-clamp-1">{dir.title || dir.concept}</h5>
+                        <p className={`text-[11px] line-clamp-2 ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>{dir.visualSceneSetup || dir.description}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2">
+                  <Button 
+                    onClick={handleGenerateAd}
+                    disabled={loading || activeCampaign.selectedDirections.length === 0}
+                    className="w-full bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white font-extrabold rounded-xl h-12 text-sm shadow-md"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                    {loading ? 'Rendering Visual Variations...' : `Generate Visuals for ${activeCampaign.selectedDirections.length} Selected Directions`}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Render items inside active campaign grid */}
+            {activeCampaign.items.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {activeCampaign.items.map((item, idx) => (
+                  <div key={idx} className="bg-white rounded-2xl overflow-hidden border border-stone-200 shadow-sm flex flex-col justify-between">
+                    <div className="relative aspect-[4/5] bg-stone-900 overflow-hidden group">
+                      <img src={item.imageUrl} alt={`Variation ${idx+1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-wider">
+                        {item.direction?.title || `Variation #${idx+1}`}
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <p className="font-extrabold text-sm text-stone-900 line-clamp-2">"{item.brief?.tagline || item.brief?.title}"</p>
+                      <p className="text-xs text-stone-500 line-clamp-2">{item.brief?.supportingCopy || item.brief?.copy}</p>
+                      <div className="pt-2 flex gap-2">
+                        <Button 
+                          onClick={() => handleComposePost(item.brief, item.imageUrl)}
+                          className="flex-1 bg-stone-900 hover:bg-black text-white text-xs font-bold rounded-xl h-9"
+                        >
+                          Compose Post
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         
         {loadingHistory ? (
           <div className="flex items-center justify-center p-12">
