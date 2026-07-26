@@ -102,16 +102,44 @@ export class PostingEngineService {
     }
 
     // 1.2 Account Health Check: Prevent scheduling for accounts that are already restricted/errored
+    const VALID_PLATFORMS = ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER', 'TIKTOK', 'YOUTUBE', 'THREADS', 'PINTEREST', 'SNAPCHAT', 'REDDIT'];
+
+    const platformEnums: string[] = [];
+    const accountIds: string[] = [];
+
+    for (const p of data.platforms) {
+      const upper = p.toUpperCase();
+      if (VALID_PLATFORMS.includes(upper)) {
+        platformEnums.push(upper);
+      } else {
+        accountIds.push(p);
+      }
+    }
+
+    // If UUID account IDs were passed instead of Platform names, fetch their corresponding platform Enums
+    if (accountIds.length > 0) {
+      const accountsById = await prisma.socialAccount.findMany({
+        where: { id: { in: accountIds }, userId },
+        select: { id: true, platform: true }
+      });
+      for (const acc of accountsById) {
+        const platStr = acc.platform.toString().toUpperCase();
+        if (!platformEnums.includes(platStr)) {
+          platformEnums.push(platStr);
+        }
+      }
+    }
+
     const connectedAccounts = await prisma.socialAccount.findMany({
       where: {
         userId,
-        platform: { in: data.platforms.map(p => p.toUpperCase() as any) },
+        platform: { in: platformEnums as any[] },
         status: 'CONNECTED'
       }
     });
 
-    const connectedPlatformNames = connectedAccounts.map(a => a.platform.toString());
-    const missingOrBroken = data.platforms.filter(p => !connectedPlatformNames.includes(p.toUpperCase()));
+    const connectedPlatformNames = connectedAccounts.map(a => a.platform.toString().toUpperCase());
+    const missingOrBroken = platformEnums.filter(p => !connectedPlatformNames.includes(p));
 
     if (missingOrBroken.length > 0) {
       throw new SchedulingError(`Account Health Check: The following platforms are restricted or not connected: ${missingOrBroken.join(', ')}. Please resolve Account Quality issues first.`);

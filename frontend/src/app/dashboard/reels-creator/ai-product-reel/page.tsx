@@ -54,10 +54,30 @@ const VOICES_BY_LANGUAGE: Record<string, { id: string, name: string, type: strin
 };
 
 const SCHEDULE_PRESETS = [
-  { label: 'Morning Peak (9:00 AM)', value: '0 9 * * *', short: '9 AM Daily' },
-  { label: 'Lunch Break (12:00 PM)', value: '0 12 * * *', short: '12 PM Daily' },
-  { label: 'Evening Commute (5:00 PM)', value: '0 17 * * *', short: '5 PM Daily' },
-  { label: 'Night Owl (9:00 PM)', value: '0 21 * * *', short: '9 PM Daily' }
+  { 
+    label: 'Morning Peak (9:00 AM)', 
+    value: '0 9 * * *', 
+    short: '9 AM Daily',
+    insight: '⚡ Peak Morning Feed Check: Highest engagement for Instagram & LinkedIn as users open social feeds before starting work.' 
+  },
+  { 
+    label: 'Lunch Break (12:00 PM)', 
+    value: '0 12 * * *', 
+    short: '12 PM Daily',
+    insight: '🛒 Peak E-Commerce Shopping Window: Highest click-through rate on store product links during mid-day lunch breaks.' 
+  },
+  { 
+    label: 'Evening Commute (5:00 PM)', 
+    value: '0 17 * * *', 
+    short: '5 PM Daily',
+    insight: '🔥 Maximum Virality Window: Peak video watch time for TikTok & Instagram Reels as workday wraps up.' 
+  },
+  { 
+    label: 'Night Owl (9:00 PM)', 
+    value: '0 21 * * *', 
+    short: '9 PM Daily',
+    insight: '🎬 Longest Completion Rate: Highest full-video watch completion for YouTube Shorts & Reels while relaxing.' 
+  }
 ];
 
 const VOICE_EMOTION_PRESETS = [
@@ -300,10 +320,16 @@ export default function AIProductReelPage() {
 
             {/* Posting Schedule */}
             <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 text-emerald-600">
-                <Calendar className="h-5 w-5" />
-                <h3 className="text-sm font-bold uppercase tracking-wider">Best Time to Post</h3>
+              <div className="flex items-center justify-between text-emerald-600">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  <h3 className="text-sm font-bold uppercase tracking-wider">Best Time to Post & AI Audience Schedule</h3>
+                </div>
+                <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  ⚡ Peak Virality Insights
+                </span>
               </div>
+
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {SCHEDULE_PRESETS.map((item) => (
                   <button
@@ -311,16 +337,27 @@ export default function AIProductReelPage() {
                     onClick={() => setSchedule(item.value)}
                     disabled={isCreating}
                     className={cn(
-                      "px-3 py-3 rounded-xl text-xs font-bold border transition-all text-center",
+                      "px-3 py-3 rounded-xl text-xs font-bold border transition-all text-center flex flex-col items-center justify-center gap-1",
                       schedule === item.value
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500'
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500 shadow-xs'
                         : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
                     )}
                   >
-                    {item.label}
+                    <span>{item.label}</span>
                   </button>
                 ))}
               </div>
+
+              {/* Selected Schedule Optimal Posting Insight Box */}
+              {selectedSchedule?.insight && (
+                <div className="p-3.5 bg-gradient-to-r from-emerald-50/80 to-teal-50/50 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-start gap-2.5 animate-in fade-in">
+                  <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-extrabold uppercase text-[10px] tracking-wider text-emerald-700 block mb-0.5">Optimal Posting Window Strategy</span>
+                    <p className="font-medium text-stone-700 leading-relaxed">{selectedSchedule.insight}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Image to Video */}
