@@ -40,21 +40,20 @@ router.post('/directions', authenticate, adUploadFields, async (req: any, res: a
 
 Analyze the provided product image(s) and reference image(s). Then propose exactly 5 distinct ad creative directions.
 
-HARD CONSTRAINTS (apply to ALL 5 directions):
+HARD CONSTRAINTS (apply to ALL 4 directions):
 1. PRODUCT IDENTITY LOCK: The product(s) in the Product Image(s) must remain 100% identical in every direction - exact shape, fabric, cuts, color, pattern, logo, labels, texture. STRICTLY PROHIBITED: feature averaging, merging, smoothing, or altering the product design.
 2. REFERENCE IMAGE PINNING: ${refFiles.length > 0 ? `The ${refFiles.length} Style/Pose Reference Image(s) are ENVIRONMENT/POSE TEMPLATES. For each direction, describe how the scene would replicate the exact camera angle, model pose, lighting setup, background, and aesthetic from the reference image(s). The ONLY element that changes between directions is the product presentation - everything else (model, setting, light, mood) is locked to the reference.` : 'No reference images provided - use high-end commercial studio or aspirational lifestyle composition.'}
 3. NANO-BANANA QUALITY: Every direction must be achievable with hyper-realistic imaging: camera math (85mm, f/2.0, ISO 200), natural directional lighting, shallow depth of field, visible material texture, unretouched surface details.
 
 For each direction, provide:
-- title: The direction name (use exactly these 5)
+- title: The direction name (use exactly these 4)
 - description: A 2-3 sentence concept explaining the scene, how the reference image is replicated, how the product identity is preserved, and what makes this direction distinct from the others. Be specific about camera angle, lighting, model pose, background, and product presentation.
 
-Use these 5 fixed directions:
+Use these 4 fixed directions:
 1. Hero Lifestyle Integration - Aspirational usage in a real-world lifestyle context matching the reference
 2. Dramatic Product Theater - Cinematic, high-contrast, product as the sole hero, replicating reference lighting
-3. Ingredient/Component Explosion - Materials, textures, craftsmanship deconstructed within the reference scene
-4. Action / Dynamic Moment - Motion, energy, decisive moment, matching reference camera angle and energy
-5. Premium Minimalist Showcase - Clean, elegant, negative space, craftsmanship focus within reference composition
+3. Action / Dynamic Moment - Motion, energy, decisive moment, matching reference camera angle and energy
+4. Premium Minimalist Showcase - Clean, elegant, negative space, craftsmanship focus within reference composition
 
 Details:
 - Product: ${productName}

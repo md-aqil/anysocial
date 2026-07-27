@@ -1101,7 +1101,7 @@ export default function PostCreatorPage() {
                  <div className="bg-amber-50/40 border border-amber-200 rounded-2xl p-5 space-y-4 animate-in fade-in duration-300">
                    <div className="flex items-center justify-between">
                      <span className="text-xs font-black text-[#D27D50] uppercase tracking-wider flex items-center gap-1.5">
-                       <Sparkles className="w-3.5 h-3.5" /> 5 Proposed Directions
+                       <Sparkles className="w-3.5 h-3.5" /> 4 Proposed Directions
                      </span>
                      <span className="text-[10px] font-black text-stone-500">
                        {selectedDirections.length} of {directions.length} selected
@@ -1352,12 +1352,12 @@ export default function PostCreatorPage() {
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-extrabold text-stone-900 flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-[#D27D50]" />
-                            <span>5 Proposed Creative Directions</span>
+                             <span>4 Proposed Creative Directions</span>
                           </h4>
                           <span className="text-xs font-bold text-stone-550">Select directions to render</span>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                           {group.directions.map((dir: any, idx: number) => {
                             const isSel = group.selectedDirections?.some((d: any) => d.title === dir.title);
                             return (
