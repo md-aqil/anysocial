@@ -9,6 +9,7 @@ import {
   Check, ArrowLeft, Layers, Wand2, ExternalLink, Eye, Link2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { cn } from '@/lib/utils';
 
 const getThemeBadge = (title: string, desc: string) => {
   const t = (title + ' ' + desc).toLowerCase();
@@ -44,7 +45,6 @@ export default function PostCreatorPage() {
   const [platform, setPlatform] = useState('Instagram Feed (4:5)');
   const [mood, setMood] = useState('High energy');
   const [specialInstructions, setSpecialInstructions] = useState('');
-  const [useOriginalImages, setUseOriginalImages] = useState(false);
   
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -529,14 +529,11 @@ export default function PostCreatorPage() {
 
     try {
       const generatedResults: any[] = [];
-      let idx = 0;
       for (const direction of dirsToUse) {
           const formData = new FormData();
           formData.append('productName', productName);
           formData.append('direction', JSON.stringify(direction));
           formData.append('platform', platform);
-          formData.append('useOriginalImages', useOriginalImages.toString());
-          formData.append('directionIndex', idx.toString());
           if (specialInstructions) {
             formData.append('specialInstructions', specialInstructions);
           }
@@ -582,7 +579,6 @@ export default function PostCreatorPage() {
           if (generatedResults.length === 1) {
             setStep(3);
           }
-          idx++;
       }
       
       setActiveCampaign(prev => prev ? {
@@ -654,11 +650,11 @@ export default function PostCreatorPage() {
         </div>
 
         {/* Step Progress Pills */}
-        <div className="flex items-center gap-2 bg-stone-100 p-1.5 rounded-2xl border border-stone-200 shrink-0">
+        <div className="flex items-center gap-2 bg-stone-100 p-1.5 rounded-2xl border border-stone-200/80 shrink-0">
           <button 
             type="button"
             onClick={() => setStep(1)}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 1 ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-500 hover:text-stone-755'}`}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 1 ? 'bg-[#D27D50] text-white shadow-xs' : 'text-stone-500 hover:text-stone-700'}`}
           >
             <span>1. Brief & Media</span>
           </button>
@@ -666,7 +662,7 @@ export default function PostCreatorPage() {
             type="button"
             onClick={() => { if (directions.length > 0) setStep(2); }}
             disabled={directions.length === 0}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 2 ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-500 hover:text-stone-755 disabled:opacity-50'}`}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 2 ? 'bg-[#D27D50] text-white shadow-xs' : 'text-stone-500 hover:text-stone-700 disabled:opacity-50'}`}
           >
             <span>2. Directions</span>
           </button>
@@ -674,7 +670,7 @@ export default function PostCreatorPage() {
             type="button"
             onClick={() => { if (results.length > 0 || activeCampaign?.items?.length) setStep(3); }}
             disabled={results.length === 0 && !activeCampaign?.items?.length}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 3 ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-500 hover:text-stone-755 disabled:opacity-50'}`}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 3 ? 'bg-[#D27D50] text-white shadow-xs' : 'text-stone-500 hover:text-stone-700 disabled:opacity-50'}`}
           >
             <span>3. Studio</span>
           </button>
@@ -683,17 +679,17 @@ export default function PostCreatorPage() {
 
       {/* Active Motion Graphic Video Progress Banner (Survives Refresh & Tab Switching) */}
       {activeReelId && animating && (
-        <div className="p-5 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white rounded-2xl border border-stone-700 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-500">
+        <div className="p-5 bg-gradient-to-r from-amber-50/60 via-orange-50/40 to-amber-50/50 text-stone-800 rounded-2xl border border-amber-200/80 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-500">
           <div className="flex items-center gap-3.5">
-            <div className="bg-orange-500/20 p-2.5 rounded-xl border border-orange-500/30 shrink-0">
-              <Loader2 className="w-6 h-6 text-[#D27D50] animate-spin" />
+            <div className="bg-orange-100 p-2 rounded-xl border border-orange-200 shrink-0">
+              <Loader2 className="w-5 h-5 text-[#D27D50] animate-spin" />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-xs font-black uppercase tracking-wider text-[#D27D50]">Google Veo 3 Motion Video Engine</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">In Progress</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-150 text-[#D27D50] border border-orange-200">In Progress</span>
               </div>
-              <p className="text-sm font-bold text-stone-200">{animStatusMsg || 'Rendering video in background...'}</p>
+              <p className="text-sm font-extrabold text-stone-850">{animStatusMsg || 'Rendering video in background...'}</p>
             </div>
           </div>
           
@@ -762,23 +758,8 @@ export default function PostCreatorPage() {
                 </div>
               </div>
 
-              {/* Keep Original Photos Toggle */}
-              <div className="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-xl p-3.5 shadow-2xs">
-                <div className="flex flex-col text-left">
-                  <span className="text-xs font-bold text-stone-850">Keep Original Product Photo(s)</span>
-                  <span className="text-[10px] text-stone-550">Use uploaded product photos directly without AI distortion</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setUseOriginalImages(v => !v)}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${useOriginalImages ? 'bg-[#D27D50]' : 'bg-stone-200'}`}
-                >
-                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${useOriginalImages ? 'translate-x-4' : 'translate-x-1'}`} />
-                </button>
-              </div>
-
-              {useOriginalImages ? (
-                /* Full width Product Photos only */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Product Photos (Identity Lock) */}
                 <div className="bg-stone-50/75 border border-stone-200 hover:border-amber-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
@@ -798,7 +779,7 @@ export default function PostCreatorPage() {
                   />
 
                   {imagePreviews.length > 0 ? (
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {imagePreviews.map((src, idx) => (
                         <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
                           <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
@@ -824,154 +805,92 @@ export default function PostCreatorPage() {
                   ) : (
                     <div 
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-8 px-4 hover:bg-stone-100/60 transition-colors"
+                      className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
                     >
-                      <Upload className="w-6 h-6 text-[#D27D50] mb-2" />
-                      <p className="font-extrabold text-xs text-stone-700 text-center">
-                        Upload Product Photos<br/>
-                        <span className="text-stone-400 font-normal text-[10px]">Select image files (up to 4)</span>
+                      <Upload className="w-4 h-4 text-[#D27D50] mb-1.5" />
+                      <p className="font-extrabold text-[11px] text-stone-700 text-center">
+                        Upload Product Shots<br/>
+                        <span className="text-stone-400 font-normal text-[9px]">Front/angle views</span>
                       </p>
                     </div>
                   )}
                 </div>
-              ) : (
-                /* 2-Column Split: Product Photos & Style Refs */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Product Photos (Identity Lock) */}
-                  <div className="bg-stone-50/75 border border-stone-200 hover:border-amber-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
-                        <span>Product Photos</span>
-                        <span className="text-[8px] font-black uppercase tracking-wider text-[#D27D50] bg-orange-50 px-2 py-0.5 rounded border border-orange-100">🔒 Lock</span>
-                      </h4>
-                      <span className="text-[10px] text-stone-400 font-bold">{imagePreviews.length}/4</span>
-                    </div>
 
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleImageChange} 
-                      className="hidden" 
-                      accept="image/*" 
-                      multiple 
-                    />
-
-                    {imagePreviews.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {imagePreviews.map((src, idx) => (
-                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
-                            <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); removeImageFile(idx); }}
-                              className="absolute top-1 right-1 w-4 h-4 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
-                        ))}
-                        {imagePreviews.length < 4 && (
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="aspect-square rounded-xl border border-dashed border-stone-300 hover:border-amber-300 flex items-center justify-center bg-white text-stone-400 hover:text-stone-600 transition-colors text-lg font-bold"
-                          >
-                            +
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
-                      >
-                        <Upload className="w-4 h-4 text-[#D27D50] mb-1.5" />
-                        <p className="font-extrabold text-[11px] text-stone-700 text-center">
-                          Upload Product Shots<br/>
-                          <span className="text-stone-400 font-normal text-[9px]">Front/angle views</span>
-                        </p>
-                      </div>
-                    )}
+                {/* Pose & Style Reference Photos */}
+                <div className="bg-stone-50/75 border border-stone-200 hover:border-emerald-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
+                      <span>Style Refs</span>
+                      <span className="text-[8px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">🎨 Style</span>
+                    </h4>
+                    <span className="text-[10px] text-stone-400 font-bold">{referencePreviews.length}/4</span>
                   </div>
 
-                  {/* Pose & Style Reference Photos */}
-                  <div className="bg-stone-50/75 border border-stone-200 hover:border-emerald-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
-                        <span>Style Refs</span>
-                        <span className="text-[8px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">🎨 Style</span>
-                      </h4>
-                      <span className="text-[10px] text-stone-400 font-bold">{referencePreviews.length}/4</span>
-                    </div>
-
-                    <input 
-                      type="file" 
-                      ref={refInputRef} 
-                      onChange={handleReferenceChange} 
-                      className="hidden" 
-                      accept="image/*" 
-                      multiple 
-                    />
-
-                    {referencePreviews.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {referencePreviews.map((src, idx) => (
-                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
-                            <img src={src} alt={`Reference ${idx+1}`} className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); removeReferenceFile(idx); }}
-                              className="absolute top-1 right-1 w-4 h-4 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
-                        ))}
-                        {referencePreviews.length < 4 && (
-                          <button
-                            type="button"
-                            onClick={() => refInputRef.current?.click()}
-                            className="aspect-square rounded-xl border border-dashed border-stone-300 hover:border-emerald-300 flex items-center justify-center bg-white text-stone-400 hover:text-stone-600 transition-colors text-lg font-bold"
-                          >
-                            +
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div 
-                        onClick={() => refInputRef.current?.click()}
-                        className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
-                      >
-                        <ImageIcon className="w-4 h-4 text-emerald-600 mb-1.5" />
-                        <p className="font-extrabold text-[11px] text-stone-700 text-center">
-                          Upload Poses/Styles<br/>
-                          <span className="text-stone-400 font-normal text-[9px]">Model, lighting or angle</span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {!useOriginalImages && (
-                /* Special Style & Pose Instructions Input */
-                <div className="bg-gradient-to-r from-amber-50/60 to-orange-50/30 border border-amber-200/80 rounded-2xl p-4 space-y-2 animate-in fade-in duration-300">
-                  <label className="block text-xs font-extrabold text-stone-900 tracking-wider flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#D27D50]" />
-                      Special Pose / AI Guidance <span className="text-stone-400 font-normal lowercase">(optional)</span>
-                    </span>
-                    <span className="text-[10px] text-[#D27D50] font-bold bg-white px-2 py-0.5 rounded-md border border-amber-200/80 shadow-2xs">Prompt Directive</span>
-                  </label>
-                  <textarea
-                    value={specialInstructions}
-                    onChange={e => setSpecialInstructions(e.target.value)}
-                    rows={2}
-                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-850 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-all shadow-2xs font-semibold"
-                    placeholder='e.g. "Focus on model posture and warm sunset studio lighting from Reference #1, keep model on a luxury marble balcony."'
+                  <input 
+                    type="file" 
+                    ref={refInputRef} 
+                    onChange={handleReferenceChange} 
+                    className="hidden" 
+                    accept="image/*" 
+                    multiple 
                   />
+
+                  {referencePreviews.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {referencePreviews.map((src, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
+                          <img src={src} alt={`Reference ${idx+1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeReferenceFile(idx); }}
+                            className="absolute top-1 right-1 w-4 h-4 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                      {referencePreviews.length < 4 && (
+                        <button
+                          type="button"
+                          onClick={() => refInputRef.current?.click()}
+                          className="aspect-square rounded-xl border border-dashed border-stone-300 hover:border-emerald-300 flex items-center justify-center bg-white text-stone-400 hover:text-stone-600 transition-colors text-lg font-bold"
+                        >
+                          +
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div 
+                      onClick={() => refInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
+                    >
+                      <ImageIcon className="w-4 h-4 text-emerald-600 mb-1.5" />
+                      <p className="font-extrabold text-[11px] text-stone-700 text-center">
+                        Upload Poses/Styles<br/>
+                        <span className="text-stone-400 font-normal text-[9px]">Model, lighting or angle</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Special Style & Pose Instructions Input */}
+              <div className="bg-gradient-to-r from-amber-50/60 to-orange-50/30 border border-amber-200/80 rounded-2xl p-4 space-y-2">
+                <label className="block text-xs font-extrabold text-stone-900 tracking-wider flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#D27D50]" />
+                    Special Pose / AI Guidance <span className="text-stone-400 font-normal lowercase">(optional)</span>
+                  </span>
+                  <span className="text-[10px] text-[#D27D50] font-bold bg-white px-2 py-0.5 rounded-md border border-amber-200/80 shadow-2xs">Prompt Directive</span>
+                </label>
+                <textarea
+                  value={specialInstructions}
+                  onChange={e => setSpecialInstructions(e.target.value)}
+                  rows={2}
+                  className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-850 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-all shadow-2xs font-semibold"
+                  placeholder='e.g. "Focus on model posture and warm sunset studio lighting from Reference #1, keep model on a luxury marble balcony."'
+                />
+              </div>
             </div>
 
             {/* Right Column: Campaign Brief & Specs */}
@@ -1049,23 +968,23 @@ export default function PostCreatorPage() {
                           }}
                           className={`p-4 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between gap-3 ${
                             isSel 
-                              ? 'bg-amber-50/60 border-[#D27D50] ring-1 ring-[#D27D50]/30 shadow-sm scale-[1.005]' 
+                              ? 'bg-stone-900 text-white border-stone-900 shadow-md scale-[1.005]' 
                               : 'bg-white text-stone-750 border-stone-200 hover:border-amber-300 hover:shadow-2xs'
                           }`}
                         >
                           <div className="space-y-1">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-black uppercase ${isSel ? 'text-[#D27D50]' : 'text-stone-400'}`}>
+                                <span className={`text-[10px] font-black uppercase ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
                                   #{idx + 1}
                                 </span>
-                                <h5 className={`font-extrabold text-xs ${isSel ? 'text-stone-900' : 'text-stone-800'}`}>{dir.title}</h5>
+                                <h5 className="font-extrabold text-xs">{dir.title}</h5>
                               </div>
-                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${isSel ? 'bg-white text-[#D27D50] border-orange-200/80 shadow-2xs' : badge.color}`}>
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${isSel ? 'bg-white/10 text-amber-200 border-white/20' : badge.color}`}>
                                 {badge.text}
                               </span>
                             </div>
-                            <p className={`text-xs leading-relaxed ${isSel ? 'text-stone-700' : 'text-stone-500'}`}>
+                            <p className={`text-xs leading-relaxed ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
                               {dir.description || dir.visualSceneSetup}
                             </p>
                           </div>
@@ -1117,155 +1036,17 @@ export default function PostCreatorPage() {
           </h2>
         </div>
 
-        {/* Spawning Active Campaign Card (Series & Cinematic Reels Pattern) */}
-        {activeCampaign && (
-          <div className="bg-gradient-to-br from-amber-50/20 via-white to-stone-50 rounded-3xl p-6 lg:p-8 border-2 border-[#D27D50]/40 shadow-xl space-y-6 animate-in fade-in duration-500 relative">
-            {/* Active Campaign Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-6">
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h3 className="text-2xl font-black text-stone-900">{activeCampaign.productName}</h3>
-                  <span className="px-3 py-1 bg-stone-900 text-amber-300 text-xs font-black rounded-full uppercase tracking-wider">
-                    {activeCampaign.platform}
-                  </span>
-                  <span className="px-2.5 py-0.5 bg-orange-100 text-[#D27D50] text-[10px] font-black rounded-md border border-orange-200 uppercase tracking-widest animate-pulse">
-                    ⚡ Live Generation
-                  </span>
-                </div>
-                <p className="text-xs font-semibold text-stone-500">
-                  {activeCampaign.items.length} Post Variations • Started Just Now
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {/* Reference Style Thumbnail in Top-Right */}
-                {activeCampaign.referenceImageUrl && (
-                  <div className="flex items-center gap-2 bg-stone-900 text-white p-1.5 pr-3.5 rounded-2xl border border-stone-800 shadow-md">
-                    <img src={activeCampaign.referenceImageUrl} alt="Target Reference" className="w-10 h-10 rounded-xl object-cover border border-amber-400/60 shadow-xs" />
-                    <div className="text-left">
-                      <span className="text-[9px] font-black uppercase text-amber-300 block tracking-wider">Style Ref</span>
-                      <span className="text-[11px] font-bold text-stone-200">Active Pose</span>
-                    </div>
-                  </div>
-                )}
-
-                {activeCampaign.items.length > 0 && (
-                  <Button
-                    onClick={() => handleComposeEntireCampaign(activeCampaign.items)}
-                    className="bg-black hover:bg-stone-800 text-white rounded-xl font-bold px-5 py-2.5 text-xs shadow-md flex items-center gap-2"
-                  >
-                    <Share2 className="w-4 h-4 text-[#D27D50]" />
-                    <span>Compose Campaign ({activeCampaign.items.length})</span>
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Live Progress Preloader Bar inside the Card */}
-            {activeCampaign.status !== 'completed' && (
-              <div className="bg-gradient-to-r from-amber-50/50 via-stone-50 to-orange-50/30 p-4 rounded-2xl border border-amber-200/80 shadow-xs flex items-center justify-between gap-4 animate-in fade-in">
-                <div className="flex items-center gap-3">
-                  <div className="bg-amber-500/10 p-2.5 rounded-xl border border-amber-400/20">
-                    <Loader2 className="w-5 h-5 text-[#D27D50] animate-spin" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-black uppercase text-[#D27D50] tracking-widest block">AI Art Director Engine</span>
-                    <p className="text-xs font-extrabold text-stone-700">{activeCampaign.progressMessage}</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-3 py-1 rounded-full">Processing</span>
-              </div>
-            )}
-
-            {/* Brainstormed Creative Directions inside the spawned Campaign Card */}
-            {activeCampaign.directions.length > 0 && activeCampaign.status === 'directions_ready' && (
-              <div className="bg-stone-50 rounded-2xl p-5 border border-stone-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-extrabold text-stone-900 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#D27D50]" />
-                    <span>5 Proposed Creative Directions</span>
-                  </h4>
-                  <span className="text-xs font-bold text-stone-500">Select directions to render</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                  {activeCampaign.directions.map((dir: any, idx: number) => {
-                    const isSel = activeCampaign.selectedDirections.some((d: any) => d.title === dir.title);
-                    return (
-                      <div 
-                        key={idx}
-                        onClick={() => {
-                          const updated = isSel 
-                            ? activeCampaign.selectedDirections.filter((d: any) => d.title !== dir.title)
-                            : [...activeCampaign.selectedDirections, dir];
-                          setActiveCampaign({ ...activeCampaign, selectedDirections: updated });
-                        }}
-                        className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${isSel ? 'bg-amber-50/60 border-[#D27D50] ring-1 ring-[#D27D50]/30 shadow-sm scale-[1.02]' : 'bg-white text-stone-700 border-stone-200 hover:border-amber-300'}`}
-                      >
-                        <span className={`text-[10px] font-black uppercase tracking-wider block mb-1 ${isSel ? 'text-[#D27D50]' : 'text-stone-400'}`}>
-                          Dir #{idx+1}
-                        </span>
-                        <h5 className="font-extrabold text-xs mb-1 line-clamp-1 text-stone-900">{dir.title || dir.concept}</h5>
-                        <p className={`text-[11px] line-clamp-2 ${isSel ? 'text-stone-700' : 'text-stone-500'}`}>{dir.visualSceneSetup || dir.description}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2">
-                  <Button 
-                    onClick={handleGenerateAd}
-                    disabled={loading || activeCampaign.selectedDirections.length === 0}
-                    className="w-full bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white font-extrabold rounded-xl h-12 text-sm shadow-md"
-                  >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                    {loading ? 'Rendering Visual Variations...' : `Generate Visuals for ${activeCampaign.selectedDirections.length} Selected Directions`}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Render items inside active campaign grid */}
-            {activeCampaign.items.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {activeCampaign.items.map((item, idx) => (
-                  <div key={idx} className="bg-white rounded-2xl overflow-hidden border border-stone-200 shadow-sm flex flex-col justify-between">
-                    <div className="relative aspect-[4/5] bg-stone-900 overflow-hidden group">
-                      <img src={item.imageUrl} alt={`Variation ${idx+1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-wider">
-                        {item.direction?.title || `Variation #${idx+1}`}
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-3">
-                      <p className="font-extrabold text-sm text-stone-900 line-clamp-2">"{item.brief?.tagline || item.brief?.title}"</p>
-                      <p className="text-xs text-stone-500 line-clamp-2">{item.brief?.supportingCopy || item.brief?.copy}</p>
-                      <div className="pt-2 flex gap-2">
-                        <Button 
-                          onClick={() => handleComposePost(item.brief, item.imageUrl)}
-                          className="flex-1 bg-stone-900 hover:bg-black text-white text-xs font-bold rounded-xl h-9"
-                        >
-                          Compose Post
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        
         {loadingHistory ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="w-8 h-8 text-stone-300 animate-spin" />
           </div>
-        ) : history.length === 0 ? (
+        ) : history.length === 0 && !activeCampaign ? (
           <div className="text-center p-16 bg-stone-50 rounded-3xl border border-stone-100">
             <ImageIcon className="w-16 h-16 text-stone-300 mx-auto mb-4" />
             <p className="text-stone-500 font-medium text-lg">No past campaigns found.</p>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-12 animate-in fade-in duration-300">
             {(() => {
               // Group history into separate Campaign Cards
               const campaignGroups: {
@@ -1274,15 +1055,33 @@ export default function PostCreatorPage() {
                 platform: string;
                 createdAt: string;
                 items: any[];
+                status?: string;
+                progressMessage?: string;
+                selectedDirections?: any[];
+                directions?: any[];
+                referenceImageUrl?: string | null;
               }[] = [];
 
-              const filteredHistory = activeCampaign
-                ? history.filter((item) => (item.productName || '').toLowerCase() !== activeCampaign.productName.toLowerCase())
-                : history;
+              // Prepend active campaign if it is generating
+              if (activeCampaign && activeCampaign.status !== 'completed') {
+                campaignGroups.push({
+                  campaignId: activeCampaign.id || 'active-campaign',
+                  productName: activeCampaign.productName || 'Creative Campaign',
+                  platform: activeCampaign.platform || 'INSTAGRAM',
+                  createdAt: activeCampaign.createdAt || new Date().toISOString(),
+                  items: activeCampaign.items || [],
+                  status: activeCampaign.status,
+                  progressMessage: activeCampaign.progressMessage,
+                  selectedDirections: activeCampaign.selectedDirections,
+                  directions: activeCampaign.directions,
+                  referenceImageUrl: activeCampaign.referenceImageUrl
+                });
+              }
 
-              filteredHistory.forEach((item) => {
+              history.forEach((item) => {
                 const itemTime = new Date(item.createdAt).getTime();
                 const existing = campaignGroups.find((g) => {
+                  if (g.campaignId === 'active-campaign') return false;
                   if ((g.productName || '').toLowerCase() !== (item.productName || '').toLowerCase()) return false;
                   const groupTime = new Date(g.createdAt).getTime();
                   return Math.abs(itemTime - groupTime) < 15 * 60 * 1000;
@@ -1302,140 +1101,222 @@ export default function PostCreatorPage() {
               });
 
               return campaignGroups.map((group) => {
-                const groupRefImg = group.items.find(i => i.referenceImageUrl || i.brief?.referenceImageUrl)?.referenceImageUrl 
+                const groupRefImg = group.referenceImageUrl 
+                  || group.items.find(i => i.referenceImageUrl || i.brief?.referenceImageUrl)?.referenceImageUrl 
                   || group.items.find(i => i.brief?.referenceImageUrl)?.brief?.referenceImageUrl;
 
+                const isActive = group.campaignId === 'active-campaign' || group.campaignId.startsWith('camp_');
+
                 return (
-                  <div key={group.campaignId} className="bg-stone-50/80 rounded-3xl p-6 lg:p-8 border border-stone-200/80 shadow-sm space-y-6">
+                  <div key={group.campaignId} className={cn("bg-white rounded-3xl p-6 lg:p-8 border shadow-sm space-y-6 transition-all duration-300", isActive ? 'border-[#D27D50]/40 ring-1 ring-[#D27D50]/20 shadow-md' : 'border-stone-200/80')}>
                     {/* Separate Campaign Card Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-150 pb-6">
                       <div>
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="text-2xl font-black text-stone-900">{group.productName}</h3>
-                          <span className="px-3 py-1 bg-stone-200 text-stone-700 text-xs font-bold rounded-full uppercase tracking-wider">
+                        <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                          <h3 className="text-xl lg:text-2xl font-black text-stone-900">{group.productName}</h3>
+                          <span className="px-2.5 py-0.5 bg-stone-100 text-stone-700 text-[10px] font-extrabold rounded-full uppercase border border-stone-200/50">
                             {group.platform}
                           </span>
+                          {isActive && group.status !== 'completed' && (
+                            <span className="px-2.5 py-0.5 bg-orange-50 text-[#D27D50] text-[10px] font-black rounded-md border border-orange-200 uppercase tracking-widest animate-pulse">
+                              ⚡ Live Generation
+                            </span>
+                          )}
                         </div>
-                        <p className="text-xs font-semibold text-stone-500">
-                          {group.items.length} Post Variations • Created {new Date(group.createdAt).toLocaleDateString()}
+                        <p className="text-xs font-semibold text-stone-400">
+                          {isActive && group.status !== 'completed' ? (
+                            `${group.items.length} Post Variations • Started Just Now`
+                          ) : (
+                            `${group.items.length} Post Variations • Created ${new Date(group.createdAt).toLocaleDateString()}`
+                          )}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        {/* Small Floating Reference Image Thumbnail in Top Right of Series Card Header */}
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {/* Reference Image Thumbnail */}
                         {groupRefImg && (
                           <a 
                             href={groupRefImg}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 bg-stone-900 text-white p-1.5 pr-3.5 rounded-2xl border border-stone-800 shadow-md hover:scale-105 transition-transform group/refHead"
+                            className="flex items-center gap-2 bg-stone-50 hover:bg-stone-100 text-stone-850 p-1.5 pr-3 rounded-xl border border-stone-200 shadow-2xs hover:scale-102 transition-transform group/refHead"
                             title="View Target Reference Style Photo"
                           >
-                            <img src={groupRefImg} alt="Target Reference" className="w-10 h-10 rounded-xl object-cover border border-amber-400/60 shadow-xs" />
+                            <img src={groupRefImg} alt="Target Reference" className="w-8 h-8 rounded-lg object-cover border border-[#D27D50]/30 shadow-2xs" />
                             <div className="text-left">
-                              <span className="text-[9px] font-black uppercase text-amber-300 block tracking-wider">Style Ref</span>
-                              <span className="text-[11px] font-bold text-stone-200 flex items-center gap-1">
-                                View <ExternalLink className="w-3 h-3 text-amber-300" />
+                              <span className="text-[8px] font-black uppercase text-[#D27D50] block tracking-wider">Style Ref</span>
+                              <span className="text-[10px] font-bold text-stone-600 flex items-center gap-0.5">
+                                View <ExternalLink className="w-2.5 h-2.5 text-[#D27D50]" />
                               </span>
                             </div>
                           </a>
                         )}
 
-                        <Button
-                          onClick={() => handleComposeEntireCampaign(group.items)}
-                          className="bg-black hover:bg-stone-800 text-white rounded-xl font-bold px-6 py-3 shadow-md flex items-center gap-2"
-                        >
-                          <Share2 className="w-4 h-4 text-[#D27D50]" />
-                          <span>Compose Entire Campaign ({group.items.length} Images/Videos)</span>
-                        </Button>
+                        {group.items.length > 0 && (
+                          <Button
+                            onClick={() => handleComposeEntireCampaign(group.items)}
+                            className="bg-[#D27D50] hover:bg-[#b86d45] text-white rounded-xl font-bold px-4 py-2.5 text-xs shadow-sm flex items-center gap-1.5"
+                          >
+                            <Share2 className="w-3.5 h-3.5 text-white" />
+                            <span>Compose Campaign ({group.items.length})</span>
+                          </Button>
+                        )}
                       </div>
                     </div>
 
-                    {/* Inside Campaign: Separate Post Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {group.items.map((ad: any) => {
-                        const adVideoUrl = ad.videoUrl || renderedVideoMap[ad.id];
-                        const currentViewMode = viewModeMap[ad.id] || (adVideoUrl ? 'video' : 'image');
-
-                        return (
-                          <div key={ad.id} className="bg-white rounded-2xl overflow-hidden border border-stone-200 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col">
-                            <div className="h-56 w-full bg-black relative overflow-hidden group/img">
-                              {currentViewMode === 'video' && adVideoUrl ? (
-                                <video src={adVideoUrl} controls autoPlay muted loop className="w-full h-full object-cover" />
-                              ) : (
-                                <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
-                              )}
-
-                              {/* Media Type Switcher */}
-                              {adVideoUrl && (
-                                <div className="absolute top-3 left-3 z-20 flex gap-1 bg-black/70 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'image' })); }}
-                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${currentViewMode === 'image' ? 'bg-[#D27D50] text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
-                                  >
-                                    Photo
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'video' })); }}
-                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${currentViewMode === 'video' ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
-                                  >
-                                    <Film className="w-3 h-3 animate-pulse" /> Motion Video
-                                  </button>
-                                </div>
-                              )}
-
-                              {!adVideoUrl && (
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
-                                  <a href={ad.imageUrl} target="_blank" rel="noopener noreferrer" className="bg-white/90 text-stone-800 hover:bg-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transform translate-y-4 group-hover/img:translate-y-0 transition-all duration-300 shadow-xl">
-                                    <Maximize2 className="w-4 h-4" /> View Photo
-                                  </a>
-                                </div>
-                              )}
-
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
-                              <div className="absolute bottom-3 left-3 right-3">
-                                <span className="text-white text-xs font-extrabold uppercase tracking-wider block drop-shadow-md">
-                                  {ad.direction}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="p-5 flex-1 flex flex-col">
-                              <p className="text-sm font-black text-stone-800 line-clamp-2 mb-2 leading-tight">"{ad.brief?.tagline || ''}"</p>
-                              <p className="text-xs font-medium text-stone-500 line-clamp-2 mb-4 flex-1">{ad.brief?.supportingCopy || ad.brief?.copy || ''}</p>
-
-                              <div className="flex gap-1.5 mt-auto pt-2">
-                                <Button 
-                                  onClick={() => openAnimateModal(ad)}
-                                  className="flex-1 rounded-xl font-bold bg-[#D27D50] hover:bg-[#b86d45] text-white transition-all shadow-2xs flex items-center justify-center gap-1 text-xs py-2 px-2"
-                                >
-                                  <Film className="w-3.5 h-3.5" />
-                                  <span>{adVideoUrl ? 'Re-Animate' : 'Animate'}</span>
-                                </Button>
-                                <Button 
-                                  onClick={() => handleComposePost(ad.brief, ad.imageUrl, adVideoUrl)}
-                                  variant="outline"
-                                  className="flex-1 rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1 text-xs py-2 px-2"
-                                >
-                                  <PenSquare className="w-3.5 h-3.5" />
-                                  Compose
-                                </Button>
-                                <Button
-                                  onClick={() => setSelectedDetailAd(ad)}
-                                  variant="ghost"
-                                  className="rounded-xl font-bold text-stone-500 hover:text-stone-900 border border-stone-200 hover:bg-stone-100 flex items-center justify-center gap-1 text-xs py-2 px-2.5 shrink-0"
-                                  title="See Full Post Brief Details"
-                                >
-                                  <Eye className="w-3.5 h-3.5 text-[#D27D50]" />
-                                </Button>
-                              </div>
-                            </div>
+                    {/* If Active Campaign: Live Progress Preloader Bar */}
+                    {isActive && group.status !== 'completed' && (
+                      <div className="bg-amber-50/50 border border-amber-250/60 text-stone-850 p-4 rounded-2xl flex items-center justify-between gap-4 animate-in fade-in duration-300">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-amber-500/10 p-2 rounded-xl border border-amber-400/20">
+                            <Loader2 className="w-5 h-5 text-[#D27D50] animate-spin" />
                           </div>
-                        );
-                      })}
-                    </div>
+                          <div>
+                            <span className="text-[10px] font-black uppercase text-[#D27D50] tracking-widest block">AI Art Director Engine</span>
+                            <p className="text-xs font-bold text-stone-705">{group.progressMessage || 'Synthesizing campaign assets...'}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#D27D50] bg-orange-50 border border-orange-100 px-3 py-1 rounded-full">Processing</span>
+                      </div>
+                    )}
+
+                    {/* If Active Campaign: Proposed Directions */}
+                    {isActive && group.directions && group.directions.length > 0 && group.status === 'directions_ready' && (
+                      <div className="bg-stone-50/70 rounded-2xl p-5 border border-stone-200/80 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-extrabold text-stone-900 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-[#D27D50]" />
+                            <span>5 Proposed Creative Directions</span>
+                          </h4>
+                          <span className="text-xs font-bold text-stone-550">Select directions to render</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                          {group.directions.map((dir: any, idx: number) => {
+                            const isSel = group.selectedDirections?.some((d: any) => d.title === dir.title);
+                            return (
+                              <div 
+                                key={idx}
+                                onClick={() => {
+                                  const updated = (isSel 
+                                    ? group.selectedDirections?.filter((d: any) => d.title !== dir.title)
+                                    : [...(group.selectedDirections || []), dir]) || [];
+                                  if (activeCampaign) {
+                                    setActiveCampaign({ ...activeCampaign, selectedDirections: updated });
+                                  }
+                                }}
+                                className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${isSel ? 'bg-amber-50/80 text-stone-900 border-[#D27D50] shadow-xs scale-[1.02] ring-1 ring-[#D27D50]/30' : 'bg-white text-stone-750 border-stone-200 hover:border-amber-300'}`}
+                              >
+                                <span className={`text-[10px] font-black uppercase tracking-wider block mb-1 ${isSel ? 'text-[#D27D50]' : 'text-stone-400'}`}>
+                                  Dir #{idx+1}
+                                </span>
+                                <h5 className="font-extrabold text-xs mb-1 line-clamp-1">{dir.title || dir.concept}</h5>
+                                <p className={`text-[11px] line-clamp-2 ${isSel ? 'text-stone-700' : 'text-stone-500'}`}>{dir.visualSceneSetup || dir.description}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="pt-2">
+                          <Button 
+                            onClick={handleGenerateAd}
+                            disabled={loading || group.selectedDirections?.length === 0}
+                            className="w-full bg-[#D27D50] hover:bg-[#b86d45] text-white font-extrabold rounded-xl h-12 text-sm shadow-md"
+                          >
+                            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                            {loading ? 'Rendering Visual Variations...' : `Generate Visuals for ${group.selectedDirections?.length} Selected Directions`}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inside Campaign: Separate Post Cards Grid */}
+                    {group.items.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
+                        {group.items.map((ad: any) => {
+                          const adVideoUrl = ad.videoUrl || renderedVideoMap[ad.id];
+                          const currentViewMode = viewModeMap[ad.id] || (adVideoUrl ? 'video' : 'image');
+
+                          return (
+                            <div key={ad.id} className="bg-white rounded-2xl overflow-hidden border border-stone-200 shadow-sm hover:shadow-lg transition-all duration-305 flex flex-col">
+                              <div className="h-56 w-full bg-stone-900 relative overflow-hidden group/img">
+                                {currentViewMode === 'video' && adVideoUrl ? (
+                                  <video src={adVideoUrl} controls autoPlay muted loop className="w-full h-full object-cover" />
+                                ) : (
+                                  <img src={ad.imageUrl} alt={ad.productName} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105" />
+                                )}
+
+                                {/* Media Type Switcher */}
+                                {adVideoUrl && (
+                                  <div className="absolute top-3 left-3 z-20 flex gap-1 bg-black/60 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'image' })); }}
+                                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${currentViewMode === 'image' ? 'bg-[#D27D50] text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
+                                    >
+                                      Photo
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setViewModeMap(prev => ({ ...prev, [ad.id]: 'video' })); }}
+                                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${currentViewMode === 'video' ? 'bg-gradient-to-r from-[#D27D50] to-rose-500 text-white shadow-sm' : 'text-stone-300 hover:text-white'}`}
+                                    >
+                                      <Film className="w-3 h-3 animate-pulse" /> Motion Video
+                                    </button>
+                                  </div>
+                                )}
+
+                                {!adVideoUrl && (
+                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
+                                    <a href={ad.imageUrl} target="_blank" rel="noopener noreferrer" className="bg-white/95 text-stone-800 hover:bg-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transform translate-y-4 group-hover/img:translate-y-0 transition-all duration-300 shadow-xl">
+                                      <Maximize2 className="w-4 h-4" /> View Photo
+                                    </a>
+                                  </div>
+                                )}
+
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none"></div>
+                                <div className="absolute bottom-3 left-3 right-3">
+                                  <span className="text-white text-xs font-extrabold uppercase tracking-wider block drop-shadow-md">
+                                    {ad.direction?.title || group.productName}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="p-5 flex-1 flex flex-col">
+                                <p className="text-sm font-black text-stone-850 line-clamp-2 mb-2 leading-tight">"{ad.brief?.tagline || ''}"</p>
+                                <p className="text-xs font-medium text-stone-500 line-clamp-2 mb-4 flex-1">{ad.brief?.supportingCopy || ad.brief?.copy || ''}</p>
+
+                                <div className="flex gap-1.5 mt-auto pt-2">
+                                  <Button 
+                                    onClick={() => openAnimateModal(ad)}
+                                    className="flex-1 rounded-xl font-bold bg-[#D27D50] hover:bg-[#b86d45] text-white transition-all shadow-2xs flex items-center justify-center gap-1 text-xs py-2 px-2"
+                                  >
+                                    <Film className="w-3.5 h-3.5" />
+                                    <span>{adVideoUrl ? 'Re-Animate' : 'Animate'}</span>
+                                  </Button>
+                                  <Button 
+                                    onClick={() => handleComposePost(ad.brief, ad.imageUrl, adVideoUrl)}
+                                    variant="outline"
+                                    className="flex-1 rounded-xl font-bold border-stone-200 hover:border-[#D27D50] hover:text-[#D27D50] transition-colors flex items-center justify-center gap-1 text-xs py-2 px-2"
+                                  >
+                                    <PenSquare className="w-3.5 h-3.5" />
+                                    Compose
+                                  </Button>
+                                  <Button
+                                    onClick={() => setSelectedDetailAd(ad)}
+                                    variant="ghost"
+                                    className="rounded-xl font-bold text-stone-500 hover:text-stone-900 border border-stone-200 hover:bg-stone-100 flex items-center justify-center gap-1 text-xs py-2 px-2.5 shrink-0"
+                                    title="See Full Post Brief Details"
+                                  >
+                                    <Eye className="w-3.5 h-3.5 text-[#D27D50]" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               });

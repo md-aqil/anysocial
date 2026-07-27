@@ -92,9 +92,7 @@ router.post('/directions', authenticate, adUploadFields, async (req: any, res: a
 
 router.post('/generate', authenticate, adUploadFields, async (req: any, res: any) => {
   try {
-    let { productName, direction, platform, specialInstructions, useOriginalImages, directionIndex } = req.body;
-    let isUseOriginal = useOriginalImages === 'true' || useOriginalImages === true;
-    let dirIdx = parseInt(directionIndex || '0');
+    let { productName, direction, platform, specialInstructions } = req.body;
     
     if (typeof direction === 'string') {
       direction = JSON.parse(direction);
@@ -149,48 +147,38 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
     const cleanedBrief = briefText.replace(/```json\n?|```/g, '').trim();
     const briefParsed = JSON.parse(cleanedBrief);
 
+    const imagePayload = JSON.stringify({
+      prompt: briefParsed.imagePrompt,
+      negative_prompt: (briefParsed.negativePrompt ? briefParsed.negativePrompt + ", " : "") + "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces",
+      api_parameters: {
+        resolution: "1K",
+        output_format: "jpg",
+        aspect_ratio: platform.toLowerCase().includes('stor') || platform.toLowerCase().includes('reel') ? '9:16' : '4:5'
+      },
+      settings: {
+        resolution: "1K",
+        quality: "high detail, commercial photography"
+      }
+    });
+
+    const tempImageUrl = await aiOrchestrator.generateImage(
+      imagePayload, 
+      Math.floor(Math.random() * 1000000), 
+      productImagesList, 
+      null,
+      styleImagesList,
+      null
+    );
+    
+    // Move the temp file to the public uploads directory
+    const fileName = `ad_creative_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
     const publicDir = path.join(process.cwd(), 'frontend', 'public', 'uploads', 'ai-images');
     if (!fs.existsSync(publicDir)) {
       fs.mkdirSync(publicDir, { recursive: true });
     }
-
-    let imageUrl = '';
-    if (isUseOriginal && prodFiles.length > 0) {
-      const fileIdx = dirIdx % prodFiles.length;
-      const targetFile = prodFiles[fileIdx >= 0 ? fileIdx : 0];
-      const fileName = `prod_creative_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
-      const publicPath = path.join(publicDir, fileName);
-      fs.writeFileSync(publicPath, targetFile.buffer);
-      imageUrl = `/uploads/ai-images/${fileName}`;
-    } else {
-      const imagePayload = JSON.stringify({
-        prompt: briefParsed.imagePrompt,
-        negative_prompt: (briefParsed.negativePrompt ? briefParsed.negativePrompt + ", " : "") + "logo, logos, watermark, watermarks, signature, brand icon, anatomy normalization, body proportion averaging, dataset-average anatomy, beautification filters, skin smoothing, plastic skin, airbrushed texture, stylized realism, borders, distortion, extra limbs, weird hands, poorly drawn faces",
-        api_parameters: {
-          resolution: "1K",
-          output_format: "jpg",
-          aspect_ratio: platform.toLowerCase().includes('stor') || platform.toLowerCase().includes('reel') ? '9:16' : '4:5'
-        },
-        settings: {
-          resolution: "1K",
-          quality: "high detail, commercial photography"
-        }
-      });
-
-      const tempImageUrl = await aiOrchestrator.generateImage(
-        imagePayload, 
-        Math.floor(Math.random() * 1000000), 
-        productImagesList, 
-        null,
-        styleImagesList,
-        null
-      );
-      
-      const fileName = `ad_creative_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
-      const publicPath = path.join(publicDir, fileName);
-      fs.copyFileSync(tempImageUrl, publicPath);
-      imageUrl = `/uploads/ai-images/${fileName}`;
-    }
+    const publicPath = path.join(publicDir, fileName);
+    fs.copyFileSync(tempImageUrl, publicPath);
+    const imageUrl = `/uploads/ai-images/${fileName}`;
 
     let referenceImageUrl: string | null = null;
     if (refFiles.length > 0) {
