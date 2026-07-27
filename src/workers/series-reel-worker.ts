@@ -681,7 +681,35 @@ Respond ONLY with the prompt text. No JSON. No labels. Just the raw prompt.`;
           try {
             const { postingEngine } = await import('../services/posting-engine.service.js');
             const videoBuffer = fs.readFileSync(publicFilePath);
-            const mappedPlatforms = socialChannels.map(ch => ch.toUpperCase());
+            
+            // Resolve UUID account IDs to platform names
+            const resolvedPlatforms = new Set<string>();
+            const accountIds: string[] = [];
+            for (const ch of socialChannels) {
+              const trimmed = ch.trim();
+              if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) {
+                accountIds.push(trimmed);
+              } else {
+                resolvedPlatforms.add(trimmed.toUpperCase());
+              }
+            }
+
+            if (accountIds.length > 0) {
+              const dbAccounts = await prisma.socialAccount.findMany({
+                where: {
+                  id: { in: accountIds },
+                  userId: reelRecord.userId
+                },
+                select: {
+                  platform: true
+                }
+              });
+              for (const acc of dbAccounts) {
+                resolvedPlatforms.add(acc.platform.toString().toUpperCase());
+              }
+            }
+            const mappedPlatforms = Array.from(resolvedPlatforms);
+
             const platformOptions: Record<string, any> = {};
             for (const plat of mappedPlatforms) {
               if (plat === 'INSTAGRAM' || plat === 'FACEBOOK') {

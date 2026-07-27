@@ -10,11 +10,28 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
+const getThemeBadge = (title: string, desc: string) => {
+  const t = (title + ' ' + desc).toLowerCase();
+  if (t.includes('viral') || t.includes('hook') || t.includes('trend')) return { text: 'Viral Hook', color: 'bg-orange-50 text-orange-700 border-orange-100' };
+  if (t.includes('education') || t.includes('how') || t.includes('guide') || t.includes('did you')) return { text: 'Educational', color: 'bg-blue-50 text-blue-700 border-blue-100' };
+  if (t.includes('premium') || t.includes('luxury') || t.includes('elegant') || t.includes('aesthetic')) return { text: 'Premium Style', color: 'bg-violet-50 text-violet-700 border-violet-100' };
+  if (t.includes('story') || t.includes('narrator') || t.includes('behind')) return { text: 'Storytelling', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
+  return { text: 'Creative Spec', color: 'bg-stone-50 text-stone-700 border-stone-100' };
+};
+
 export default function PostCreatorPage() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Prompt builder form state
+  const [motionGuide, setMotionGuide] = useState('');
+  const [cameraGuide, setCameraGuide] = useState('');
+  const [styleGuide, setStyleGuide] = useState('');
+  const [textStyleGuide, setTextStyleGuide] = useState('');
+  const [isCodeView, setIsCodeView] = useState(false);
+  const [scrapePhase, setScrapePhase] = useState<'idle' | 'fetching' | 'parsing' | 'downloading' | 'done'>('idle');
 
   // Form State
   const [magicLink, setMagicLink] = useState('');
@@ -78,6 +95,50 @@ export default function PostCreatorPage() {
   const [renderedVideoMap, setRenderedVideoMap] = useState<Record<string, string>>({});
   const [viewModeMap, setViewModeMap] = useState<Record<string, 'image' | 'video'>>({});
 
+  // Auto-update JSON prompt whenever visual inputs change
+  useEffect(() => {
+    if (!selectedAdForAnimate || isCodeView) return;
+    const brief = selectedAdForAnimate.brief || {};
+    const prodName = selectedAdForAnimate.productName || 'Product';
+    const dirName = selectedAdForAnimate.direction || 'Creative Ad';
+    const visualSetup = brief.visualSceneSetup || brief.sceneSetup || brief.campaignConcept || `Professional studio showcase of ${prodName}`;
+    const layoutEffects = brief.layoutAndEffects || 'Dynamic lighting, subtle motion blur, crisp reflections, premium composition';
+    const taglineText = brief.tagline || '';
+    const supportingText = brief.supportingCopy || brief.copy || '';
+
+    try {
+      const updatedPrompt = {
+        "veo_model": "veo-3.0-fast-generate-001",
+        "prompt_type": "image_to_video_motion_graphic",
+        "subject": {
+          "name": prodName,
+          "direction": dirName,
+          "details": brief.imagePrompt || `High-end commercial advertisement featuring ${prodName}`,
+          "physical_motion": motionGuide
+        },
+        "environment_and_scene": {
+          "setup": visualSetup,
+          "effects": layoutEffects,
+          "background_motion": "Background lighting shifts gracefully, subtle environmental particle effects float with volumetric depth, ambient light reflections glide across the scene."
+        },
+        "camera": {
+          "movement": cameraGuide,
+          "framing": "9:16 vertical portrait composition"
+        },
+        "kinetic_typography": {
+          "headline_text": taglineText,
+          "supporting_text": supportingText,
+          "animation_style": textStyleGuide
+        },
+        "cinematography_and_physics": {
+          "lighting": styleGuide,
+          "physics_realism": "Adheres strictly to physical weight, gravity, real-time natural human speed, and physical temporal consistency"
+        }
+      };
+      setAnimatePrompt(JSON.stringify(updatedPrompt, null, 2));
+    } catch (e) {}
+  }, [motionGuide, cameraGuide, styleGuide, textStyleGuide, selectedAdForAnimate, isCodeView]);
+
   const openAnimateModal = (ad: any) => {
     setSelectedAdForAnimate(ad);
     const brief = ad.brief || {};
@@ -91,6 +152,18 @@ export default function PostCreatorPage() {
     const taglineText = brief.tagline || '';
     const supportingText = brief.supportingCopy || brief.copy || '';
 
+    const motionVal = `Full physical scene animation of ${prodName}. Subject dynamically moves with realistic temporal weight, surface reflections shift across materials, and physical properties animate with 3D depth.`;
+    const cameraVal = "Slow 3D push-in camera tracking shot with natural depth parallax effect";
+    const styleVal = "High-end commercial studio lighting, vibrant rim highlights, sharp focal clarity";
+    const textStyleVal = taglineText 
+      ? `Kinetic typography motion graphics animating text "${taglineText}" with snappy keyframe scaling and entrance motion design.`
+      : `Dynamic kinetic text animation with bold typography motion graphics.`;
+
+    setMotionGuide(motionVal);
+    setCameraGuide(cameraVal);
+    setStyleGuide(styleVal);
+    setTextStyleGuide(textStyleVal);
+
     // Synthesize Google Veo 3 JSON Prompt Guide structure (veo-3-prompting-guide format)
     const veo3JsonPrompt = JSON.stringify({
       "veo_model": "veo-3.0-fast-generate-001",
@@ -99,7 +172,7 @@ export default function PostCreatorPage() {
         "name": prodName,
         "direction": dirName,
         "details": imagePromptText,
-        "physical_motion": `Full physical scene animation of ${prodName}. Subject dynamically moves with realistic temporal weight, surface reflections shift across materials, and physical properties animate with 3D depth.`
+        "physical_motion": motionVal
       },
       "environment_and_scene": {
         "setup": visualSetup,
@@ -107,18 +180,16 @@ export default function PostCreatorPage() {
         "background_motion": "Background lighting shifts gracefully, subtle environmental particle effects float with volumetric depth, ambient light reflections glide across the scene."
       },
       "camera": {
-        "movement": "Slow 3D push-in camera tracking shot with natural depth parallax effect",
+        "movement": cameraVal,
         "framing": "9:16 vertical portrait composition"
       },
       "kinetic_typography": {
         "headline_text": taglineText,
         "supporting_text": supportingText,
-        "animation_style": taglineText 
-          ? `Kinetic typography motion graphics animating text "${taglineText}" with snappy keyframe scaling and entrance motion design.`
-          : `Dynamic kinetic text animation with bold typography motion graphics.`
+        "animation_style": textStyleVal
       },
       "cinematography_and_physics": {
-        "lighting": "High-end commercial studio lighting, vibrant rim highlights, sharp focal clarity",
+        "lighting": styleVal,
         "physics_realism": "Adheres strictly to physical weight, gravity, real-time natural human speed, and physical temporal consistency"
       }
     }, null, 2);
@@ -258,13 +329,20 @@ export default function PostCreatorPage() {
   const handleMagicLink = async () => {
     if (!magicLink) return;
     setScraping(true);
+    setScrapePhase('fetching');
     setError(null);
     try {
+      const phaseTimer = setTimeout(() => setScrapePhase('parsing'), 1200);
+      const downloadTimer = setTimeout(() => setScrapePhase('downloading'), 2400);
+
       const res = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: magicLink })
       });
+      
+      clearTimeout(phaseTimer);
+      clearTimeout(downloadTimer);
       
       if (!res.ok) throw new Error('Failed to extract data from link');
       
@@ -295,8 +373,10 @@ export default function PostCreatorPage() {
           setImagePreviews(prev => [...prev, ...fetchedPreviews].slice(0, 4));
         }
       }
+      setScrapePhase('done');
     } catch (err: any) {
       setError(err.message);
+      setScrapePhase('idle');
     } finally {
       setScraping(false);
     }
@@ -447,7 +527,7 @@ export default function PostCreatorPage() {
     } : null);
 
     try {
-      const generatedResults = [];
+      const generatedResults: any[] = [];
       for (const direction of dirsToUse) {
           const formData = new FormData();
           formData.append('productName', productName);
@@ -570,15 +650,29 @@ export default function PostCreatorPage() {
 
         {/* Step Progress Pills */}
         <div className="flex items-center gap-2 bg-stone-100 p-1.5 rounded-2xl border border-stone-200 shrink-0">
-          <div className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 1 ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-500'}`}>
+          <button 
+            type="button"
+            onClick={() => setStep(1)}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 1 ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-500 hover:text-stone-755'}`}
+          >
             <span>1. Brief & Media</span>
-          </div>
-          <div className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 2 ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-500'}`}>
+          </button>
+          <button 
+            type="button"
+            onClick={() => { if (directions.length > 0) setStep(2); }}
+            disabled={directions.length === 0}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 2 ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-500 hover:text-stone-755 disabled:opacity-50'}`}
+          >
             <span>2. Directions</span>
-          </div>
-          <div className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 3 ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-500'}`}>
+          </button>
+          <button 
+            type="button"
+            onClick={() => { if (results.length > 0 || activeCampaign?.items?.length) setStep(3); }}
+            disabled={results.length === 0 && !activeCampaign?.items?.length}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 3 ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-500 hover:text-stone-755 disabled:opacity-50'}`}
+          >
             <span>3. Studio</span>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -617,7 +711,7 @@ export default function PostCreatorPage() {
 
       {/* Step 1: Input */}
       {step === 1 && (
-        <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-stone-200/80 space-y-8">
+        <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-stone-200/80 space-y-8 animate-in fade-in duration-300">
           {/* Top Full-Width Magic Link Import Hero Bar */}
           <div className="bg-gradient-to-r from-amber-50/40 via-stone-50 to-orange-50/30 border border-amber-200/80 rounded-2xl p-5 shadow-2xs">
             <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-2 flex items-center justify-between">
@@ -637,142 +731,146 @@ export default function PostCreatorPage() {
                 className="flex-1 bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-all font-medium text-stone-800 placeholder-stone-400 shadow-2xs" 
                 placeholder="Paste product page URL (Shopify, Amazon, Store link...)" 
               />
-              <Button onClick={handleMagicLink} disabled={scraping || !magicLink} className="bg-stone-900 hover:bg-black text-white rounded-xl px-8 font-bold text-sm h-12 shadow-sm shrink-0">
-                {scraping ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {scraping ? 'Importing...' : 'Import Data'}
+              <Button onClick={handleMagicLink} disabled={scraping || !magicLink} className="bg-stone-900 hover:bg-black text-white rounded-xl px-8 font-bold text-sm h-12 shadow-sm shrink-0 min-w-[160px]">
+                {scraping ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
+                    <span>
+                      {scrapePhase === 'fetching' && 'Connecting...'}
+                      {scrapePhase === 'parsing' && 'Extracting...'}
+                      {scrapePhase === 'downloading' && 'Importing...'}
+                    </span>
+                  </div>
+                ) : (
+                  'Import Data'
+                )}
               </Button>
             </div>
           </div>
 
           {/* 2-Column Split: Visual Assets Left vs Campaign Specs Right */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column: Visual Assets & References */}
             <div className="space-y-6">
-              <h2 className="text-lg font-extrabold text-stone-900 border-b border-stone-200 pb-3 flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-[#D27D50]" />
+              <h2 className="text-base font-extrabold text-stone-900 border-b border-stone-200 pb-2.5 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-[#D27D50]" />
                 <span>Visual Assets & Inspiration</span>
               </h2>
 
-              {/* Product Photos (Identity Lock) */}
-              <div className="bg-stone-50/70 border-2 border-dashed border-stone-200 hover:border-amber-300 rounded-2xl p-5 space-y-3 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-extrabold text-sm text-stone-900 flex items-center gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Product Photos (Identity Lock) */}
+                <div className="bg-stone-50/75 border border-stone-200 hover:border-amber-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
                       <span>Product Photos</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-[#D27D50] bg-orange-100 px-2.5 py-0.5 rounded-full border border-orange-200">🔒 Identity Lock</span>
+                      <span className="text-[8px] font-black uppercase tracking-wider text-[#D27D50] bg-orange-50 px-2 py-0.5 rounded border border-orange-100">🔒 Lock</span>
                     </h4>
-                    <p className="text-xs text-stone-500 font-medium mt-0.5">Product design remains 100% identical ({imagePreviews.length}/4)</p>
+                    <span className="text-[10px] text-stone-400 font-bold">{imagePreviews.length}/4</span>
                   </div>
-                  {imagePreviews.length < 4 && (
-                    <Button 
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()} 
-                      className="bg-stone-900 hover:bg-black text-white text-xs font-bold rounded-xl h-8 px-3.5 shadow-2xs"
+
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleImageChange} 
+                    className="hidden" 
+                    accept="image/*" 
+                    multiple 
+                  />
+
+                  {imagePreviews.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {imagePreviews.map((src, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
+                          <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeImageFile(idx); }}
+                            className="absolute top-1 right-1 w-4 h-4 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                      {imagePreviews.length < 4 && (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="aspect-square rounded-xl border border-dashed border-stone-300 hover:border-amber-300 flex items-center justify-center bg-white text-stone-400 hover:text-stone-600 transition-colors text-lg font-bold"
+                        >
+                          +
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
                     >
-                      + Add Photo
-                    </Button>
+                      <Upload className="w-4 h-4 text-[#D27D50] mb-1.5" />
+                      <p className="font-extrabold text-[11px] text-stone-700 text-center">
+                        Upload Product Shots<br/>
+                        <span className="text-stone-400 font-normal text-[9px]">Front/angle views</span>
+                      </p>
+                    </div>
                   )}
                 </div>
 
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleImageChange} 
-                  className="hidden" 
-                  accept="image/*" 
-                  multiple 
-                />
+                {/* Pose & Style Reference Photos */}
+                <div className="bg-stone-50/75 border border-stone-200 hover:border-emerald-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
+                      <span>Style Refs</span>
+                      <span className="text-[8px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">🎨 Style</span>
+                    </h4>
+                    <span className="text-[10px] text-stone-400 font-bold">{referencePreviews.length}/4</span>
+                  </div>
 
-                {imagePreviews.length > 0 ? (
-                  <div className="grid grid-cols-4 gap-2.5 pt-1">
-                    {imagePreviews.map((src, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-sm group">
-                        <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
+                  <input 
+                    type="file" 
+                    ref={refInputRef} 
+                    onChange={handleReferenceChange} 
+                    className="hidden" 
+                    accept="image/*" 
+                    multiple 
+                  />
+
+                  {referencePreviews.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {referencePreviews.map((src, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
+                          <img src={src} alt={`Reference ${idx+1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeReferenceFile(idx); }}
+                            className="absolute top-1 right-1 w-4 h-4 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                      {referencePreviews.length < 4 && (
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); removeImageFile(idx); }}
-                          className="absolute top-1 right-1 w-5 h-5 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => refInputRef.current?.click()}
+                          className="aspect-square rounded-xl border border-dashed border-stone-300 hover:border-emerald-300 flex items-center justify-center bg-white text-stone-400 hover:text-stone-600 transition-colors text-lg font-bold"
                         >
-                          <X className="w-3 h-3" />
+                          +
                         </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl p-5 hover:bg-stone-100/80 transition-colors"
-                  >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-2xs border border-amber-200">
-                      <Upload className="w-4 h-4 text-[#D27D50]" />
+                      )}
                     </div>
-                    <p className="font-bold text-xs text-stone-700 text-center">
-                      Upload Product Shots<br/>
-                      <span className="text-stone-400 font-normal text-[11px]">Upload front, angle, or fabric close-ups</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Pose & Style Reference Photos */}
-              <div className="bg-stone-50/70 border-2 border-dashed border-stone-200 hover:border-emerald-300 rounded-2xl p-5 space-y-3 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-extrabold text-sm text-stone-900 flex items-center gap-2">
-                      <span>Pose & Style References</span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">🎨 Style Transfer</span>
-                    </h4>
-                    <p className="text-xs text-stone-500 font-medium mt-0.5">Model pose, camera angle & lighting ({referencePreviews.length}/4)</p>
-                  </div>
-                  {referencePreviews.length < 4 && (
-                    <Button 
-                      type="button"
-                      onClick={() => refInputRef.current?.click()} 
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl h-8 px-3.5 shadow-2xs"
+                  ) : (
+                    <div 
+                      onClick={() => refInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
                     >
-                      + Add Ref
-                    </Button>
+                      <ImageIcon className="w-4 h-4 text-emerald-600 mb-1.5" />
+                      <p className="font-extrabold text-[11px] text-stone-700 text-center">
+                        Upload Poses/Styles<br/>
+                        <span className="text-stone-400 font-normal text-[9px]">Model, lighting or angle</span>
+                      </p>
+                    </div>
                   )}
                 </div>
-
-                <input 
-                  type="file" 
-                  ref={refInputRef} 
-                  onChange={handleReferenceChange} 
-                  className="hidden" 
-                  accept="image/*" 
-                  multiple 
-                />
-
-                {referencePreviews.length > 0 ? (
-                  <div className="grid grid-cols-4 gap-2.5 pt-1">
-                    {referencePreviews.map((src, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-sm group">
-                        <img src={src} alt={`Reference ${idx+1}`} className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); removeReferenceFile(idx); }}
-                          className="absolute top-1 right-1 w-5 h-5 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => refInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl p-5 hover:bg-stone-100/80 transition-colors"
-                  >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-2 shadow-2xs border border-emerald-200">
-                      <ImageIcon className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <p className="font-bold text-xs text-stone-700 text-center">
-                      Upload Pose / Style References<br/>
-                      <span className="text-stone-400 font-normal text-[11px]">Upload model poses, lighting, or aesthetic inspiration</span>
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* Special Style & Pose Instructions Input */}
@@ -788,7 +886,7 @@ export default function PostCreatorPage() {
                   value={specialInstructions}
                   onChange={e => setSpecialInstructions(e.target.value)}
                   rows={2}
-                  className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-all shadow-2xs font-medium"
+                  className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-850 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-all shadow-2xs font-semibold"
                   placeholder='e.g. "Focus on model posture and warm sunset studio lighting from Reference #1, keep model on a luxury marble balcony."'
                 />
               </div>
@@ -796,9 +894,9 @@ export default function PostCreatorPage() {
 
             {/* Right Column: Campaign Brief & Specs */}
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-stone-200 pb-3">
-                <h2 className="text-lg font-extrabold text-stone-900 flex items-center gap-2">
-                  <Target className="w-5 h-5 text-[#D27D50]" />
+              <div className="flex items-center justify-between border-b border-stone-200 pb-2.5">
+                <h2 className="text-base font-extrabold text-stone-900 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-[#D27D50]" />
                   <span>Campaign Brief & Specs</span>
                 </h2>
                 <Button onClick={handleClearForm} variant="ghost" className="text-stone-400 hover:text-red-500 font-semibold h-8 px-3 rounded-lg text-xs">Clear Form</Button>
@@ -843,19 +941,20 @@ export default function PostCreatorPage() {
 
               {/* Proposed Creative Directions Inline Box */}
               {directions.length > 0 && (
-                <div className="bg-amber-50/40 border border-amber-200 rounded-2xl p-4 space-y-3 animate-in fade-in duration-300">
+                <div className="bg-amber-50/40 border border-amber-200 rounded-2xl p-5 space-y-4 animate-in fade-in duration-300">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-[#D27D50] uppercase tracking-wider flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" /> 5 Proposed Directions
                     </span>
-                    <span className="text-[10px] font-bold text-stone-500">
+                    <span className="text-[10px] font-black text-stone-500">
                       {selectedDirections.length} of {directions.length} selected
                     </span>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 gap-3">
                     {directions.map((dir, idx) => {
                       const isSel = selectedDirections.some(d => d.title === dir.title);
+                      const badge = getThemeBadge(dir.title, dir.description || dir.visualSceneSetup || '');
                       return (
                         <div 
                           key={idx}
@@ -866,25 +965,33 @@ export default function PostCreatorPage() {
                               setSelectedDirections([...selectedDirections, dir]);
                             }
                           }}
-                          className={`p-3 rounded-xl border text-left cursor-pointer transition-all flex items-center justify-between ${
+                          className={`p-4 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between gap-3 ${
                             isSel 
-                              ? 'bg-stone-900 text-white border-stone-900 shadow-xs' 
-                              : 'bg-white text-stone-700 border-stone-200 hover:border-amber-300'
+                              ? 'bg-stone-900 text-white border-stone-900 shadow-md scale-[1.005]' 
+                              : 'bg-white text-stone-750 border-stone-200 hover:border-amber-300 hover:shadow-2xs'
                           }`}
                         >
-                          <div className="flex-1 pr-3">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[10px] font-black uppercase ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
-                                #{idx + 1}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[10px] font-black uppercase ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
+                                  #{idx + 1}
+                                </span>
+                                <h5 className="font-extrabold text-xs">{dir.title}</h5>
+                              </div>
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${isSel ? 'bg-white/10 text-amber-200 border-white/20' : badge.color}`}>
+                                {badge.text}
                               </span>
-                              <h5 className="font-extrabold text-xs">{dir.title}</h5>
                             </div>
-                            <p className={`text-[11px] line-clamp-1 mt-0.5 ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
+                            <p className={`text-xs leading-relaxed ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
                               {dir.description || dir.visualSceneSetup}
                             </p>
                           </div>
-                          <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${isSel ? 'bg-amber-400 text-stone-950 font-bold text-xs' : 'border border-stone-300'}`}>
-                            {isSel ? '✓' : ''}
+                          <div className="flex items-center justify-between pt-1 border-t border-dashed border-stone-200/20">
+                            <span className="text-[10px] font-medium opacity-80">Pose transfer matching: High</span>
+                            <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 border ${isSel ? 'bg-amber-400 text-stone-950 border-amber-400' : 'border-stone-300'}`}>
+                              {isSel && <Check className="w-2.5 h-2.5 stroke-[3px]" />}
+                            </div>
                           </div>
                         </div>
                       );
@@ -1358,7 +1465,6 @@ export default function PostCreatorPage() {
               </div>
             </div>
 
-            {/* Active Video Result */}
             {animResultVideoUrl ? (
               <div className="space-y-6">
                 <div className="relative w-full aspect-[9/16] max-h-[400px] bg-black rounded-2xl overflow-hidden flex items-center justify-center mx-auto shadow-xl">
@@ -1392,7 +1498,7 @@ export default function PostCreatorPage() {
                 {animStatus === 'FAILED' ? (
                   <div className="text-center space-y-4">
                     <XCircle className="w-12 h-12 text-red-500 mx-auto" />
-                    <h4 className="font-bold text-stone-800 text-lg">Animation Failed</h4>
+                    <h4 className="font-bold text-stone-850 text-lg">Animation Failed</h4>
                     <p className="text-sm text-red-600 font-medium">{animStatusMsg}</p>
                     <Button onClick={() => { setAnimating(false); setAnimStatus(null); }} className="bg-[#D27D50] text-white font-bold rounded-xl px-6 py-2">Try Again</Button>
                   </div>
@@ -1401,14 +1507,14 @@ export default function PostCreatorPage() {
                     <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
                       <div className="flex items-center gap-2">
                         <Loader2 className="w-5 h-5 text-[#D27D50] animate-spin" />
-                        <h4 className="font-bold text-stone-800 text-base">Rendering Motion Graphic Video</h4>
+                        <h4 className="font-bold text-stone-850 text-base">Rendering Motion Graphic Video</h4>
                       </div>
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-100 text-[#D27D50] border border-orange-200">
                         Veo 3 Fast Engine
                       </span>
                     </div>
 
-                    <p className="text-xs text-stone-600 font-medium bg-white p-3 rounded-xl border border-stone-200">
+                    <p className="text-xs text-stone-600 font-medium bg-white p-3 rounded-xl border border-stone-200 text-left">
                       {animStatusMsg || 'Generating kinetic motion graphic video...'}
                     </p>
 
@@ -1419,34 +1525,141 @@ export default function PostCreatorPage() {
                 )}
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Synthesized Veo 3 JSON Prompt Editor */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#D27D50]" />
-                      Google Veo 3 JSON Prompt (Full Scene + Kinetic Typography Guide Format)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selectedAdForAnimate) openAnimateModal(selectedAdForAnimate);
-                      }}
-                      className="text-[11px] font-semibold text-[#D27D50] hover:underline flex items-center gap-1"
-                    >
-                      <Sparkles className="w-3 h-3" /> Re-synthesize JSON Prompt
-                    </button>
-                  </div>
-                  <textarea 
-                    value={animatePrompt} 
-                    onChange={e => setAnimatePrompt(e.target.value)} 
-                    rows={8} 
-                    className="w-full bg-stone-900 border border-stone-800 text-amber-300 font-mono rounded-2xl p-4 text-xs focus:outline-none focus:ring-2 focus:ring-[#D27D50]/40 transition-shadow leading-relaxed" 
-                  />
-                  <p className="text-[10px] text-stone-500 mt-1.5 italic">
-                    Structured according to Google Veo 3 Prompting Guide JSON specification. Animates full scene physics (subject rotation, background particles, light reflections, camera tracking) AND kinetic typography.
-                  </p>
+              <div className="space-y-6 text-left">
+                {/* Mode Selector Tab */}
+                <div className="flex bg-stone-100 p-1 rounded-xl border border-stone-200 w-fit">
+                  <button
+                    type="button"
+                    onClick={() => setIsCodeView(false)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${!isCodeView ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'}`}
+                  >
+                    🎨 Prompt Builder
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCodeView(true)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${isCodeView ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'}`}
+                  >
+                    {'{ } Code / JSON View'}
+                  </button>
                 </div>
+
+                {isCodeView ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider">
+                        Google Veo 3.0 Raw JSON Guide Prompt
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedAdForAnimate) openAnimateModal(selectedAdForAnimate);
+                        }}
+                        className="text-[11px] font-semibold text-[#D27D50] hover:underline flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" /> Re-synthesize JSON Prompt
+                      </button>
+                    </div>
+                    <textarea 
+                      value={animatePrompt} 
+                      onChange={e => setAnimatePrompt(e.target.value)} 
+                      rows={10} 
+                      className="w-full bg-stone-950 border border-stone-850 text-amber-300 font-mono rounded-2xl p-4 text-xs focus:outline-none focus:ring-2 focus:ring-[#D27D50]/40 transition-shadow leading-relaxed" 
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1">
+                          Subject Physical Motion
+                        </label>
+                        <select
+                          value={motionGuide}
+                          onChange={e => setMotionGuide(e.target.value)}
+                          className="w-full rounded-xl border-stone-200 bg-white text-xs focus:border-[#D27D50] focus:ring-[#D27D50]/20 p-2.5 shadow-2xs font-semibold text-stone-800"
+                        >
+                          <option value={`Full physical scene animation of ${selectedAdForAnimate.productName || 'product'}. Subject dynamically moves with realistic temporal weight, surface reflections shift across materials, and physical properties animate with 3D depth.`}>
+                            Realistic Physical Depth (Default)
+                          </option>
+                          <option value={`Dynamic 360-degree rotation of ${selectedAdForAnimate.productName || 'product'} showcasing 3D depth, surface reflections glide naturally across materials.`}>
+                            3D Showcase Spin
+                          </option>
+                          <option value={`Subtle ambient organic motion of ${selectedAdForAnimate.productName || 'product'}. Clean slow movements with elegant flow.`}>
+                            Subtle Ambient Motion
+                          </option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1">
+                          Camera Movement
+                        </label>
+                        <select
+                          value={cameraGuide}
+                          onChange={e => setCameraGuide(e.target.value)}
+                          className="w-full rounded-xl border-stone-200 bg-white text-xs focus:border-[#D27D50] focus:ring-[#D27D50]/20 p-2.5 shadow-2xs font-semibold text-stone-800"
+                        >
+                          <option value="Slow 3D push-in camera tracking shot with natural depth parallax effect">
+                            Slow 3D Push-In (Cinematic)
+                          </option>
+                          <option value="Slow sweeping camera pan left-to-right with wide lens angle and crisp focus">
+                            Slow Wide Pan (Left-to-Right)
+                          </option>
+                          <option value="3D orbital camera tilt rotating around the product with shallow depth of field">
+                            3D Orbital Tilt (Focus Spin)
+                          </option>
+                          <option value="Dramatic vertical camera push down showing high angle product layout">
+                            High Angle Zoom-Out (Dramatic)
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1">
+                          Lighting & Visual Aesthetics
+                        </label>
+                        <select
+                          value={styleGuide}
+                          onChange={e => setStyleGuide(e.target.value)}
+                          className="w-full rounded-xl border-stone-200 bg-white text-xs focus:border-[#D27D50] focus:ring-[#D27D50]/20 p-2.5 shadow-2xs font-semibold text-stone-850"
+                        >
+                          <option value="High-end commercial studio lighting, vibrant rim highlights, sharp focal clarity">
+                            Commercial Studio Glow (Default)
+                          </option>
+                          <option value="Dramatic warm sunset lighting, volumetric sunbeams, long soft shadows, cinematic atmosphere">
+                            Golden Hour Sunset
+                          </option>
+                          <option value="Cyberpunk neon lighting, vibrant magenta and cyan highlights, glossy reflective surfaces">
+                            Neon Cyberpunk Vibe
+                          </option>
+                          <option value="Minimalist natural window shadows, diffuse soft daylight, clean pastel backdrop">
+                            Minimalist Natural Light
+                          </option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-1">
+                          Typography Motion
+                        </label>
+                        <textarea
+                          value={textStyleGuide}
+                          onChange={e => setTextStyleGuide(e.target.value)}
+                          rows={2}
+                          className="w-full rounded-xl border-stone-200 bg-white text-xs focus:border-[#D27D50] focus:ring-[#D27D50]/20 p-2.5 shadow-2xs font-semibold text-stone-850 resize-none animate-in fade-in"
+                          placeholder="Kinetic typography motion graphics style..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-[10px] text-stone-500 mt-1.5 italic">
+                  Structured according to Google Veo 3 Prompting Guide JSON specification. Animates full scene physics (subject rotation, background particles, light reflections, camera tracking) AND kinetic typography.
+                </p>
 
                 <div className="pt-2 flex gap-3">
                   <Button 
@@ -1473,4 +1686,3 @@ export default function PostCreatorPage() {
     </div>
   );
 }
-

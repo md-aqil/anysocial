@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -537,11 +537,24 @@ export default function ReelsDashboard() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as 'series' | 'product' | null;
-  const [activeTab, setActiveTab] = useState<'product'>('product');
+  const [activeTab, setActiveTab] = useState<'product' | 'series'>(tabParam || 'product');
   const [selectedMetadataReel, setSelectedMetadataReel] = useState<any | null>(null);
   const [editedScript, setEditedScript] = useState("");
   const [editedVoiceModel, setEditedVoiceModel] = useState("");
   const [shotsToRegenerate, setShotsToRegenerate] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  const handleTabChange = (tab: 'product' | 'series') => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', tab);
+    router.replace(`/dashboard/reels-creator?${params.toString()}`);
+  };
 
 
   const handleViewDetails = (reel: any) => {
@@ -729,22 +742,58 @@ export default function ReelsDashboard() {
         <div>
           <h1 className="text-3xl font-extrabold text-stone-900 tracking-tight flex items-center gap-2.5">
             <Video className="h-8 w-8 text-violet-600" />
-            AI Product Reels
+            {activeTab === 'product' ? 'AI Product Reels' : 'Custom Video Series'}
           </h1>
-          <p className="text-stone-500 mt-2">Create AI-powered product reels with Veo animation, voiceover, and auto-posting.</p>
+          <p className="text-stone-500 mt-2">
+            {activeTab === 'product'
+              ? 'Create AI-powered product reels with Veo animation, voiceover, and auto-posting.'
+              : 'Create automated storytelling series, customized scripts, voiceovers, and scheduled posting.'}
+          </p>
         </div>
         <div className="flex flex-wrap gap-3 flex-nowrap">
-          <Button
-            onClick={() => router.push('/dashboard/reels-creator/ai-product-reel')}
-            className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
-          >
-            <Sparkles className="mr-2 h-5 w-5" />
-            New Product Reel
-          </Button>
+          {activeTab === 'product' ? (
+            <Button
+              onClick={() => router.push('/dashboard/reels-creator/ai-product-reel')}
+              className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
+            >
+              <Sparkles className="mr-2 h-5 w-5" />
+              New Product Reel
+            </Button>
+          ) : (
+            <Button
+              onClick={() => router.push('/dashboard/reels-creator/new')}
+              className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              New Video Series
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* No tabs needed — single product reels view */}
+      {/* Tabs Layout */}
+      <div className="flex border-b border-stone-200 mb-8">
+        <button
+          onClick={() => handleTabChange('product')}
+          className={`py-3.5 px-6 text-sm font-bold border-b-2 transition-all relative ${
+            activeTab === 'product'
+              ? 'border-violet-600 text-violet-600 font-extrabold'
+              : 'border-transparent text-stone-500 hover:text-stone-800'
+          }`}
+        >
+          AI Product Campaigns
+        </button>
+        <button
+          onClick={() => handleTabChange('series')}
+          className={`py-3.5 px-6 text-sm font-bold border-b-2 transition-all relative ${
+            activeTab === 'series'
+              ? 'border-violet-600 text-violet-600 font-extrabold'
+              : 'border-transparent text-stone-500 hover:text-stone-800'
+          }`}
+        >
+          Custom Video Series
+        </button>
+      </div>
 
       {activeTab === 'series' ? (
         <>

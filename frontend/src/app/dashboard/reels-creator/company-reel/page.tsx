@@ -531,7 +531,7 @@ export default function CompanyReelPage() {
     queryKey: ['accounts'],
     queryFn: () => api.oauth.getAccounts(),
   });
-  const accounts = accountsData?.data || [];
+  const accounts = accountsData?.accounts || [];
 
   const { data: kbsData, isLoading: loadingKBs } = useQuery({
     queryKey: ['company-kbs'],

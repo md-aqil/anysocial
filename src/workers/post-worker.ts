@@ -54,6 +54,8 @@ export class PostWorker {
     logger.info({ event: 'human_jitter_delay', ms: jitterMs, postId });
     await new Promise(resolve => setTimeout(resolve, jitterMs));
 
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(platform);
+
     try {
       // 1. Fetch post from database
       const post = await prisma.post.findUnique({
@@ -66,16 +68,16 @@ export class PostWorker {
 
       // 2. Fetch OAuth tokens for this platform
       let socialAccount = await prisma.socialAccount.findFirst({
-        where: {
-          userId,
-          platform: platform.toUpperCase() as any,
-          status: 'CONNECTED'
-        }
+        where: isUuid
+          ? { id: platform, userId, status: 'CONNECTED' }
+          : { platform: platform.toUpperCase() as any, userId, status: 'CONNECTED' }
       });
 
       if (!socialAccount) {
         throw new Error(`No connected ${platform} account found`);
       }
+
+      const resolvedPlatform = socialAccount.platform.toString().toUpperCase();
 
       // Proactively refresh token if expired or expiring in the next 5 minutes
       const now = new Date();
@@ -83,13 +85,13 @@ export class PostWorker {
       const isExpiredOrExpiringSoon = !expiresAt || expiresAt.getTime() < (now.getTime() + 5 * 60 * 1000);
 
       if (isExpiredOrExpiringSoon && socialAccount.refreshToken) {
-        logger.info({ event: 'proactive_token_refresh', platform, accountId: socialAccount.id });
+        logger.info({ event: 'proactive_token_refresh', platform: resolvedPlatform, accountId: socialAccount.id });
         try {
           await oauthService.refreshToken(socialAccount.id);
           // Re-fetch with new token
           socialAccount = await prisma.socialAccount.findUnique({ where: { id: socialAccount.id } }) ?? socialAccount;
         } catch (refreshErr: any) {
-          logger.warn({ event: 'proactive_refresh_failed', platform, error: refreshErr.message });
+          logger.warn({ event: 'proactive_refresh_failed', platform: resolvedPlatform, error: refreshErr.message });
           // Continue with the existing token — the adapter will handle 401 on retry
         }
       }
@@ -99,13 +101,15 @@ export class PostWorker {
       const accessToken = tokenCrypto.decrypt(encryptedToken);
 
       // 3. Prepare platform-specific payload
-      const adapter = this.getAdapter(platform);
+      const adapter = this.getAdapter(resolvedPlatform);
       
-      const customOptions = post.platformOptions ? (post.platformOptions as any)[platform] : {};
+      const customOptions = post.platformOptions 
+        ? (post.platformOptions as any)[platform] || (post.platformOptions as any)[resolvedPlatform] || {}
+        : {};
       const platformContent = customOptions.content || content;
       
-      const payload = adapter.prepareContent(platformContent, platform);
-      payload.mediaUrls = adapter.formatMediaUrls(mediaUrls, platform);
+      const payload = adapter.prepareContent(platformContent, resolvedPlatform);
+      payload.mediaUrls = adapter.formatMediaUrls(mediaUrls, resolvedPlatform);
 
 
       payload.platformSpecificFields = {
@@ -182,11 +186,9 @@ export class PostWorker {
 
         // Automatically disable the account to prevent further escalation/ban
         await prisma.socialAccount.updateMany({
-          where: {
-            userId,
-            platform: platform.toUpperCase() as any,
-            status: 'CONNECTED'
-          },
+          where: isUuid
+            ? { id: platform, userId, status: 'CONNECTED' }
+            : { platform: platform.toUpperCase() as any, userId, status: 'CONNECTED' },
           data: {
             status: 'ERROR',
             metadata: {

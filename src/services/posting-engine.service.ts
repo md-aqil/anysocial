@@ -117,6 +117,7 @@ export class PostingEngineService {
     }
 
     // If UUID account IDs were passed instead of Platform names, fetch their corresponding platform Enums
+    const accountPlatformMap = new Map<string, string>();
     if (accountIds.length > 0) {
       const accountsById = await prisma.socialAccount.findMany({
         where: { id: { in: accountIds }, userId },
@@ -124,6 +125,7 @@ export class PostingEngineService {
       });
       for (const acc of accountsById) {
         const platStr = acc.platform.toString().toUpperCase();
+        accountPlatformMap.set(acc.id, platStr);
         if (!platformEnums.includes(platStr)) {
           platformEnums.push(platStr);
         }
@@ -177,38 +179,39 @@ export class PostingEngineService {
       // Validate against all target platforms
       let lastValidation: any;
       for (const platform of data.platforms) {
-        const platformOpts = data.platformOptions?.[platform] || {};
-        logToFile(`SCHEDULE POST: platform=${platform}, options=${JSON.stringify(platformOpts)}`);
+        const resolvedPlatform = accountPlatformMap.get(platform) || platform.toUpperCase();
+        const platformOpts = data.platformOptions?.[platform] || data.platformOptions?.[resolvedPlatform] || {};
+        logToFile(`SCHEDULE POST: platform=${platform} (resolved=${resolvedPlatform}), options=${JSON.stringify(platformOpts)}`);
         
         let validation = await mediaValidator.validate(
           mediaItem.file,
-          platform,
+          resolvedPlatform,
           mediaItem.type,
           platformOpts
         );
 
         // AUTO-FIX LOGIC: If invalid and autoFix is enabled
         if (!validation.valid && platformOpts.autoFix) {
-          logToFile(`AUTO-FIX: Attempting to conform ${mediaItem.type} for ${platform}`);
+          logToFile(`AUTO-FIX: Attempting to conform ${mediaItem.type} for ${resolvedPlatform}`);
           
           // Determine target ratio
           let targetRatio = 1.0; // Default square
           // Frontend sends platformOptions[PLATFORM].postType
-          if (platform === 'INSTAGRAM') {
+          if (resolvedPlatform === 'INSTAGRAM') {
             const type = platformOpts.postType || 'FEED';
             if (type === 'REEL' || type === 'STORY') targetRatio = 0.562; // 9:16
-          } else if (platform === 'FACEBOOK') {
+          } else if (resolvedPlatform === 'FACEBOOK') {
             const type = platformOpts.postType || 'FEED';
             if (type === 'REEL') targetRatio = 0.562;
-          } else if (platform === 'YOUTUBE') {
+          } else if (resolvedPlatform === 'YOUTUBE') {
             const type = platformOpts.postType || 'VIDEO';
             if (type === 'SHORTS') targetRatio = 0.562; // Vertical
             else targetRatio = 1.777; // Landscape
-          } else if (platform === 'TWITTER') {
+          } else if (resolvedPlatform === 'TWITTER') {
             targetRatio = 1.777; // Twitter feeds look best in standard 16:9 Landscape
-          } else if (platform === 'THREADS') {
+          } else if (resolvedPlatform === 'THREADS') {
             targetRatio = 0.8; // 4:5 portrait is ideal for Threads media
-          } else if (platform === 'SNAPCHAT') {
+          } else if (resolvedPlatform === 'SNAPCHAT') {
             targetRatio = 0.562; // 9:16 portrait is strictly required for Snapchat
           }
 
@@ -217,7 +220,7 @@ export class PostingEngineService {
             let fixedBuffer: Buffer;
             let fixedType: 'image' | 'video' = mediaItem.type;
 
-            if (mediaItem.type === 'image' && platform === 'YOUTUBE') {
+            if (mediaItem.type === 'image' && resolvedPlatform === 'YOUTUBE') {
               logToFile(`AUTO-FIX: Converting image to video for YouTube compliance (Ratio: ${targetRatio})`);
               const tempDir = path.join(process.cwd(), 'scratch', 'temp');
               if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
@@ -273,18 +276,18 @@ export class PostingEngineService {
 
               // --- DURATION TRIM: If the only/primary error is duration, trim first ---
               const { getPlatformRules } = await import('../config/platform-rules.js');
-              const platformRules = getPlatformRules(platform);
+              const platformRules = getPlatformRules(resolvedPlatform);
               const durationError = validation.errors.find(e => e.includes('duration exceeds'));
 
               if (durationError) {
                 // Mirror the validator's post-type-aware duration logic
                 let maxDuration = platformRules.videoDurationLimit;
-                if (platform === 'INSTAGRAM') {
+                if (resolvedPlatform === 'INSTAGRAM') {
                   const igType = platformOpts.postType || 'FEED';
                   if (igType === 'REEL') maxDuration = 90;
                   else if (igType === 'STORY') maxDuration = 15;
                 }
-                logToFile(`AUTO-FIX: Trimming video to ${maxDuration}s for ${platform} (${platformOpts.postType || 'FEED'})`);
+                logToFile(`AUTO-FIX: Trimming video to ${maxDuration}s for ${resolvedPlatform} (${platformOpts.postType || 'FEED'})`);
                 const trimmedPath = path.join(tempDir, `${Date.now()}-trimmed.mp4`);
                 conformTempFiles.push(trimmedPath);
                 await new Promise<void>((resolve, reject) => {
@@ -304,7 +307,7 @@ export class PostingEngineService {
                 if (fs.existsSync(tempInput)) fs.unlinkSync(tempInput);
                 fs.copyFileSync(trimmedPath, tempInput);
                 if (fs.existsSync(trimmedPath)) fs.unlinkSync(trimmedPath);
-                logToFile(`AUTO-FIX: Duration trim complete for ${platform}`);
+                logToFile(`AUTO-FIX: Duration trim complete for ${resolvedPlatform}`);
               }
               // -------------------------------------------------------------------
 
@@ -314,7 +317,7 @@ export class PostingEngineService {
               fixedBuffer = fs.readFileSync(videoPath);
               
               // If a thumbnail was generated, we can attach it to the postOptions for YouTube
-              if (thumbnailPath && platform === 'YOUTUBE') {
+              if (thumbnailPath && resolvedPlatform === 'YOUTUBE') {
                 const thumbBuffer = fs.readFileSync(thumbnailPath);
                 const thumbUpload = await storageService.upload(thumbBuffer, {
                   mimeType: 'image/jpeg',
@@ -337,13 +340,13 @@ export class PostingEngineService {
             // Re-validate the fixed media
             const reValidation = await mediaValidator.validate(
               fixedBuffer,
-              platform,
+              resolvedPlatform,
               fixedType,
               platformOpts
             );
 
             if (reValidation.valid) {
-              logToFile(`AUTO-FIX: Successfully fixed ${mediaItem.type} for ${platform}`);
+              logToFile(`AUTO-FIX: Successfully fixed ${mediaItem.type} for ${resolvedPlatform}`);
               mediaItem.file = fixedBuffer; // Update original buffer
               mediaItem.type = fixedType;   // Update type so it passes YouTube MIME check
               validation = reValidation;
@@ -365,10 +368,10 @@ export class PostingEngineService {
         }
 
         lastValidation = validation;
-        logToFile(`VALIDATION: platform=${platform}, type=${mediaItem.type}, valid=${validation.valid}, errors=${validation.errors.join('|')}`);
+        logToFile(`VALIDATION: platform=${platform} (resolved=${resolvedPlatform}), type=${mediaItem.type}, valid=${validation.valid}, errors=${validation.errors.join('|')}`);
 
         if (!validation.valid) {
-          logToFile(`CRITICAL: Media validation failed for ${platform}`);
+          logToFile(`CRITICAL: Media validation failed for ${resolvedPlatform}`);
           // Clean up: mark post as failed
           await prisma.post.update({
             where: { id: post.id },
@@ -376,7 +379,7 @@ export class PostingEngineService {
           });
 
           throw new MediaValidationError(
-            `Media validation failed for ${platform}`,
+            `Media validation failed for ${resolvedPlatform}`,
             validation.errors
           );
         }
@@ -393,7 +396,8 @@ export class PostingEngineService {
 
       // Generate platform variants
       for (const platform of data.platforms) {
-        const variants = await storageService.generateVariants(mediaItem.file, platform);
+        const resolvedPlatform = accountPlatformMap.get(platform) || platform.toUpperCase();
+        const variants = await storageService.generateVariants(mediaItem.file, resolvedPlatform);
         platformVariants[platform] = variants;
       }
 
@@ -424,9 +428,10 @@ export class PostingEngineService {
     const jobIds: string[] = [];
 
     for (const platform of data.platforms) {
-      const platformOpts = data.platformOptions?.[platform] || {};
+      const resolvedPlatform = accountPlatformMap.get(platform) || platform.toUpperCase();
+      const platformOpts = data.platformOptions?.[platform] || data.platformOptions?.[resolvedPlatform] || {};
       
-      if (platform === 'YOUTUBE') {
+      if (resolvedPlatform === 'YOUTUBE') {
         const tempDir = path.join(process.cwd(), 'scratch', 'temp');
         if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
