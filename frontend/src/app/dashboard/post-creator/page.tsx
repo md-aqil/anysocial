@@ -639,12 +639,38 @@ export default function PostCreatorPage() {
           body: formData
         });
 
+        let data: any = null;
+        const contentType = res.headers.get('content-type');
+        
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to generate ad');
+          let errorMessage = `Generation failed (HTTP ${res.status})`;
+          if (contentType && contentType.includes('application/json')) {
+            try {
+              data = await res.json();
+              errorMessage = data.error || errorMessage;
+            } catch {
+              // Keep default error message
+            }
+          } else {
+            // HTML error page - likely rate limit or server error
+            const text = await res.text();
+            if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+              errorMessage = `AI service returned an error (${res.status}). This may be due to rate limiting or service unavailability. Please retry in a moment.`;
+            }
+          }
+          throw new Error(errorMessage);
         }
 
-        const data = await res.json();
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Invalid response from server. Expected JSON but received non-JSON response.');
+        }
+
+        try {
+          data = await res.json();
+        } catch (err) {
+          console.error('JSON parse error:', err);
+          throw new Error('Failed to parse server response. The AI service may have returned an error page. Please retry.');
+        }
         const newItem = { 
           brief: data.brief, 
           imageUrl: data.imageUrl, 

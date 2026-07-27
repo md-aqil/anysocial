@@ -21,6 +21,26 @@ const adUploadFields = upload.fields([
   { name: 'referenceImages', maxCount: 4 }
 ]);
 
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, baseDelay = 2000): Promise<T> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const isLastAttempt = i === retries - 1;
+      const isRetryable = /429|503|500|rate.?limit|quota|unavailable|timeout|ECONNRESET|ENOTFOUND/i.test(err.message || '');
+      
+      if (isLastAttempt || !isRetryable) {
+        throw err;
+      }
+      
+      const delay = baseDelay * Math.pow(2, i) + Math.random() * 1000;
+      logger.warn(`Retry ${i + 1}/${retries} after error: ${err.message}. Waiting ${Math.round(delay)}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('Retry logic failed unexpectedly');
+}
+
 router.post('/directions', authenticate, adUploadFields, async (req: any, res: any) => {
   try {
     const { productName, description, usp, personality, audience, platform, mood, specialInstructions } = req.body;
@@ -38,16 +58,16 @@ router.post('/directions', authenticate, adUploadFields, async (req: any, res: a
 
     const prompt = `You are an elite advertising art director and commercial photographer using the Nano Banana 2 hyper-realistic imaging protocol combined with world-class campaign strategy.
 
-Analyze the provided product image(s) and reference image(s). Then propose exactly 5 distinct ad creative directions.
+Analyze the provided product image(s) and reference image(s). Then propose exactly 4 distinct ad creative directions.
 
 HARD CONSTRAINTS (apply to ALL 4 directions):
 1. PRODUCT IDENTITY LOCK: The product(s) in the Product Image(s) must remain 100% identical in every direction - exact shape, fabric, cuts, color, pattern, logo, labels, texture. STRICTLY PROHIBITED: feature averaging, merging, smoothing, or altering the product design.
-2. REFERENCE IMAGE PINNING: ${refFiles.length > 0 ? `The ${refFiles.length} Style/Pose Reference Image(s) are ENVIRONMENT/POSE TEMPLATES. For each direction, describe how the scene would replicate the exact camera angle, model pose, lighting setup, background, and aesthetic from the reference image(s). The ONLY element that changes between directions is the product presentation - everything else (model, setting, light, mood) is locked to the reference.` : 'No reference images provided - use high-end commercial studio or aspirational lifestyle composition.'}
+2. REFERENCE IMAGE PINNING: ${refFiles.length > 0 ? `The ${refFiles.length} Style/Pose Reference Image(s) are ENVIRONMENT/POSE TEMPLATES. For each direction, describe how the scene would replicate the exact camera angle, model pose, lighting setup, background, and aesthetic from the reference image(s). CRITICAL: If the reference image contains text, typography, or copy, replicate the EXACT font style, font weight, letter spacing, text color, text placement, text size, and text alignment. Do NOT overlap or place new text over existing reference text. The ONLY element that changes between directions is the product presentation - everything else (model, setting, light, mood, typography) is locked to the reference.` : 'No reference images provided - use high-end commercial studio or aspirational lifestyle composition.'}
 3. NANO-BANANA QUALITY: Every direction must be achievable with hyper-realistic imaging: camera math (85mm, f/2.0, ISO 200), natural directional lighting, shallow depth of field, visible material texture, unretouched surface details.
 
 For each direction, provide:
 - title: The direction name (use exactly these 4)
-- description: A 2-3 sentence concept explaining the scene, how the reference image is replicated, how the product identity is preserved, and what makes this direction distinct from the others. Be specific about camera angle, lighting, model pose, background, and product presentation.
+- description: A 2-3 sentence concept explaining the scene, how the reference image is replicated, how the product identity is preserved, and what makes this direction distinct from the others. Be specific about camera angle, lighting, model pose, background, text/typography treatment, and product presentation.
 
 Use these 4 fixed directions:
 1. Hero Lifestyle Integration - Aspirational usage in a real-world lifestyle context matching the reference
@@ -131,7 +151,7 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
 
 We are providing:
 ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s): These are the HERO IDENTITY ANCHORS. The product/garment/object in the generated visual must remain 100% identical to these images in shape, fabric, cuts, color, pattern, logo, labels, and texture. STRICTLY PROHIBITED: any feature averaging, merging, smoothing, or altering of the product design. The product must look like the exact same physical object placed into the new scene.` : ''}
-${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s): These are ENVIRONMENT/POSE TEMPLATES. The generated image MUST replicate the exact camera angle, optical perspective, camera elevation, shot framing, model pose, stance, body posture, lighting setup, 3D environment, background scene, typography layout, color grading, and aesthetic style from these reference images. The ONLY element that changes is the product itself - everything else (model, setting, light, mood) must match the reference with photographic precision.` : ''}
+${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s): These are ENVIRONMENT/POSE TEMPLATES. The generated image MUST replicate the exact camera angle, optical perspective, camera elevation, shot framing, model pose, stance, body posture, lighting setup, 3D environment, background scene, typography layout, color grading, and aesthetic style from these reference images. CRITICAL: If the reference image contains text, typography, or copy, replicate the EXACT font style, font weight, letter spacing, text color, text placement, text size, and text alignment. Do NOT overlap or place new text over existing reference text. The ONLY element that changes is the product itself - everything else (model, setting, light, mood, typography) must match the reference with photographic precision.` : ''}
 ${specialInstructions ? `- USER SPECIAL POSE/STYLE INSTRUCTION: "${specialInstructions}". This is a hard constraint. Explicitly obey this instruction regarding what to look for or adapt from the reference images.` : ''}
 
 Output exactly in this JSON format (no markdown blocks, just raw JSON):
@@ -175,7 +195,7 @@ CRITICAL IMAGE PROMPT CONSTRUCTION RULES:
    - Depth of field: shallow depth of field, bokeh background
    - Complete scene composition: not just the product in isolation, but the full ad frame with tagline, CTA, background, and graphic atmosphere
 
-2. REFERENCE IMAGE PINNING: ${styleImagesList.length > 0 ? 'The imagePrompt must explicitly state: "Match the exact camera angle, model pose, body posture, lighting setup, background environment, and visual aesthetic from the attached Style/Pose Reference Image(s). The product is the ONLY element that changes - everything else is locked to the reference."' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
+ 2. REFERENCE IMAGE PINNING: ${styleImagesList.length > 0 ? 'The imagePrompt must explicitly state: "Match the exact camera angle, model pose, body posture, lighting setup, background environment, typography layout, text style, font family, font weight, letter spacing, text color, text placement, text size, and visual aesthetic from the attached Style/Pose Reference Image(s). If the reference contains text, replicate the exact typography style - do NOT create new text styles or overlap text over existing reference text. The product is the ONLY element that changes - everything else (model, setting, light, mood, typography) is locked to the reference."' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
 
 3. PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'The imagePrompt must explicitly state: "The product is the strict hero anchor. Preserve 100% identity: exact shape, fabric texture, logo, color, pattern, cuts, and labels. No feature averaging or merging with reference images. No smoothing, beautification, or redesign of the product."' : 'Feature the product as the central hero element.'}
 
@@ -187,9 +207,22 @@ CRITICAL IMAGE PROMPT CONSTRUCTION RULES:
 
     const briefMediaParts: { data: string; mimeType: string }[] = [...productImagesList, ...styleImagesList];
 
-    const briefText = await aiOrchestrator.generateContent(briefPrompt, briefMediaParts);
+    let briefText: string;
+    try {
+      briefText = await withRetry(() => aiOrchestrator.generateContent(briefPrompt, briefMediaParts), 3, 2000);
+    } catch (err: any) {
+      logger.error({ event: 'brief_generation_failed', error: err.message }, 'Brief generation failed after retries');
+      return res.status(502).json({ error: `AI brief generation failed: ${err.message}. Please retry.` });
+    }
+
     const cleanedBrief = briefText.replace(/```json\n?|```/g, '').trim();
-    const briefParsed = JSON.parse(cleanedBrief);
+    let briefParsed: any;
+    try {
+      briefParsed = JSON.parse(cleanedBrief);
+    } catch (err) {
+      logger.error({ event: 'brief_json_parse_failed', raw: cleanedBrief.substring(0, 500) }, 'Failed to parse brief JSON');
+      return res.status(502).json({ error: 'AI returned invalid brief format. Please retry.' });
+    }
 
     const imagePayload = JSON.stringify({
       prompt: briefParsed.imagePrompt,
@@ -234,14 +267,20 @@ CRITICAL IMAGE PROMPT CONSTRUCTION RULES:
       }
     });
 
-    const tempImageUrl = await aiOrchestrator.generateImage(
-      imagePayload, 
-      Math.floor(Math.random() * 1000000), 
-      productImagesList, 
-      null,
-      styleImagesList,
-      null
-    );
+    let tempImageUrl: string;
+    try {
+      tempImageUrl = await withRetry(() => aiOrchestrator.generateImage(
+        imagePayload, 
+        Math.floor(Math.random() * 1000000), 
+        productImagesList, 
+        null,
+        styleImagesList,
+        null
+      ), 3, 2000);
+    } catch (err: any) {
+      logger.error({ event: 'image_generation_failed', error: err.message }, 'Image generation failed after retries');
+      return res.status(502).json({ error: `AI image generation failed: ${err.message}. Please retry.` });
+    }
     
     // Move the temp file to the public uploads directory
     const fileName = `ad_creative_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
