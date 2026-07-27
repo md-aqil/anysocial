@@ -115,8 +115,8 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
     const briefPrompt = `You are a world-class advertising creative assistant and art director. Create a full creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
     
     We are providing:
-    ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s): Use this product/garment/object 100% identically in the generated visual. Keep exact logo, labels, fabric, cuts, color, and pattern unchanged.` : ''}
-    ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s): The pose, model stance, body angle, camera perspective, lighting, 3D environment, and aesthetic style MUST adapt from these reference images while seamlessly featuring the identical product.` : ''}
+    ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s): Use this product/garment/object 100% identically in the generated visual. Keep exact logo, labels, fabric, cuts, color, and pattern unchanged. DO NOT alter the design.` : ''}
+    ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s): The pose, model stance, body angle, camera perspective, lighting, 3D environment, typography layout, and aesthetic style MUST adapt from these reference images while seamlessly featuring the identical product.` : ''}
     ${specialInstructions ? `- USER SPECIAL POSE/STYLE INSTRUCTION: "${specialInstructions}". Make sure to explicitly obey this instruction regarding what to look for or adapt from the reference images!` : ''}
 
     Output exactly in this JSON format (no markdown blocks, just raw JSON):
@@ -134,10 +134,10 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
     }
     
     CRITICAL GUIDELINES FOR THE IMAGE PROMPT:
-    1. COMPLETE COMMERCIAL ADVERTISEMENT WITH TYPOGRAPHY: Describe a complete, campaign-ready advertisement featuring the tagline headline "${direction.title || ''}" and CTA button clearly integrated into the layout.
+    1. COMPLETE COMMERCIAL ADVERTISEMENT WITH TYPOGRAPHY: Describe a complete, campaign-ready advertisement featuring the tagline headline "${direction.title || ''}" and CTA button clearly integrated into the layout. Get the text layout, typography font styles, and placement from the Pose & Style Reference Image.
     2. CAMERA MATH & OPTICAL PHYSICS: Include explicit focal length (85mm f/1.8 lens, ISO 100), natural directional lighting, rim lights, soft shadow falloff, and unretouched micro-surface texture details.
-    3. PRIMARY HERO PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to treat Image #1 as the SINGLE HERO PRODUCT ANCHOR. Keep the original product, garment, logos, colors, fabric, and cuts 100% identical and unaltered. Prohibit feature averaging or replacing the product with any clothing from style reference photos.' : 'Feature the product as the central hero element.'}
-    4. CAMERA PERSPECTIVE & POSE MATCH: ${styleImagesList.length > 0 ? 'Instruct the generator to faithfully match and replicate the exact camera angle, optical perspective, camera elevation, framing, model pose, stance, body posture, lighting setup, and background scene from the attached style reference photo, while featuring the identical hero product.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
+    3. PRIMARY HERO PRODUCT IDENTITY LOCK: ${productImagesList.length > 0 ? 'Instruct the generator to treat the Product Image as the strict hero product anchor. The original product, garment, logos, colors, fabric texture, cuts, and patterns must remain 100% identical and completely unaltered. Strictly prohibit any feature averaging or merging of clothing features with the style reference photos.' : 'Feature the product as the central hero element.'}
+    4. CAMERA PERSPECTIVE & POSE MATCH: ${styleImagesList.length > 0 ? 'Instruct the generator to match and replicate the exact camera angle, optical perspective, camera elevation, framing, model pose, stance, body posture, lighting setup, and background scene from the attached style reference photo, while featuring the identical hero product.' : 'Use high-end commercial studio or aspirational lifestyle composition.'}
     ${specialInstructions ? `5. USER SPECIAL DIRECTIVE: "${specialInstructions}". Enforce this instruction strictly in the prompt!` : ''}
     `;
 
