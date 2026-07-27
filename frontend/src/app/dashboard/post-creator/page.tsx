@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, 
   XCircle, PenSquare, Maximize2, Film, Download, X, Video, Share2, 
-  Check, ArrowLeft, Layers, Wand2, ExternalLink, Eye
+  Check, ArrowLeft, Layers, Wand2, ExternalLink, Eye, Link2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -712,42 +712,6 @@ export default function PostCreatorPage() {
       {/* Step 1: Input */}
       {step === 1 && (
         <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-stone-200/80 space-y-8 animate-in fade-in duration-300">
-          {/* Top Full-Width Magic Link Import Hero Bar */}
-          <div className="bg-gradient-to-r from-amber-50/40 via-stone-50 to-orange-50/30 border border-amber-200/80 rounded-2xl p-5 shadow-2xs">
-            <label className="block text-xs font-black text-stone-700 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span className="flex items-center gap-2 text-stone-900 text-sm font-extrabold">
-                <Wand2 className="w-4 h-4 text-[#D27D50]" />
-                <span>Magic Link Import</span>
-              </span>
-              <span className="text-[11px] font-bold text-[#D27D50] bg-white px-3 py-1 rounded-lg border border-orange-200/80 shadow-2xs">
-                ⚡ Auto-Fill Details & Images from URL
-              </span>
-            </label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input 
-                type="text" 
-                value={magicLink} 
-                onChange={e => setMagicLink(e.target.value)} 
-                className="flex-1 bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-all font-medium text-stone-800 placeholder-stone-400 shadow-2xs" 
-                placeholder="Paste product page URL (Shopify, Amazon, Store link...)" 
-              />
-              <Button onClick={handleMagicLink} disabled={scraping || !magicLink} className="bg-stone-900 hover:bg-black text-white rounded-xl px-8 font-bold text-sm h-12 shadow-sm shrink-0 min-w-[160px]">
-                {scraping ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
-                    <span>
-                      {scrapePhase === 'fetching' && 'Connecting...'}
-                      {scrapePhase === 'parsing' && 'Extracting...'}
-                      {scrapePhase === 'downloading' && 'Importing...'}
-                    </span>
-                  </div>
-                ) : (
-                  'Import Data'
-                )}
-              </Button>
-            </div>
-          </div>
-
           {/* 2-Column Split: Visual Assets Left vs Campaign Specs Right */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column: Visual Assets & References */}
@@ -756,6 +720,42 @@ export default function PostCreatorPage() {
                 <ImageIcon className="w-4 h-4 text-[#D27D50]" />
                 <span>Visual Assets & Inspiration</span>
               </h2>
+
+              {/* Compact Magic Link Import */}
+              <div className="bg-gradient-to-r from-amber-50/50 via-stone-50 to-orange-50/30 border border-amber-100 rounded-xl p-3.5 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-stone-850 text-xs font-bold">
+                    <Link2 className="w-3.5 h-3.5 text-[#D27D50]" />
+                    <span>Import Product URL</span>
+                  </span>
+                  <span className="text-[9px] font-black text-[#D27D50] bg-white px-2 py-0.5 rounded border border-orange-100">
+                    ⚡ Auto-Fill
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={magicLink} 
+                    onChange={e => setMagicLink(e.target.value)} 
+                    className="flex-1 bg-white border border-stone-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] transition-all font-medium text-stone-800 placeholder-stone-400 placeholder:text-[10px]" 
+                    placeholder="Paste Shopify or Amazon link..." 
+                  />
+                  <Button 
+                    onClick={handleMagicLink} 
+                    disabled={scraping || !magicLink} 
+                    className="bg-stone-900 hover:bg-black text-white rounded-lg px-4 font-bold text-xs h-8 shadow-sm shrink-0 min-w-[90px]"
+                  >
+                    {scraping ? (
+                      <div className="flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin text-amber-300" />
+                        <span className="text-[9px]">Importing</span>
+                      </div>
+                    ) : (
+                      'Import'
+                    )}
+                  </Button>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Product Photos (Identity Lock) */}

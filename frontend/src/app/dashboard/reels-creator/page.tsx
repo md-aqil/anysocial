@@ -752,25 +752,6 @@ export default function ReelsDashboard() {
               : 'Create manual product reels, customize scripts, voiceovers, and manually compose posts.'}
           </p>
         </div>
-        <div className="flex flex-wrap gap-3 flex-nowrap">
-          {activeTab === 'product' ? (
-            <Button
-              onClick={() => router.push('/dashboard/reels-creator/ai-product-reel')}
-              className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
-            >
-              <Sparkles className="mr-2 h-5 w-5" />
-              New Product Reel
-            </Button>
-          ) : (
-            <Button
-              onClick={() => router.push('/dashboard/reels-creator/manual')}
-              className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              New Manual Reel
-            </Button>
-          )}
-        </div>
       </div>
 
       {/* Tabs Layout */}
@@ -806,120 +787,156 @@ export default function ReelsDashboard() {
           ) : manualReels.length === 0 ? (
             <div className="bg-white rounded-3xl border border-stone-200 p-12 text-center shadow-sm">
               <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Sparkles className="h-10 w-10" />
+                <Sparkles className="h-10 w-10 animate-pulse" />
               </div>
               <h2 className="text-xl font-bold text-stone-900 mb-2">No Manual Reels Yet</h2>
               <p className="text-stone-500 mb-8 max-w-md mx-auto">
                 Create a manual product reel to customize video assets, voiceovers, and scripts before posting.
               </p>
-              <Button onClick={() => router.push('/dashboard/reels-creator/manual')} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl">
+              <Button onClick={() => router.push('/dashboard/reels-creator/manual')} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold h-11 px-6">
                 Create Your First Manual Reel
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
-              {manualReels.map((reel: any) => {
-                const badge = getReelStatus(reel);
-                const hasThumbnail = !!reel.thumbnail;
-                const thumbnailPath = hasThumbnail ? reel.thumbnail : '/assets/styles/cinematic.jpg';
-                return (
-                  <div key={reel.id} className="border border-stone-200 rounded-2xl bg-white overflow-hidden flex flex-col shadow-sm group relative">
-                    <div className="w-full h-40 relative bg-stone-100 border-b border-stone-200 overflow-hidden">
-                      <img
-                        src={thumbnailPath}
-                        alt="Reel preview"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                      <div className="absolute top-3 right-3 z-10">
-                        <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full flex items-center gap-1.5 shadow-sm border backdrop-blur-md ${badge.classes}`}>
-                          {badge.icon}
-                          {badge.label}
-                        </span>
-                      </div>
-                      {reel.videoUrl && (
-                        <a
-                          href={reel.videoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-xs"
-                        >
-                          <div className="w-12 h-12 rounded-full bg-white/95 flex items-center justify-center shadow-lg text-violet-600 hover:scale-110 transition-transform">
-                            <Play className="h-6 w-6 fill-violet-600 ml-1" />
-                          </div>
-                        </a>
-                      )}
-                    </div>
-
-                    <div className="p-5 flex-1 flex flex-col justify-between">
-                      <div>
-                        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">
-                          {reel.createdAt ? format(new Date(reel.createdAt), 'MMM d, yyyy @ p') : 'Recently'}
-                        </p>
-                        <p className="text-sm text-stone-700 font-medium line-clamp-3 mb-4 italic leading-relaxed text-left">
-                          "{reel.script || 'No script text generated'}"
-                        </p>
-                      </div>
-
-                      <div className="space-y-3">
-                        {/* Live Log or Timeline */}
-                        {((reel.status === 'GENERATING' && reel.statusMessage) || reel.status === 'READY') && (
-                          <GenerationTimeline statusMessage={reel.statusMessage || ''} metadata={reel.metadata} isCompleted={reel.status === 'READY'} />
-                        )}
-
-                        {renderPostStatus(reel)}
-
-                        {/* Error log display */}
-                        {(reel.status === 'FAILED' || reel.status === 'PARTIALLY_FAILED') && reel.statusMessage && (
-                          <div className="w-full mt-2 text-xs text-red-650 bg-red-50 p-2.5 rounded-lg border border-red-100 font-mono break-all shadow-sm">
-                            <strong>Error:</strong> {reel.statusMessage}
-                          </div>
-                        )}
-
-                        {reel.metadata && (
-                          <button
-                            type="button"
-                            onClick={() => handleViewDetails(reel)}
-                            className="w-full flex items-center justify-center gap-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-250/50 text-stone-700 font-semibold text-xs py-2 rounded-xl transition-colors shadow-2xs"
-                          >
-                            <Sparkles className="h-3.5 w-3.5 text-violet-500" />
-                            Edit / Re-compose script
-                          </button>
-                        )}
-
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="flex items-center justify-between mb-4 border-b border-stone-150 pb-4">
+                <h2 className="text-xl font-bold text-stone-900">All Manual Reels</h2>
+                <Button
+                  onClick={() => router.push('/dashboard/reels-creator/manual')}
+                  className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> New Manual Reel
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {manualReels.map((reel: any) => {
+                  const badge = getReelStatus(reel);
+                  const hasThumbnail = !!reel.thumbnail;
+                  const thumbnailPath = hasThumbnail ? reel.thumbnail : '/assets/styles/cinematic.jpg';
+                  return (
+                    <div key={reel.id} className="border border-stone-200 rounded-2xl bg-white overflow-hidden flex flex-col shadow-sm group relative">
+                      <div className="w-full h-40 relative bg-stone-100 border-b border-stone-200 overflow-hidden">
+                        <img
+                          src={thumbnailPath}
+                          alt="Reel preview"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full flex items-center gap-1.5 shadow-sm border backdrop-blur-md ${badge.classes}`}>
+                            {badge.icon}
+                            {badge.label}
+                          </span>
+                        </div>
                         {reel.videoUrl && (
-                          <div className="pt-3 border-t border-stone-100 flex gap-2">
-                            <a
-                              href={reel.videoUrl}
-                              download
-                              className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors shadow-2xs"
-                            >
-                              <Video className="h-3.5 w-3.5 text-violet-600" />
-                              Download
-                            </a>
-                            <Link
-                              href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(reel.socialChannels || '[]')}`}
-                              className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-violet-650 border border-transparent rounded-xl text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
-                            >
-                              <Send className="h-3.5 w-3.5" />
-                              Compose
-                            </Link>
-                          </div>
+                          <a
+                            href={reel.videoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-xs"
+                          >
+                            <div className="w-12 h-12 rounded-full bg-white/95 flex items-center justify-center shadow-lg text-violet-600 hover:scale-110 transition-transform">
+                              <Play className="h-6 w-6 fill-violet-600 ml-1" />
+                            </div>
+                          </a>
                         )}
                       </div>
+
+                      <div className="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">
+                            {reel.createdAt ? format(new Date(reel.createdAt), 'MMM d, yyyy @ p') : 'Recently'}
+                          </p>
+                          <p className="text-sm text-stone-700 font-medium line-clamp-3 mb-4 italic leading-relaxed text-left">
+                            "{reel.script || 'No script text generated'}"
+                          </p>
+                        </div>
+
+                        <div className="space-y-3">
+                          {/* Live Log or Timeline */}
+                          {((reel.status === 'GENERATING' && reel.statusMessage) || reel.status === 'READY') && (
+                            <GenerationTimeline statusMessage={reel.statusMessage || ''} metadata={reel.metadata} isCompleted={reel.status === 'READY'} />
+                          )}
+
+                          {renderPostStatus(reel)}
+
+                          {/* Error log display */}
+                          {(reel.status === 'FAILED' || reel.status === 'PARTIALLY_FAILED') && reel.statusMessage && (
+                            <div className="w-full mt-2 text-xs text-red-650 bg-red-50 p-2.5 rounded-lg border border-red-100 font-mono break-all shadow-sm">
+                              <strong>Error:</strong> {reel.statusMessage}
+                            </div>
+                          )}
+
+                          {reel.metadata && (
+                            <button
+                              type="button"
+                              onClick={() => handleViewDetails(reel)}
+                              className="w-full flex items-center justify-center gap-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-250/50 text-stone-700 font-semibold text-xs py-2 rounded-xl transition-colors shadow-2xs"
+                            >
+                              <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+                              Edit / Re-compose script
+                            </button>
+                          )}
+
+                          {reel.videoUrl && (
+                            <div className="pt-3 border-t border-stone-100 flex gap-2">
+                              <a
+                                href={reel.videoUrl}
+                                download
+                                className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors shadow-2xs"
+                              >
+                                <Video className="h-3.5 w-3.5 text-violet-600" />
+                                Download
+                              </a>
+                              <Link
+                                href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(reel.socialChannels || '[]')}`}
+                                className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-violet-650 border border-transparent rounded-xl text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
+                              >
+                                <Send className="h-3.5 w-3.5" />
+                                Compose
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
         </>
       ) : (
         <>
           {/* Automated Campaigns Section */}
-          {automatedCampaigns && automatedCampaigns.length > 0 && (
-            <div className="mb-8 space-y-6">
-              <h2 className="text-xl font-bold text-stone-900">Active Campaigns</h2>
+          {loadingCampaigns ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600" />
+            </div>
+          ) : !automatedCampaigns || automatedCampaigns.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-stone-200 p-12 text-center shadow-sm animate-in fade-in duration-300">
+              <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Sparkles className="h-10 w-10 animate-pulse" />
+              </div>
+              <h2 className="text-xl font-bold text-stone-900 mb-2">No AI Campaigns Yet</h2>
+              <p className="text-stone-500 mb-8 max-w-md mx-auto">
+                Connect your Shopify or website store to auto-discover products, generate reels, and auto-post them on a schedule.
+              </p>
+              <Button onClick={() => router.push('/dashboard/reels-creator/ai-product-reel')} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold h-11 px-6">
+                Create Your First Campaign
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="flex items-center justify-between mb-4 border-b border-stone-150 pb-4">
+                <h2 className="text-xl font-bold text-stone-900">Active Campaigns</h2>
+                <Button
+                  onClick={() => router.push('/dashboard/reels-creator/ai-product-reel')}
+                  className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" /> New Campaign
+                </Button>
+              </div>
               <div className="grid gap-6">
                 {automatedCampaigns.map((campaign: any) => {
                   const campaignReels = productReels?.filter((r: any) => r.metadata?.campaignId === campaign.id) || [];
@@ -1039,7 +1056,7 @@ export default function ReelsDashboard() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="my-1" />
                             <DropdownMenuItem
-                              className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-red-600 hover:bg-red-50 focus:bg-red-50 transition-colors"
+                              className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-red-650 hover:bg-red-55 border-b border-stone-50"
                               onClick={() => deleteCampaignMutation.mutate(campaign.id)}
                               disabled={deleteCampaignMutation.isPending}
                             >
@@ -1107,8 +1124,6 @@ export default function ReelsDashboard() {
                                       "{reel.script || 'No script text generated'}"
                                     </p>
                                     
-                                    {/* Config details moved to parent card */}
-                                    
                                     {/* Detailed Live Log for Generation */}
                                     {((reel.status === 'GENERATING' && reel.statusMessage) || reel.status === 'READY') && (
                                       <GenerationTimeline statusMessage={reel.statusMessage || ''} metadata={reel.metadata} isCompleted={reel.status === 'READY'} />
@@ -1141,7 +1156,7 @@ export default function ReelsDashboard() {
                                         {reel.status === 'READY' && (
                                           <Link
                                             href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(campaign.socialChannels || '[]')}`}
-                                            className="flex items-center justify-center gap-1.5 w-full py-2 bg-violet-600 border border-transparent rounded-lg text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
+                                            className="flex items-center justify-center gap-1.5 w-full py-2 bg-violet-650 border border-transparent rounded-lg text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
                                           >
                                             <Send className="h-3.5 w-3.5" />
                                             Post Now
@@ -1163,8 +1178,6 @@ export default function ReelsDashboard() {
               </div>
             </div>
           )}
-
-
         </>
       )}
 

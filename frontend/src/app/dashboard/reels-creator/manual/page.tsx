@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, ArrowLeft, Link2, Share2, CheckCircle2, Mic, Languages, Video, Upload, X, ImageIcon, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowLeft, Link2, Share2, CheckCircle2, Mic, Languages, Video, Upload, X, ImageIcon, Loader2, ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -65,6 +65,12 @@ const VOICE_EMOTION_PRESETS = [
   { label: '🎭 Dramatic Storyteller', prompt: 'Speak dramatically with expressive storytelling emotion and pauses' },
 ];
 
+interface AssetFile {
+  file: File;
+  preview: string;
+  type: 'IMAGE' | 'VIDEO';
+}
+
 export default function ManualReelPage() {
   const router = useRouter();
   
@@ -87,9 +93,8 @@ export default function ManualReelPage() {
   const [statusMessage, setStatusMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Images state (combines imported and custom uploaded ones)
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  // Unified Assets State (contains File, preview URL, and type)
+  const [assets, setAssets] = useState<AssetFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: accountsData } = useQuery({
@@ -123,8 +128,7 @@ export default function ManualReelPage() {
       if (data.description) setProductDescription(data.description);
       
       if (data.images && data.images.length > 0) {
-        const fetchedFiles: File[] = [];
-        const fetchedPreviews: string[] = [];
+        const fetchedAssets: AssetFile[] = [];
         for (let i = 0; i < Math.min(data.images.length, 4); i++) {
           try {
             const proxyUrl = `/api/scrape/proxy-image?url=${encodeURIComponent(data.images[i])}`;
@@ -132,16 +136,18 @@ export default function ManualReelPage() {
             if (imgRes.ok) {
               const blob = await imgRes.blob();
               const file = new File([blob], `imported-product-${i + 1}.jpg`, { type: blob.type || 'image/jpeg' });
-              fetchedFiles.push(file);
-              fetchedPreviews.push(URL.createObjectURL(file));
+              fetchedAssets.push({
+                file,
+                preview: URL.createObjectURL(file),
+                type: 'IMAGE'
+              });
             }
           } catch (e) {
             console.warn('Failed to proxy scraped image', e);
           }
         }
-        if (fetchedFiles.length > 0) {
-          setImageFiles(prev => [...prev, ...fetchedFiles].slice(0, 4));
-          setImagePreviews(prev => [...prev, ...fetchedPreviews].slice(0, 4));
+        if (fetchedAssets.length > 0) {
+          setAssets(prev => [...prev, ...fetchedAssets].slice(0, 4));
         }
       }
       setScrapePhase('done');
@@ -153,19 +159,33 @@ export default function ManualReelPage() {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      const newFiles = [...imageFiles, ...selectedFiles].slice(0, 4);
-      setImageFiles(newFiles);
-      setImagePreviews(newFiles.map(f => URL.createObjectURL(f)));
+      const newAssets: AssetFile[] = selectedFiles.map(file => ({
+        file,
+        preview: URL.createObjectURL(file),
+        type: file.type.startsWith('video/') ? 'VIDEO' : 'IMAGE'
+      }));
+      setAssets(prev => [...prev, ...newAssets].slice(0, 4));
     }
   };
 
-  const removeImageFile = (index: number) => {
-    const updatedFiles = imageFiles.filter((_, i) => i !== index);
-    setImageFiles(updatedFiles);
-    setImagePreviews(updatedFiles.map(f => URL.createObjectURL(f)));
+  const removeAsset = (index: number) => {
+    setAssets(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const moveAsset = (index: number, direction: 'left' | 'right') => {
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= assets.length) return;
+
+    setAssets(prev => {
+      const copy = [...prev];
+      const temp = copy[index];
+      copy[index] = copy[targetIndex];
+      copy[targetIndex] = temp;
+      return copy;
+    });
   };
 
   const toggleSocialChannel = (channel: string) => {
@@ -179,13 +199,13 @@ export default function ManualReelPage() {
       alert("Please enter a Product Name");
       return;
     }
-    if (imageFiles.length === 0) {
-      alert("Please upload or import at least one product photo");
+    if (assets.length === 0) {
+      alert("Please upload or import at least one product photo or video");
       return;
     }
 
     setIsCreating(true);
-    setStatusMessage("Uploading product images to storage...");
+    setStatusMessage("Uploading visual assets to storage...");
     setError(null);
 
     try {
@@ -193,10 +213,11 @@ export default function ManualReelPage() {
       if (!token) throw new Error('No token found');
 
       // Upload files first
-      const uploadedUrls: string[] = [];
-      for (const file of imageFiles) {
-        const url = await uploadFile(file);
-        uploadedUrls.push(url);
+      const uploadedUrls: { url: string; type: 'IMAGE' | 'VIDEO' }[] = [];
+      for (const asset of assets) {
+        setStatusMessage(`Uploading ${asset.type.toLowerCase()} asset...`);
+        const url = await uploadFile(asset.file);
+        uploadedUrls.push({ url, type: asset.type });
       }
 
       setStatusMessage("Enqueuing custom reel generation with Google Veo...");
@@ -204,7 +225,7 @@ export default function ManualReelPage() {
       const payload = {
         prompt: `Create a manual premium product commercial reel for "${productName}".`,
         productDescription: productDescription || productName,
-        assets: uploadedUrls.map(url => ({ url, type: 'IMAGE' })),
+        assets: uploadedUrls,
         language,
         voiceId,
         voicePrompt,
@@ -352,16 +373,16 @@ export default function ManualReelPage() {
                 <div className="bg-stone-50/70 border border-dashed border-stone-200 hover:border-violet-300 rounded-2xl p-5 space-y-3 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-extrabold text-sm text-stone-900">Product Photos</h4>
-                      <p className="text-xs text-stone-500 font-medium mt-0.5">Will be featured in the final reel ({imagePreviews.length}/4)</p>
+                      <h4 className="font-extrabold text-sm text-stone-900">Product Photos & Videos</h4>
+                      <p className="text-xs text-stone-500 font-medium mt-0.5">Drag to rearrange. Up to 4 files total. ({assets.length}/4)</p>
                     </div>
-                    {imagePreviews.length < 4 && (
+                    {assets.length < 4 && (
                       <Button 
                         type="button"
                         onClick={() => fileInputRef.current?.click()} 
                         className="bg-stone-900 hover:bg-black text-white text-xs font-bold rounded-xl h-8 px-3.5 shadow-2xs"
                       >
-                        + Add Photo
+                        + Upload File
                       </Button>
                     )}
                   </div>
@@ -369,24 +390,79 @@ export default function ManualReelPage() {
                   <input 
                     type="file" 
                     ref={fileInputRef} 
-                    onChange={handleImageChange} 
+                    onChange={handleFileChange} 
                     className="hidden" 
-                    accept="image/*" 
+                    accept="image/*,video/*" 
                     multiple 
                   />
 
-                  {imagePreviews.length > 0 ? (
-                    <div className="grid grid-cols-4 gap-2.5 pt-1">
-                      {imagePreviews.map((src, idx) => (
-                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-sm group">
-                          <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); removeImageFile(idx); }}
-                            className="absolute top-1 right-1 w-5 h-5 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+                  {assets.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
+                      {assets.map((asset, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-sm group bg-stone-900 flex flex-col justify-between">
+                          
+                          {/* Media Preview */}
+                          <div className="flex-1 w-full h-full relative overflow-hidden">
+                            {asset.type === 'VIDEO' ? (
+                              <video 
+                                src={asset.preview} 
+                                className="w-full h-full object-cover" 
+                                muted 
+                                loop 
+                                playsInline 
+                                autoPlay
+                              />
+                            ) : (
+                              <img 
+                                src={asset.preview} 
+                                alt={`Product Asset ${idx+1}`} 
+                                className="w-full h-full object-cover" 
+                              />
+                            )}
+
+                            {/* Badge */}
+                            <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-black/60 text-white border border-white/20 uppercase tracking-widest">
+                              {asset.type}
+                            </span>
+                          </div>
+
+                          {/* Controls (Move & Delete) */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                            <div className="flex justify-end">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeAsset(idx); }}
+                                className="w-6 h-6 bg-red-650 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            
+                            {/* Reordering Controls */}
+                            <div className="flex justify-center gap-1.5 bg-black/60 rounded-xl p-1 backdrop-blur-xs">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => moveAsset(idx, 'left')}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                                title="Move Left"
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </button>
+                              <span className="text-[10px] font-bold text-white/80 self-center px-1">
+                                #{idx + 1}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={idx === assets.length - 1}
+                                onClick={() => moveAsset(idx, 'right')}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                                title="Move Right"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -397,8 +473,8 @@ export default function ManualReelPage() {
                     >
                       <Upload className="w-8 h-8 text-stone-400 mb-1.5" />
                       <p className="font-bold text-xs text-stone-750 text-center">
-                        Upload Product Photos<br/>
-                        <span className="text-stone-400 font-normal text-[10px]">Select front, back, or detail close-ups</span>
+                        Upload Product Photos / Videos<br/>
+                        <span className="text-stone-400 font-normal text-[10px]">Select image or video files (up to 4)</span>
                       </p>
                     </div>
                   )}
@@ -408,7 +484,7 @@ export default function ManualReelPage() {
 
             {/* Language & Voice Grid */}
             <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-xs space-y-5">
-              <div className="flex items-center gap-2 text-blue-650 border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-2 text-blue-655 border-b border-stone-100 pb-3">
                 <Mic className="h-5 w-5" />
                 <h3 className="text-sm font-bold uppercase tracking-wider">Voiceover AI</h3>
               </div>
@@ -503,7 +579,7 @@ export default function ManualReelPage() {
               {/* Image to Video */}
               <div className={`bg-white p-5 rounded-2xl border shadow-2xs transition-all ${imageToVideo ? 'border-violet-400 ring-1 ring-violet-300' : 'border-stone-200'}`}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-violet-600">
+                  <div className="flex items-center gap-3 text-violet-650">
                     <Video className="h-5 w-5 shrink-0" />
                     <div>
                       <h3 className="text-xs font-black uppercase tracking-wider">Image to Video</h3>
@@ -526,7 +602,7 @@ export default function ManualReelPage() {
               {/* Ingredients to Video */}
               <div className={`bg-white p-5 rounded-2xl border shadow-2xs transition-all ${ingredientsToVideo ? 'border-violet-400 ring-1 ring-violet-300' : 'border-stone-200'}`}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-violet-600">
+                  <div className="flex items-center gap-3 text-violet-650">
                     <Video className="h-5 w-5 shrink-0" />
                     <div>
                       <h3 className="text-xs font-black uppercase tracking-wider">Ingredients to Video</h3>
@@ -608,7 +684,7 @@ export default function ManualReelPage() {
                   <div>
                     <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Visual Assets</span>
                     <div className="text-sm font-semibold text-violet-400">
-                      {imageFiles.length} Photos Selected
+                      {assets.length} Files Selected
                     </div>
                   </div>
                 </div>
@@ -638,7 +714,7 @@ export default function ManualReelPage() {
                 
                 <Button
                   onClick={handleGenerateManualReel}
-                  disabled={isCreating || !productName || imageFiles.length === 0}
+                  disabled={isCreating || !productName || assets.length === 0}
                   className="w-full h-12 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black rounded-xl transition-all hover:-translate-y-0.5 active:translate-y-0 text-xs uppercase tracking-widest gap-2"
                 >
                   {isCreating ? (
