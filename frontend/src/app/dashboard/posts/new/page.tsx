@@ -531,7 +531,7 @@ export default function NewPostPage() {
     const params = new URLSearchParams(window.location.search);
     const draftId = params.get("id");
     const videoUrlParam = params.get("videoUrl");
-    const contentParam = params.get("content");
+    const contentParam = params.get("content") || params.get("caption");
     const platformsParam = params.get("platforms");
 
     if (draftId) {

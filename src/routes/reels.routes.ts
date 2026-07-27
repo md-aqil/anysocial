@@ -457,12 +457,24 @@ router.post("/generate-product-reel", requireAuth, async (req: any, res: any) =>
     const userId = req.userId;
     const validatedData = generateProductReelSchema.parse(req.body);
 
+    let scriptText = validatedData.scriptText;
+    if (!scriptText) {
+      const targetLanguage = validatedData.language || 'English';
+      const aiPrompt = `Create a short viral TikTok/Reels promotional video voiceover script for this product: ${validatedData.productDescription || 'Product'}. Focus on high energy, hooks, and benefits. IMPORTANT: Write the script entirely in ${targetLanguage}. Output ONLY the spoken voiceover text in ${targetLanguage}. Do not include scene descriptions, JSON, brackets, or any other formatting. Just the raw dialogue.`;
+      try {
+        scriptText = await aiOrchestrator.generateContent(aiPrompt, undefined, false);
+      } catch (e: any) {
+        console.error("Failed to generate script inline:", e);
+        scriptText = aiPrompt;
+      }
+    }
+
     const reel = await prisma.reel.create({
       data: {
         userId,
         type: "PRODUCT",
         status: "PENDING",
-        script: validatedData.scriptText || validatedData.prompt || null,
+        script: scriptText || validatedData.prompt || null,
         assets: {
           create: validatedData.assets.map((asset) => ({
             url: asset.url,
@@ -477,7 +489,7 @@ router.post("/generate-product-reel", requireAuth, async (req: any, res: any) =>
       reelId: reel.id,
       enableMusic: validatedData.enableMusic,
       enableVoice: validatedData.enableVoice,
-      scriptText: validatedData.scriptText,
+      scriptText: scriptText,
       hookText: validatedData.hookText,
       language: validatedData.language,
       voiceId: validatedData.voiceId,

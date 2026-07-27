@@ -889,8 +889,8 @@ export default function ReelsDashboard() {
                                 Download
                               </a>
                               <Link
-                                href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(reel.socialChannels || '[]')}`}
-                                className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-violet-650 border border-transparent rounded-xl text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
+                                href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&caption=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(reel.socialChannels || '[]')}`}
+                                className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-violet-600 border border-transparent rounded-xl text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
                               >
                                 <Send className="h-3.5 w-3.5" />
                                 Compose
@@ -1155,8 +1155,8 @@ export default function ReelsDashboard() {
                                         </div>
                                         {reel.status === 'READY' && (
                                           <Link
-                                            href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(campaign.socialChannels || '[]')}`}
-                                            className="flex items-center justify-center gap-1.5 w-full py-2 bg-violet-650 border border-transparent rounded-lg text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
+                                            href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&caption=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(campaign.socialChannels || '[]')}`}
+                                            className="flex items-center justify-center gap-1.5 w-full py-2 bg-violet-600 border border-transparent rounded-lg text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
                                           >
                                             <Send className="h-3.5 w-3.5" />
                                             Post Now

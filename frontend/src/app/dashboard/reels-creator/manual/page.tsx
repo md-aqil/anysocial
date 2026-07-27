@@ -92,6 +92,7 @@ export default function ManualReelPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [enableVoice, setEnableVoice] = useState(true);
 
   // Unified Assets State (contains File, preview URL, and type)
   const [assets, setAssets] = useState<AssetFile[]>([]);
@@ -232,7 +233,7 @@ export default function ManualReelPage() {
         ingredientsToVideo,
         imageToVideo,
         enableMusic: true,
-        enableVoice: true,
+        enableVoice,
       };
 
       const res = await fetch('/api/reels/generate-product-reel', {
@@ -483,95 +484,115 @@ export default function ManualReelPage() {
             </div>
 
             {/* Language & Voice Grid */}
-            <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-xs space-y-5">
-              <div className="flex items-center gap-2 text-blue-655 border-b border-stone-100 pb-3">
-                <Mic className="h-5 w-5" />
-                <h3 className="text-sm font-bold uppercase tracking-wider">Voiceover AI</h3>
+            <div className={cn("bg-white p-6 rounded-2xl border shadow-xs space-y-5 transition-all duration-205", enableVoice ? 'border-stone-200' : 'border-stone-200 opacity-60 bg-stone-50/50')}>
+              <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                <div className="flex items-center gap-2 text-blue-650">
+                  <Mic className="h-5 w-5" />
+                  <h3 className="text-sm font-bold uppercase tracking-wider">Voiceover AI</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-stone-500">{enableVoice ? 'Enabled' : 'Disabled'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setEnableVoice(v => !v)}
+                    className={cn(
+                      "relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none",
+                      enableVoice ? 'bg-blue-600' : 'bg-stone-200'
+                    )}
+                  >
+                    <span className={cn(
+                      "inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform",
+                      enableVoice ? 'translate-x-4' : 'translate-x-1'
+                    )} />
+                  </button>
+                </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="md:col-span-1 space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase flex items-center gap-1"><Languages className="w-3 h-3"/> Language</label>
-                  <select
-                    value={language}
-                    onChange={(e) => {
-                      setLanguage(e.target.value);
-                      setVoiceId(VOICES_BY_LANGUAGE[e.target.value][0].id);
-                    }}
-                    className="w-full h-10 px-3 border border-stone-200 rounded-lg bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {Object.keys(VOICES_BY_LANGUAGE).map(lang => (
-                      <option key={lang} value={lang}>{lang}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="md:col-span-3 space-y-2">
-                  <label className="text-xs font-bold text-stone-500 uppercase">Voice Model</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {VOICES_BY_LANGUAGE[language].map(voice => (
-                      <button
-                        key={voice.id}
-                        onClick={() => setVoiceId(voice.id)}
-                        className={cn(
-                          "p-2 rounded-lg border text-left transition-all flex flex-col justify-center",
-                          voiceId === voice.id 
-                            ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' 
-                            : 'border-stone-200 bg-stone-50 hover:bg-stone-100'
-                        )}
-                      >
-                        <span className="text-xs font-bold text-stone-900">{voice.name}</span>
-                        <span className="text-[10px] text-stone-500">{voice.description}</span>
-                      </button>
-                    ))}
+              {enableVoice && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-in fade-in duration-200">
+                  <div className="md:col-span-1 space-y-2">
+                    <label className="text-xs font-bold text-stone-500 uppercase flex items-center gap-1"><Languages className="w-3 h-3"/> Language</label>
+                    <select
+                      value={language}
+                      onChange={(e) => {
+                        setLanguage(e.target.value);
+                        setVoiceId(VOICES_BY_LANGUAGE[e.target.value][0].id);
+                      }}
+                      className="w-full h-10 px-3 border border-stone-200 rounded-lg bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {Object.keys(VOICES_BY_LANGUAGE).map(lang => (
+                        <option key={lang} value={lang}>{lang}</option>
+                      ))}
+                    </select>
                   </div>
-                </div>
-
-                <div className="md:col-span-4 space-y-3 pt-2 border-t border-stone-100">
-                  <label className="text-xs font-bold text-stone-500 uppercase flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <span>Voice Style / Emotion</span>
-                    </span>
-                    {voicePrompt && (
-                      <button
-                        type="button"
-                        onClick={() => setVoicePrompt('')}
-                        className="text-[10px] text-stone-400 hover:text-stone-600 underline font-semibold"
-                      >
-                        Clear Custom Style
-                      </button>
-                    )}
-                  </label>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {VOICE_EMOTION_PRESETS.map((preset, idx) => {
-                      const isActive = voicePrompt === preset.prompt;
-                      return (
+                  
+                  <div className="md:col-span-3 space-y-2">
+                    <label className="text-xs font-bold text-stone-500 uppercase">Voice Model</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {VOICES_BY_LANGUAGE[language].map(voice => (
                         <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setVoicePrompt(isActive ? '' : preset.prompt)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
-                            isActive
-                              ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20 scale-[1.02]'
-                              : 'bg-stone-50 hover:bg-amber-50 text-stone-700 hover:text-amber-900 border-stone-200 hover:border-amber-300'
-                          }`}
+                          key={voice.id}
+                          onClick={() => setVoiceId(voice.id)}
+                          className={cn(
+                            "p-2 rounded-lg border text-left transition-all flex flex-col justify-center",
+                            voiceId === voice.id 
+                              ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' 
+                              : 'border-stone-200 bg-stone-50 hover:bg-stone-100'
+                          )}
                         >
-                          <span>{preset.label}</span>
+                          <span className="text-xs font-bold text-stone-900">{voice.name}</span>
+                          <span className="text-[10px] text-stone-500">{voice.description}</span>
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
 
-                  <input
-                    type="text"
-                    value={voicePrompt}
-                    onChange={(e) => setVoicePrompt(e.target.value)}
-                    placeholder="e.g. Speak in a luxurious aesthetic whisper with calm confidence..."
-                    className="w-full h-10 px-3 border border-stone-200 rounded-lg bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-stone-400"
-                  />
+                  <div className="md:col-span-4 space-y-3 pt-2 border-t border-stone-100">
+                    <label className="text-xs font-bold text-stone-500 uppercase flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <span>Voice Style / Emotion</span>
+                      </span>
+                      {voicePrompt && (
+                        <button
+                          type="button"
+                          onClick={() => setVoicePrompt('')}
+                          className="text-[10px] text-stone-400 hover:text-stone-600 underline font-semibold"
+                        >
+                          Clear Custom Style
+                        </button>
+                      )}
+                    </label>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {VOICE_EMOTION_PRESETS.map((preset, idx) => {
+                        const isActive = voicePrompt === preset.prompt;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setVoicePrompt(isActive ? '' : preset.prompt)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                              isActive
+                                ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20 scale-[1.02]'
+                                : 'bg-stone-50 hover:bg-amber-50 text-stone-700 hover:text-amber-900 border-stone-200 hover:border-amber-300'
+                            }`}
+                          >
+                            <span>{preset.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <input
+                      type="text"
+                      value={voicePrompt}
+                      onChange={(e) => setVoicePrompt(e.target.value)}
+                      placeholder="e.g. Speak in a luxurious aesthetic whisper with calm confidence..."
+                      className="w-full h-10 px-3 border border-stone-200 rounded-lg bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-stone-400"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Video Motion Settings */}
@@ -579,7 +600,7 @@ export default function ManualReelPage() {
               {/* Image to Video */}
               <div className={`bg-white p-5 rounded-2xl border shadow-2xs transition-all ${imageToVideo ? 'border-violet-400 ring-1 ring-violet-300' : 'border-stone-200'}`}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-violet-650">
+                  <div className="flex items-center gap-3 text-violet-600">
                     <Video className="h-5 w-5 shrink-0" />
                     <div>
                       <h3 className="text-xs font-black uppercase tracking-wider">Image to Video</h3>
@@ -602,7 +623,7 @@ export default function ManualReelPage() {
               {/* Ingredients to Video */}
               <div className={`bg-white p-5 rounded-2xl border shadow-2xs transition-all ${ingredientsToVideo ? 'border-violet-400 ring-1 ring-violet-300' : 'border-stone-200'}`}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-violet-650">
+                  <div className="flex items-center gap-3 text-violet-600">
                     <Video className="h-5 w-5 shrink-0" />
                     <div>
                       <h3 className="text-xs font-black uppercase tracking-wider">Ingredients to Video</h3>
