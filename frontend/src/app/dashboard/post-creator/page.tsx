@@ -44,6 +44,7 @@ export default function PostCreatorPage() {
   const [platform, setPlatform] = useState('Instagram Feed (4:5)');
   const [mood, setMood] = useState('High energy');
   const [specialInstructions, setSpecialInstructions] = useState('');
+  const [useOriginalImages, setUseOriginalImages] = useState(false);
   
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -528,11 +529,14 @@ export default function PostCreatorPage() {
 
     try {
       const generatedResults: any[] = [];
+      let idx = 0;
       for (const direction of dirsToUse) {
           const formData = new FormData();
           formData.append('productName', productName);
           formData.append('direction', JSON.stringify(direction));
           formData.append('platform', platform);
+          formData.append('useOriginalImages', useOriginalImages.toString());
+          formData.append('directionIndex', idx.toString());
           if (specialInstructions) {
             formData.append('specialInstructions', specialInstructions);
           }
@@ -578,6 +582,7 @@ export default function PostCreatorPage() {
           if (generatedResults.length === 1) {
             setStep(3);
           }
+          idx++;
       }
       
       setActiveCampaign(prev => prev ? {
@@ -757,8 +762,23 @@ export default function PostCreatorPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Product Photos (Identity Lock) */}
+              {/* Keep Original Photos Toggle */}
+              <div className="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-xl p-3.5 shadow-2xs">
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-stone-850">Keep Original Product Photo(s)</span>
+                  <span className="text-[10px] text-stone-550">Use uploaded product photos directly without AI distortion</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUseOriginalImages(v => !v)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${useOriginalImages ? 'bg-[#D27D50]' : 'bg-stone-200'}`}
+                >
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${useOriginalImages ? 'translate-x-4' : 'translate-x-1'}`} />
+                </button>
+              </div>
+
+              {useOriginalImages ? (
+                /* Full width Product Photos only */
                 <div className="bg-stone-50/75 border border-stone-200 hover:border-amber-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
@@ -778,7 +798,7 @@ export default function PostCreatorPage() {
                   />
 
                   {imagePreviews.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       {imagePreviews.map((src, idx) => (
                         <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
                           <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
@@ -804,92 +824,154 @@ export default function PostCreatorPage() {
                   ) : (
                     <div 
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
+                      className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-8 px-4 hover:bg-stone-100/60 transition-colors"
                     >
-                      <Upload className="w-4 h-4 text-[#D27D50] mb-1.5" />
-                      <p className="font-extrabold text-[11px] text-stone-700 text-center">
-                        Upload Product Shots<br/>
-                        <span className="text-stone-400 font-normal text-[9px]">Front/angle views</span>
+                      <Upload className="w-6 h-6 text-[#D27D50] mb-2" />
+                      <p className="font-extrabold text-xs text-stone-700 text-center">
+                        Upload Product Photos<br/>
+                        <span className="text-stone-400 font-normal text-[10px]">Select image files (up to 4)</span>
                       </p>
                     </div>
                   )}
                 </div>
+              ) : (
+                /* 2-Column Split: Product Photos & Style Refs */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Product Photos (Identity Lock) */}
+                  <div className="bg-stone-50/75 border border-stone-200 hover:border-amber-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
+                        <span>Product Photos</span>
+                        <span className="text-[8px] font-black uppercase tracking-wider text-[#D27D50] bg-orange-50 px-2 py-0.5 rounded border border-orange-100">🔒 Lock</span>
+                      </h4>
+                      <span className="text-[10px] text-stone-400 font-bold">{imagePreviews.length}/4</span>
+                    </div>
 
-                {/* Pose & Style Reference Photos */}
-                <div className="bg-stone-50/75 border border-stone-200 hover:border-emerald-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
-                      <span>Style Refs</span>
-                      <span className="text-[8px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">🎨 Style</span>
-                    </h4>
-                    <span className="text-[10px] text-stone-400 font-bold">{referencePreviews.length}/4</span>
-                  </div>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleImageChange} 
+                      className="hidden" 
+                      accept="image/*" 
+                      multiple 
+                    />
 
-                  <input 
-                    type="file" 
-                    ref={refInputRef} 
-                    onChange={handleReferenceChange} 
-                    className="hidden" 
-                    accept="image/*" 
-                    multiple 
-                  />
-
-                  {referencePreviews.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      {referencePreviews.map((src, idx) => (
-                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
-                          <img src={src} alt={`Reference ${idx+1}`} className="w-full h-full object-cover" />
+                    {imagePreviews.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {imagePreviews.map((src, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
+                            <img src={src} alt={`Product ${idx+1}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); removeImageFile(idx); }}
+                              className="absolute top-1 right-1 w-4 h-4 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                        {imagePreviews.length < 4 && (
                           <button
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); removeReferenceFile(idx); }}
-                            className="absolute top-1 right-1 w-4 h-4 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="aspect-square rounded-xl border border-dashed border-stone-300 hover:border-amber-300 flex items-center justify-center bg-white text-stone-400 hover:text-stone-600 transition-colors text-lg font-bold"
                           >
-                            <X className="w-2.5 h-2.5" />
+                            +
                           </button>
-                        </div>
-                      ))}
-                      {referencePreviews.length < 4 && (
-                        <button
-                          type="button"
-                          onClick={() => refInputRef.current?.click()}
-                          className="aspect-square rounded-xl border border-dashed border-stone-300 hover:border-emerald-300 flex items-center justify-center bg-white text-stone-400 hover:text-stone-600 transition-colors text-lg font-bold"
-                        >
-                          +
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div 
-                      onClick={() => refInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
-                    >
-                      <ImageIcon className="w-4 h-4 text-emerald-600 mb-1.5" />
-                      <p className="font-extrabold text-[11px] text-stone-700 text-center">
-                        Upload Poses/Styles<br/>
-                        <span className="text-stone-400 font-normal text-[9px]">Model, lighting or angle</span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
+                      >
+                        <Upload className="w-4 h-4 text-[#D27D50] mb-1.5" />
+                        <p className="font-extrabold text-[11px] text-stone-700 text-center">
+                          Upload Product Shots<br/>
+                          <span className="text-stone-400 font-normal text-[9px]">Front/angle views</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-              {/* Special Style & Pose Instructions Input */}
-              <div className="bg-gradient-to-r from-amber-50/60 to-orange-50/30 border border-amber-200/80 rounded-2xl p-4 space-y-2">
-                <label className="block text-xs font-extrabold text-stone-900 tracking-wider flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#D27D50]" />
-                    Special Pose / AI Guidance <span className="text-stone-400 font-normal lowercase">(optional)</span>
-                  </span>
-                  <span className="text-[10px] text-[#D27D50] font-bold bg-white px-2 py-0.5 rounded-md border border-amber-200/80 shadow-2xs">Prompt Directive</span>
-                </label>
-                <textarea
-                  value={specialInstructions}
-                  onChange={e => setSpecialInstructions(e.target.value)}
-                  rows={2}
-                  className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-850 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-all shadow-2xs font-semibold"
-                  placeholder='e.g. "Focus on model posture and warm sunset studio lighting from Reference #1, keep model on a luxury marble balcony."'
-                />
-              </div>
+                  {/* Pose & Style Reference Photos */}
+                  <div className="bg-stone-50/75 border border-stone-200 hover:border-emerald-300 rounded-2xl p-4 space-y-2.5 transition-colors flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-xs text-stone-900 flex flex-wrap items-center gap-1.5">
+                        <span>Style Refs</span>
+                        <span className="text-[8px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">🎨 Style</span>
+                      </h4>
+                      <span className="text-[10px] text-stone-400 font-bold">{referencePreviews.length}/4</span>
+                    </div>
+
+                    <input 
+                      type="file" 
+                      ref={refInputRef} 
+                      onChange={handleReferenceChange} 
+                      className="hidden" 
+                      accept="image/*" 
+                      multiple 
+                    />
+
+                    {referencePreviews.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {referencePreviews.map((src, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-2xs group">
+                            <img src={src} alt={`Reference ${idx+1}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); removeReferenceFile(idx); }}
+                              className="absolute top-1 right-1 w-4 h-4 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                        {referencePreviews.length < 4 && (
+                          <button
+                            type="button"
+                            onClick={() => refInputRef.current?.click()}
+                            className="aspect-square rounded-xl border border-dashed border-stone-300 hover:border-emerald-300 flex items-center justify-center bg-white text-stone-400 hover:text-stone-600 transition-colors text-lg font-bold"
+                          >
+                            +
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => refInputRef.current?.click()}
+                        className="flex flex-col items-center justify-center cursor-pointer border border-dashed border-stone-300 rounded-xl py-6 px-4 hover:bg-stone-100/60 transition-colors"
+                      >
+                        <ImageIcon className="w-4 h-4 text-emerald-600 mb-1.5" />
+                        <p className="font-extrabold text-[11px] text-stone-700 text-center">
+                          Upload Poses/Styles<br/>
+                          <span className="text-stone-400 font-normal text-[9px]">Model, lighting or angle</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!useOriginalImages && (
+                /* Special Style & Pose Instructions Input */
+                <div className="bg-gradient-to-r from-amber-50/60 to-orange-50/30 border border-amber-200/80 rounded-2xl p-4 space-y-2 animate-in fade-in duration-300">
+                  <label className="block text-xs font-extrabold text-stone-900 tracking-wider flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#D27D50]" />
+                      Special Pose / AI Guidance <span className="text-stone-400 font-normal lowercase">(optional)</span>
+                    </span>
+                    <span className="text-[10px] text-[#D27D50] font-bold bg-white px-2 py-0.5 rounded-md border border-amber-200/80 shadow-2xs">Prompt Directive</span>
+                  </label>
+                  <textarea
+                    value={specialInstructions}
+                    onChange={e => setSpecialInstructions(e.target.value)}
+                    rows={2}
+                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-850 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-all shadow-2xs font-semibold"
+                    placeholder='e.g. "Focus on model posture and warm sunset studio lighting from Reference #1, keep model on a luxury marble balcony."'
+                  />
+                </div>
+              )}
             </div>
 
             {/* Right Column: Campaign Brief & Specs */}
@@ -967,23 +1049,23 @@ export default function PostCreatorPage() {
                           }}
                           className={`p-4 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between gap-3 ${
                             isSel 
-                              ? 'bg-stone-900 text-white border-stone-900 shadow-md scale-[1.005]' 
+                              ? 'bg-amber-50/60 border-[#D27D50] ring-1 ring-[#D27D50]/30 shadow-sm scale-[1.005]' 
                               : 'bg-white text-stone-750 border-stone-200 hover:border-amber-300 hover:shadow-2xs'
                           }`}
                         >
                           <div className="space-y-1">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-black uppercase ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
+                                <span className={`text-[10px] font-black uppercase ${isSel ? 'text-[#D27D50]' : 'text-stone-400'}`}>
                                   #{idx + 1}
                                 </span>
-                                <h5 className="font-extrabold text-xs">{dir.title}</h5>
+                                <h5 className={`font-extrabold text-xs ${isSel ? 'text-stone-900' : 'text-stone-800'}`}>{dir.title}</h5>
                               </div>
-                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${isSel ? 'bg-white/10 text-amber-200 border-white/20' : badge.color}`}>
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${isSel ? 'bg-white text-[#D27D50] border-orange-200/80 shadow-2xs' : badge.color}`}>
                                 {badge.text}
                               </span>
                             </div>
-                            <p className={`text-xs leading-relaxed ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
+                            <p className={`text-xs leading-relaxed ${isSel ? 'text-stone-700' : 'text-stone-500'}`}>
                               {dir.description || dir.visualSceneSetup}
                             </p>
                           </div>
@@ -1081,17 +1163,17 @@ export default function PostCreatorPage() {
 
             {/* Live Progress Preloader Bar inside the Card */}
             {activeCampaign.status !== 'completed' && (
-              <div className="bg-stone-900 text-white p-4 rounded-2xl border border-stone-800 shadow-md flex items-center justify-between gap-4 animate-in fade-in">
+              <div className="bg-gradient-to-r from-amber-50/50 via-stone-50 to-orange-50/30 p-4 rounded-2xl border border-amber-200/80 shadow-xs flex items-center justify-between gap-4 animate-in fade-in">
                 <div className="flex items-center gap-3">
-                  <div className="bg-amber-500/20 p-2.5 rounded-xl border border-amber-400/30">
-                    <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />
+                  <div className="bg-amber-500/10 p-2.5 rounded-xl border border-amber-400/20">
+                    <Loader2 className="w-5 h-5 text-[#D27D50] animate-spin" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-black uppercase text-amber-400 tracking-widest block">AI Art Director Engine</span>
-                    <p className="text-xs font-bold text-stone-200">{activeCampaign.progressMessage}</p>
+                    <span className="text-[10px] font-black uppercase text-[#D27D50] tracking-widest block">AI Art Director Engine</span>
+                    <p className="text-xs font-extrabold text-stone-700">{activeCampaign.progressMessage}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 border border-amber-400/30 px-3 py-1 rounded-full">Processing</span>
+                <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-3 py-1 rounded-full">Processing</span>
               </div>
             )}
 
@@ -1118,13 +1200,13 @@ export default function PostCreatorPage() {
                             : [...activeCampaign.selectedDirections, dir];
                           setActiveCampaign({ ...activeCampaign, selectedDirections: updated });
                         }}
-                        className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${isSel ? 'bg-stone-900 text-white border-stone-900 shadow-md scale-[1.02]' : 'bg-white text-stone-700 border-stone-200 hover:border-amber-300'}`}
+                        className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${isSel ? 'bg-amber-50/60 border-[#D27D50] ring-1 ring-[#D27D50]/30 shadow-sm scale-[1.02]' : 'bg-white text-stone-700 border-stone-200 hover:border-amber-300'}`}
                       >
-                        <span className={`text-[10px] font-black uppercase tracking-wider block mb-1 ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
+                        <span className={`text-[10px] font-black uppercase tracking-wider block mb-1 ${isSel ? 'text-[#D27D50]' : 'text-stone-400'}`}>
                           Dir #{idx+1}
                         </span>
-                        <h5 className="font-extrabold text-xs mb-1 line-clamp-1">{dir.title || dir.concept}</h5>
-                        <p className={`text-[11px] line-clamp-2 ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>{dir.visualSceneSetup || dir.description}</p>
+                        <h5 className="font-extrabold text-xs mb-1 line-clamp-1 text-stone-900">{dir.title || dir.concept}</h5>
+                        <p className={`text-[11px] line-clamp-2 ${isSel ? 'text-stone-700' : 'text-stone-500'}`}>{dir.visualSceneSetup || dir.description}</p>
                       </div>
                     );
                   })}
@@ -1194,7 +1276,11 @@ export default function PostCreatorPage() {
                 items: any[];
               }[] = [];
 
-              history.forEach((item) => {
+              const filteredHistory = activeCampaign
+                ? history.filter((item) => (item.productName || '').toLowerCase() !== activeCampaign.productName.toLowerCase())
+                : history;
+
+              filteredHistory.forEach((item) => {
                 const itemTime = new Date(item.createdAt).getTime();
                 const existing = campaignGroups.find((g) => {
                   if ((g.productName || '').toLowerCase() !== (item.productName || '').toLowerCase()) return false;
