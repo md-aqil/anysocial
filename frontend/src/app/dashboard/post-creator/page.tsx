@@ -328,6 +328,62 @@ export default function PostCreatorPage() {
     fetchHistory();
   }, []);
 
+  // Restore campaign state from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedStep = localStorage.getItem('postCreator_step');
+      if (savedStep) setStep(JSON.parse(savedStep) as 1 | 2 | 3);
+
+      const savedDirections = localStorage.getItem('postCreator_directions');
+      if (savedDirections) setDirections(JSON.parse(savedDirections));
+
+      const savedSelectedDirections = localStorage.getItem('postCreator_selectedDirections');
+      if (savedSelectedDirections) setSelectedDirections(JSON.parse(savedSelectedDirections));
+
+      const savedResults = localStorage.getItem('postCreator_results');
+      if (savedResults) setResults(JSON.parse(savedResults));
+
+      const savedActiveCampaign = localStorage.getItem('postCreator_activeCampaign');
+      if (savedActiveCampaign) {
+        const parsed = JSON.parse(savedActiveCampaign);
+        setActiveCampaign(parsed);
+      }
+
+      const savedFormFields = localStorage.getItem('postCreator_formFields');
+      if (savedFormFields) {
+        const fields = JSON.parse(savedFormFields);
+        if (fields.productName) setProductName(fields.productName);
+        if (fields.description) setDescription(fields.description);
+        if (fields.usp) setUsp(fields.usp);
+        if (fields.personality) setPersonality(fields.personality);
+        if (fields.audience) setAudience(fields.audience);
+        if (fields.platform) setPlatform(fields.platform);
+        if (fields.mood) setMood(fields.mood);
+        if (fields.specialInstructions) setSpecialInstructions(fields.specialInstructions);
+      }
+    } catch (e) {
+      console.error('Failed to restore post creator state:', e);
+    }
+  }, []);
+
+  // Persist campaign state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('postCreator_step', JSON.stringify(step));
+      localStorage.setItem('postCreator_directions', JSON.stringify(directions));
+      localStorage.setItem('postCreator_selectedDirections', JSON.stringify(selectedDirections));
+      localStorage.setItem('postCreator_results', JSON.stringify(results));
+      if (activeCampaign) {
+        localStorage.setItem('postCreator_activeCampaign', JSON.stringify(activeCampaign));
+      }
+      localStorage.setItem('postCreator_formFields', JSON.stringify({
+        productName, description, usp, personality, audience, platform, mood, specialInstructions
+      }));
+    } catch (e) {
+      console.error('Failed to persist post creator state:', e);
+    }
+  }, [step, directions, selectedDirections, results, activeCampaign, productName, description, usp, personality, audience, platform, mood, specialInstructions]);
+
   const fetchHistory = async () => {
     try {
       const res = await fetch('/api/ad-creator/history', {
@@ -448,7 +504,15 @@ export default function PostCreatorPage() {
     setDirections([]);
     setSelectedDirections([]);
     setResults([]);
+    setFailedDirections([]);
+    setActiveCampaign(null);
     setError(null);
+    localStorage.removeItem('postCreator_step');
+    localStorage.removeItem('postCreator_directions');
+    localStorage.removeItem('postCreator_selectedDirections');
+    localStorage.removeItem('postCreator_results');
+    localStorage.removeItem('postCreator_activeCampaign');
+    localStorage.removeItem('postCreator_formFields');
   };
 
   const handleGenerateDirections = async () => {
