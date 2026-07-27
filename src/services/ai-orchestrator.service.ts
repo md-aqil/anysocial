@@ -347,7 +347,6 @@ Make sure the output is a valid JSON object.`;
           }
           if (parsed.api_parameters?.aspect_ratio) {
              aspectRatio = parsed.api_parameters.aspect_ratio;
-             if (aspectRatio === "4:5") aspectRatio = "3:4"; // Map 4:5 to closest Imagen supported ratio
              finalPromptText += `\n\nAspect Ratio: ${parsed.api_parameters.aspect_ratio}`;
           }
         }
@@ -389,10 +388,51 @@ Make sure the output is a valid JSON object.`;
 
       const requestParts: any[] = [];
       if (prodImgList.length > 0 || styleImgList.length > 0) {
-        requestParts.push({ text: `You are a world-class commercial advertising photographer and AI art director.\n\nCRITICAL PRODUCT IDENTITY LOCK: Keep the product/garment/object from the Product Images 100% identical and unaltered in design, pattern, color, logo, and texture.\n\nCRITICAL CAMERA ANGLE & POSE MATCH: Replicate and match the exact camera angle, optical perspective, camera elevation, shot framing, model pose, stance, body posture, lighting setup, 3D environment, and visual aesthetics from the attached Style/Pose Reference Images to seamlessly feature the identical product.\n\nInstructions: ${finalPromptText}` });
+        const hasProduct = prodImgList.length > 0;
+        const hasStyle = styleImgList.length > 0;
+
+        const nanoBananaSystemPrompt = [
+          "You are a world-class commercial advertising photographer and AI art director using the Nano Banana 2 hyper-realistic imaging protocol. Follow these rules STRICTLY:",
+          "",
+          "CAMERA & OPTICAL PHYSICS:",
+          "- Use exact camera math: 85mm lens, f/2.0 aperture, ISO 200",
+          "- Natural directional lighting with rim highlights and soft shadow falloff",
+          "- Shallow depth of field with tack-sharp focus on the product",
+          "- High dynamic range, visible film grain, natural vignetting",
+          "- Do not use studio lighting unless explicitly requested",
+          "",
+          "PRODUCT IDENTITY LOCK (" + (hasProduct ? "MANDATORY" : "N/A - use product description as hero anchor") + "):",
+          hasProduct ? "- The product/garment/object from the Product Images is the STRICT HERO ANCHOR." : "",
+          hasProduct ? "- Preserve 100% identity: exact shape, fabric texture, logo, color, pattern, cuts, labels, and surface details." : "",
+          hasProduct ? "- STRICTLY PROHIBITED: feature averaging, merging, smoothing, beautification, or ANY alteration of the product design." : "",
+          hasProduct ? "- The product must look like the exact same physical object placed into the new scene." : "",
+          "",
+          "REFERENCE IMAGE PINNING (" + (hasStyle ? "MANDATORY" : "N/A") + "):",
+          hasStyle ? "- The attached Style/Pose Reference Image(s) are ENVIRONMENT/POSE TEMPLATES." : "",
+          hasStyle ? "- REPLICATE EXACTLY: camera angle, optical perspective, camera elevation, shot framing, model pose, stance, body posture, lighting setup, 3D environment, background scene, typography layout, color grading, and visual aesthetic from the reference image(s)." : "",
+          hasStyle ? "- The ONLY element that changes is the product - everything else (model, setting, light, mood, composition) is LOCKED to the reference with photographic precision." : "",
+          hasStyle ? "- Do not invent new backgrounds, new poses, or new lighting schemes - copy the reference frame with fidelity." : "",
+          "",
+          "MATERIAL PHYSICS & IMPERFECTIONS:",
+          "- Describe material-specific surface details: micro-scratches, grain texture, natural wear, oxidation, fabric fuzz",
+          "- Use explicit imperfection vocabulary: subtle scoring, mild patina, light abrasion, unretouched surface",
+          "- Do NOT smooth or airbrush the product surface",
+          "",
+          "DIRECT COMMANDS:",
+          "- Do not beautify or alter the product in any way",
+          "- No plastic skin, no airbrushed texture, no stylized realism",
+          "- No dataset-average anatomy or editorial fashion proportions",
+          "- Avoid mirror selfies, reflections, wide-angle distortion not in reference",
+          "",
+          "COMMERCIAL ANCHORS: commercial photography, advertising campaign, campaign-ready, editorial composition, professional color grading",
+          "",
+          "Instructions: " + finalPromptText
+        ].filter((line) => line !== undefined && line !== null && line !== "").join("\n");
+
+        requestParts.push({ text: nanoBananaSystemPrompt });
 
         if (prodImgList.length > 0) {
-          requestParts.push({ text: "PRODUCT IMAGES (IDENTITY LOCK - Keep the product/object in these images 100% identical, preserving exact shape, fabric, details, branding, and colors):" });
+          requestParts.push({ text: "PRODUCT IMAGES (IDENTITY LOCK - Keep the product/object in these images 100% identical, preserving exact shape, fabric, details, branding, colors, and surface texture. No alterations allowed.):" });
           for (const item of prodImgList) {
             requestParts.push({
               inlineData: {
@@ -404,7 +444,7 @@ Make sure the output is a valid JSON object.`;
         }
 
         if (styleImgList.length > 0) {
-          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (MATCH EXACT CAMERA ANGLE & MODEL POSE - Replicate and match the camera perspective, camera angle, elevation, model pose, body posture, background scene, lighting setup, and visual style from these images):" });
+          requestParts.push({ text: "STYLE & POSE REFERENCE IMAGES (PINNING TEMPLATES - Match and replicate the exact camera angle, optical perspective, camera elevation, shot framing, model pose, stance, body posture, lighting setup, 3D environment, background scene, typography layout, color grading, and visual aesthetic from these reference images. The product is the ONLY element that changes.):" });
           for (const item of styleImgList) {
             requestParts.push({
               inlineData: {
@@ -468,7 +508,8 @@ Make sure the output is a valid JSON object.`;
     } catch (e: any) {
       console.warn("[Gemini Image Generation Error] Falling back to Pollinations:", e.message || e);
       try {
-        return await this.fetchPollinationsImage(finalPromptText, seed);
+        const fallbackPrompt = finalPromptText + "\n\nStyle: commercial photography, advertising campaign, campaign-ready, editorial composition. Camera: 85mm lens, f/2.0, ISO 200. Lighting: natural directional lighting with rim highlights, shallow depth of field. Quality: high detail, unretouched surface texture, visible material grain, hyper-realistic. Avoid: logo, watermark, plastic skin, airbrushed texture, stylized realism, extra limbs, distorted faces.";
+        return await this.fetchPollinationsImage(fallbackPrompt, seed);
       } catch (fallbackErr: any) {
         console.warn("[Pollinations Fallback Error] Falling back to Stock Image:", fallbackErr.message);
         return await this.fetchStockImage(finalPromptText);

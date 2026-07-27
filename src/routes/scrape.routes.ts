@@ -30,42 +30,97 @@ router.post('/', async (req: any, res: any) => {
     
     // Extract images
     const images: string[] = [];
+    const productImages: string[] = [];
+    const lifestyleImages: string[] = [];
     
-    // 1. OG Image (highest priority)
+    const isProductImage = (src: string, alt: string, classNames: string): boolean => {
+      const lowerSrc = src.toLowerCase();
+      const lowerAlt = alt.toLowerCase();
+      const lowerClass = classNames.toLowerCase();
+      
+      const bannerKeywords = ['banner', 'header', 'hero', 'slider', 'carousel', 'promo', 'ad-banner', 'hero-banner', 'category-banner'];
+      const logoKeywords = ['logo', 'icon', 'favicon', 'sprite', 'svg'];
+      const uiKeywords = ['button', 'nav', 'menu', 'arrow', 'chevron', 'close', 'hamburger', 'star', 'rating', 'badge'];
+      
+      if (logoKeywords.some(k => lowerSrc.includes(k) || lowerClass.includes(k) || lowerAlt.includes(k))) return false;
+      if (uiKeywords.some(k => lowerSrc.includes(k) || lowerClass.includes(k) || lowerAlt.includes(k))) return false;
+      if (bannerKeywords.some(k => lowerSrc.includes(k) || lowerClass.includes(k) || lowerAlt.includes(k))) return false;
+      
+      return true;
+    };
+    
+    const isLikelyProductShot = (src: string, alt: string): boolean => {
+      const lowerSrc = src.toLowerCase();
+      const lowerAlt = alt.toLowerCase();
+      
+      const productKeywords = ['product', 'item', 'pdp', 'main', 'zoom', 'front', 'back', 'side', 'detail', 'closeup', 'close-up'];
+      const lifestyleKeywords = ['lifestyle', 'scene', 'model', 'wearing', 'using', 'action', 'outdoor', 'studio'];
+      
+      const productScore = productKeywords.reduce((score, k) => score + (lowerSrc.includes(k) || lowerAlt.includes(k) ? 1 : 0), 0);
+      const lifestyleScore = lifestyleKeywords.reduce((score, k) => score + (lowerSrc.includes(k) || lowerAlt.includes(k) ? 1 : 0), 0);
+      
+      return productScore >= lifestyleScore;
+    };
+
+    // 1. OG Image (highest priority - usually main product)
     const ogImage = $('meta[property="og:image"]').attr('content');
     if (ogImage) images.push(ogImage);
 
-    // 2. High-res product images (e.g., from Shopify/Amazon standard classes or JSON-LD if we wanted to get fancy)
+    // 2. Priority product images from JSON-LD or structured data
+    const jsonLdScripts = $('script[type="application/ld+json"]');
+    jsonLdScripts.each((_: any, el: any) => {
+      try {
+        const data = JSON.parse($(el).text());
+        const items = data['@graph'] || [data];
+        for (const item of items) {
+          if (item.image && typeof item.image === 'string') {
+            if (!images.includes(item.image)) images.push(item.image);
+          } else if (item.image && item.image.url) {
+            if (!images.includes(item.image.url)) images.push(item.image.url);
+          }
+        }
+      } catch (e) {}
+    });
+
+    // 3. High-res product images from img tags
     $('img').each((_: any, el: any) => {
       let src = $(el).attr('src') || $(el).attr('data-src');
       if (!src) return;
       
-      // Fix relative URLs
       if (src.startsWith('//')) src = 'https:' + src;
       else if (src.startsWith('/')) {
         const urlObj = new URL(url);
         src = `${urlObj.protocol}//${urlObj.host}${src}`;
       }
 
-      if (src.startsWith('http') && !images.includes(src)) {
-        // filter out tiny icons/logos by checking width or keyword
-        const width = $(el).attr('width');
+      if (src.startsWith('http') && !images.includes(src) && !productImages.includes(src) && !lifestyleImages.includes(src)) {
+        const width = parseInt($(el).attr('width') || '0');
+        const height = parseInt($(el).attr('height') || '0');
         const classNames = $(el).attr('class') || '';
         const alt = $(el).attr('alt') || '';
         
-        const isIcon = classNames.includes('icon') || src.includes('icon') || src.includes('logo');
-        const isTiny = width && parseInt(width) < 150;
+        const isIcon = width > 0 && width < 150;
+        const isBanner = height > 0 && width > 0 && (width / height) > 4;
+        const passesFilter = isProductImage(src, alt, classNames);
         
-        if (!isIcon && !isTiny) {
-            images.push(src);
+        if (passesFilter && !isIcon && !isBanner) {
+          if (isLikelyProductShot(src, alt)) {
+            productImages.push(src);
+          } else {
+            lifestyleImages.push(src);
+          }
         }
       }
     });
 
+    // Merge: product images first, then lifestyle, capped at 5 total
+    const mergedImages = [...images, ...productImages, ...lifestyleImages];
+    const uniqueImages = [...new Set(mergedImages)];
+
     res.json({
       title: title.trim(),
       description: description.trim(),
-      images: images.slice(0, 5) // Return up to 5 best images
+      images: uniqueImages.slice(0, 5)
     });
 
   } catch (error: any) {

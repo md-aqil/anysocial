@@ -60,6 +60,7 @@ export default function PostCreatorPage() {
 
   // Result & Detail Modal State
   const [results, setResults] = useState<any[]>([]);
+  const [failedDirections, setFailedDirections] = useState<Array<{ direction: any; error: string }>>([]);
   const [selectedDetailAd, setSelectedDetailAd] = useState<any | null>(null);
 
   // Active Campaign Generation State (Series / Cinematic Post Spawn Pattern)
@@ -69,7 +70,7 @@ export default function PostCreatorPage() {
     platform: string;
     createdAt: string;
     referenceImageUrl: string | null;
-    status: 'brainstorming' | 'directions_ready' | 'generating_ads' | 'completed';
+    status: 'brainstorming' | 'directions_ready' | 'generating_ads' | 'completed' | 'partial' | 'failed';
     progressMessage: string;
     directions: any[];
     selectedDirections: any[];
@@ -152,6 +153,10 @@ export default function PostCreatorPage() {
     const layoutEffects = brief.layoutAndEffects || 'Dynamic lighting, subtle motion blur, crisp reflections, premium composition';
     const taglineText = brief.tagline || '';
     const supportingText = brief.supportingCopy || brief.copy || '';
+    const colorAndMood = brief.colorAndMood || {};
+    const typographyTreatment = brief.typographyTreatment || {};
+    const logoTreatment = brief.logoTreatment || {};
+    const platformSpecs = brief.platformSpecs || { aspectRatio: '9:16' };
 
     const motionVal = `Full physical scene animation of ${prodName}. Subject dynamically moves with realistic temporal weight, surface reflections shift across materials, and physical properties animate with 3D depth.`;
     const cameraVal = "Slow 3D push-in camera tracking shot with natural depth parallax effect";
@@ -165,10 +170,22 @@ export default function PostCreatorPage() {
     setStyleGuide(styleVal);
     setTextStyleGuide(textStyleVal);
 
-    // Synthesize Google Veo 3 JSON Prompt Guide structure (veo-3-prompting-guide format)
+    const veoAspectRatio = platformSpecs.aspectRatio || '9:16';
+
     const veo3JsonPrompt = JSON.stringify({
       "veo_model": "veo-3.0-fast-generate-001",
       "prompt_type": "image_to_video_motion_graphic",
+      "nano_banana_constraints": {
+        "camera_math": "85mm lens, f/2.0 aperture, ISO 200",
+        "lighting": "Natural directional lighting with rim highlights and soft shadow falloff. Do not use flat studio lighting.",
+        "material_physics": "Preserve micro-scratches, grain texture, natural wear on product surface. No smoothing or airbrushing.",
+        "direct_commands": [
+          "Do not beautify or alter the product in any way",
+          "No plastic skin, no airbrushed texture, no stylized realism",
+          "Product identity is absolute - no feature averaging or merging"
+        ],
+        "quality_anchors": "commercial photography, advertising campaign, campaign-ready, editorial composition"
+      },
       "subject": {
         "name": prodName,
         "direction": dirName,
@@ -182,12 +199,14 @@ export default function PostCreatorPage() {
       },
       "camera": {
         "movement": cameraVal,
-        "framing": "9:16 vertical portrait composition"
+        "framing": `${veoAspectRatio} ${veoAspectRatio === '9:16' ? 'vertical portrait' : veoAspectRatio === '16:9' ? 'horizontal landscape' : veoAspectRatio === '1:1' ? 'square' : 'portrait'} composition`
       },
       "kinetic_typography": {
         "headline_text": taglineText,
         "supporting_text": supportingText,
-        "animation_style": textStyleVal
+        "animation_style": textStyleVal,
+        "font_style": typographyTreatment.headlineFont || 'Bold condensed sans-serif, uppercase',
+        "placement": typographyTreatment.textPlacement || 'bottom third overlay'
       },
       "cinematography_and_physics": {
         "lighting": styleVal,
@@ -520,6 +539,7 @@ export default function PostCreatorPage() {
     setLoading(true);
     setError(null);
     setResults([]);
+    setFailedDirections([]);
 
     setActiveCampaign(prev => prev ? {
       ...prev,
@@ -527,68 +547,140 @@ export default function PostCreatorPage() {
       progressMessage: `Generating commercial visual assets for ${dirsToUse.length} creative directions...`
     } : null);
 
-    try {
-      const generatedResults: any[] = [];
-      for (const direction of dirsToUse) {
-          const formData = new FormData();
-          formData.append('productName', productName);
-          formData.append('direction', JSON.stringify(direction));
-          formData.append('platform', platform);
-          if (specialInstructions) {
-            formData.append('specialInstructions', specialInstructions);
-          }
-          imageFiles.forEach(file => {
-            formData.append('images', file);
-          });
-          referenceFiles.forEach(refFile => {
-            formData.append('referenceImages', refFile);
-          });
+    const generatedResults: any[] = [];
+    const failures: Array<{ direction: any; error: string }> = [];
 
-          const res = await fetch('/api/ad-creator/generate', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: formData
-          });
+    for (let i = 0; i < dirsToUse.length; i++) {
+      const direction = dirsToUse[i];
+      try {
+        const formData = new FormData();
+        formData.append('productName', productName);
+        formData.append('direction', JSON.stringify(direction));
+        formData.append('platform', platform);
+        if (specialInstructions) {
+          formData.append('specialInstructions', specialInstructions);
+        }
+        imageFiles.forEach(file => {
+          formData.append('images', file);
+        });
+        referenceFiles.forEach(refFile => {
+          formData.append('referenceImages', refFile);
+        });
 
-          if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || 'Failed to generate ad');
-          }
+        const res = await fetch('/api/ad-creator/generate', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formData
+        });
 
+        if (!res.ok) {
           const data = await res.json();
-          const newItem = { 
-            brief: data.brief, 
-            imageUrl: data.imageUrl, 
-            direction, 
-            id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substring(7),
-            productName,
-            platform,
-            createdAt: new Date().toISOString()
-          };
-          generatedResults.push(newItem);
-          setResults([...generatedResults]);
+          throw new Error(data.error || 'Failed to generate ad');
+        }
 
-          setActiveCampaign(prev => prev ? {
-            ...prev,
-            items: [...generatedResults],
-            progressMessage: `Generated ${generatedResults.length} of ${dirsToUse.length} creative visual variations...`
-          } : null);
-          
-          if (generatedResults.length === 1) {
-            setStep(3);
-          }
+        const data = await res.json();
+        const newItem = { 
+          brief: data.brief, 
+          imageUrl: data.imageUrl, 
+          direction, 
+          id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substring(7),
+          productName,
+          platform,
+          createdAt: new Date().toISOString()
+        };
+        generatedResults.push(newItem);
+        setResults([...generatedResults]);
+
+        setActiveCampaign(prev => prev ? {
+          ...prev,
+          items: [...generatedResults],
+          progressMessage: `Generated ${generatedResults.length} of ${dirsToUse.length} creative visual variations...`
+        } : null);
+        
+        if (generatedResults.length === 1) {
+          setStep(3);
+        }
+      } catch (err: any) {
+        failures.push({ direction, error: err.message || 'Unknown error' });
+        setFailedDirections([...failures]);
       }
-      
+    }
+    
+    if (generatedResults.length > 0) {
       setActiveCampaign(prev => prev ? {
         ...prev,
-        status: 'completed',
-        progressMessage: 'Campaign generation complete! All visual assets ready for export.'
+        status: failures.length > 0 ? 'partial' : 'completed',
+        progressMessage: failures.length > 0 
+          ? `Generated ${generatedResults.length} of ${dirsToUse.length} variations. ${failures.length} failed - retry below.`
+          : 'Campaign generation complete! All visual assets ready for export.'
       } : null);
+    } else {
+      setActiveCampaign(prev => prev ? {
+        ...prev,
+        status: 'failed',
+        progressMessage: 'All generations failed. Please retry.'
+      } : null);
+    }
 
-      fetchHistory();
+    fetchHistory();
+    
+    if (failures.length > 0 && generatedResults.length === 0) {
+      setError(`${failures.length} direction(s) failed: ${failures[0].error}`);
+    }
+  };
+
+  const handleRetryDirection = async (direction: any) => {
+    setFailedDirections(prev => prev.filter(f => f.direction.title !== direction.title));
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('productName', productName);
+      formData.append('direction', JSON.stringify(direction));
+      formData.append('platform', platform);
+      if (specialInstructions) {
+        formData.append('specialInstructions', specialInstructions);
+      }
+      imageFiles.forEach(file => {
+        formData.append('images', file);
+      });
+      referenceFiles.forEach(refFile => {
+        formData.append('referenceImages', refFile);
+      });
+
+      const res = await fetch('/api/ad-creator/generate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate ad');
+      }
+
+      const data = await res.json();
+      const newItem = { 
+        brief: data.brief, 
+        imageUrl: data.imageUrl, 
+        direction, 
+        id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substring(7),
+        productName,
+        platform,
+        createdAt: new Date().toISOString()
+      };
+      setResults(prev => [...prev, newItem]);
+      setActiveCampaign(prev => prev ? {
+        ...prev,
+        items: [...(prev.items || []), newItem]
+      } : null);
     } catch (err: any) {
+      setFailedDirections(prev => [...prev, { direction, error: err.message || 'Retry failed' }]);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -941,18 +1033,28 @@ export default function PostCreatorPage() {
               </div>
 
               {/* Proposed Creative Directions Inline Box */}
-              {directions.length > 0 && (
-                <div className="bg-amber-50/40 border border-amber-200 rounded-2xl p-5 space-y-4 animate-in fade-in duration-300">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-[#D27D50] uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" /> 5 Proposed Directions
-                    </span>
-                    <span className="text-[10px] font-black text-stone-500">
-                      {selectedDirections.length} of {directions.length} selected
-                    </span>
-                  </div>
+               {directions.length > 0 && (
+                 <div className="bg-amber-50/40 border border-amber-200 rounded-2xl p-5 space-y-4 animate-in fade-in duration-300">
+                   <div className="flex items-center justify-between">
+                     <span className="text-xs font-black text-[#D27D50] uppercase tracking-wider flex items-center gap-1.5">
+                       <Sparkles className="w-3.5 h-3.5" /> 5 Proposed Directions
+                     </span>
+                     <span className="text-[10px] font-black text-stone-500">
+                       {selectedDirections.length} of {directions.length} selected
+                     </span>
+                   </div>
 
-                  <div className="grid grid-cols-1 gap-3">
+                   {specialInstructions && (
+                     <div className="bg-blue-50/60 border border-blue-200 rounded-xl p-3 flex items-start gap-2">
+                       <Sparkles className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
+                       <div>
+                         <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider block">Your Special Instructions</span>
+                         <p className="text-[11px] text-blue-800 leading-relaxed mt-0.5">{specialInstructions}</p>
+                       </div>
+                     </div>
+                   )}
+
+                   <div className="grid grid-cols-1 gap-3">
                     {directions.map((dir, idx) => {
                       const isSel = selectedDirections.some(d => d.title === dir.title);
                       const badge = getThemeBadge(dir.title, dir.description || dir.visualSceneSetup || '');
@@ -1227,6 +1329,28 @@ export default function PostCreatorPage() {
                             {loading ? 'Rendering Visual Variations...' : `Generate Visuals for ${group.selectedDirections?.length} Selected Directions`}
                           </Button>
                         </div>
+
+                        {/* Failed Directions with Retry */}
+                        {failedDirections.length > 0 && (
+                          <div className="mt-4 space-y-2">
+                            <p className="text-[10px] font-black text-red-600 uppercase tracking-wider">Failed Generations</p>
+                            {failedDirections.map((fail, idx) => (
+                              <div key={idx} className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-red-900 truncate">{fail.direction.title}</p>
+                                  <p className="text-[10px] text-red-700 truncate">{fail.error}</p>
+                                </div>
+                                <Button
+                                  onClick={() => handleRetryDirection(fail.direction)}
+                                  disabled={loading}
+                                  className="shrink-0 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg"
+                                >
+                                  Retry
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
