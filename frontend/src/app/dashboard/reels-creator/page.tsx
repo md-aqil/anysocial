@@ -670,8 +670,10 @@ export default function ReelsDashboard() {
       const json = await res.json();
       return json.data || [];
     },
-    refetchInterval: 60000 // refresh every minute
+    refetchInterval: 5000 // refresh every 5 seconds for live progress
   });
+
+  const manualReels = productReels?.filter((r: any) => !r.metadata?.campaignId) || [];
 
   const { data: automatedCampaigns, isLoading: loadingCampaigns } = useQuery({
     queryKey: ['automated-campaigns'],
@@ -742,12 +744,12 @@ export default function ReelsDashboard() {
         <div>
           <h1 className="text-3xl font-extrabold text-stone-900 tracking-tight flex items-center gap-2.5">
             <Video className="h-8 w-8 text-violet-600" />
-            {activeTab === 'product' ? 'AI Product Reels' : 'Custom Video Series'}
+            {activeTab === 'product' ? 'AI Product Reels' : 'Manual Reels'}
           </h1>
           <p className="text-stone-500 mt-2">
             {activeTab === 'product'
               ? 'Create AI-powered product reels with Veo animation, voiceover, and auto-posting.'
-              : 'Create automated storytelling series, customized scripts, voiceovers, and scheduled posting.'}
+              : 'Create manual product reels, customize scripts, voiceovers, and manually compose posts.'}
           </p>
         </div>
         <div className="flex flex-wrap gap-3 flex-nowrap">
@@ -761,11 +763,11 @@ export default function ReelsDashboard() {
             </Button>
           ) : (
             <Button
-              onClick={() => router.push('/dashboard/reels-creator/new')}
+              onClick={() => router.push('/dashboard/reels-creator/manual')}
               className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl h-11 px-6 shadow-md font-bold"
             >
               <Plus className="mr-2 h-5 w-5" />
-              New Video Series
+              New Manual Reel
             </Button>
           )}
         </div>
@@ -791,404 +793,126 @@ export default function ReelsDashboard() {
               : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
-          Custom Video Series
+          Manual Reels
         </button>
       </div>
 
       {activeTab === 'series' ? (
         <>
-          {isLoading ? (
+          {loadingProduct ? (
             <div className="flex h-64 items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600" />
             </div>
-          ) : seriesList?.length === 0 ? (
+          ) : manualReels.length === 0 ? (
             <div className="bg-white rounded-3xl border border-stone-200 p-12 text-center shadow-sm">
               <div className="w-20 h-20 bg-violet-50 text-violet-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Sparkles className="h-10 w-10" />
               </div>
-              <h2 className="text-xl font-bold text-stone-900 mb-2">No Series Yet</h2>
+              <h2 className="text-xl font-bold text-stone-900 mb-2">No Manual Reels Yet</h2>
               <p className="text-stone-500 mb-8 max-w-md mx-auto">
-                Create an automated video series and let our AI generate, assemble, and post highly engaging reels for you automatically.
+                Create a manual product reel to customize video assets, voiceovers, and scripts before posting.
               </p>
-              <Button onClick={() => router.push('/dashboard/reels-creator/new')} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl">
-                Create Your First Series
+              <Button onClick={() => router.push('/dashboard/reels-creator/manual')} className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl">
+                Create Your First Manual Reel
               </Button>
             </div>
           ) : (
-            <div className="grid gap-6">
-              {seriesList?.map((series: any) => (
-                <div key={series.id} className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-                          {series.name}
-                          {series.isActive && <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Active</span>}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-2 text-violet-700 border-violet-200 hover:bg-violet-50 hover:border-violet-300"
-                            onClick={() => generateMutation.mutate(series.id)}
-                            disabled={generateMutation.isPending}
-                          >
-                            {generateMutation.isPending && generateMutation.variables === series.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Wand2 className="h-4 w-4" />
-                            )}
-                            Generate Now
-                          </Button>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-colors">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-52 p-2 rounded-2xl border border-stone-100 shadow-xl bg-white/95 backdrop-blur-xl">
-                              <DropdownMenuItem
-                                className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-stone-700 hover:bg-stone-100/80 focus:bg-stone-100/80 transition-colors"
-                                onClick={() => {
-                                  const readyReels = series.reels?.filter((r: any) => r.status === 'READY');
-                                  if (readyReels && readyReels.length > 0) {
-                                    window.open(readyReels[0].videoUrl, '_blank');
-                                  } else {
-                                    alert('No finished reels to play yet. Generate one first!');
-                                  }
-                                }}
-                              >
-                                <Play className="h-4 w-4 text-emerald-600" /> Play Latest Reel
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-stone-700 hover:bg-stone-100/80 focus:bg-stone-100/80 transition-colors"
-                                onClick={() => router.push(`/dashboard/reels-creator/edit/${series.id}`)}
-                              >
-                                <Edit2 className="h-4 w-4 text-violet-600" /> Edit Series
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="my-1" />
-                              <DropdownMenuItem
-                                className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-amber-700 hover:bg-amber-50 focus:bg-amber-50 transition-colors"
-                                onClick={() => toggleActiveMutation.mutate(series.id)}
-                                disabled={toggleActiveMutation.isPending}
-                              >
-                                <PauseCircle className="h-4 w-4" /> {series.isActive ? 'Stop Auto Posting' : 'Resume Auto Posting'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="gap-2.5 cursor-pointer rounded-xl p-2.5 text-sm font-medium text-red-600 hover:bg-red-50 focus:bg-red-50 transition-colors"
-                                onClick={() => deleteMutation.mutate(series.id)}
-                                disabled={deleteMutation.isPending}
-                              >
-                                <Trash2 className="h-4 w-4" /> Delete Series
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-stone-500">
-                        <span className="flex items-center gap-1" title="Niche / Topic"><FileText className="h-4 w-4 text-violet-500" /> {series.niche || 'Custom Script'}</span>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <span className="flex items-center gap-1 cursor-pointer hover:text-pink-600 transition-colors" title="Art Style (Click to change)">
-                              <Video className="h-4 w-4 text-pink-500" />
-                              {STYLES.find(s => s.id === series.artStyle)?.title || series.artStyle}
-                            </span>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <div className="px-2 py-1.5 text-xs font-semibold text-stone-500">Change Art Style</div>
-                            <DropdownMenuSeparator />
-                            {STYLES.map(style => (
-                              <DropdownMenuItem
-                                key={style.id}
-                                onClick={() => updateSeriesMutation.mutate({ seriesId: series.id, data: { artStyle: style.id } })}
-                                className={series.artStyle === style.id ? 'bg-pink-50 text-pink-900 font-medium' : ''}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <img src={style.image} alt={style.title} className="w-10 h-10 rounded-md object-cover" />
-                                  {style.title}
-                                </div>
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <span className="flex items-center gap-1 cursor-pointer hover:text-amber-600 transition-colors" title="Voice & Language (Click to change)">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></svg>
-                              {series.voiceName} ({series.language || 'English'})
-                            </span>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <div className="px-2 py-1.5 text-xs font-semibold text-stone-500">Change Voice ({series.language || 'English'})</div>
-                            <DropdownMenuSeparator />
-                            {(VOICES_BY_LANGUAGE[series.language || 'English'] || VOICES_BY_LANGUAGE['English']).map(v => (
-                              <DropdownMenuItem
-                                key={v.id}
-                                onClick={() => updateSeriesMutation.mutate({ seriesId: series.id, data: { voiceId: v.id, voiceName: v.name } })}
-                                className={series.voiceId === v.id ? 'bg-amber-50 text-amber-900 font-medium' : ''}
-                              >
-                                {v.name}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4 text-blue-500" />
-                          {(() => {
-                            try {
-                              const days = JSON.parse(series.scheduleDays);
-                              if (!days || days.length === 0) return 'No schedule';
-                              return `${days.join(', ')} at ${series.scheduleTime || '12:00'}`;
-                            } catch {
-                              return 'No schedule';
-                            }
-                          })()}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
+              {manualReels.map((reel: any) => {
+                const badge = getReelStatus(reel);
+                const hasThumbnail = !!reel.thumbnail;
+                const thumbnailPath = hasThumbnail ? reel.thumbnail : '/assets/styles/cinematic.jpg';
+                return (
+                  <div key={reel.id} className="border border-stone-200 rounded-2xl bg-white overflow-hidden flex flex-col shadow-sm group relative">
+                    <div className="w-full h-40 relative bg-stone-100 border-b border-stone-200 overflow-hidden">
+                      <img
+                        src={thumbnailPath}
+                        alt="Reel preview"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                      <div className="absolute top-3 right-3 z-10">
+                        <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full flex items-center gap-1.5 shadow-sm border backdrop-blur-md ${badge.classes}`}>
+                          {badge.icon}
+                          {badge.label}
                         </span>
-
-                        {(() => {
-                          try {
-                            const channels = JSON.parse(series.socialChannels);
-                            if (!channels || channels.length === 0) return null;
-                            return (
-                              <div className="flex items-center gap-1.5 sm:ml-auto">
-                                <span className="text-xs text-stone-400 font-semibold uppercase tracking-wider">Channels:</span>
-                                <div className="flex items-center -space-x-1">
-                                  {channels.map((chId: string) => {
-                                    const acc = accountsData?.accounts?.find((a: any) => a.id === chId);
-                                    if (!acc) return null;
-                                    const config = platformStyles[acc.platform.toUpperCase()];
-                                    if (!config) return null;
-                                    const Logo = config.icon;
-                                    return (
-                                      <div
-                                        key={chId}
-                                        className="w-6 h-6 rounded-full border border-white bg-stone-50 flex items-center justify-center shadow-sm hover:scale-110 transition-transform duration-200"
-                                        title={`${acc.metadata?.accountName || config.name}`}
-                                        style={{ backgroundColor: config.bg }}
-                                      >
-                                        <Logo className="w-3 h-3" style={{ color: config.color }} />
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          } catch {
-                            return null;
-                          }
-                        })()}
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-stone-900 uppercase tracking-wider">Generated Reels</h4>
-                    {series.reels?.length === 0 ? (
-                      <div className="bg-stone-50 rounded-xl p-4 text-center text-sm text-stone-500">
-                        No reels generated yet for this series.
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {series.reels?.map((reel: any) => (
-                            <div key={reel.id} className="border border-stone-100 rounded-xl bg-white overflow-hidden flex flex-col shadow-sm">
-                            <div className="w-full h-24 relative bg-stone-100 border-b border-stone-100 group">
-                              <img
-                                src={STYLES.find(s => s.id === series.artStyle)?.image || '/assets/styles/cinematic.jpg'}
-                                alt={series.artStyle}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                              <div className="absolute top-2 right-2">
-                                {(() => {
-                                  const badge = getReelStatus(reel);
-                                  return (
-                                    <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full flex items-center gap-1.5 shadow-sm border backdrop-blur-md ${badge.classes}`}>
-                                      {badge.icon}
-                                      {badge.label}
-                                    </span>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                            <div className="p-4 flex-1 flex flex-col">
-
-
-
-                              {/* Generation Details Button */}
-                              {reel.metadata && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleViewDetails(reel)}
-                                  className="mb-4 flex w-full items-center justify-center gap-1.5 bg-[#F2F6F2] hover:bg-[#E8EDE8] border border-emerald-100/50 text-emerald-700 font-semibold text-xs py-2 rounded-lg transition-colors shadow-sm"
-                                >
-                                  <Sparkles className="h-3.5 w-3.5" />
-                                  View Generation Details
-                                </button>
-                              )}
-
-                              {/* Detailed Live Log for Generation */}
-                              {reel.status === 'GENERATING' && reel.statusMessage && (
-                                <div className="mb-4 bg-stone-900 border border-stone-800 rounded-lg p-3 shadow-inner">
-                                  <div className="flex items-center gap-2 mb-1.5">
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
-                                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Live Engine Log</span>
-                                  </div>
-                                  <div className="text-xs font-mono text-emerald-400 break-words leading-relaxed">
-                                    <span className="text-stone-500 mr-2">$</span>
-                                    {reel.statusMessage}
-                                    <span className="animate-pulse inline-block w-1.5 h-3.5 bg-emerald-400 ml-1 align-middle"></span>
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="mt-auto space-y-2 text-xs font-medium text-stone-500">
-                                {(() => {
-                                  const isFuture = reel.scheduledFor ? new Date(reel.scheduledFor) > new Date() : false;
-                                  let channels: string[] = [];
-                                  try {
-                                    channels = JSON.parse(reel.socialChannels || '[]');
-                                  } catch { }
-                                  const hasChannels = channels.length > 0;
-
-                                  const isFailed = reel.status === 'FAILED' || (reel.post && reel.post.status === 'FAILED');
-
-                                  return (
-                                    <>
-                                      <div className="flex items-center gap-1.5">
-                                        {reel.scheduledFor ? (
-                                          <>
-                                            <Calendar className={`h-3.5 w-3.5 ${isFailed ? 'text-red-500' : (isFuture ? 'text-amber-500' : 'text-emerald-500')}`} />
-                                            <span>
-                                              {hasChannels
-                                                ? (isFailed ? 'Failed to Post:' : (isFuture ? 'Scheduled to Post:' : 'Posted on:'))
-                                                : (isFuture ? 'Scheduled to Generate:' : 'Generated on:')}{' '}
-                                              <span className="font-semibold text-stone-700">
-                                                {format(new Date(reel.scheduledFor), 'MMM d, yyyy @ p')}
-                                              </span>
-                                            </span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Clock className="h-3.5 w-3.5 text-stone-400" />
-                                            <span>
-                                              Created:{' '}
-                                              <span className="font-semibold text-stone-700">
-                                                {format(new Date(reel.createdAt), 'MMM d, yyyy @ p')}
-                                              </span>
-                                            </span>
-                                          </>
-                                        )}
-                                      </div>
-
-                                      {/* Premium Platform-specific status icons */}
-                                      {hasChannels && (
-                                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-stone-100/60">
-                                          <span className="text-[9px] text-stone-400 font-extrabold uppercase tracking-wider">Channels:</span>
-                                          <div className="flex flex-wrap items-center gap-1">
-                                            {channels.map((channel) => {
-                                              const platformName = channel.toUpperCase();
-
-                                              // Find platform result in linked post
-                                              const platformRes = reel.post?.platformResults?.find((r: any) => r.platform.toUpperCase() === platformName);
-
-                                              let statusColor = 'text-stone-400 border-stone-200 bg-stone-50'; // Default gray/ready
-                                              let tooltip = `${channel}: Ready to publish`;
-
-                                              if (platformRes) {
-                                                if (platformRes.status === 'PUBLISHED') {
-                                                  statusColor = 'text-emerald-600 border-emerald-200 bg-emerald-50';
-                                                  tooltip = `${channel}: Posted successfully`;
-                                                } else if (platformRes.status === 'FAILED') {
-                                                  statusColor = 'text-red-600 border-red-200 bg-red-50';
-                                                  tooltip = `${channel}: Failed - ${platformRes.error || 'Unknown error'}`;
-                                                } else if (platformRes.status === 'QUEUED' || platformRes.status === 'PROCESSING') {
-                                                  statusColor = 'text-blue-600 border-blue-200 bg-blue-50 animate-pulse';
-                                                  tooltip = `${channel}: Publishing in progress`;
-                                                }
-                                              } else if (reel.status === 'FAILED') {
-                                                statusColor = 'text-red-600 border-red-200 bg-red-50';
-                                                tooltip = `${channel}: Failed to schedule - ${reel.statusMessage || 'Check logs'}`;
-                                              } else if (isFuture) {
-                                                statusColor = 'text-amber-600 border-amber-200 bg-amber-50';
-                                                tooltip = `${channel}: Scheduled`;
-                                              }
-
-                                              // Map platform name to short label
-                                              const shortLabel = platformName.substring(0, 2);
-
-                                              return (
-                                                <span
-                                                  key={channel}
-                                                  className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold border uppercase tracking-wider ${statusColor}`}
-                                                  title={tooltip}
-                                                >
-                                                  {shortLabel}
-                                                </span>
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-                                      )}
-                                    </>
-                                  );
-                                })()}
-
-                                {/* Detailed General/Generation Error Reason Display */}
-                                {(reel.status === 'FAILED' || reel.status === 'PARTIALLY_FAILED') && reel.statusMessage && (
-                                  <div className="w-full mt-2 text-[10px] sm:text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 font-mono break-words shadow-sm">
-                                    <strong>Error:</strong> {reel.statusMessage}
-                                  </div>
-                                )}
-
-                                {/* Detailed Platform Post Errors from linked Post model */}
-                                {reel.post?.status === 'FAILED' && reel.post?.platformResults?.some((r: any) => r.error) && (
-                                  <div className="w-full mt-2 text-[10px] sm:text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 font-mono break-words shadow-sm">
-                                    <strong>Posting Errors:</strong>
-                                    <ul className="list-disc pl-3.5 mt-1 space-y-0.5 text-[9px] leading-relaxed">
-                                      {reel.post.platformResults.map((r: any) => r.error ? (
-                                        <li key={r.platform}>
-                                          <span className="font-bold">{r.platform}:</span> {r.error}
-                                        </li>
-                                      ) : null)}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {reel.videoUrl && (
-                              <div className="bg-stone-50 p-3 border-t border-stone-100 flex gap-2">
-                                <a
-                                  href={reel.videoUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white border border-stone-200 rounded-lg text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors shadow-sm"
-                                >
-                                  <Play className="h-3.5 w-3.5 text-violet-600 animate-pulse" />
-                                  Watch Reel
-                                </a>
-                                <Link
-                                  href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(series.socialChannels || '[]')}`}
-                                  className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-violet-600 border border-transparent rounded-lg text-xs font-bold text-white hover:bg-violet-700 transition-all hover:scale-[1.02] shadow-sm"
-                                >
-                                  <Send className="h-3.5 w-3.5" />
-                                  To Composer
-                                </Link>
-                              </div>
-                            )}
+                      {reel.videoUrl && (
+                        <a
+                          href={reel.videoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/30 backdrop-blur-xs"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-white/95 flex items-center justify-center shadow-lg text-violet-600 hover:scale-110 transition-transform">
+                            <Play className="h-6 w-6 fill-violet-600 ml-1" />
                           </div>
-                        ))}
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">
+                          {reel.createdAt ? format(new Date(reel.createdAt), 'MMM d, yyyy @ p') : 'Recently'}
+                        </p>
+                        <p className="text-sm text-stone-700 font-medium line-clamp-3 mb-4 italic leading-relaxed text-left">
+                          "{reel.script || 'No script text generated'}"
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        {/* Live Log or Timeline */}
+                        {((reel.status === 'GENERATING' && reel.statusMessage) || reel.status === 'READY') && (
+                          <GenerationTimeline statusMessage={reel.statusMessage || ''} metadata={reel.metadata} isCompleted={reel.status === 'READY'} />
+                        )}
+
+                        {renderPostStatus(reel)}
+
+                        {/* Error log display */}
+                        {(reel.status === 'FAILED' || reel.status === 'PARTIALLY_FAILED') && reel.statusMessage && (
+                          <div className="w-full mt-2 text-xs text-red-650 bg-red-50 p-2.5 rounded-lg border border-red-100 font-mono break-all shadow-sm">
+                            <strong>Error:</strong> {reel.statusMessage}
+                          </div>
+                        )}
+
+                        {reel.metadata && (
+                          <button
+                            type="button"
+                            onClick={() => handleViewDetails(reel)}
+                            className="w-full flex items-center justify-center gap-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-250/50 text-stone-700 font-semibold text-xs py-2 rounded-xl transition-colors shadow-2xs"
+                          >
+                            <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+                            Edit / Re-compose script
+                          </button>
+                        )}
+
+                        {reel.videoUrl && (
+                          <div className="pt-3 border-t border-stone-100 flex gap-2">
+                            <a
+                              href={reel.videoUrl}
+                              download
+                              className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors shadow-2xs"
+                            >
+                              <Video className="h-3.5 w-3.5 text-violet-600" />
+                              Download
+                            </a>
+                            <Link
+                              href={`/dashboard/posts/new?videoUrl=${encodeURIComponent(reel.videoUrl)}&content=${encodeURIComponent(reel.script || '')}&platforms=${encodeURIComponent(reel.socialChannels || '[]')}`}
+                              className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-violet-650 border border-transparent rounded-xl text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-sm"
+                            >
+                              <Send className="h-3.5 w-3.5" />
+                              Compose
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
-
         </>
       ) : (
         <>
