@@ -19,6 +19,7 @@ import { settingsRoutes } from './settings.routes.js';
 import veoRoutes from './veo.routes.js';
 import automationRoutes from './automation.routes.js';
 import companyReelsRoutes from './company-reels.routes.js';
+import publicVeoRoutes from './public-veo.routes.js';
 
 const router = Router();
 
@@ -106,5 +107,8 @@ router.use('/api/automation', automationRoutes);
 
 // Company Reels routes (B2B)
 router.use('/api/company-reels', jwtAuth, companyReelsRoutes);
+
+// Public API for other projects to trigger Veo generations securely
+router.use('/api/public/veo', publicVeoRoutes);
 
 export const routes = router;
