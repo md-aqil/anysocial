@@ -1,0 +1,21 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img "SocialSched" [ref=e7]
+      - heading "Welcome Back" [level=3] [ref=e8]
+      - paragraph [ref=e9]: Broadcast your message to the world.
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - text: Email
+        - textbox "Email" [ref=e13]:
+          - /placeholder: you@example.com
+      - generic [ref=e14]:
+        - text: Password
+        - textbox "Password" [ref=e15]:
+          - /placeholder: ••••••••
+      - button "Login" [ref=e16] [cursor=pointer]
+      - paragraph [ref=e17]:
+        - text: Don't have an account?
+        - link "Sign up" [ref=e18] [cursor=pointer]:
+          - /url: /signup

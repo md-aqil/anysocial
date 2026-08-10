@@ -145,10 +145,14 @@ export class YouTubeAdapter implements PlatformAdapter {
     // Build tags array
     let tags: string[] = [];
     if (Array.isArray(payload.metadata.tags)) {
-      tags = payload.metadata.tags as string[];
-    } else if (typeof payload.platformSpecificFields.tags === 'string') {
-      tags = (payload.platformSpecificFields.tags as string).split(',').map(t => t.trim()).filter(Boolean);
+      tags = [...(payload.metadata.tags as string[])];
     }
+    if (typeof payload.platformSpecificFields.tags === 'string' && payload.platformSpecificFields.tags.trim() !== '') {
+      const explicitTags = payload.platformSpecificFields.tags.split(',').map(t => t.trim()).filter(Boolean);
+      tags = [...tags, ...explicitTags];
+    }
+    // ensure unique tags
+    tags = Array.from(new Set(tags));
 
     if (postType === 'SHORTS') {
       if (!description.toLowerCase().includes('#shorts')) {

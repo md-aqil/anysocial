@@ -427,6 +427,11 @@ export default function NewPostPage() {
   const igAutoFix = watch('instagramAutoFix');
   const fbType = watch('facebookPostType');
   const igType = watch('instagramPostType');
+  const ytPrivacy = watch('youtubePrivacy');
+  const ytCategory = watch('youtubeCategory');
+  const ytKids = watch('youtubeMadeForKids');
+  const ytTags = watch('youtubeTags');
+  const ytPostType = watch('youtubePostType');
 
   useEffect(() => {
     setValue('platforms', selectedPlatforms);
@@ -449,6 +454,21 @@ export default function NewPostPage() {
     
     const savedIg = localStorage.getItem('lastIgPostType');
     if (savedIg) setValue('instagramPostType', savedIg as any);
+
+    const ytPrivacy = localStorage.getItem('ytPrivacy');
+    if (ytPrivacy) setValue('youtubePrivacy', ytPrivacy as any);
+    
+    const ytCategory = localStorage.getItem('ytCategory');
+    if (ytCategory) setValue('youtubeCategory', ytCategory);
+    
+    const ytKids = localStorage.getItem('ytKids');
+    if (ytKids) setValue('youtubeMadeForKids', ytKids === 'true');
+    
+    const ytTags = localStorage.getItem('ytTags');
+    if (ytTags) setValue('youtubeTags', ytTags);
+    
+    const ytPostType = localStorage.getItem('ytPostType');
+    if (ytPostType) setValue('youtubePostType', ytPostType as any);
   }, [setValue]);
 
   useEffect(() => {
@@ -458,6 +478,26 @@ export default function NewPostPage() {
   useEffect(() => {
     if (igType) localStorage.setItem('lastIgPostType', igType);
   }, [igType]);
+
+  useEffect(() => {
+    if (ytPrivacy) localStorage.setItem('ytPrivacy', ytPrivacy);
+  }, [ytPrivacy]);
+  
+  useEffect(() => {
+    if (ytCategory) localStorage.setItem('ytCategory', ytCategory);
+  }, [ytCategory]);
+  
+  useEffect(() => {
+    localStorage.setItem('ytKids', String(ytKids));
+  }, [ytKids]);
+  
+  useEffect(() => {
+    if (ytTags !== undefined) localStorage.setItem('ytTags', ytTags);
+  }, [ytTags]);
+
+  useEffect(() => {
+    if (ytPostType) localStorage.setItem('ytPostType', ytPostType);
+  }, [ytPostType]);
 
   useEffect(() => {
     const composeData = localStorage.getItem('composeAdData');
