@@ -174,7 +174,7 @@ Make sure the output is a valid JSON object.`;
         
         const executeScriptGen = async (overrideModel?: string) => {
           const modelName = overrideModel || settings.text.primary;
-          const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'project-bcd01169-8285-4613-a17';
+          const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'project-b5ecd3be-298f-4a5f-acb';
           const location = process.env.VERTEX_AI_LOCATION || 'us-central1';
           const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
           
@@ -660,7 +660,7 @@ Make sure the output is a valid JSON object.`;
             if (!fetchRes.ok) throw new Error("AI Studio TTS Error: " + await fetchRes.text());
             resData = await fetchRes.json();
         } else {
-            const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'project-bcd01169-8285-4613-a17';
+            const projectId = await auth.getProjectId() || process.env.VERTEX_AI_PROJECT_ID || 'project-b5ecd3be-298f-4a5f-acb';
             const location = process.env.VERTEX_AI_LOCATION || 'us-central1';
             const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
             
