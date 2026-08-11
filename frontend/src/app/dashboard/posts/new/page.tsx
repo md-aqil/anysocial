@@ -432,6 +432,14 @@ export default function NewPostPage() {
   const ytKids = watch('youtubeMadeForKids');
   const ytTags = watch('youtubeTags');
   const ytPostType = watch('youtubePostType');
+  const twReply = watch('twitterReplySettings');
+  const pinBoard = watch('pinterestBoardId');
+  const snapType = watch('snapchatPostType');
+  const ytAutoFix = watch('youtubeAutoFix');
+  const thAutoFix = watch('threadsAutoFix');
+  const twAutoFix = watch('twitterAutoFix');
+  const igShareToFeed = watch('shareToFeed');
+  const fbShareToStory = watch('facebookShareToStory');
 
   useEffect(() => {
     setValue('platforms', selectedPlatforms);
@@ -469,6 +477,30 @@ export default function NewPostPage() {
     
     const ytPostType = localStorage.getItem('ytPostType');
     if (ytPostType) setValue('youtubePostType', ytPostType as any);
+
+    const sTwReply = localStorage.getItem('twReply');
+    if (sTwReply) setValue('twitterReplySettings', sTwReply as any);
+
+    const sPinBoard = localStorage.getItem('pinBoard');
+    if (sPinBoard) setValue('pinterestBoardId', sPinBoard);
+
+    const sSnapType = localStorage.getItem('snapType');
+    if (sSnapType) setValue('snapchatPostType', sSnapType as any);
+
+    const sYtAutoFix = localStorage.getItem('ytAutoFix');
+    if (sYtAutoFix !== null) setValue('youtubeAutoFix', sYtAutoFix === 'true');
+
+    const sThAutoFix = localStorage.getItem('thAutoFix');
+    if (sThAutoFix !== null) setValue('threadsAutoFix', sThAutoFix === 'true');
+
+    const sTwAutoFix = localStorage.getItem('twAutoFix');
+    if (sTwAutoFix !== null) setValue('twitterAutoFix', sTwAutoFix === 'true');
+
+    const sIgShareToFeed = localStorage.getItem('igShareToFeed');
+    if (sIgShareToFeed !== null) setValue('shareToFeed', sIgShareToFeed === 'true');
+
+    const sFbShareToStory = localStorage.getItem('fbShareToStory');
+    if (sFbShareToStory !== null) setValue('facebookShareToStory', sFbShareToStory === 'true');
   }, [setValue]);
 
   useEffect(() => {
@@ -498,6 +530,38 @@ export default function NewPostPage() {
   useEffect(() => {
     if (ytPostType) localStorage.setItem('ytPostType', ytPostType);
   }, [ytPostType]);
+
+  useEffect(() => {
+    if (twReply) localStorage.setItem('twReply', twReply);
+  }, [twReply]);
+
+  useEffect(() => {
+    if (pinBoard) localStorage.setItem('pinBoard', pinBoard);
+  }, [pinBoard]);
+
+  useEffect(() => {
+    if (snapType) localStorage.setItem('snapType', snapType);
+  }, [snapType]);
+
+  useEffect(() => {
+    if (ytAutoFix !== undefined) localStorage.setItem('ytAutoFix', String(ytAutoFix));
+  }, [ytAutoFix]);
+
+  useEffect(() => {
+    if (thAutoFix !== undefined) localStorage.setItem('thAutoFix', String(thAutoFix));
+  }, [thAutoFix]);
+
+  useEffect(() => {
+    if (twAutoFix !== undefined) localStorage.setItem('twAutoFix', String(twAutoFix));
+  }, [twAutoFix]);
+
+  useEffect(() => {
+    if (igShareToFeed !== undefined) localStorage.setItem('igShareToFeed', String(igShareToFeed));
+  }, [igShareToFeed]);
+
+  useEffect(() => {
+    if (fbShareToStory !== undefined) localStorage.setItem('fbShareToStory', String(fbShareToStory));
+  }, [fbShareToStory]);
 
   useEffect(() => {
     const composeData = localStorage.getItem('composeAdData');
@@ -1577,6 +1641,14 @@ export default function NewPostPage() {
                         type="button"
                         onClick={() => {
                           setValue('content', msg.content);
+                          if (selectedPlatforms?.includes('YOUTUBE')) {
+                            const extractedTags = (msg.content.match(/#[\w]+/g) || []).map((t: string) => t.replace('#', ''));
+                            if (extractedTags.length > 0) {
+                              const currTags = watch('youtubeTags') || '';
+                              const mergedTags = Array.from(new Set([...currTags.split(',').map((t: string) => t.trim()).filter(Boolean), ...extractedTags])).join(', ');
+                              setValue('youtubeTags', mergedTags);
+                            }
+                          }
                           showToast('Content inserted into post!');
                           setIsChatModalOpen(false);
                         }}
