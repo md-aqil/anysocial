@@ -611,6 +611,8 @@ export default function PostCreatorPage() {
       progressMessage: `Generating commercial visual assets for ${dirsToUse.length} creative directions...`
     } : null);
 
+    setStep(3);
+
     const generatedResults: any[] = [];
     const failures: Array<{ direction: any; error: string }> = [];
 
@@ -707,11 +709,7 @@ export default function PostCreatorPage() {
           : 'Campaign generation complete! All visual assets ready for export.'
       } : null);
     } else {
-      setActiveCampaign(prev => prev ? {
-        ...prev,
-        status: 'failed',
-        progressMessage: 'All generations failed. Please retry.'
-      } : null);
+      setActiveCampaign(null);
     }
 
     fetchHistory();
@@ -1122,88 +1120,17 @@ export default function PostCreatorPage() {
                 <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-stone-50/70 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D27D50]/20 focus:border-[#D27D50] resize-none transition-all font-semibold text-stone-900" placeholder="A sky blue malmal top with straight pants designed for active, chic confidence..." />
               </div>
 
-              {/* Proposed Creative Directions Inline Box */}
-               {directions.length > 0 && (
-                 <div className="bg-amber-50/40 border border-amber-200 rounded-2xl p-5 space-y-4 animate-in fade-in duration-300">
-                   <div className="flex items-center justify-between">
-                     <span className="text-xs font-black text-[#D27D50] uppercase tracking-wider flex items-center gap-1.5">
-                       <Sparkles className="w-3.5 h-3.5" /> 4 Proposed Directions
-                     </span>
-                     <span className="text-[10px] font-black text-stone-500">
-                       {selectedDirections.length} of {directions.length} selected
-                     </span>
-                   </div>
 
-                   {specialInstructions && (
-                     <div className="bg-blue-50/60 border border-blue-200 rounded-xl p-3 flex items-start gap-2">
-                       <Sparkles className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
-                       <div>
-                         <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider block">Your Special Instructions</span>
-                         <p className="text-[11px] text-blue-800 leading-relaxed mt-0.5">{specialInstructions}</p>
-                       </div>
-                     </div>
-                   )}
 
-                   <div className="grid grid-cols-1 gap-3">
-                    {directions.map((dir, idx) => {
-                      const isSel = selectedDirections.some(d => d.title === dir.title);
-                      const badge = getThemeBadge(dir.title, dir.description || dir.visualSceneSetup || '');
-                      return (
-                        <div 
-                          key={idx}
-                          onClick={() => {
-                            if (isSel) {
-                              setSelectedDirections(selectedDirections.filter(d => d.title !== dir.title));
-                            } else {
-                              setSelectedDirections([...selectedDirections, dir]);
-                            }
-                          }}
-                          className={`p-4 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between gap-3 ${
-                            isSel 
-                              ? 'bg-stone-900 text-white border-stone-900 shadow-md scale-[1.005]' 
-                              : 'bg-white text-stone-750 border-stone-200 hover:border-amber-300 hover:shadow-2xs'
-                          }`}
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-black uppercase ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
-                                  #{idx + 1}
-                                </span>
-                                <h5 className="font-extrabold text-xs">{dir.title}</h5>
-                              </div>
-                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${isSel ? 'bg-white/10 text-amber-200 border-white/20' : badge.color}`}>
-                                {badge.text}
-                              </span>
-                            </div>
-                            <p className={`text-xs leading-relaxed ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
-                              {dir.description || dir.visualSceneSetup}
-                            </p>
-                          </div>
-                          <div className="flex items-center justify-between pt-1 border-t border-dashed border-stone-200/20">
-                            <span className="text-[10px] font-medium opacity-80">Pose transfer matching: High</span>
-                            <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 border ${isSel ? 'bg-amber-400 text-stone-950 border-amber-400' : 'border-stone-300'}`}>
-                              {isSel && <Check className="w-2.5 h-2.5 stroke-[3px]" />}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
+              <div className="pt-2">
+                {directions.length > 0 ? (
                   <Button 
-                    onClick={handleGenerateAd} 
-                    disabled={loading || selectedDirections.length === 0}
-                    className="w-full bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-xl h-12 font-extrabold text-sm shadow-md flex items-center justify-center gap-2"
+                    onClick={() => setStep(2)} 
+                    className="w-full bg-[#D27D50] hover:bg-[#b86d45] text-white rounded-2xl h-14 font-black text-base transition-all shadow-lg hover:scale-[1.005] flex items-center justify-center gap-2"
                   >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {loading ? 'Generating Commercial Visuals...' : `Generate Visuals (${selectedDirections.length})`}
+                    Continue to Directions <ArrowRight className="w-5 h-5" />
                   </Button>
-                </div>
-              )}
-
-              {directions.length === 0 && (
-                <div className="pt-2">
+                ) : (
                   <Button 
                     onClick={handleGenerateDirections} 
                     disabled={loading || !productName || !description}
@@ -1212,9 +1139,83 @@ export default function PostCreatorPage() {
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-[#D27D50]" />}
                     {loading ? 'Brainstorming Directions...' : 'Propose 5 Creative Directions'}
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Directions */}
+      {step === 2 && (
+        <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-stone-200/80 space-y-8 animate-in slide-in-from-right-4 duration-500">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black text-stone-900 flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-[#D27D50]" />
+              <span>Select Creative Directions</span>
+            </h2>
+            <div className="flex items-center gap-3">
+              <Button onClick={() => setStep(1)} variant="outline" className="rounded-xl h-10 font-bold text-stone-500 hover:text-stone-700">Back</Button>
+              <Button onClick={handleGenerateDirections} disabled={loading} variant="outline" className="rounded-xl h-10 font-bold border-amber-200 text-[#D27D50] hover:bg-amber-50">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                Regenerate
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {directions.map((dir, idx) => {
+              const isSel = selectedDirections.some(d => d.title === dir.title);
+              const badge = getThemeBadge(dir.title, dir.description || dir.visualSceneSetup || '');
+              return (
+                <div 
+                  key={idx}
+                  onClick={() => {
+                    if (isSel) {
+                      setSelectedDirections(selectedDirections.filter(d => d.title !== dir.title));
+                    } else {
+                      setSelectedDirections([...selectedDirections, dir]);
+                    }
+                  }}
+                  className={`p-6 rounded-3xl border text-left cursor-pointer transition-all flex flex-col gap-4 ${
+                    isSel 
+                      ? 'bg-stone-900 text-white border-stone-900 shadow-xl scale-[1.02] ring-2 ring-stone-900/20' 
+                      : 'bg-white text-stone-750 border-stone-200 hover:border-[#D27D50] hover:shadow-lg'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-xs font-black uppercase tracking-wider ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
+                      Direction #{idx + 1}
+                    </span>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${isSel ? 'bg-white/10 text-amber-200 border-white/20' : badge.color}`}>
+                      {badge.text}
+                    </span>
+                  </div>
+                  <h5 className="font-extrabold text-lg leading-tight">{dir.title}</h5>
+                  <p className={`text-sm leading-relaxed flex-1 ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
+                    {dir.description || dir.visualSceneSetup}
+                  </p>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-dashed border-stone-200/20">
+                    <span className="text-xs font-medium opacity-80">Style matching: High</span>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${isSel ? 'bg-amber-400 text-stone-950 border-amber-400' : 'border-stone-300'}`}>
+                      {isSel && <Check className="w-3.5 h-3.5 stroke-[3px]" />}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex justify-end pt-6 border-t border-stone-200">
+            <Button 
+              onClick={handleGenerateAd} 
+              disabled={loading || selectedDirections.length === 0}
+              className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-2xl h-14 px-8 font-black text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-3"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+              {loading ? 'Generating Commercial Visuals...' : `Generate Visuals (${selectedDirections.length})`}
+            </Button>
           </div>
         </div>
       )}
@@ -1372,77 +1373,7 @@ export default function PostCreatorPage() {
                       </div>
                     )}
 
-                    {/* If Active Campaign: Proposed Directions */}
-                    {isActive && group.directions && group.directions.length > 0 && group.status === 'directions_ready' && (
-                      <div className="bg-stone-50/70 rounded-2xl p-5 border border-stone-200/80 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-extrabold text-stone-900 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-[#D27D50]" />
-                             <span>4 Proposed Creative Directions</span>
-                          </h4>
-                          <span className="text-xs font-bold text-stone-550">Select directions to render</span>
-                        </div>
 
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-                          {group.directions.map((dir: any, idx: number) => {
-                            const isSel = group.selectedDirections?.some((d: any) => d.title === dir.title);
-                            return (
-                              <div 
-                                key={idx}
-                                onClick={() => {
-                                  const updated = (isSel 
-                                    ? group.selectedDirections?.filter((d: any) => d.title !== dir.title)
-                                    : [...(group.selectedDirections || []), dir]) || [];
-                                  if (activeCampaign) {
-                                    setActiveCampaign({ ...activeCampaign, selectedDirections: updated });
-                                  }
-                                }}
-                                className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${isSel ? 'bg-amber-50/80 text-stone-900 border-[#D27D50] shadow-xs scale-[1.02] ring-1 ring-[#D27D50]/30' : 'bg-white text-stone-750 border-stone-200 hover:border-amber-300'}`}
-                              >
-                                <span className={`text-[9px] font-black uppercase tracking-wider block mb-0.5 ${isSel ? 'text-[#D27D50]' : 'text-stone-400'}`}>
-                                  Dir #{idx+1}
-                                </span>
-                                <h5 className="font-extrabold text-[11px] mb-0.5 line-clamp-1">{dir.title || dir.concept}</h5>
-                                <p className={`text-[10px] leading-snug line-clamp-2 ${isSel ? 'text-stone-700' : 'text-stone-500'}`}>{dir.visualSceneSetup || dir.description}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        <div className="pt-2">
-                          <Button 
-                            onClick={handleGenerateAd}
-                            disabled={loading || group.selectedDirections?.length === 0}
-                            className="w-full bg-[#D27D50] hover:bg-[#b86d45] text-white font-extrabold rounded-xl h-12 text-sm shadow-md"
-                          >
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                            {loading ? 'Rendering Visual Variations...' : `Generate Visuals for ${group.selectedDirections?.length} Selected Directions`}
-                          </Button>
-                        </div>
-
-                        {/* Failed Directions with Retry */}
-                        {failedDirections.length > 0 && (
-                          <div className="mt-4 space-y-2">
-                            <p className="text-[10px] font-black text-red-600 uppercase tracking-wider">Failed Generations</p>
-                            {failedDirections.map((fail, idx) => (
-                              <div key={idx} className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="text-xs font-bold text-red-900 truncate">{fail.direction.title}</p>
-                                  <p className="text-[10px] text-red-700 truncate">{fail.error}</p>
-                                </div>
-                                <Button
-                                  onClick={() => handleRetryDirection(fail.direction)}
-                                  disabled={loading}
-                                  className="shrink-0 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg"
-                                >
-                                  Retry
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
 
                     {/* Inside Campaign: Separate Post Cards Grid */}
                     {group.items.length > 0 && (

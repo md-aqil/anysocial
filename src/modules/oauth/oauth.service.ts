@@ -100,7 +100,7 @@ export class OAuthService {
     // Platform-specific extras
     if (platform === 'YOUTUBE') {
       params.access_type = 'offline';
-      params.prompt = 'consent';
+      params.prompt = 'consent select_account';
     }
 
     const authUrl = buildAuthUrl(config.authUrl, params);
