@@ -53,21 +53,26 @@ app.use(
   })
 );
 
-// CORS
-const allowedOrigins = process.env.FRONTEND_URL 
-  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+// CORS — restrict to an explicit allowlist (never reflect arbitrary origins with credentials)
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim()).filter(Boolean)
   : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:5173', 'https://socialsched.vibeship.in'];
 
 app.use(
   cors({
-    origin: true, // Automatically reflects the request origin, allowing all
+    origin: (origin, callback) => {
+      // Allow same-origin / server-to-server / curl (no Origin header)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+    },
     credentials: true
   })
 );
 
-// Body parsing
-app.use(express.json({ limit: '500mb' }));
-app.use(express.urlencoded({ extended: true, limit: '500mb' }));
+// Body parsing (uploads use multer/multipart, so JSON/urlencoded can stay modest)
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Cookie parser
 app.use(cookieParser());

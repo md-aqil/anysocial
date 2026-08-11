@@ -1383,7 +1383,7 @@ export default function PostCreatorPage() {
                           <span className="text-xs font-bold text-stone-550">Select directions to render</span>
                         </div>
 
-                         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
                           {group.directions.map((dir: any, idx: number) => {
                             const isSel = group.selectedDirections?.some((d: any) => d.title === dir.title);
                             return (
@@ -1397,13 +1397,13 @@ export default function PostCreatorPage() {
                                     setActiveCampaign({ ...activeCampaign, selectedDirections: updated });
                                   }
                                 }}
-                                className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${isSel ? 'bg-amber-50/80 text-stone-900 border-[#D27D50] shadow-xs scale-[1.02] ring-1 ring-[#D27D50]/30' : 'bg-white text-stone-750 border-stone-200 hover:border-amber-300'}`}
+                                className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${isSel ? 'bg-amber-50/80 text-stone-900 border-[#D27D50] shadow-xs scale-[1.02] ring-1 ring-[#D27D50]/30' : 'bg-white text-stone-750 border-stone-200 hover:border-amber-300'}`}
                               >
-                                <span className={`text-[10px] font-black uppercase tracking-wider block mb-1 ${isSel ? 'text-[#D27D50]' : 'text-stone-400'}`}>
+                                <span className={`text-[9px] font-black uppercase tracking-wider block mb-0.5 ${isSel ? 'text-[#D27D50]' : 'text-stone-400'}`}>
                                   Dir #{idx+1}
                                 </span>
-                                <h5 className="font-extrabold text-xs mb-1 line-clamp-1">{dir.title || dir.concept}</h5>
-                                <p className={`text-[11px] line-clamp-2 ${isSel ? 'text-stone-700' : 'text-stone-500'}`}>{dir.visualSceneSetup || dir.description}</p>
+                                <h5 className="font-extrabold text-[11px] mb-0.5 line-clamp-1">{dir.title || dir.concept}</h5>
+                                <p className={`text-[10px] leading-snug line-clamp-2 ${isSel ? 'text-stone-700' : 'text-stone-500'}`}>{dir.visualSceneSetup || dir.description}</p>
                               </div>
                             );
                           })}

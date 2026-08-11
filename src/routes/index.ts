@@ -10,6 +10,7 @@ import { adminAuditRoutes } from '../admin/audit.routes.js';
 import { adminRoutes } from '../admin/admin.routes.js';
 
 import { jwtAuth } from '../middleware/jwt-auth.js';
+import { adminAuth } from '../middleware/admin-auth.js';
 import { aiGenerationRoutes } from './ai-generation.routes.js';
 import { reelsRoutes } from './reels.routes.js';
 import { curationRoutes } from './curation.routes.js';
@@ -50,9 +51,9 @@ router.use('/api/webhooks', jwtAuth, webhookRoutes);
 // Config routes
 router.use('/api/config', configRoutes);
 
-// Admin routes
-router.use('/admin', adminHealthRoutes);
-router.use('/admin/audit', adminAuditRoutes);
+// Admin routes (all require admin role)
+router.use('/admin', adminAuth, adminHealthRoutes);
+router.use('/admin/audit', adminAuth, adminAuditRoutes);
 router.use('/api/admin', adminRoutes);
 
 // AI Generation routes
@@ -95,8 +96,8 @@ router.use('/api/curation', curationRoutes);
 // Ad Creator routes
 router.use('/api/ad-creator', jwtAuth, adCreatorRoutes);
 
-// Scrape routes
-router.use('/api/scrape', scrapeRoutes);
+// Scrape routes (protected — performs server-side outbound fetches)
+router.use('/api/scrape', jwtAuth, scrapeRoutes);
 
 // Settings routes
 router.use('/api/settings', settingsRoutes);

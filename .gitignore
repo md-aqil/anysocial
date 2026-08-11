@@ -28,6 +28,12 @@ scratch/
 !tsconfig.json
 !next.config.json
 
+# Cloudflare tunnel + VPS credentials (never commit)
+.cloudflared/
+tunnel-config/
+*.env
+*credentials.json
+
 # Next.js build output
 frontend/.next/
 .next/

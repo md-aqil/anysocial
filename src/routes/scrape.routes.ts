@@ -1,6 +1,7 @@
 import express from 'express';
 import * as cheerio from 'cheerio';
 import { logger } from '../logger/pino.js';
+import { assertPublicUrl } from '../utils/safe-url.js';
 
 const router = express.Router();
 
@@ -9,12 +10,21 @@ router.post('/', async (req: any, res: any) => {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: 'URL is required' });
 
+    // SSRF guard: reject non-public / non-http(s) targets before fetching.
+    try {
+      await assertPublicUrl(url);
+    } catch (e: any) {
+      return res.status(400).json({ error: e.message || 'Invalid URL' });
+    }
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
-      }
+      },
+      redirect: 'error',
+      signal: AbortSignal.timeout(15000),
     });
     
     if (!response.ok) {
@@ -134,20 +144,33 @@ router.get('/proxy-image', async (req: any, res: any) => {
     const imageUrl = req.query.url as string;
     if (!imageUrl) return res.status(400).send('Missing url parameter');
 
+    // SSRF guard on the proxied image URL.
+    try {
+      await assertPublicUrl(imageUrl);
+    } catch (e: any) {
+      return res.status(400).send(e.message || 'Invalid URL');
+    }
+
     const imgRes = await fetch(imageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
-      }
+      },
+      redirect: 'error',
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!imgRes.ok) {
       return res.status(500).send(`Failed to fetch image: ${imgRes.statusText}`);
     }
 
-    const arrayBuffer = await imgRes.arrayBuffer();
     const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
-    
+    // Only proxy actual images — prevents this endpoint being used as a generic proxy.
+    if (!contentType.startsWith('image/')) {
+      return res.status(400).send('URL did not return an image');
+    }
+
+    const arrayBuffer = await imgRes.arrayBuffer();
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.send(Buffer.from(arrayBuffer));
