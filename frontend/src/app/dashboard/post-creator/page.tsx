@@ -1617,8 +1617,9 @@ export default function PostCreatorPage() {
 
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none"></div>
                                 <div className="absolute bottom-3 left-3 right-3">
-                                  <span className="text-white text-xs font-extrabold uppercase tracking-wider block drop-shadow-md">
-                                    {ad.direction?.title || group.productName}
+                                  <span className="text-white text-xs font-extrabold tracking-wide block drop-shadow-md line-clamp-1">
+                                    <span className="text-amber-300 font-black uppercase text-[10px] tracking-wider mr-1.5">Narrative:</span>
+                                    {ad.brief?.tagline || ad.direction?.caption || ad.direction?.title || group.productName}
                                   </span>
                                 </div>
                               </div>
