@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { 
   Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, 
   XCircle, PenSquare, Maximize2, Film, Download, X, Video, Share2, 
-  Check, ArrowLeft, Layers, Wand2, ExternalLink, Eye, Link2, RefreshCw
+  Check, ArrowLeft, ArrowRight, Layers, Wand2, ExternalLink, Eye, Link2, RefreshCw,
+  Lock, Camera, ChevronLeft, ChevronRight, Play
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,36 @@ const getThemeBadge = (title: string, desc: string) => {
   if (t.includes('premium') || t.includes('luxury') || t.includes('elegant') || t.includes('aesthetic')) return { text: 'Premium Style', color: 'bg-violet-50 text-violet-700 border-violet-100' };
   if (t.includes('story') || t.includes('narrator') || t.includes('behind')) return { text: 'Storytelling', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
   return { text: 'Creative Spec', color: 'bg-stone-50 text-stone-700 border-stone-100' };
+};
+
+const getRoleLabel = (role?: string) => {
+  const map: Record<string, string> = {
+    cover: 'Cover',
+    hook: 'Hook',
+    problem: 'Problem',
+    reveal: 'Reveal',
+    detail: 'Detail',
+    benefit: 'Benefit',
+    lifestyle: 'Lifestyle',
+    guarantee: 'Proof',
+    cta: 'CTA'
+  };
+  return map[role || ''] || 'Slide';
+};
+
+const getSlideBadgeColor = (role?: string) => {
+  const map: Record<string, string> = {
+    cover: 'bg-rose-50 text-rose-700 border-rose-100',
+    hook: 'bg-orange-50 text-orange-700 border-orange-100',
+    problem: 'bg-amber-50 text-amber-700 border-amber-100',
+    reveal: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    detail: 'bg-cyan-50 text-cyan-700 border-cyan-100',
+    benefit: 'bg-blue-50 text-blue-700 border-blue-100',
+    lifestyle: 'bg-violet-50 text-violet-700 border-violet-100',
+    guarantee: 'bg-teal-50 text-teal-700 border-teal-100',
+    cta: 'bg-stone-900 text-white border-stone-900'
+  };
+  return map[role || ''] || 'bg-stone-100 text-stone-600 border-stone-200';
 };
 
 export default function PostCreatorPage() {
@@ -58,6 +89,10 @@ export default function PostCreatorPage() {
   const [directions, setDirections] = useState<any[]>([]);
   const [selectedDirections, setSelectedDirections] = useState<any[]>([]);
 
+  // Carousel state (storyboard + locked design system used for continuity)
+  const [carouselDesignSystem, setCarouselDesignSystem] = useState<any>(null);
+  const [carouselActiveIndex, setCarouselActiveIndex] = useState(0);
+
   // Result & Detail Modal State
   const [results, setResults] = useState<any[]>([]);
   const [failedDirections, setFailedDirections] = useState<Array<{ direction: any; error: string }>>([]);
@@ -75,6 +110,7 @@ export default function PostCreatorPage() {
     directions: any[];
     selectedDirections: any[];
     items: any[];
+    designSystem?: any;
   } | null>(null);
 
   const archiveRef = useRef<HTMLDivElement>(null);
@@ -347,7 +383,11 @@ export default function PostCreatorPage() {
       if (savedActiveCampaign) {
         const parsed = JSON.parse(savedActiveCampaign);
         setActiveCampaign(parsed);
+        if (parsed.designSystem) setCarouselDesignSystem(parsed.designSystem);
       }
+
+      const savedDesignSystem = localStorage.getItem('postCreator_designSystem');
+      if (savedDesignSystem) setCarouselDesignSystem(JSON.parse(savedDesignSystem));
 
       const savedFormFields = localStorage.getItem('postCreator_formFields');
       if (savedFormFields) {
@@ -373,6 +413,9 @@ export default function PostCreatorPage() {
       localStorage.setItem('postCreator_directions', JSON.stringify(directions));
       localStorage.setItem('postCreator_selectedDirections', JSON.stringify(selectedDirections));
       localStorage.setItem('postCreator_results', JSON.stringify(results));
+      if (carouselDesignSystem) {
+        localStorage.setItem('postCreator_designSystem', JSON.stringify(carouselDesignSystem));
+      }
       if (activeCampaign) {
         localStorage.setItem('postCreator_activeCampaign', JSON.stringify(activeCampaign));
       }
@@ -382,7 +425,7 @@ export default function PostCreatorPage() {
     } catch (e) {
       console.error('Failed to persist post creator state:', e);
     }
-  }, [step, directions, selectedDirections, results, activeCampaign, productName, description, usp, personality, audience, platform, mood, specialInstructions]);
+  }, [step, directions, selectedDirections, results, activeCampaign, carouselDesignSystem, productName, description, usp, personality, audience, platform, mood, specialInstructions]);
 
   const fetchHistory = async () => {
     try {
@@ -503,6 +546,8 @@ export default function PostCreatorPage() {
     setStep(1);
     setDirections([]);
     setSelectedDirections([]);
+    setCarouselDesignSystem(null);
+    setCarouselActiveIndex(0);
     setResults([]);
     setFailedDirections([]);
     setActiveCampaign(null);
@@ -512,6 +557,7 @@ export default function PostCreatorPage() {
     localStorage.removeItem('postCreator_selectedDirections');
     localStorage.removeItem('postCreator_results');
     localStorage.removeItem('postCreator_activeCampaign');
+    localStorage.removeItem('postCreator_designSystem');
     localStorage.removeItem('postCreator_formFields');
   };
 
@@ -577,15 +623,20 @@ export default function PostCreatorPage() {
       }
 
       const data = await res.json();
-      setDirections(data.directions);
-      setSelectedDirections(data.directions);
-      
+      const storyboard = (data.directions || data.slides || []).slice();
+      // Keep the storyboard strictly ordered by slide number
+      storyboard.sort((a: any, b: any) => (a.slideIndex ?? a.id ?? 0) - (b.slideIndex ?? b.id ?? 0));
+      setDirections(storyboard);
+      setSelectedDirections(storyboard);
+      setCarouselDesignSystem(data.designSystem || null);
+
       setActiveCampaign(prev => prev ? {
         ...prev,
         status: 'directions_ready',
-        progressMessage: '5 Creative Directions proposed! Select directions below to generate visual assets.',
-        directions: data.directions,
-        selectedDirections: data.directions
+        progressMessage: `${storyboard.length}-Slide Carousel Storyboard ready! The design system is locked so every slide reads as one continuous campaign.`,
+        directions: storyboard,
+        selectedDirections: storyboard,
+        designSystem: data.designSystem || null
       } : null);
 
       setStep(2);
@@ -598,8 +649,11 @@ export default function PostCreatorPage() {
   };
 
   const handleGenerateAd = async () => {
-    const dirsToUse = activeCampaign?.selectedDirections?.length ? activeCampaign.selectedDirections : (selectedDirections.length ? selectedDirections : directions);
+    let dirsToUse: any[] = activeCampaign?.selectedDirections?.length ? activeCampaign.selectedDirections : (selectedDirections.length ? selectedDirections : directions);
     if (dirsToUse.length === 0) return;
+    // Generate in carousel order (Slide 1 → N) so results assemble as a sequence
+    dirsToUse = dirsToUse.slice().sort((a: any, b: any) => (a.slideIndex ?? a.id ?? 0) - (b.slideIndex ?? b.id ?? 0));
+    const designSystem = carouselDesignSystem || activeCampaign?.designSystem || null;
     setLoading(true);
     setError(null);
     setResults([]);
@@ -608,7 +662,7 @@ export default function PostCreatorPage() {
     setActiveCampaign(prev => prev ? {
       ...prev,
       status: 'generating_ads',
-      progressMessage: `Generating commercial visual assets for ${dirsToUse.length} creative directions...`
+      progressMessage: `Generating ${dirsToUse.length}-slide Instagram Carousel with a locked design system...`
     } : null);
 
     setStep(3);
@@ -618,6 +672,7 @@ export default function PostCreatorPage() {
 
     for (let i = 0; i < dirsToUse.length; i++) {
       const direction = dirsToUse[i];
+      const slideNo = direction.slideIndex ?? direction.id ?? (i + 1);
       try {
         const formData = new FormData();
         formData.append('productName', productName);
@@ -625,6 +680,11 @@ export default function PostCreatorPage() {
         formData.append('platform', platform);
         if (specialInstructions) {
           formData.append('specialInstructions', specialInstructions);
+        }
+        // Send the full storyboard + locked design system so this slide keeps
+        // visual continuity with the rest of the carousel.
+        if (designSystem && dirsToUse.length > 0) {
+          formData.append('carouselContext', JSON.stringify({ designSystem, slides: dirsToUse }));
         }
         imageFiles.forEach(file => {
           formData.append('images', file);
@@ -676,7 +736,8 @@ export default function PostCreatorPage() {
         const newItem = { 
           brief: data.brief, 
           imageUrl: data.imageUrl, 
-          direction, 
+          direction,
+          slideIndex: slideNo,
           id: 'ad_' + Date.now() + '_' + Math.random().toString(36).substring(7),
           productName,
           platform,
@@ -688,7 +749,7 @@ export default function PostCreatorPage() {
         setActiveCampaign(prev => prev ? {
           ...prev,
           items: [...generatedResults],
-          progressMessage: `Generated ${generatedResults.length} of ${dirsToUse.length} creative visual variations...`
+          progressMessage: `Generated Slide ${slideNo} of ${dirsToUse.length} carousel slides...`
         } : null);
         
         if (generatedResults.length === 1) {
@@ -705,8 +766,8 @@ export default function PostCreatorPage() {
         ...prev,
         status: failures.length > 0 ? 'partial' : 'completed',
         progressMessage: failures.length > 0 
-          ? `Generated ${generatedResults.length} of ${dirsToUse.length} variations. ${failures.length} failed - retry below.`
-          : 'Campaign generation complete! All visual assets ready for export.'
+          ? `Generated ${generatedResults.length} of ${dirsToUse.length} carousel slides. ${failures.length} failed - retry below.`
+          : `${dirsToUse.length}-part carousel complete! All slides share the same locked design system - ready to export.`
       } : null);
     } else {
       setActiveCampaign(null);
@@ -715,7 +776,7 @@ export default function PostCreatorPage() {
     fetchHistory();
     
     if (failures.length > 0 && generatedResults.length === 0) {
-      setError(`${failures.length} direction(s) failed: ${failures[0].error}`);
+      setError(`${failures.length} slide(s) failed: ${failures[0].error}`);
     }
   };
 
@@ -731,6 +792,11 @@ export default function PostCreatorPage() {
       formData.append('platform', platform);
       if (specialInstructions) {
         formData.append('specialInstructions', specialInstructions);
+      }
+      const designSystem = carouselDesignSystem || activeCampaign?.designSystem || null;
+      const carouselSlides = (activeCampaign?.selectedDirections?.length ? activeCampaign.selectedDirections : (selectedDirections.length ? selectedDirections : directions));
+      if (designSystem && carouselSlides.length > 0) {
+        formData.append('carouselContext', JSON.stringify({ designSystem, slides: carouselSlides }));
       }
       imageFiles.forEach(file => {
         formData.append('images', file);
@@ -787,11 +853,18 @@ export default function PostCreatorPage() {
   const handleComposeEntireCampaign = (items: any[]) => {
     if (!items || items.length === 0) return;
 
-    const firstItem = items[0];
+    // Keep the carousel in slide order (Slide 1 → N)
+    const ordered = items.slice().sort((a: any, b: any) => {
+      const ia = a.slideIndex ?? a.brief?.carousel?.slideIndex ?? a.direction?.slideIndex ?? 0;
+      const ib = b.slideIndex ?? b.brief?.carousel?.slideIndex ?? b.direction?.slideIndex ?? 0;
+      return ia - ib;
+    });
+
+    const firstItem = ordered[0];
     const prodName = firstItem.productName || productName || 'Product Campaign';
 
     // Gather all media URLs (prefer videoUrl if animated, else imageUrl)
-    const mediaUrls = items
+    const mediaUrls = ordered
       .map(item => item.videoUrl || renderedVideoMap[item.id] || item.imageUrl)
       .filter(Boolean);
 
@@ -800,13 +873,17 @@ export default function PostCreatorPage() {
     const mainCopy = firstBrief.supportingCopy || firstBrief.copy || '';
     const mainCta = firstBrief.callToAction ? `\n\n${firstBrief.callToAction}` : '';
 
-    const slideSummaries = items.map((item, idx) => {
+    const slideSummaries = ordered.map((item, idx) => {
       const b = item.brief || {};
-      const t = b.tagline ? `"${b.tagline}"` : (item.direction || `Option ${idx + 1}`);
-      return `Slide ${idx + 1}: ${t}`;
+      const slideTitle = item.direction?.title || b.carousel?.slideTitle || '';
+      const t = slideTitle
+        ? `"${slideTitle}"`
+        : (b.tagline ? `"${b.tagline}"` : `Slide ${idx + 1}`);
+      const captionLine = item.direction?.caption || b.carousel?.caption || '';
+      return `Slide ${idx + 1}: ${t}${captionLine ? ` — ${captionLine}` : ''}`;
     }).join('\n');
 
-    const fullCaption = `🚀 ${prodName.toUpperCase()}\n\n${mainTagline}${mainCopy}${mainCta}\n\n📸 Carousel Collection (${items.length} Variations):\n${slideSummaries}\n\n👉 Swipe to explore all creative styles!`.trim();
+    const fullCaption = `🚀 ${prodName.toUpperCase()}\n\n${mainTagline}${mainCopy}${mainCta}\n\n📸 Instagram Carousel (${ordered.length} slides):\n${slideSummaries}\n\n👉 Swipe through the story and shop the look!`.trim();
 
     const postData = {
       content: fullCaption,
@@ -826,7 +903,7 @@ export default function PostCreatorPage() {
             <Target className="w-7 h-7 text-[#D27D50]" />
             <span>AI Ad & Post Creator</span>
           </h1>
-          <p className="text-stone-500 text-sm font-medium mt-0.5">Generate high-converting commercial ad campaigns with AI model pose & style transfer.</p>
+          <p className="text-stone-500 text-sm font-medium mt-0.5">Generate one cohesive Instagram carousel campaign — the AI analyses each product photo (front / back / side / detail) and assigns the right angle to the right slide, with a locked design system across all slides.</p>
         </div>
 
         {/* Step Progress Pills */}
@@ -1146,14 +1223,19 @@ export default function PostCreatorPage() {
         </div>
       )}
 
-      {/* Step 2: Directions */}
+      {/* Step 2: Carousel Storyboard */}
       {step === 2 && (
         <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-stone-200/80 space-y-8 animate-in slide-in-from-right-4 duration-500">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-stone-900 flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-[#D27D50]" />
-              <span>Select Creative Directions</span>
-            </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-stone-900 flex items-center gap-2">
+                <Layers className="w-6 h-6 text-[#D27D50]" />
+                <span>Carousel Storyboard</span>
+              </h2>
+              <p className="text-xs font-semibold text-stone-500 mt-1">
+                {directions.length} connected slides for Instagram — one locked design system makes them read as a single campaign, not random options.
+              </p>
+            </div>
             <div className="flex items-center gap-3">
               <Button onClick={() => setStep(1)} variant="outline" className="rounded-xl h-10 font-bold text-stone-500 hover:text-stone-700">Back</Button>
               <Button onClick={handleGenerateDirections} disabled={loading} variant="outline" className="rounded-xl h-10 font-bold border-amber-200 text-[#D27D50] hover:bg-amber-50">
@@ -1163,13 +1245,50 @@ export default function PostCreatorPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          {/* Locked Design System Strip — the shared look for all slides */}
+          {carouselDesignSystem && (
+            <div className="bg-stone-900 rounded-2xl p-5 text-white space-y-3">
+              <div className="flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 text-amber-300" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">Locked Design System — identical on every slide</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-[11px]">
+                <div>
+                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Environment</span>
+                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.environment || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Lighting</span>
+                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.lighting || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Color Palette</span>
+                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.colorPalette || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Typography</span>
+                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.typography || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Composition</span>
+                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.compositionGrid || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Mood</span>
+                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.mood || '—'}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Ordered Storyboard Strip (swipeable like Instagram) */}
+          <div className="flex items-stretch gap-5 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth">
             {directions.map((dir, idx) => {
               const isSel = selectedDirections.some(d => d.title === dir.title);
-              const badge = getThemeBadge(dir.title, dir.description || dir.visualSceneSetup || '');
+              const slideNo = dir.slideIndex ?? dir.id ?? (idx + 1);
               return (
-                <div 
-                  key={idx}
+                <div
+                  key={dir.id ?? idx}
                   onClick={() => {
                     if (isSel) {
                       setSelectedDirections(selectedDirections.filter(d => d.title !== dir.title));
@@ -1177,27 +1296,50 @@ export default function PostCreatorPage() {
                       setSelectedDirections([...selectedDirections, dir]);
                     }
                   }}
-                  className={`p-6 rounded-3xl border text-left cursor-pointer transition-all flex flex-col gap-4 ${
-                    isSel 
-                      ? 'bg-stone-900 text-white border-stone-900 shadow-xl scale-[1.02] ring-2 ring-stone-900/20' 
-                      : 'bg-white text-stone-750 border-stone-200 hover:border-[#D27D50] hover:shadow-lg'
+                  className={`cursor-pointer snap-start shrink-0 w-[280px] rounded-3xl border p-5 flex flex-col gap-3 transition-all ${
+                    isSel
+                      ? 'bg-stone-900 text-white border-stone-900 shadow-xl ring-2 ring-stone-900/20'
+                      : 'bg-white text-stone-800 border-stone-200 hover:border-[#D27D50] hover:shadow-lg'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`text-xs font-black uppercase tracking-wider ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
-                      Direction #{idx + 1}
+                    <span className={`text-[10px] font-black uppercase tracking-wider ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
+                      Slide {slideNo} of {directions.length}
                     </span>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md border ${isSel ? 'bg-white/10 text-amber-200 border-white/20' : badge.color}`}>
-                      {badge.text}
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${isSel ? 'bg-white/10 text-amber-200 border-white/20' : getSlideBadgeColor(dir.role)}`}>
+                      {getRoleLabel(dir.role)}
                     </span>
                   </div>
-                  <h5 className="font-extrabold text-lg leading-tight">{dir.title}</h5>
-                  <p className={`text-sm leading-relaxed flex-1 ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
+
+                  <h5 className="font-extrabold text-base leading-tight">{dir.title}</h5>
+
+                  {(dir.featuredAngle || dir.productAngle) && (
+                    <div className={`flex items-start gap-1.5 text-[10px] font-bold rounded-lg px-2 py-1.5 ${isSel ? 'bg-white/10 text-amber-100' : 'bg-amber-50 text-amber-800'}`}>
+                      <Camera className="w-3 h-3 shrink-0 mt-0.5" />
+                      <span>{dir.featuredAngle || dir.productAngle}</span>
+                    </div>
+                  )}
+
+                  {dir.shotType && (
+                    <span className={`text-[10px] font-semibold ${isSel ? 'text-stone-300' : 'text-stone-400'}`}>
+                      🎥 {dir.shotType}
+                    </span>
+                  )}
+
+                  <p className={`text-[11px] leading-relaxed flex-1 line-clamp-4 ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
                     {dir.description || dir.visualSceneSetup}
                   </p>
-                  
-                  <div className="flex items-center justify-between pt-4 border-t border-dashed border-stone-200/20">
-                    <span className="text-xs font-medium opacity-80">Style matching: High</span>
+
+                  {dir.caption && (
+                    <p className={`text-[11px] italic line-clamp-2 border-t border-dashed pt-2 ${isSel ? 'text-amber-200/90 border-white/20' : 'text-stone-400 border-stone-200'}`}>
+                      “{dir.caption}”
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2">
+                    <span className={`text-[9px] font-medium ${isSel ? 'text-stone-400' : 'text-stone-400'}`}>
+                      {isSel ? 'Included in carousel' : 'Tap to include'}
+                    </span>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${isSel ? 'bg-amber-400 text-stone-950 border-amber-400' : 'border-stone-300'}`}>
                       {isSel && <Check className="w-3.5 h-3.5 stroke-[3px]" />}
                     </div>
@@ -1207,14 +1349,19 @@ export default function PostCreatorPage() {
             })}
           </div>
 
-          <div className="flex justify-end pt-6 border-t border-stone-200">
-            <Button 
-              onClick={handleGenerateAd} 
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-stone-200">
+            <div className="text-[11px] font-semibold text-stone-400">
+              {selectedDirections.length === directions.length
+                ? `All ${directions.length} slides selected — the carousel will be generated in Slide 1 → N order.`
+                : `${selectedDirections.length} of ${directions.length} slides selected.`}
+            </div>
+            <Button
+              onClick={handleGenerateAd}
               disabled={loading || selectedDirections.length === 0}
               className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-2xl h-14 px-8 font-black text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-3"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-              {loading ? 'Generating Commercial Visuals...' : `Generate Visuals (${selectedDirections.length})`}
+              {loading ? 'Generating Carousel...' : `Generate Instagram Carousel (${selectedDirections.length})`}
             </Button>
           </div>
         </div>
@@ -1300,6 +1447,16 @@ export default function PostCreatorPage() {
 
                 const isActive = group.campaignId === 'active-campaign' || group.campaignId.startsWith('camp_');
 
+                // Carousel-aware: keep the generated slides in Slide 1 → N order
+                const isCarouselGroup = group.items.some((i: any) =>
+                  i.slideIndex != null || i.direction?.slideIndex != null || i.brief?.carousel?.slideIndex != null || i.direction?.id != null || i.direction?.role
+                );
+                const sortedItems = group.items.slice().sort((a: any, b: any) => {
+                  const ia = a.slideIndex ?? a.direction?.slideIndex ?? a.brief?.carousel?.slideIndex ?? (a.direction?.id ?? 0);
+                  const ib = b.slideIndex ?? b.direction?.slideIndex ?? b.brief?.carousel?.slideIndex ?? (b.direction?.id ?? 0);
+                  return ia - ib;
+                });
+
                 return (
                   <div key={group.campaignId} className={cn("bg-white rounded-3xl p-6 lg:p-8 border shadow-sm space-y-6 transition-all duration-300", isActive ? 'border-[#D27D50]/40 ring-1 ring-[#D27D50]/20 shadow-md' : 'border-stone-200/80')}>
                     {/* Separate Campaign Card Header */}
@@ -1310,6 +1467,11 @@ export default function PostCreatorPage() {
                           <span className="px-2.5 py-0.5 bg-stone-100 text-stone-700 text-[10px] font-extrabold rounded-full uppercase border border-stone-200/50">
                             {group.platform}
                           </span>
+                          {isCarouselGroup && (
+                            <span className="px-2.5 py-0.5 bg-gradient-to-r from-[#D27D50] to-rose-500 text-white text-[10px] font-black rounded-md uppercase tracking-widest">
+                              📸 {group.items.length}-Slide Carousel
+                            </span>
+                          )}
                           {isActive && group.status !== 'completed' && (
                             <span className="px-2.5 py-0.5 bg-orange-50 text-[#D27D50] text-[10px] font-black rounded-md border border-orange-200 uppercase tracking-widest animate-pulse">
                               ⚡ Live Generation
@@ -1318,9 +1480,9 @@ export default function PostCreatorPage() {
                         </div>
                         <p className="text-xs font-semibold text-stone-400">
                           {isActive && group.status !== 'completed' ? (
-                            `${group.items.length} Post Variations • Started Just Now`
+                            `${group.items.length} ${isCarouselGroup ? 'Carousel Slides' : 'Post Variations'} • Started Just Now`
                           ) : (
-                            `${group.items.length} Post Variations • Created ${new Date(group.createdAt).toLocaleDateString()}`
+                            `${group.items.length} ${isCarouselGroup ? 'Carousel Slides' : 'Post Variations'} • Created ${new Date(group.createdAt).toLocaleDateString()}`
                           )}
                         </p>
                       </div>
@@ -1375,16 +1537,90 @@ export default function PostCreatorPage() {
 
 
 
-                    {/* Inside Campaign: Separate Post Cards Grid */}
+                    {/* Carousel Preview Strip (ordered slides) */}
+                    {isCarouselGroup && sortedItems.length > 1 && (
+                      <div className="bg-stone-50/70 border border-stone-200 rounded-2xl p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-[#D27D50]">
+                            Instagram Carousel Preview — Slide Order
+                          </span>
+                          <span className="text-[9px] font-bold text-stone-400">{sortedItems.length} connected slides</span>
+                        </div>
+                        <div className="flex items-center gap-3 overflow-x-auto pb-1 snap-x">
+                          {sortedItems.map((ad: any, sIdx: number) => {
+                            const sNo = ad.slideIndex ?? ad.direction?.slideIndex ?? ad.brief?.carousel?.slideIndex ?? (sIdx + 1);
+                            const slideTitle = ad.direction?.title || ad.brief?.carousel?.slideTitle || `Slide ${sNo}`;
+                            return (
+                              <button
+                                type="button"
+                                key={ad.id}
+                                onClick={() => setCarouselActiveIndex(sIdx)}
+                                className={`snap-start shrink-0 w-20 rounded-xl overflow-hidden border-2 transition-all relative ${
+                                  carouselActiveIndex === sIdx
+                                    ? 'border-[#D27D50] ring-2 ring-[#D27D50]/30'
+                                    : 'border-stone-200 hover:border-stone-300'
+                                }`}
+                                title={slideTitle}
+                              >
+                                <img src={ad.imageUrl} alt={slideTitle} className="w-full h-24 object-cover" />
+                                <span className="absolute top-1 left-1 text-[8px] font-black bg-black/70 text-white px-1.5 py-0.5 rounded">
+                                  {sNo}/{sortedItems.length}
+                                </span>
+                                <span className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent text-white text-[8px] font-bold px-1 py-0.5 truncate text-left">
+                                  {getRoleLabel(ad.direction?.role || ad.brief?.carousel?.role)}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setCarouselActiveIndex(Math.max(0, carouselActiveIndex - 1))}
+                              className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center hover:border-[#D27D50] hover:text-[#D27D50] transition-colors"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <span className="text-[10px] font-black text-stone-600 min-w-[70px] text-center">
+                              {Math.min(carouselActiveIndex + 1, sortedItems.length)} / {sortedItems.length}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setCarouselActiveIndex(Math.min(sortedItems.length - 1, carouselActiveIndex + 1))}
+                              className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center hover:border-[#D27D50] hover:text-[#D27D50] transition-colors"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <a
+                            href={sortedItems[Math.min(carouselActiveIndex, sortedItems.length - 1)]?.imageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-bold text-stone-500 hover:text-[#D27D50] flex items-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" /> View Slide {Math.min(carouselActiveIndex + 1, sortedItems.length)}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inside Campaign: Slide Cards Grid */}
                     {group.items.length > 0 && (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
-                        {group.items.map((ad: any) => {
+                        {sortedItems.map((ad: any) => {
                           const adVideoUrl = ad.videoUrl || renderedVideoMap[ad.id];
                           const currentViewMode = viewModeMap[ad.id] || (adVideoUrl ? 'video' : 'image');
 
                           return (
                             <div key={ad.id} className="bg-white rounded-2xl overflow-hidden border border-stone-200 shadow-sm hover:shadow-lg transition-all duration-305 flex flex-col">
                               <div className="h-56 w-full bg-stone-900 relative overflow-hidden group/img">
+                                {/* Carousel slide badge */}
+                                {isCarouselGroup && (
+                                  <span className="absolute top-3 right-3 z-20 bg-black/70 text-white text-[9px] font-black px-2 py-1 rounded-md border border-white/20">
+                                    {(ad.slideIndex ?? ad.direction?.slideIndex ?? ad.brief?.carousel?.slideIndex ?? 1)} / {sortedItems.length}
+                                  </span>
+                                )}
                                 {currentViewMode === 'video' && adVideoUrl ? (
                                   <video src={adVideoUrl} controls autoPlay muted loop className="w-full h-full object-cover" />
                                 ) : (

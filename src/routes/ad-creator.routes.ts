@@ -56,24 +56,50 @@ router.post('/directions', authenticate, adUploadFields, async (req: any, res: a
       return res.status(400).json({ error: 'At least one product image is required to generate directions. Please upload a product photo.' });
     }
 
-    const prompt = `You are an elite advertising art director and commercial photographer using the Nano Banana 2 hyper-realistic imaging protocol combined with world-class campaign strategy.
+    // Carousel slide count: exactly 4 slides (one core carousel arc), with product angle
+    // assignment below ensuring every uploaded product photo is featured somewhere
+    // across the 4 slides. If fewer than 4 photos are uploaded, angles are reused/
+    const slideCount = 4;
 
-Analyze the provided product image(s) and reference image(s). Then propose exactly 4 distinct ad creative directions.
+    const prompt = `You are an elite advertising art director and commercial photographer using the Nano Banana 2 hyper-realistic imaging protocol combined with world-class Instagram Carousel campaign strategy.
 
-HARD CONSTRAINTS (apply to ALL 4 directions):
-1. PRODUCT IDENTITY LOCK: The product(s) in the Product Image(s) must remain 100% identical in every direction - exact shape, fabric, cuts, color, pattern, logo, labels, texture. STRICTLY PROHIBITED: feature averaging, merging, smoothing, or altering the product design.
-2. REFERENCE IMAGE PINNING: ${refFiles.length > 0 ? `The ${refFiles.length} Style/Pose Reference Image(s) are ENVIRONMENT/POSE TEMPLATES. For each direction, describe how the scene would replicate the exact camera angle, model pose, lighting setup, background, and aesthetic from the reference image(s). CRITICAL: If the reference image contains text, typography, or copy, replicate the EXACT font style, font weight, letter spacing, text color, text placement, text size, and text alignment. Do NOT overlap or place new text over existing reference text. The ONLY element that changes between directions is the product presentation - everything else (model, setting, light, mood, typography) is locked to the reference.` : 'No reference images provided - use high-end commercial studio or aspirational lifestyle composition.'}
-3. NANO-BANANA QUALITY: Every direction must be achievable with hyper-realistic imaging: camera math (85mm, f/2.0, ISO 200), natural directional lighting, shallow depth of field, visible material texture, unretouched surface details.
+Your task: design ONE COHESIVE Instagram Carousel campaign of exactly ${slideCount} slides. The slides are CHAPTERS OF A SINGLE STORY. They must feel like frames of the SAME photoshoot — same product, same set/environment, same lighting, same color grade, same typography, same model/pose world. ONLY the camera framing (shot type) and the featured PRODUCT ANGLE change from slide to slide.
 
-For each direction, provide:
-- title: The direction name (use exactly these 4)
-- description: A 2-3 sentence concept explaining the scene, how the reference image is replicated, how the product identity is preserved, and what makes this direction distinct from the others. Be specific about camera angle, lighting, model pose, background, text/typography treatment, and product presentation.
+STEP 1 — ANALYZE EVERY PRODUCT IMAGE INDIVIDUALLY:
+There are ${prodFiles.length} Product Image(s). Analyze EACH uploaded photo and identify the exact view it shows — e.g. FRONT view, BACK view, SIDE view, DETAIL/close-up (logo, stitching, texture, sole, clasp). Number them "Product Image #1, Product Image #2, ...". You will assign each uploaded photo's best angle to the most relevant slide so every uploaded angle is used and none is ignored.
 
-Use these 4 fixed directions:
-1. Hero Lifestyle Integration - Aspirational usage in a real-world lifestyle context matching the reference
-2. Dramatic Product Theater - Cinematic, high-contrast, product as the sole hero, replicating reference lighting
-3. Action / Dynamic Moment - Motion, energy, decisive moment, matching reference camera angle and energy
-4. Premium Minimalist Showcase - Clean, elegant, negative space, craftsmanship focus within reference composition
+STEP 2 — LOCK THE CAROUSEL DESIGN SYSTEM (identical on every slide so the set feels continuous):
+- environment: One consistent background/set/environment reused on every slide (describe it concretely).
+- lighting: One exact lighting plan repeated on every slide (direction, quality, shadows, color temperature).
+- colorPalette: The exact color palette (with hex codes) that appears on every slide.
+- typography: The exact headline + subheadline font styles, text color, text placement used on every slide.
+- compositionGrid: Where the product and any text always sit within the frame.
+- mood: The emotional tone kept constant across all slides.
+
+HARD CONSTRAINTS (apply to EVERY slide):
+1. PRODUCT IDENTITY LOCK: The product must stay 100% identical across all ${slideCount} slides - exact shape, fabric, cuts, color, pattern, logo, labels, texture. STRICTLY PROHIBITED: feature averaging, merging, smoothing, or altering the product design.
+2. PRODUCT ANGLE ASSIGNMENT: For every slide, specify which uploaded Product Image (#1..#${prodFiles.length}) is the anchor and the exact angle shown (productImageIndex + featuredAngle). A slide that features the BACK view must show exactly that back surface — never invent an angle you were not provided.
+3. CAROUSEL VISUAL CONTINUITY: Every slide description must reuse the LOCKED design system VERBATIM (same environment, lighting, palette, typography, mood). Only the shot framing + product angle change. Slide N must read as the immediate next frame of Slide N-1.
+4. REFERENCE IMAGE PINNING: ${refFiles.length > 0 ? `The ${refFiles.length} Pose & Style Reference Image(s) are ENVIRONMENT/POSE TEMPLATES for the WHOLE carousel. Describe how EVERY slide replicates the same camera angle, model pose, lighting plan, background and aesthetic from the reference. CRITICAL: If a reference contains text/typography, replicate its EXACT font style, weight, tracking, color, placement and size on EVERY slide; never overlap new text over pre-existing reference text. The ONLY changing element between slides is the product presentation.` : 'No reference images provided - build one consistent high-end commercial environment and reuse it across every slide.'}
+5. NANO-BANANA QUALITY: every slide must be achievable with hyper-realistic imaging: camera math (85mm, f/2.0, ISO 200), natural directional lighting, shallow depth of field, visible material texture, unretouched surface details.
+
+STEP 3 — WRITE THE 4-SLIDE STORYBOARD using the classic Instagram carousel arc:
+- Slide 1 COVER / HOOK: a bold visual + punchy title line that stops the scroll and establishes the design system.
+- Slide 2 PROBLEM: the situation / pain point the target audience feels (emotional, relatable).
+- Slide 3 REVEAL: the product hero shot — anchor on Product Image #1 (usually the front / hero view).
+- Then BENEFIT / HOW IT WORKS and LIFESTYLE-in-use slides — always inside the locked environment.
+- Final slide CALL TO ACTION / OFFER: a strong CTA + urgency on the same end-card design.
+Fill exactly 4 slides total (never fewer, never more).
+
+For every slide, provide a JSON object with these field names:
+- id: slide number (1..${slideCount})
+- title: "Slide K — Short Name" (e.g. "Slide 1 — Hook")
+- description: 2-3 sentences describing the scene, the shot framing, the camera angle, how the locked design system repeats, and the slide's job in the storyline
+- caption: a short on-slide / carousel caption line for this slide (max 100 chars)
+- role: one of "cover | hook | problem | reveal | detail | benefit | lifestyle | guarantee | cta"
+- shotType: e.g. "hero wide establishing", "three-quarter", "medium", "close-up", "macro detail", "flat lay", "over-shoulder"
+- productImageIndex: the number of the uploaded Product Image to anchor this slide on (or null when no product is shown)
+- featuredAngle: one sentence describing the exact product view to show (e.g. "Front view of the garment from Product Image #1 - full placket and collar visible")
 
 Details:
 - Product: ${productName}
@@ -88,11 +114,24 @@ ${specialInstructions ? `- USER SPECIAL INSTRUCTIONS (HARD CONSTRAINT): "${speci
 
 Output exactly in this JSON format (no markdown blocks, just raw JSON):
 {
+  "designSystem": {
+    "environment": "...",
+    "lighting": "...",
+    "colorPalette": "...",
+    "typography": "...",
+    "compositionGrid": "...",
+    "mood": "..."
+  },
   "directions": [
     {
       "id": 1,
-      "title": "Hero Lifestyle Integration",
-      "description": "2-3 sentences describing the scene, reference replication, product lock, and camera/lighting specifics."
+      "title": "Slide 1 — Hook",
+      "description": "2-3 sentences describing the scene, the design system repetition, and the slide's role",
+      "caption": "short on-slide caption",
+      "role": "cover",
+      "shotType": "wide establishing",
+      "productImageIndex": 1,
+      "featuredAngle": "exact product view to show"
     }
   ]
 }`;
@@ -147,13 +186,47 @@ router.post('/generate', authenticate, adUploadFields, async (req: any, res: any
       mimeType: f.mimetype
     }));
 
-    const briefPrompt = `You are an elite advertising creative assistant and art director using the Nano Banana 2 hyper-realistic imaging protocol combined with world-class campaign strategy. Create a full creative brief for "${productName}" targeting the "${direction.title}" direction for ${platform}.
+// ── Carousel Continuity Context (optional) ─────────────────────────────────
+    // The frontend sends the full storyboard + locked design system so every slide
+    // is generated as a chapter of ONE Instagram carousel campaign (not a random ad).
+    let carouselContext: any = null;
+    if (req.body.carouselContext) {
+      try {
+        carouselContext = JSON.parse(req.body.carouselContext);
+      } catch (e) {
+        carouselContext = null;
+      }
+    }
+    const carouselSlides: any[] = Array.isArray(carouselContext?.slides) ? carouselContext.slides : [];
+    const designSystem = carouselContext?.designSystem || null;
+    const totalSlides = carouselSlides.length;
+    const slideIdx = Number(direction?.slideIndex ?? direction?.id ?? 0) || 0;
+    const prevSlideObj = slideIdx > 1 ? carouselSlides[slideIdx - 2] : null;
+    const nextSlideObj = slideIdx < totalSlides ? carouselSlides[slideIdx] : null;
+    const isCarousel = totalSlides > 0;
+
+    const carouselContinuityBlock = isCarousel
+      ? `CAROUSEL CONTINUITY ENGINE (HARD - this is Slide ${slideIdx || '?'} of ${totalSlides} of a SINGLE Instagram carousel campaign for the same product):
+- Slide title: "${direction?.title || ''}" | Role: ${direction?.role || 'slide'}
+- Story context - Previous slide: "${prevSlideObj?.title || 'COVER (this is the first slide)'}"; Next slide: "${nextSlideObj?.title || 'END CARD'}"
+- The LOCKED design system below appears on EVERY slide and must be replicated EXACTLY in this visual (same environment, same lighting, same color palette, same typography, same composition):
+${JSON.stringify(designSystem, null, 2)}
+- Only the shot framing and the featured product angle change from the other slides. Never invent a new background, new palette, or new lighting plan.
+`
+      : '';
+
+    const carouselAngleBlock = isCarousel
+      ? `- PRODUCT VIEW ASSIGNMENT FOR THIS SLIDE: The uploaded product photos are DIFFERENT VIEWS of the SAME product. Anchor the hero on Product Image #${direction?.productImageIndex ?? 1} and show exactly: "${direction?.featuredAngle || direction?.description || ''}". Keep the product 100% identical; feature this exact angle/surface.`
+      : '';
+    const briefPrompt = `You are an elite advertising creative assistant and art director using the Nano Banana 2 hyper-realistic imaging protocol combined with world-class campaign strategy. Create a full creative brief for "${productName}" targeting the "${direction.title}" ${isCarousel ? `creative for Slide ${slideIdx} of ${totalSlides} of a single Instagram carousel campaign` : 'direction'} for ${platform}.
 
 We are providing:
 ${productImagesList.length > 0 ? `- ${productImagesList.length} Product Image(s): These are the HERO IDENTITY ANCHORS. The product/garment/object in the generated visual must remain 100% identical to these images in shape, fabric, cuts, color, pattern, logo, labels, and texture. STRICTLY PROHIBITED: any feature averaging, merging, smoothing, or altering of the product design. The product must look like the exact same physical object placed into the new scene.` : ''}
 ${styleImagesList.length > 0 ? `- ${styleImagesList.length} Pose & Style Reference Image(s): These are ENVIRONMENT/POSE TEMPLATES. The generated image MUST replicate the exact camera angle, optical perspective, camera elevation, shot framing, model pose, stance, body posture, lighting setup, 3D environment, background scene, typography layout, color grading, and aesthetic style from these reference images. CRITICAL: If the reference image contains text, typography, or copy, replicate the EXACT font style, font weight, letter spacing, text color, text placement, text size, and text alignment. Do NOT overlap or place new text over existing reference text. The ONLY element that changes is the product itself - everything else (model, setting, light, mood, typography) must match the reference with photographic precision.` : ''}
 ${specialInstructions ? `- USER SPECIAL POSE/STYLE INSTRUCTION: "${specialInstructions}". This is a hard constraint. Explicitly obey this instruction regarding what to look for or adapt from the reference images.` : ''}
 
+${carouselContinuityBlock}
+${carouselAngleBlock}
 Output exactly in this JSON format (no markdown blocks, just raw JSON):
 {
   "campaignConcept": "One sentence describing the creative idea and emotional trigger",
@@ -203,7 +276,9 @@ CRITICAL IMAGE PROMPT CONSTRUCTION RULES:
 
 5. TYPOGRAPHY INTEGRATION: The imagePrompt must describe where the tagline and CTA appear in the frame, what font styles they use, and how they integrate with the scene - not as an afterthought, but as a composed part of the advertisement.
 
-6. USER DIRECTIVE: ${specialInstructions ? `Enforce strictly: "${specialInstructions}"` : 'N/A'}`;
+6. USER DIRECTIVE: ${specialInstructions ? `Enforce strictly: \"${specialInstructions}\"` : 'N/A'}
+${isCarousel ? '7. CAROUSEL CONTINUITY: The imagePrompt must RESTATE at the top, verbatim: "Same environment/set, same lighting, same color palette, same typography, same composition as the other slides of this Instagram carousel. Only the shot framing and the featured product angle change. Never invent a new background, lighting plan, or palette."' : ''}`;
+
 
     const briefMediaParts: { data: string; mimeType: string }[] = [...productImagesList, ...styleImagesList];
 
@@ -303,6 +378,23 @@ CRITICAL IMAGE PROMPT CONSTRUCTION RULES:
       } catch (e: any) {
         logger.warn(`Failed to save reference image copy: ${e.message || e}`);
       }
+    }
+
+    // Persist carousel identity in the brief so the frontend can keep slide ordering
+    // after a page refresh (the brief column is JSON — no schema migration needed).
+    if (isCarousel) {
+      briefParsed.carousel = {
+        slideIndex: slideIdx || 1,
+        slideTitle: direction?.title || '',
+        role: direction?.role || '',
+        slideCount: totalSlides,
+        productImageIndex: direction?.productImageIndex ?? null,
+        featuredAngle: direction?.featuredAngle || '',
+        caption: direction?.caption || '',
+        designSystem: designSystem || null,
+        prevSlideTitle: prevSlideObj?.title || null,
+        nextSlideTitle: nextSlideObj?.title || null
+      };
     }
 
     const adCreative = await prisma.adCreative.create({
