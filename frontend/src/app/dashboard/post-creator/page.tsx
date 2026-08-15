@@ -735,6 +735,8 @@ export default function PostCreatorPage() {
         formData.append('productName', productName);
         formData.append('direction', JSON.stringify(direction));
         formData.append('platform', platform);
+        const currentCampId = activeCampaign?.id || ('camp_' + Date.now());
+        formData.append('campaignId', currentCampId);
         if (specialInstructions) {
           formData.append('specialInstructions', specialInstructions);
         }
@@ -1500,19 +1502,32 @@ export default function PostCreatorPage() {
               }
 
               history.forEach((item) => {
+                const itemCampId = item.brief?.campaignId || item.brief?.carousel?.campaignId;
+                
+                // If this item is already in activeCampaign, update or skip
+                if (activeCampaign && activeCampaign.items.some((i: any) => i.id === item.id)) {
+                  return;
+                }
+
                 const itemTime = new Date(item.createdAt).getTime();
+
                 const existing = campaignGroups.find((g) => {
+                  if (itemCampId && g.campaignId) {
+                    return g.campaignId === itemCampId;
+                  }
                   if (g.campaignId === 'active-campaign') return false;
                   if ((g.productName || '').toLowerCase() !== (item.productName || '').toLowerCase()) return false;
                   const groupTime = new Date(g.createdAt).getTime();
-                  return Math.abs(itemTime - groupTime) < 15 * 60 * 1000;
+                  return Math.abs(itemTime - groupTime) < 10 * 60 * 1000;
                 });
 
                 if (existing) {
-                  existing.items.push(item);
+                  if (!existing.items.some((i: any) => i.id === item.id)) {
+                    existing.items.push(item);
+                  }
                 } else {
                   campaignGroups.push({
-                    campaignId: item.id,
+                    campaignId: itemCampId || item.id,
                     productName: item.productName || 'Creative Campaign',
                     platform: item.platform || 'INSTAGRAM',
                     createdAt: item.createdAt,

@@ -65,11 +65,18 @@ router.post('/directions', authenticate, adUploadFields, async (req: any, res: a
 
 Your task: design ONE COHESIVE Instagram Carousel campaign of exactly ${slideCount} slides. The slides are CHAPTERS OF A SINGLE STORY. They must feel like frames of the SAME photoshoot — same product, same set/environment, same lighting, same color grade, same typography, same model/pose world. ONLY the camera framing (shot type) and the featured PRODUCT ANGLE change from slide to slide.
 
-STEP 1 — CATEGORY DETECTION & BENCHMARKING:
-Analyze the product name ("${productName}"), description, and uploaded images. Classify into a primary industry category (e.g., "Fashion & Apparel", "Luxury Skincare", "Tech & Electronics", "Footwear", "Food & Beverage", "Fitness & Activewear", "Home & Lifestyle"). Specify the category-specific 4-slide benchmark narrative arc that works best for Instagram engagement in this category.
+STEP 1 — DEEP GARMENT & BUYING TRIGGER UNDERSTANDING:
+Analyze the product name ("${productName}"), description ("${description}"), USP ("${usp}"), and uploaded images.
+1. Garment & Fabric Analysis: Identify the exact clothing/product type (e.g., Anarkali suit, embroidered kurti, streetwear hoodie, luxury blazer, co-ord set), fabric/materials (e.g. Chanderi silk, cotton malmal, zari embroidery, heavy knit), fit silhouette, and occasion.
+2. Psychological Buying Triggers: Identify what specifically makes people BUY this piece (e.g., flattering silhouette, lightweight summer comfort, royal festive flair, statement back neck cutouts/embroidery, day-to-night versatility).
+3. On-Image Text Relevance: All captions and headlines MUST be hyper-specific to this exact product and its buying triggers. STRICTLY PROHIBITED: generic placeholder phrases like "Elegance Unveiled" or unrelated text.
 
-STEP 2 — ANALYZE EVERY PRODUCT IMAGE INDIVIDUALLY (VISION ANGLE ANALYSIS):
-There are ${prodFiles.length} Product Image(s). Analyze EACH uploaded photo and identify the exact view it shows — e.g. FRONT hero view, BACK view, SIDE profile, DETAIL/close-up (logo, stitching, texture, sole, clasp, ingredient texture). Number them "Product Image #1, Product Image #2, ...". You will assign each uploaded photo's best angle to the most relevant slide so every uploaded angle is used and none is ignored.
+STEP 2 — MULTI-ANGLE VISION ANALYSIS & BACK VIEW PRESERVATION:
+There are ${prodFiles.length} Product Image(s). Analyze EACH uploaded photo individually and tag its exact view:
+- Product Image #1: Front hero view / main silhouette
+- Product Image #2: BACK view / rear neckline / back embroidery (if provided), OR close-up fabric texture / detail shot
+- Product Image #3..#${prodFiles.length}: Side profile, detail, or styling view.
+CRITICAL ANGLE PRESERVATION RULE: If any uploaded photo shows the BACK view of the product (or a secondary angle like a close-up detail or side drape), YOU MUST DEDICATE A SLIDE (usually Slide 3) TO THAT EXACT BACK VIEW/ANGLE. Set productImageIndex: 2 (or the corresponding image index), set featuredAngle to describe showing that exact back surface or detail from Product Image #2, and write a caption highlighting that specific back neck/embroidery/cutout detail!
 
 STEP 3 — LOCK THE CAROUSEL DESIGN SYSTEM (identical on every slide so the set feels continuous):
 - environment: One consistent background/set/environment reused on every slide (describe it concretely). ${refFiles.length > 0 ? 'CRITICAL: Extract and lock the exact background environment directly from the attached Reference Image(s).' : ''}
@@ -86,11 +93,11 @@ HARD CONSTRAINTS (apply to EVERY slide):
 4. MASTER REFERENCE DESIGN FLOW: ${refFiles.length > 0 ? `The ${refFiles.length} Pose & Style Reference Image(s) contain the MASTER DESIGN DNA for the WHOLE carousel. EVERY SINGLE SLIDE MUST DERIVE 100% OF ITS DESIGN SYSTEM (camera angle world, model pose/posture, lighting plan, 3D environment, background set, color grading, and typography style/placement) DIRECTLY FROM THE REFERENCE IMAGE. The reference design flows seamlessly through every slide of the carousel campaign. CRITICAL: Replicate the reference's exact font style, weight, letter spacing, text color, placement, and size on EVERY slide; never overlap new text over pre-existing reference text. The ONLY element that changes between slides is the product angle/presentation.` : 'No reference images provided - build one consistent high-end commercial environment and reuse it across every slide.'}
 5. NANO-BANANA QUALITY: every slide must be achievable with hyper-realistic imaging: camera math (85mm, f/2.0, ISO 200), natural directional lighting, shallow depth of field, visible material texture, unretouched surface details.
 
-STEP 4 — WRITE THE 4-SLIDE STORYBOARD using the category benchmark arc:
-- Slide 1 COVER / HOOK: a bold visual + punchy title line that stops the scroll and establishes the design system.
-- Slide 2 PROBLEM / CONTEXT: the situation / pain point / lifestyle context the target audience feels (emotional, relatable).
-- Slide 3 SPOTLIGHT ANGLE / DETAIL: highlight specific secondary angle (e.g. back view, close-up texture, or feature detail from Product Image #2).
-- Slide 4 CALL TO ACTION / OFFER: a strong CTA + urgency on the same end-card design.
+STEP 4 — WRITE THE 4-SLIDE STORYBOARD (HIGH-CONVERSION BUYER STORYLINE):
+- Slide 1 COVER / HOOK: Scroll-stopping hero visual + punchy headline specific to this garment's main buying trigger.
+- Slide 2 RELATABLE BENEFIT / FIT CONTEXT: Focus on fabric feel, silhouette fit, comfort, or occasion readiness that makes buyers choose this piece.
+- Slide 3 SPOTLIGHT ANGLE / BACK & DETAIL: Focus on secondary photo (Back view / rear neck embroidery / intricate texture from Product Image #2) with caption explaining how this detail completes the look.
+- Slide 4 FINAL CONVERSION END-CARD (THE BUYING CLOSER): Must look 100% convincing to convert viewers into immediate buyers! Include an irresistible offer callout (e.g. "Limited Batch — Free Express Shipping + 10% Off"), social proof trust elements (e.g. "10,000+ Happy Customers • 100% Authentic Quality • Easy Returns"), and a bold action directive: "Tap Link in Bio to Shop Now" or "Claim Yours Before It Sells Out". The visual features a full-length hero posture inside the locked environment with a high-converting commercial end-card layout.
 Fill exactly 4 slides total (never fewer, never more).
 
 For every slide, provide a JSON object with these field names:
@@ -173,7 +180,7 @@ Output exactly in this JSON format (no markdown blocks, just raw JSON):
 
 router.post('/generate', authenticate, adUploadFields, async (req: any, res: any) => {
   try {
-    let { productName, direction, platform, specialInstructions } = req.body;
+    let { productName, direction, platform, specialInstructions, campaignId } = req.body;
     
     if (typeof direction === 'string') {
       direction = JSON.parse(direction);
@@ -284,7 +291,9 @@ CRITICAL IMAGE PROMPT CONSTRUCTION RULES:
 5. TYPOGRAPHY INTEGRATION: The imagePrompt must describe where the tagline and CTA appear in the frame, what font styles they use, and how they integrate with the scene - not as an afterthought, but as a composed part of the advertisement.
 
 6. USER DIRECTIVE: ${specialInstructions ? `Enforce strictly: \"${specialInstructions}\"` : 'N/A'}
-${isCarousel ? '7. CAROUSEL CONTINUITY: The imagePrompt must RESTATE at the top, verbatim: "Same environment/set, same lighting, same color palette, same typography, same composition as the other slides of this Instagram carousel. Only the shot framing and the featured product angle change. Never invent a new background, lighting plan, or palette."' : ''}`;
+${isCarousel ? '7. CAROUSEL CONTINUITY: The imagePrompt must RESTATE at the top, verbatim: "Same environment/set, same lighting, same color palette, same typography, same composition as the other slides of this Instagram carousel. Only the shot framing and the featured product angle change. Never invent a new background, lighting plan, or palette."' : ''}
+8. GARMENT-RELEVANT TEXT & BACK ANGLE PRESERVATION: The tagline and text overlay MUST be hyper-relevant to '${productName}' and its specific fabric/cut/features (e.g. embroidered details, silk drape, flattering fit). If this slide features the BACK view or a specific angle from Product Image #2, the imagePrompt MUST explicitly demand showing that exact back surface or detail alongside matching text: "${direction?.caption || ''}". STRICTLY PROHIBITED: unrelated text or generic placeholder phrases.
+9. FINAL CONVERSION END-CARD CLOSER: If this is Slide 4 (or role 'cta'), the brief and imagePrompt MUST construct a hyper-convincing conversion end-card visual. Require rendering a prominent commercial offer badge (e.g., 'Limited Batch — Free Express Shipping & 10% Off'), social proof trust seal ('10,000+ Happy Customers • Easy Returns'), and a bold 'SHOP NOW / TAP LINK IN BIO' CTA callout. It must look aspirational, friction-free, and 100% convincing for customers to buy immediately.`;
 
 
     const briefMediaParts: { data: string; mimeType: string }[] = [...productImagesList, ...styleImagesList];
@@ -387,10 +396,15 @@ ${isCarousel ? '7. CAROUSEL CONTINUITY: The imagePrompt must RESTATE at the top,
       }
     }
 
+    if (campaignId) {
+      briefParsed.campaignId = campaignId;
+    }
+
     // Persist carousel identity in the brief so the frontend can keep slide ordering
     // after a page refresh (the brief column is JSON — no schema migration needed).
     if (isCarousel) {
       briefParsed.carousel = {
+        campaignId: campaignId || null,
         slideIndex: slideIdx || 1,
         slideTitle: direction?.title || '',
         role: direction?.role || '',
