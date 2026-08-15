@@ -1027,42 +1027,13 @@ export default function PostCreatorPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-6 lg:p-10 space-y-8">
-      {/* Clean Page Title & Step Progress Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-200/90">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-black text-stone-900 tracking-tight flex items-center gap-2.5">
-            <Target className="w-7 h-7 text-[#D27D50]" />
-            <span>AI Ad & Post Creator</span>
-          </h1>
-          <p className="text-stone-500 text-sm font-medium mt-0.5">Generate one cohesive Instagram carousel campaign — the AI analyses each product photo (front / back / side / detail) and assigns the right angle to the right slide, with a locked design system across all slides.</p>
-        </div>
-
-        {/* Step Progress Pills */}
-        <div className="flex items-center gap-2 bg-stone-100 p-1.5 rounded-2xl border border-stone-200/80 shrink-0">
-          <button 
-            type="button"
-            onClick={() => setStep(1)}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 1 ? 'bg-[#D27D50] text-white shadow-xs' : 'text-stone-500 hover:text-stone-700'}`}
-          >
-            <span>1. Brief & Media</span>
-          </button>
-          <button 
-            type="button"
-            onClick={() => { if (directions.length > 0) setStep(2); }}
-            disabled={directions.length === 0}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 2 ? 'bg-[#D27D50] text-white shadow-xs' : 'text-stone-500 hover:text-stone-700 disabled:opacity-50'}`}
-          >
-            <span>2. Directions</span>
-          </button>
-          <button 
-            type="button"
-            onClick={() => { if (results.length > 0 || activeCampaign?.items?.length) setStep(3); }}
-            disabled={results.length === 0 && !activeCampaign?.items?.length}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${step === 3 ? 'bg-[#D27D50] text-white shadow-xs' : 'text-stone-500 hover:text-stone-700 disabled:opacity-50'}`}
-          >
-            <span>3. Studio</span>
-          </button>
-        </div>
+      {/* Clean Page Title Header */}
+      <div className="pb-4 border-b border-stone-200/90">
+        <h1 className="text-2xl lg:text-3xl font-black text-stone-900 tracking-tight flex items-center gap-2.5">
+          <Target className="w-7 h-7 text-[#D27D50]" />
+          <span>AI Ad & Post Creator</span>
+        </h1>
+        <p className="text-stone-500 text-sm font-medium mt-0.5">Generate one cohesive Instagram carousel campaign — the AI analyses each product photo (front / back / side / detail) and assigns the right angle to the right slide, with a locked design system across all slides.</p>
       </div>
 
       {/* Active Motion Graphic Video Progress Banner (Survives Refresh & Tab Switching) */}
@@ -1098,12 +1069,11 @@ export default function PostCreatorPage() {
         </div>
       )}
 
-      {/* Step 1: Input */}
-      {step === 1 && (
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-stone-200/80 space-y-8 animate-in fade-in duration-300">
-          {/* 2-Column Split: Visual Assets Left vs Campaign Specs Right */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column: Visual Assets & References */}
+      {/* Main Campaign Brief Form */}
+      <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-stone-200/80 space-y-8 animate-in fade-in duration-300">
+        {/* 2-Column Split: Visual Assets Left vs Campaign Specs Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column: Visual Assets & References */}
             <div className="space-y-6">
               <h2 className="text-base font-extrabold text-stone-900 border-b border-stone-200 pb-2.5 flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-[#D27D50]" />
@@ -1343,175 +1313,6 @@ export default function PostCreatorPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Step 2: Carousel Storyboard */}
-      {step === 2 && (
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 lg:p-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-stone-200/80 space-y-8 animate-in slide-in-from-right-4 duration-500">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-black text-stone-900 flex items-center gap-2">
-                <Layers className="w-6 h-6 text-[#D27D50]" />
-                <span>Carousel Storyboard</span>
-              </h2>
-              <p className="text-xs font-semibold text-stone-500 mt-1">
-                {directions.length} connected slides for Instagram — one locked design system makes them read as a single campaign, not random options.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button onClick={() => setStep(1)} variant="outline" className="rounded-xl h-10 font-bold text-stone-500 hover:text-stone-700">Back</Button>
-              <Button onClick={handleGenerateDirections} disabled={loading} variant="outline" className="rounded-xl h-10 font-bold border-amber-200 text-[#D27D50] hover:bg-amber-50">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                Regenerate
-              </Button>
-            </div>
-          </div>
-
-          {/* Category Benchmark Strip */}
-          {detectedCategory && (
-            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-amber-200/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#D27D50] to-rose-500 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
-                  AI
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#D27D50]">Detected Category</span>
-                    <span className="text-xs font-black bg-[#D27D50] text-white px-2.5 py-0.5 rounded-full shadow-xs">
-                      {detectedCategory}
-                    </span>
-                  </div>
-                  {categoryBenchmark && (
-                    <p className="text-xs font-semibold text-stone-700 mt-1">
-                      {categoryBenchmark}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Locked Design System Strip — the shared look for all slides */}
-          {carouselDesignSystem && (
-            <div className="bg-stone-900 rounded-2xl p-5 text-white space-y-3">
-              <div className="flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-amber-300" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">Locked Design System — identical on every slide</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-[11px]">
-                <div>
-                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Environment</span>
-                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.environment || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Lighting</span>
-                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.lighting || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Color Palette</span>
-                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.colorPalette || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Typography</span>
-                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.typography || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Composition</span>
-                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.compositionGrid || '—'}</span>
-                </div>
-                <div>
-                  <span className="text-white/40 font-bold block uppercase text-[9px] tracking-wider mb-0.5">Mood</span>
-                  <span className="text-stone-200 font-semibold leading-snug">{carouselDesignSystem.mood || '—'}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Ordered Storyboard Strip (swipeable like Instagram) */}
-          <div className="flex items-stretch gap-5 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth">
-            {directions.map((dir, idx) => {
-              const isSel = selectedDirections.some(d => d.title === dir.title);
-              const slideNo = dir.slideIndex ?? dir.id ?? (idx + 1);
-              return (
-                <div
-                  key={dir.id ?? idx}
-                  onClick={() => {
-                    if (isSel) {
-                      setSelectedDirections(selectedDirections.filter(d => d.title !== dir.title));
-                    } else {
-                      setSelectedDirections([...selectedDirections, dir]);
-                    }
-                  }}
-                  className={`cursor-pointer snap-start shrink-0 w-[280px] rounded-3xl border p-5 flex flex-col gap-3 transition-all ${
-                    isSel
-                      ? 'bg-stone-900 text-white border-stone-900 shadow-xl ring-2 ring-stone-900/20'
-                      : 'bg-white text-stone-800 border-stone-200 hover:border-[#D27D50] hover:shadow-lg'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`text-[10px] font-black uppercase tracking-wider ${isSel ? 'text-amber-300' : 'text-[#D27D50]'}`}>
-                      Slide {slideNo} of {directions.length}
-                    </span>
-                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${isSel ? 'bg-white/10 text-amber-200 border-white/20' : getSlideBadgeColor(dir.role)}`}>
-                      {getRoleLabel(dir.role)}
-                    </span>
-                  </div>
-
-                  <h5 className="font-extrabold text-base leading-tight">{dir.title}</h5>
-
-                  {(dir.featuredAngle || dir.productAngle) && (
-                    <div className={`flex items-start gap-1.5 text-[10px] font-bold rounded-lg px-2 py-1.5 ${isSel ? 'bg-white/10 text-amber-100' : 'bg-amber-50 text-amber-800'}`}>
-                      <Camera className="w-3 h-3 shrink-0 mt-0.5" />
-                      <span>{dir.featuredAngle || dir.productAngle}</span>
-                    </div>
-                  )}
-
-                  {dir.shotType && (
-                    <span className={`text-[10px] font-semibold ${isSel ? 'text-stone-300' : 'text-stone-400'}`}>
-                      🎥 {dir.shotType}
-                    </span>
-                  )}
-
-                  <p className={`text-[11px] leading-relaxed flex-1 line-clamp-4 ${isSel ? 'text-stone-300' : 'text-stone-500'}`}>
-                    {dir.description || dir.visualSceneSetup}
-                  </p>
-
-                  {dir.caption && (
-                    <p className={`text-[11px] italic line-clamp-2 border-t border-dashed pt-2 ${isSel ? 'text-amber-200/90 border-white/20' : 'text-stone-400 border-stone-200'}`}>
-                      “{dir.caption}”
-                    </p>
-                  )}
-
-                  <div className="flex items-center justify-between pt-2">
-                    <span className={`text-[9px] font-medium ${isSel ? 'text-stone-400' : 'text-stone-400'}`}>
-                      {isSel ? 'Included in carousel' : 'Tap to include'}
-                    </span>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${isSel ? 'bg-amber-400 text-stone-950 border-amber-400' : 'border-stone-300'}`}>
-                      {isSel && <Check className="w-3.5 h-3.5 stroke-[3px]" />}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-stone-200">
-            <div className="text-[11px] font-semibold text-stone-400">
-              {selectedDirections.length === directions.length
-                ? `All ${directions.length} slides selected — the carousel will be generated in Slide 1 → N order.`
-                : `${selectedDirections.length} of ${directions.length} slides selected.`}
-            </div>
-            <Button
-              onClick={handleGenerateAd}
-              disabled={loading || selectedDirections.length === 0}
-              className="bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-2xl h-14 px-8 font-black text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-3"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-              {loading ? 'Generating Carousel...' : `Generate Instagram Carousel (${selectedDirections.length})`}
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* History & Active Campaign Section */}
       <div ref={archiveRef} className="mt-20 border-t border-stone-200 pt-12 space-y-8">
