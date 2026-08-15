@@ -93,6 +93,35 @@ export default function PostCreatorPage() {
   const [carouselDesignSystem, setCarouselDesignSystem] = useState<any>(null);
   const [carouselActiveIndex, setCarouselActiveIndex] = useState(0);
 
+  // Category Intelligence & Ratings State
+  const [detectedCategory, setDetectedCategory] = useState<string | null>(null);
+  const [categoryBenchmark, setCategoryBenchmark] = useState<string | null>(null);
+  const [visionAngleAnalysis, setVisionAngleAnalysis] = useState<any[] | null>(null);
+  const [slideRatings, setSlideRatings] = useState<Record<string, number>>({});
+  const [ratingLoadingMap, setRatingLoadingMap] = useState<Record<string, boolean>>({});
+
+  const handleRateSlide = async (adId: string, rating: number) => {
+    if (!adId) return;
+    setRatingLoadingMap(prev => ({ ...prev, [adId]: true }));
+    try {
+      const res = await fetch('/api/ad-creator/rate-slide', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ adId, rating })
+      });
+      if (res.ok) {
+        setSlideRatings(prev => ({ ...prev, [adId]: rating }));
+      }
+    } catch (e) {
+      console.error('Failed to rate slide:', e);
+    } finally {
+      setRatingLoadingMap(prev => ({ ...prev, [adId]: false }));
+    }
+  };
+
   // Result & Detail Modal State
   const [results, setResults] = useState<any[]>([]);
   const [failedDirections, setFailedDirections] = useState<Array<{ direction: any; error: string }>>([]);
@@ -389,6 +418,12 @@ export default function PostCreatorPage() {
       const savedDesignSystem = localStorage.getItem('postCreator_designSystem');
       if (savedDesignSystem) setCarouselDesignSystem(JSON.parse(savedDesignSystem));
 
+      const savedCategory = localStorage.getItem('postCreator_category');
+      if (savedCategory) setDetectedCategory(savedCategory);
+
+      const savedBenchmark = localStorage.getItem('postCreator_benchmark');
+      if (savedBenchmark) setCategoryBenchmark(savedBenchmark);
+
       const savedFormFields = localStorage.getItem('postCreator_formFields');
       if (savedFormFields) {
         const fields = JSON.parse(savedFormFields);
@@ -416,6 +451,12 @@ export default function PostCreatorPage() {
       if (carouselDesignSystem) {
         localStorage.setItem('postCreator_designSystem', JSON.stringify(carouselDesignSystem));
       }
+      if (detectedCategory) {
+        localStorage.setItem('postCreator_category', detectedCategory);
+      }
+      if (categoryBenchmark) {
+        localStorage.setItem('postCreator_benchmark', categoryBenchmark);
+      }
       if (activeCampaign) {
         localStorage.setItem('postCreator_activeCampaign', JSON.stringify(activeCampaign));
       }
@@ -425,7 +466,7 @@ export default function PostCreatorPage() {
     } catch (e) {
       console.error('Failed to persist post creator state:', e);
     }
-  }, [step, directions, selectedDirections, results, activeCampaign, carouselDesignSystem, productName, description, usp, personality, audience, platform, mood, specialInstructions]);
+  }, [step, directions, selectedDirections, results, activeCampaign, carouselDesignSystem, detectedCategory, categoryBenchmark, productName, description, usp, personality, audience, platform, mood, specialInstructions]);
 
   const fetchHistory = async () => {
     try {
@@ -454,9 +495,13 @@ export default function PostCreatorPage() {
       const phaseTimer = setTimeout(() => setScrapePhase('parsing'), 1200);
       const downloadTimer = setTimeout(() => setScrapePhase('downloading'), 2400);
 
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/scrape', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ url: magicLink })
       });
       
@@ -476,7 +521,11 @@ export default function PostCreatorPage() {
         for (let i = 0; i < Math.min(data.images.length, 4); i++) {
           try {
             const proxyUrl = `/api/scrape/proxy-image?url=${encodeURIComponent(data.images[i])}`;
-            const imgRes = await fetch(proxyUrl);
+            const imgRes = await fetch(proxyUrl, {
+              headers: {
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              }
+            });
             if (imgRes.ok) {
               const blob = await imgRes.blob();
               const file = new File([blob], `imported-product-${i + 1}.jpg`, { type: blob.type || 'image/jpeg' });
@@ -548,6 +597,9 @@ export default function PostCreatorPage() {
     setSelectedDirections([]);
     setCarouselDesignSystem(null);
     setCarouselActiveIndex(0);
+    setDetectedCategory(null);
+    setCategoryBenchmark(null);
+    setVisionAngleAnalysis(null);
     setResults([]);
     setFailedDirections([]);
     setActiveCampaign(null);
@@ -558,6 +610,8 @@ export default function PostCreatorPage() {
     localStorage.removeItem('postCreator_results');
     localStorage.removeItem('postCreator_activeCampaign');
     localStorage.removeItem('postCreator_designSystem');
+    localStorage.removeItem('postCreator_category');
+    localStorage.removeItem('postCreator_benchmark');
     localStorage.removeItem('postCreator_formFields');
   };
 
@@ -629,6 +683,9 @@ export default function PostCreatorPage() {
       setDirections(storyboard);
       setSelectedDirections(storyboard);
       setCarouselDesignSystem(data.designSystem || null);
+      setDetectedCategory(data.category || null);
+      setCategoryBenchmark(data.categoryBenchmark || null);
+      setVisionAngleAnalysis(data.visionAngleAnalysis || null);
 
       setActiveCampaign(prev => prev ? {
         ...prev,
@@ -1245,6 +1302,30 @@ export default function PostCreatorPage() {
             </div>
           </div>
 
+          {/* Category Benchmark Strip */}
+          {detectedCategory && (
+            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-amber-200/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#D27D50] to-rose-500 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+                  AI
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#D27D50]">Detected Category</span>
+                    <span className="text-xs font-black bg-[#D27D50] text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                      {detectedCategory}
+                    </span>
+                  </div>
+                  {categoryBenchmark && (
+                    <p className="text-xs font-semibold text-stone-700 mt-1">
+                      {categoryBenchmark}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Locked Design System Strip — the shared look for all slides */}
           {carouselDesignSystem && (
             <div className="bg-stone-900 rounded-2xl p-5 text-white space-y-3">
@@ -1666,6 +1747,29 @@ export default function PostCreatorPage() {
                               <div className="p-5 flex-1 flex flex-col">
                                 <p className="text-sm font-black text-stone-850 line-clamp-2 mb-2 leading-tight">"{ad.brief?.tagline || ''}"</p>
                                 <p className="text-xs font-medium text-stone-500 line-clamp-2 mb-4 flex-1">{ad.brief?.supportingCopy || ad.brief?.copy || ''}</p>
+
+                                {/* 5-Star Slide Rating Bar */}
+                                <div className="flex items-center justify-between py-2 my-2 border-y border-stone-100 text-xs">
+                                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Rate Slide</span>
+                                  <div className="flex items-center gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => {
+                                      const currentRating = slideRatings[ad.id] || ad.brief?.rating || 0;
+                                      const isStarred = star <= currentRating;
+                                      return (
+                                        <button
+                                          key={star}
+                                          type="button"
+                                          disabled={ratingLoadingMap[ad.id]}
+                                          onClick={() => handleRateSlide(ad.id, star)}
+                                          className={`text-sm transition-transform hover:scale-125 focus:outline-none ${isStarred ? 'text-amber-400' : 'text-stone-200 hover:text-amber-300'}`}
+                                          title={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                                        >
+                                          ★
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
 
                                 <div className="flex gap-1.5 mt-auto pt-2">
                                   <Button 

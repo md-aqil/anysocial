@@ -112,9 +112,13 @@ export default function ManualReelPage() {
       const phaseTimer = setTimeout(() => setScrapePhase('parsing'), 1200);
       const downloadTimer = setTimeout(() => setScrapePhase('downloading'), 2450);
 
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/scrape', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ url: magicLink })
       });
       
@@ -133,7 +137,11 @@ export default function ManualReelPage() {
         for (let i = 0; i < Math.min(data.images.length, 4); i++) {
           try {
             const proxyUrl = `/api/scrape/proxy-image?url=${encodeURIComponent(data.images[i])}`;
-            const imgRes = await fetch(proxyUrl);
+            const imgRes = await fetch(proxyUrl, {
+              headers: {
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              }
+            });
             if (imgRes.ok) {
               const blob = await imgRes.blob();
               const file = new File([blob], `imported-product-${i + 1}.jpg`, { type: blob.type || 'image/jpeg' });

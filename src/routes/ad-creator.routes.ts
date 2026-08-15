@@ -65,10 +65,13 @@ router.post('/directions', authenticate, adUploadFields, async (req: any, res: a
 
 Your task: design ONE COHESIVE Instagram Carousel campaign of exactly ${slideCount} slides. The slides are CHAPTERS OF A SINGLE STORY. They must feel like frames of the SAME photoshoot — same product, same set/environment, same lighting, same color grade, same typography, same model/pose world. ONLY the camera framing (shot type) and the featured PRODUCT ANGLE change from slide to slide.
 
-STEP 1 — ANALYZE EVERY PRODUCT IMAGE INDIVIDUALLY:
-There are ${prodFiles.length} Product Image(s). Analyze EACH uploaded photo and identify the exact view it shows — e.g. FRONT view, BACK view, SIDE view, DETAIL/close-up (logo, stitching, texture, sole, clasp). Number them "Product Image #1, Product Image #2, ...". You will assign each uploaded photo's best angle to the most relevant slide so every uploaded angle is used and none is ignored.
+STEP 1 — CATEGORY DETECTION & BENCHMARKING:
+Analyze the product name ("${productName}"), description, and uploaded images. Classify into a primary industry category (e.g., "Fashion & Apparel", "Luxury Skincare", "Tech & Electronics", "Footwear", "Food & Beverage", "Fitness & Activewear", "Home & Lifestyle"). Specify the category-specific 4-slide benchmark narrative arc that works best for Instagram engagement in this category.
 
-STEP 2 — LOCK THE CAROUSEL DESIGN SYSTEM (identical on every slide so the set feels continuous):
+STEP 2 — ANALYZE EVERY PRODUCT IMAGE INDIVIDUALLY (VISION ANGLE ANALYSIS):
+There are ${prodFiles.length} Product Image(s). Analyze EACH uploaded photo and identify the exact view it shows — e.g. FRONT hero view, BACK view, SIDE profile, DETAIL/close-up (logo, stitching, texture, sole, clasp, ingredient texture). Number them "Product Image #1, Product Image #2, ...". You will assign each uploaded photo's best angle to the most relevant slide so every uploaded angle is used and none is ignored.
+
+STEP 3 — LOCK THE CAROUSEL DESIGN SYSTEM (identical on every slide so the set feels continuous):
 - environment: One consistent background/set/environment reused on every slide (describe it concretely).
 - lighting: One exact lighting plan repeated on every slide (direction, quality, shadows, color temperature).
 - colorPalette: The exact color palette (with hex codes) that appears on every slide.
@@ -83,12 +86,11 @@ HARD CONSTRAINTS (apply to EVERY slide):
 4. REFERENCE IMAGE PINNING: ${refFiles.length > 0 ? `The ${refFiles.length} Pose & Style Reference Image(s) are ENVIRONMENT/POSE TEMPLATES for the WHOLE carousel. Describe how EVERY slide replicates the same camera angle, model pose, lighting plan, background and aesthetic from the reference. CRITICAL: If a reference contains text/typography, replicate its EXACT font style, weight, tracking, color, placement and size on EVERY slide; never overlap new text over pre-existing reference text. The ONLY changing element between slides is the product presentation.` : 'No reference images provided - build one consistent high-end commercial environment and reuse it across every slide.'}
 5. NANO-BANANA QUALITY: every slide must be achievable with hyper-realistic imaging: camera math (85mm, f/2.0, ISO 200), natural directional lighting, shallow depth of field, visible material texture, unretouched surface details.
 
-STEP 3 — WRITE THE 4-SLIDE STORYBOARD using the classic Instagram carousel arc:
+STEP 4 — WRITE THE 4-SLIDE STORYBOARD using the category benchmark arc:
 - Slide 1 COVER / HOOK: a bold visual + punchy title line that stops the scroll and establishes the design system.
-- Slide 2 PROBLEM: the situation / pain point the target audience feels (emotional, relatable).
-- Slide 3 REVEAL: the product hero shot — anchor on Product Image #1 (usually the front / hero view).
-- Then BENEFIT / HOW IT WORKS and LIFESTYLE-in-use slides — always inside the locked environment.
-- Final slide CALL TO ACTION / OFFER: a strong CTA + urgency on the same end-card design.
+- Slide 2 PROBLEM / CONTEXT: the situation / pain point / lifestyle context the target audience feels (emotional, relatable).
+- Slide 3 SPOTLIGHT ANGLE / DETAIL: highlight specific secondary angle (e.g. back view, close-up texture, or feature detail from Product Image #2).
+- Slide 4 CALL TO ACTION / OFFER: a strong CTA + urgency on the same end-card design.
 Fill exactly 4 slides total (never fewer, never more).
 
 For every slide, provide a JSON object with these field names:
@@ -114,6 +116,11 @@ ${specialInstructions ? `- USER SPECIAL INSTRUCTIONS (HARD CONSTRAINT): "${speci
 
 Output exactly in this JSON format (no markdown blocks, just raw JSON):
 {
+  "category": "Detected Category Name",
+  "categoryBenchmark": "High-converting 4-slide benchmark narrative arc description",
+  "visionAngleAnalysis": [
+    { "imageIndex": 1, "detectedView": "Front view hero shot" }
+  ],
   "designSystem": {
     "environment": "...",
     "lighting": "...",
@@ -455,6 +462,35 @@ router.get('/history', authenticate, async (req: any, res: any) => {
     res.json(enrichedHistory);
   } catch (error: any) {
     logger.error('Ad history fetch error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/rate-slide', authenticate, async (req: any, res: any) => {
+  try {
+    const { adId, rating, feedback } = req.body;
+    if (!adId || typeof rating !== 'number') {
+      return res.status(400).json({ error: 'adId and numeric rating (1-5) are required.' });
+    }
+    const ad = await prisma.adCreative.findUnique({ where: { id: adId } });
+    if (!ad) {
+      return res.status(404).json({ error: 'Ad creative not found.' });
+    }
+    if (ad.userId !== req.userId) {
+      return res.status(403).json({ error: 'Unauthorized.' });
+    }
+    const brief = (ad.brief as any) || {};
+    brief.rating = Math.max(1, Math.min(5, rating));
+    if (feedback) brief.ratingFeedback = feedback;
+
+    const updated = await prisma.adCreative.update({
+      where: { id: adId },
+      data: { brief }
+    });
+
+    res.json({ success: true, id: updated.id, rating: brief.rating, brief: updated.brief });
+  } catch (error: any) {
+    logger.error('Rate slide error:', error);
     res.status(500).json({ error: error.message });
   }
 });
