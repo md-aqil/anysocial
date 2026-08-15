@@ -617,22 +617,24 @@ export default function PostCreatorPage() {
 
   const handleGenerateDirections = async () => {
     if (!productName || !description) {
-        setError("Product Name and Description are required to brainstorm directions.");
+        setError("Product Name and Description are required to generate carousel.");
         return;
     }
     setLoading(true);
     setError(null);
+    setStep(3);
 
     const refImgUrl = referencePreviews[0] || imagePreviews[0] || null;
+    const currentCampId = 'camp_' + Date.now();
 
     const newCamp = {
-      id: 'camp_' + Date.now(),
+      id: currentCampId,
       productName,
       platform,
       createdAt: new Date().toISOString(),
       referenceImageUrl: refImgUrl,
-      status: 'brainstorming' as const,
-      progressMessage: 'AI Art Director is analyzing product identity & style references...',
+      status: 'generating_ads' as const,
+      progressMessage: 'AI Art Director is analyzing product photos & locking campaign design system...',
       directions: [],
       selectedDirections: [],
       items: []
@@ -673,12 +675,11 @@ export default function PostCreatorPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to generate directions');
+        throw new Error(data.error || 'Failed to analyze product & directions');
       }
 
       const data = await res.json();
       const storyboard = (data.directions || data.slides || []).slice();
-      // Keep the storyboard strictly ordered by slide number
       storyboard.sort((a: any, b: any) => (a.slideIndex ?? a.id ?? 0) - (b.slideIndex ?? b.id ?? 0));
       setDirections(storyboard);
       setSelectedDirections(storyboard);
@@ -687,16 +688,87 @@ export default function PostCreatorPage() {
       setCategoryBenchmark(data.categoryBenchmark || null);
       setVisionAngleAnalysis(data.visionAngleAnalysis || null);
 
+      // Directly run continuous 4-slide generation pipeline
+      const dirsToUse = storyboard;
+      const designSystem = data.designSystem || null;
+      const generatedResults: any[] = [];
+      const failures: Array<{ direction: any; error: string }> = [];
+
+      for (let i = 0; i < dirsToUse.length; i++) {
+        const direction = dirsToUse[i];
+        const slideNo = direction.slideIndex ?? direction.id ?? (i + 1);
+
+        setActiveCampaign(prev => prev ? {
+          ...prev,
+          status: 'generating_ads',
+          progressMessage: `Generating Slide ${slideNo} of ${dirsToUse.length} (${direction.title})...`
+        } : null);
+
+        try {
+          const genFormData = new FormData();
+          genFormData.append('productName', productName);
+          genFormData.append('direction', JSON.stringify(direction));
+          genFormData.append('platform', platform);
+          genFormData.append('campaignId', currentCampId);
+          if (specialInstructions) {
+            genFormData.append('specialInstructions', specialInstructions);
+          }
+          if (designSystem && dirsToUse.length > 0) {
+            genFormData.append('carouselContext', JSON.stringify({ designSystem, slides: dirsToUse }));
+          }
+          imageFiles.forEach(file => {
+            genFormData.append('images', file);
+          });
+          referenceFiles.forEach(refFile => {
+            genFormData.append('referenceImages', refFile);
+          });
+
+          const genRes = await fetch('/api/ad-creator/generate', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: genFormData
+          });
+
+          if (genRes.ok) {
+            const genData = await genRes.json();
+            const newItem = { 
+              brief: genData.brief, 
+              imageUrl: genData.imageUrl, 
+              direction,
+              slideIndex: slideNo,
+              id: genData.id || ('ad_' + Date.now() + '_' + Math.random().toString(36).substring(7)),
+              productName,
+              platform,
+              createdAt: new Date().toISOString(),
+              referenceImageUrl: genData.referenceImageUrl || refImgUrl
+            };
+            generatedResults.push(newItem);
+            setResults(prev => [...prev, newItem]);
+
+            setActiveCampaign(prev => prev ? {
+              ...prev,
+              items: [...generatedResults],
+              progressMessage: `Generated Slide ${slideNo} of ${dirsToUse.length} carousel slides...`
+            } : null);
+          } else {
+            failures.push({ direction, error: `HTTP ${genRes.status}` });
+          }
+        } catch (err: any) {
+          failures.push({ direction, error: err.message });
+        }
+      }
+
       setActiveCampaign(prev => prev ? {
         ...prev,
-        status: 'directions_ready',
-        progressMessage: `${storyboard.length}-Slide Carousel Storyboard ready! The design system is locked so every slide reads as one continuous campaign.`,
-        directions: storyboard,
-        selectedDirections: storyboard,
-        designSystem: data.designSystem || null
+        status: failures.length > 0 ? 'partial' : 'completed',
+        progressMessage: failures.length > 0 
+          ? `Generated ${generatedResults.length} of ${dirsToUse.length} carousel slides. ${failures.length} failed.`
+          : `${dirsToUse.length}-slide Instagram Carousel complete! All slides share locked design system — ready to export.`
       } : null);
 
-      setStep(2);
+      fetchHistory();
     } catch (err: any) {
       setError(err.message);
       setActiveCampaign(null);
@@ -1259,23 +1331,14 @@ export default function PostCreatorPage() {
 
 
               <div className="pt-2">
-                {directions.length > 0 ? (
-                  <Button 
-                    onClick={() => setStep(2)} 
-                    className="w-full bg-[#D27D50] hover:bg-[#b86d45] text-white rounded-2xl h-14 font-black text-base transition-all shadow-lg hover:scale-[1.005] flex items-center justify-center gap-2"
-                  >
-                    Continue to Directions <ArrowRight className="w-5 h-5" />
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={handleGenerateDirections} 
-                    disabled={loading || !productName || !description}
-                    className="w-full bg-stone-900 hover:bg-black text-white rounded-2xl h-14 font-black text-base transition-all shadow-lg hover:scale-[1.005] flex items-center justify-center gap-2"
-                  >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-[#D27D50]" />}
-                    {loading ? 'Brainstorming Directions...' : 'Submit Brief & Generate Directions'}
-                  </Button>
-                )}
+                <Button 
+                  onClick={handleGenerateDirections} 
+                  disabled={loading || !productName || !description}
+                  className="w-full bg-gradient-to-r from-[#D27D50] to-rose-500 hover:from-[#b86d45] hover:to-rose-600 text-white rounded-2xl h-14 font-black text-base transition-all shadow-lg hover:scale-[1.005] flex items-center justify-center gap-2"
+                >
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-white" />}
+                  {loading ? 'Generating 4-Slide Carousel...' : 'Generate 4-Slide Instagram Carousel'}
+                </Button>
               </div>
             </div>
           </div>
