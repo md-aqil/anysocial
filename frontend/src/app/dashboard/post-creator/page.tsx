@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Sparkles, Image as ImageIcon, Loader2, Upload, Target, CheckCircle2, 
   XCircle, PenSquare, Maximize2, Film, Download, X, Video, Share2, 
-  Check, ArrowLeft, Layers, Wand2, ExternalLink, Eye, Link2
+  Check, ArrowLeft, Layers, Wand2, ExternalLink, Eye, Link2, RefreshCw
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
@@ -1137,7 +1137,7 @@ export default function PostCreatorPage() {
                     className="w-full bg-stone-900 hover:bg-black text-white rounded-2xl h-14 font-black text-base transition-all shadow-lg hover:scale-[1.005] flex items-center justify-center gap-2"
                   >
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-[#D27D50]" />}
-                    {loading ? 'Brainstorming Directions...' : 'Propose 5 Creative Directions'}
+                    {loading ? 'Brainstorming Directions...' : 'Submit Brief & Generate Directions'}
                   </Button>
                 )}
               </div>

@@ -471,10 +471,7 @@ export default function NewPostPage() {
     
     const ytKids = localStorage.getItem('ytKids');
     if (ytKids) setValue('youtubeMadeForKids', ytKids === 'true');
-    
-    const ytTags = localStorage.getItem('ytTags');
-    if (ytTags) setValue('youtubeTags', ytTags);
-    
+
     const ytPostType = localStorage.getItem('ytPostType');
     if (ytPostType) setValue('youtubePostType', ytPostType as any);
 
@@ -524,7 +521,7 @@ export default function NewPostPage() {
   }, [ytKids]);
   
   useEffect(() => {
-    if (ytTags !== undefined) localStorage.setItem('ytTags', ytTags);
+
   }, [ytTags]);
 
   useEffect(() => {
