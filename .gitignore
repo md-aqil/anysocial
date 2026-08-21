@@ -37,3 +37,4 @@ tunnel-config/
 # Next.js build output
 frontend/.next/
 .next/
+tunnel-config/credentials.json
