@@ -25,6 +25,8 @@ import {
   Bot,
   Film,
   Briefcase,
+  Zap,
+  Key,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -38,6 +40,8 @@ const navigation = [
   { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film, adminOnly: true },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'AI Agent', href: '/dashboard/ai-agent', icon: Bot, adminOnly: true, superAdminOnly: true },
+  { name: 'Hermes', href: '/dashboard/hermes-agent', icon: Zap, adminOnly: true, superAdminOnly: true },
+  { name: 'Hermes Connection', href: '/dashboard/hermes-connection', icon: Key, adminOnly: true, superAdminOnly: true },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
 

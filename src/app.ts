@@ -14,6 +14,7 @@ import { requestId } from './middleware/request-id.js';
 import { routes } from './routes/index.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { rateLimiter } from './middleware/rate-limiter.js';
+import { hermesExternalRoutes } from './routes/hermes-external.routes.js';
 import { refreshScheduler } from './modules/tokens/refresh.scheduler.js';
 import { postWorker } from './workers/post-worker.js';
 import { seriesReelWorker } from './workers/series-reel-worker.js';
@@ -111,6 +112,7 @@ app.use(rateLimiter);
 
 // Routes
 app.use(routes);
+app.use('/api/hermes-external', hermesExternalRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

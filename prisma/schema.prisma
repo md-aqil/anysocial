@@ -72,6 +72,7 @@ model User {
   name              String?
   avatarUrl         String?               @map("avatar_url")
   role              String                @default("user") @map("role")
+  hermesApiKey      String?               @unique @map("hermes_api_key")
   socialAccounts    SocialAccount[]
   adCreatives       AdCreative[]
   oauthStates       OAuthState[]
@@ -85,9 +86,10 @@ model User {
   playgroundImages     PlaygroundImage[]
   companyKnowledgeBases CompanyKnowledgeBase[]
   companyReels         CompanyReel[]
+  hermesTasks          HermesTask[]
+  AutomatedCampaign    AutomatedCampaign[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
-  AutomatedCampaign    AutomatedCampaign[]
 
   @@index([email])
   @@index([role])
@@ -556,5 +558,48 @@ model CompanyReel {
   @@index([kbId])
   @@index([userId])
   @@map("company_reels")
+}
+
+model HermesTask {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  type            String           // SCHEDULE_POST, GENERATE_CONTENT, CREATE_CAMPAIGN, ANALYZE, MONITOR
+  status          String           @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
+  priority        String           @default("NORMAL") // LOW, NORMAL, HIGH, CRITICAL
+  payload         Json
+  result          Json?
+  error           String?
+  scheduledAt     DateTime?        @map("scheduled_at")
+  startedAt       DateTime?        @map("started_at")
+  completedAt     DateTime?        @map("completed_at")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([userId, status])
+  @@index([scheduledAt])
+  @@map("hermes_tasks")
+  executions HermesExecution[]
+}
+
+model HermesExecution {
+  id          String   @id @default(uuid())
+  taskId      String
+  task        HermesTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  agentId     String   @map("agent_id")
+  agentName   String   @map("agent_name")
+  action      String
+  input       Json?
+  output      Json?
+  status      String   // SUCCESS, FAILED, RETRYING
+  duration    Int?     // milliseconds
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([taskId])
+  @@index([agentId])
+  @@map("hermes_executions")
 }
 

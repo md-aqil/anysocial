@@ -351,6 +351,60 @@ export const api = {
   },
   reels: {
     list: () => request<{ success: boolean; data: any[] }>('/api/reels'),
+  },
+  hermes: {
+    getTasks: (params?: { status?: string; limit?: number; offset?: number }) =>
+      request<{ success: boolean; tasks: any[] }>('/api/hermes/tasks', { params: params as Record<string, string> }),
+
+    getTask: (id: string) =>
+      request<any>(`/api/hermes/tasks/${id}`),
+
+    createTask: (data: any) =>
+      request<any>('/api/hermes/tasks', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    executeTask: (id: string) =>
+      request<any>(`/api/hermes/tasks/${id}/execute`, {
+        method: 'POST',
+      }),
+
+    cancelTask: (id: string) =>
+      request<any>(`/api/hermes/tasks/${id}/cancel`, {
+        method: 'POST',
+      }),
+
+    getExecutions: (id: string) =>
+      request<any>(`/api/hermes/tasks/${id}/executions`),
+
+    getStatus: () =>
+      request<any>('/api/hermes/status'),
+
+    execute: (action: string, payload?: any) =>
+      request<any>('/api/hermes/execute', {
+        method: 'POST',
+        body: JSON.stringify({ action, ...payload }),
+      }),
+
+    quickSchedule: (data: { content: string; platforms: string[]; scheduledAt?: string; timezone?: string; title?: string; platformOptions?: any }) =>
+      request<any>('/api/hermes/quick-schedule', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    getConnection: () =>
+      request<any>('/api/hermes/connection'),
+
+    generateConnectionKey: () =>
+      request<any>('/api/hermes/connection/generate', {
+        method: 'POST',
+      }),
+
+    revokeConnectionKey: () =>
+      request<any>('/api/hermes/connection/revoke', {
+        method: 'POST',
+      }),
   }
 };
 

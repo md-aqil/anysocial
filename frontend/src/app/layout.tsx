@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { cn } from "@/lib/utils";
+import { ErrorSuppressor } from '@/components/error-suppressor';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", inter.variable, "dark")}>
       <body className={inter.className} suppressHydrationWarning>
+        <ErrorSuppressor />
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -33,6 +33,9 @@ const envSchema = z.object({
   // YouTube (Google)
   YOUTUBE_CLIENT_ID: z.string(),
   YOUTUBE_CLIENT_SECRET: z.string(),
+  
+  // Hermes Desktop Integration
+  HERMES_API_KEY: z.string().min(16, 'HERMES_API_KEY must be at least 16 characters'),
 });
 
 export type Env = z.infer<typeof envSchema>;

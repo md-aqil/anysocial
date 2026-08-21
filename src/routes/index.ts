@@ -21,6 +21,8 @@ import veoRoutes from './veo.routes.js';
 import automationRoutes from './automation.routes.js';
 import companyReelsRoutes from './company-reels.routes.js';
 import publicVeoRoutes from './public-veo.routes.js';
+import { hermesRoutes } from './hermes.routes.js';
+import { hermesConnectionRoutes } from './hermes-connection.routes.js';
 
 const router = Router();
 
@@ -111,5 +113,11 @@ router.use('/api/company-reels', jwtAuth, companyReelsRoutes);
 
 // Public API for other projects to trigger Veo generations securely
 router.use('/api/public/veo', publicVeoRoutes);
+
+// Hermes Agent routes
+router.use('/api/hermes', hermesRoutes);
+
+// Hermes Connection routes (user-specific API key management)
+router.use('/api/hermes', hermesConnectionRoutes);
 
 export const routes = router;

@@ -622,6 +622,8 @@ export default function PostCreatorPage() {
     }
     setLoading(true);
     setError(null);
+    setResults([]);
+    setFailedDirections([]);
     setStep(3);
 
     const refImgUrl = referencePreviews[0] || imagePreviews[0] || null;
@@ -688,7 +690,6 @@ export default function PostCreatorPage() {
       setCategoryBenchmark(data.categoryBenchmark || null);
       setVisionAngleAnalysis(data.visionAngleAnalysis || null);
 
-      // Directly run continuous 4-slide generation pipeline
       const dirsToUse = storyboard;
       const designSystem = data.designSystem || null;
       const generatedResults: any[] = [];
@@ -780,7 +781,6 @@ export default function PostCreatorPage() {
   const handleGenerateAd = async () => {
     let dirsToUse: any[] = activeCampaign?.selectedDirections?.length ? activeCampaign.selectedDirections : (selectedDirections.length ? selectedDirections : directions);
     if (dirsToUse.length === 0) return;
-    // Generate in carousel order (Slide 1 → N) so results assemble as a sequence
     dirsToUse = dirsToUse.slice().sort((a: any, b: any) => (a.slideIndex ?? a.id ?? 0) - (b.slideIndex ?? b.id ?? 0));
     const designSystem = carouselDesignSystem || activeCampaign?.designSystem || null;
     setLoading(true);
@@ -812,8 +812,6 @@ export default function PostCreatorPage() {
         if (specialInstructions) {
           formData.append('specialInstructions', specialInstructions);
         }
-        // Send the full storyboard + locked design system so this slide keeps
-        // visual continuity with the rest of the carousel.
         if (designSystem && dirsToUse.length > 0) {
           formData.append('carouselContext', JSON.stringify({ designSystem, slides: dirsToUse }));
         }
@@ -845,7 +843,6 @@ export default function PostCreatorPage() {
               // Keep default error message
             }
           } else {
-            // HTML error page - likely rate limit or server error
             const text = await res.text();
             if (text.includes('<!DOCTYPE') || text.includes('<html')) {
               errorMessage = `AI service returned an error (${res.status}). This may be due to rate limiting or service unavailability. Please retry in a moment.`;
@@ -1406,6 +1403,7 @@ export default function PostCreatorPage() {
                   || group.items.find(i => i.brief?.referenceImageUrl)?.brief?.referenceImageUrl;
 
                 const isActive = group.campaignId === 'active-campaign' || group.campaignId.startsWith('camp_');
+                const isCurrentlyGenerating = loading && activeCampaign && (group.campaignId === activeCampaign.id || group.campaignId === 'active-campaign') && activeCampaign.status === 'generating_ads';
 
                 // Carousel-aware: keep the generated slides in Slide 1 → N order
                 const isCarouselGroup = group.items.some((i: any) =>
@@ -1417,9 +1415,9 @@ export default function PostCreatorPage() {
                   return ia - ib;
                 });
 
-                return (
-                  <div key={group.campaignId} className={cn("bg-white rounded-3xl p-6 lg:p-8 border shadow-sm space-y-6 transition-all duration-300", isActive ? 'border-[#D27D50]/40 ring-1 ring-[#D27D50]/20 shadow-md' : 'border-stone-200/80')}>
-                    {/* Separate Campaign Card Header */}
+                 return (
+                  <div key={group.campaignId} className={cn("bg-white rounded-3xl p-6 lg:p-8 border shadow-sm space-y-6 transition-all duration-300", isCurrentlyGenerating ? 'border-[#D27D50]/40 ring-1 ring-[#D27D50]/20 shadow-md' : 'border-stone-200/80')}>
+                    {/* Simplified Campaign Card Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-150 pb-6">
                       <div>
                         <div className="flex items-center gap-3 mb-1.5 flex-wrap">
@@ -1432,14 +1430,9 @@ export default function PostCreatorPage() {
                               📸 {group.items.length}-Slide Carousel
                             </span>
                           )}
-                          {isActive && group.status !== 'completed' && (
-                            <span className="px-2.5 py-0.5 bg-orange-50 text-[#D27D50] text-[10px] font-black rounded-md border border-orange-200 uppercase tracking-widest animate-pulse">
-                              ⚡ Live Generation
-                            </span>
-                          )}
                         </div>
                         <p className="text-xs font-semibold text-stone-400">
-                          {isActive && group.status !== 'completed' ? (
+                          {isCurrentlyGenerating ? (
                             `${group.items.length} ${isCarouselGroup ? 'Carousel Slides' : 'Post Variations'} • Started Just Now`
                           ) : (
                             `${group.items.length} ${isCarouselGroup ? 'Carousel Slides' : 'Post Variations'} • Created ${new Date(group.createdAt).toLocaleDateString()}`
@@ -1448,25 +1441,6 @@ export default function PostCreatorPage() {
                       </div>
 
                       <div className="flex items-center gap-3 flex-wrap">
-                        {/* Reference Image Thumbnail */}
-                        {groupRefImg && (
-                          <a 
-                            href={groupRefImg}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 bg-stone-50 hover:bg-stone-100 text-stone-850 p-1.5 pr-3 rounded-xl border border-stone-200 shadow-2xs hover:scale-102 transition-transform group/refHead"
-                            title="View Target Reference Style Photo"
-                          >
-                            <img src={groupRefImg} alt="Target Reference" className="w-8 h-8 rounded-lg object-cover border border-[#D27D50]/30 shadow-2xs" />
-                            <div className="text-left">
-                              <span className="text-[8px] font-black uppercase text-[#D27D50] block tracking-wider">Style Ref</span>
-                              <span className="text-[10px] font-bold text-stone-600 flex items-center gap-0.5">
-                                View <ExternalLink className="w-2.5 h-2.5 text-[#D27D50]" />
-                              </span>
-                            </div>
-                          </a>
-                        )}
-
                         {group.items.length > 0 && (
                           <Button
                             onClick={() => handleComposeEntireCampaign(group.items)}
@@ -1480,7 +1454,7 @@ export default function PostCreatorPage() {
                     </div>
 
                     {/* If Active Campaign: Live Progress Preloader Bar */}
-                    {isActive && group.status !== 'completed' && (
+                    {isCurrentlyGenerating && (
                       <div className="bg-amber-50/50 border border-amber-250/60 text-stone-850 p-4 rounded-2xl flex items-center justify-between gap-4 animate-in fade-in duration-300">
                         <div className="flex items-center gap-3">
                           <div className="bg-amber-500/10 p-2 rounded-xl border border-amber-400/20">
@@ -1495,76 +1469,6 @@ export default function PostCreatorPage() {
                       </div>
                     )}
 
-
-
-                    {/* Carousel Preview Strip (ordered slides) */}
-                    {isCarouselGroup && sortedItems.length > 1 && (
-                      <div className="bg-stone-50/70 border border-stone-200 rounded-2xl p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[#D27D50]">
-                            Instagram Carousel Preview — Slide Order
-                          </span>
-                          <span className="text-[9px] font-bold text-stone-400">{sortedItems.length} connected slides</span>
-                        </div>
-                        <div className="flex items-center gap-3 overflow-x-auto pb-1 snap-x">
-                          {sortedItems.map((ad: any, sIdx: number) => {
-                            const sNo = ad.slideIndex ?? ad.direction?.slideIndex ?? ad.brief?.carousel?.slideIndex ?? (sIdx + 1);
-                            const slideTitle = ad.direction?.title || ad.brief?.carousel?.slideTitle || `Slide ${sNo}`;
-                            return (
-                              <button
-                                type="button"
-                                key={ad.id}
-                                onClick={() => setCarouselActiveIndex(sIdx)}
-                                className={`snap-start shrink-0 w-20 rounded-xl overflow-hidden border-2 transition-all relative ${
-                                  carouselActiveIndex === sIdx
-                                    ? 'border-[#D27D50] ring-2 ring-[#D27D50]/30'
-                                    : 'border-stone-200 hover:border-stone-300'
-                                }`}
-                                title={slideTitle}
-                              >
-                                <img src={ad.imageUrl} alt={slideTitle} className="w-full h-24 object-cover" />
-                                <span className="absolute top-1 left-1 text-[8px] font-black bg-black/70 text-white px-1.5 py-0.5 rounded">
-                                  {sNo}/{sortedItems.length}
-                                </span>
-                                <span className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent text-white text-[8px] font-bold px-1 py-0.5 truncate text-left">
-                                  {getRoleLabel(ad.direction?.role || ad.brief?.carousel?.role)}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setCarouselActiveIndex(Math.max(0, carouselActiveIndex - 1))}
-                              className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center hover:border-[#D27D50] hover:text-[#D27D50] transition-colors"
-                            >
-                              <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <span className="text-[10px] font-black text-stone-600 min-w-[70px] text-center">
-                              {Math.min(carouselActiveIndex + 1, sortedItems.length)} / {sortedItems.length}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setCarouselActiveIndex(Math.min(sortedItems.length - 1, carouselActiveIndex + 1))}
-                              className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center hover:border-[#D27D50] hover:text-[#D27D50] transition-colors"
-                            >
-                              <ChevronRight className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <a
-                            href={sortedItems[Math.min(carouselActiveIndex, sortedItems.length - 1)]?.imageUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[10px] font-bold text-stone-500 hover:text-[#D27D50] flex items-center gap-1"
-                          >
-                            <Eye className="w-3 h-3" /> View Slide {Math.min(carouselActiveIndex + 1, sortedItems.length)}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Inside Campaign: Slide Cards Grid */}
                     {group.items.length > 0 && (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
@@ -1575,10 +1479,10 @@ export default function PostCreatorPage() {
                           return (
                             <div key={ad.id} className="bg-white rounded-2xl overflow-hidden border border-stone-200 shadow-sm hover:shadow-lg transition-all duration-305 flex flex-col">
                               <div className="h-56 w-full bg-stone-900 relative overflow-hidden group/img">
-                                {/* Carousel slide badge */}
+                                {/* Small carousel slide order badge */}
                                 {isCarouselGroup && (
-                                  <span className="absolute top-3 right-3 z-20 bg-black/70 text-white text-[9px] font-black px-2 py-1 rounded-md border border-white/20">
-                                    {(ad.slideIndex ?? ad.direction?.slideIndex ?? ad.brief?.carousel?.slideIndex ?? 1)} / {sortedItems.length}
+                                  <span className="absolute top-2 right-2 z-20 bg-black/70 text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white/20">
+                                    {ad.slideIndex ?? ad.direction?.slideIndex ?? ad.brief?.carousel?.slideIndex ?? 1}/{sortedItems.length}
                                   </span>
                                 )}
                                 {currentViewMode === 'video' && adVideoUrl ? (

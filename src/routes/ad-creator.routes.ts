@@ -27,7 +27,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, baseDelay = 2000)
       return await fn();
     } catch (err: any) {
       const isLastAttempt = i === retries - 1;
-      const isRetryable = /429|503|500|rate.?limit|quota|unavailable|timeout|ECONNRESET|ENOTFOUND/i.test(err.message || '');
+      const isRetryable = /429|503|500|504|rate.?limit|quota|unavailable|timeout|ECONNRESET|ENOTFOUND/i.test(err.message || '');
       
       if (isLastAttempt || !isRetryable) {
         throw err;
