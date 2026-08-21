@@ -2,33 +2,32 @@ name: Deploy to VPS
 
 on:
   push:
-    branches:
-      - main
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy Application
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: SSH and Deploy
-        uses: appleboy/ssh-action@master
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Deploy to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no aqil@187.127.154.55 << 'EOF'
             cd /var/www/socialsched
-            
-            # Use sudo with a password injected via a GitHub secret (VPS_PASSWORD)
-            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S git config --global --add safe.directory /var/www/socialsched
-            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S git fetch origin
-            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S git reset --hard origin/main
-            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S git clean -fd --force
-            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S chmod +x deploy/deploy.sh
-            echo "${{ secrets.VPS_PASSWORD }}" | sudo -S bash deploy/deploy.sh
+            echo "aqil@noon" | sudo -S git fetch origin
+            echo "aqil@noon" | sudo -S git reset --hard origin/main
+            echo "aqil@noon" | sudo -S bash deploy/deploy.sh
+          EOF

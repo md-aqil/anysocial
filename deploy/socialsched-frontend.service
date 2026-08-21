@@ -1,0 +1,15 @@
+[Unit]
+Description=SocialSched Frontend
+After=network.target
+
+[Service]
+Type=simple
+User=aqil
+WorkingDirectory=/var/www/socialsched/frontend
+ExecStart=/usr/bin/npx next start -p 3000
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

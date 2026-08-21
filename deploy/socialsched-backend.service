@@ -1,0 +1,16 @@
+[Unit]
+Description=SocialSched Backend
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=aqil
+WorkingDirectory=/var/www/socialsched
+ExecStart=/usr/bin/node dist/app.js
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/socialsched/.env
+
+[Install]
+WantedBy=multi-user.target

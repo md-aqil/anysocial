@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloudflare Tunnel for SocialSched
+After=network.target socialsched-backend.service socialsched-frontend.service
+
+[Service]
+Type=simple
+User=aqil
+WorkingDirectory=/var/www/socialsched
+ExecStart=/usr/local/bin/cloudflared tunnel --config tunnel-config/config.yaml run
+Restart=always
+RestartSec=10
+EnvironmentFile=/etc/socialsched/.env
+
+[Install]
+WantedBy=multi-user.target

@@ -5,6 +5,7 @@ set -e
 APP_DIR="/var/www/socialsched"
 BACKEND_SERVICE="socialsched-backend"
 FRONTEND_SERVICE="socialsched-frontend"
+TUNNEL_SERVICE="cloudflared-tunnel"
 
 echo "------------------------------------------------"
 echo "🚀 Starting Deployment for SocialSched"
@@ -22,6 +23,14 @@ echo "📥 Pulling latest code from main..."
 git fetch origin
 git reset --hard origin/main
 git clean -fd --force
+
+# Install systemd services
+echo "🔧 Installing systemd services..."
+sudo cp deploy/socialsched-backend.service /etc/systemd/system/
+sudo cp deploy/socialsched-frontend.service /etc/systemd/system/
+sudo cp deploy/cloudflared-tunnel.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable $BACKEND_SERVICE $FRONTEND_SERVICE $TUNNEL_SERVICE
 
 # Backend setup
 echo "📦 Setting up Backend..."
@@ -70,6 +79,7 @@ sudo chmod -R 777 scratch frontend/public/uploads
 echo "🔄 Restarting Systemd Services..."
 sudo systemctl restart $BACKEND_SERVICE
 sudo systemctl restart $FRONTEND_SERVICE
+sudo systemctl restart $TUNNEL_SERVICE
 
 echo "------------------------------------------------"
 echo "✅ Deployment Completed Successfully!"
