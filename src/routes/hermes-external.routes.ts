@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import { hermesAgent } from '../services/hermes-agent.service.js';
+import { prisma } from '../db/prisma.js';
 import { z } from 'zod';
 import { hermesApiKey } from '../middleware/hermes-api-key.js';
 
@@ -20,15 +22,38 @@ router.post('/execute', async (req: Request, res: Response) => {
   try {
     const { action, payload = {} } = executeSchema.parse(req.body);
 
-    // Use a fixed system user ID for external Hermes agent
-    const SYSTEM_USER_ID = 'hermes-system';
+    // Run external tasks as the user who owns this API key so that account-
+    // scoped actions (list accounts, schedule, etc.) operate on their data.
+    // The global system key has no owner, so fall back to a seeded system user.
+    const apiKey = (req.headers['x-hermes-api-key'] as string | undefined)?.trim();
+    const owner = apiKey
+      ? await prisma.user.findUnique({ where: { hermesApiKey: apiKey }, select: { id: true } })
+      : null;
 
-    const task = await hermesAgent.createTask(SYSTEM_USER_ID, {
+    let systemUserId: string;
+    if (owner) {
+      systemUserId = owner.id;
+    } else {
+      await prisma.user.upsert({
+        where: { id: 'hermes-system' },
+        update: {},
+        create: {
+          id: 'hermes-system',
+          email: 'hermes-system@local',
+          passwordHash: crypto.randomBytes(32).toString('hex'),
+          name: 'Hermes System',
+          role: 'system',
+        },
+      });
+      systemUserId = 'hermes-system';
+    }
+
+    const task = await hermesAgent.createTask(systemUserId, {
       action,
       ...payload
     });
 
-    const result = await hermesAgent.executeTask(task.id, SYSTEM_USER_ID);
+    const result = await hermesAgent.executeTask(task.id, systemUserId);
 
     res.json({
       success: true,
