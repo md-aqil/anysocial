@@ -22,7 +22,7 @@ const BASE_URL = (process.env.HERMES_BASE_URL || "https://socialsched.vibeship.i
 const API_KEY = process.env.HERMES_API_KEY || "";
 
 if (!API_KEY) {
-  console.error("[hermes-mcp] Missing HERMES_API_KEY. Set it in the env or a .env file next to this server.");
+  console.error("[newdone-mcp] Missing HERMES_API_KEY. Set it in the env or a .env file next to this server.");
 }
 
 type ToolDef = {
@@ -68,17 +68,17 @@ async function runTool(def: ToolDef, args: Record<string, unknown>) {
 }
 
 // ---------------------------------------------------------------------------
-// Tool catalog — mirrors the Hermes agent actions in hermes-agent.service.ts
+// Tool catalog — Newdone MCP actions for SocialSched
 // ---------------------------------------------------------------------------
 const TOOLS: ToolDef[] = [
   {
-    name: "hermes_status",
-    description: "Get the Hermes agent status (uptime + task stats).",
+    name: "newdone_status",
+    description: "Get the Newdone agent status (uptime + task stats).",
     method: "status",
     schema: {},
   },
   {
-    name: "hermes_schedule_post",
+    name: "newdone_schedule_post",
     description: "Schedule a single social post. Requires content and a list of platforms.",
     action: "schedule_post",
     schema: {
@@ -92,7 +92,7 @@ const TOOLS: ToolDef[] = [
     },
   },
   {
-    name: "hermes_bulk_schedule",
+    name: "newdone_bulk_schedule",
     description: "Schedule many posts at once from a list of post objects.",
     action: "bulk_schedule",
     schema: {
@@ -111,7 +111,7 @@ const TOOLS: ToolDef[] = [
     },
   },
   {
-    name: "hermes_list_posts",
+    name: "newdone_list_posts",
     description: "List posts, optionally filtered by status/platform.",
     action: "list_posts",
     schema: {
@@ -121,31 +121,31 @@ const TOOLS: ToolDef[] = [
     },
   },
   {
-    name: "hermes_get_post",
+    name: "newdone_get_post",
     description: "Get a single post by ID.",
     action: "get_post",
     schema: { postId: z.string() },
   },
   {
-    name: "hermes_delete_post",
+    name: "newdone_delete_post",
     description: "Delete a post by ID.",
     action: "delete_post",
     schema: { postId: z.string() },
   },
   {
-    name: "hermes_cancel_scheduled_post",
+    name: "newdone_cancel_scheduled_post",
     description: "Cancel a queued/scheduled post by ID.",
     action: "cancel_scheduled_post",
     schema: { postId: z.string() },
   },
   {
-    name: "hermes_generate_content",
+    name: "newdone_generate_content",
     description: "Generate AI content (caption/copy) from a prompt.",
     action: "generate_content",
     schema: { prompt: z.string() },
   },
   {
-    name: "hermes_create_campaign",
+    name: "newdone_create_campaign",
     description: "Create an automated campaign from a website URL.",
     action: "create_campaign",
     schema: {
@@ -159,13 +159,13 @@ const TOOLS: ToolDef[] = [
     },
   },
   {
-    name: "hermes_list_campaigns",
+    name: "newdone_list_campaigns",
     description: "List campaigns, optionally filtered by active state.",
     action: "list_campaigns",
     schema: { isActive: z.boolean().optional() },
   },
   {
-    name: "hermes_update_campaign",
+    name: "newdone_update_campaign",
     description: "Update an existing campaign.",
     action: "update_campaign",
     schema: {
@@ -176,19 +176,19 @@ const TOOLS: ToolDef[] = [
     },
   },
   {
-    name: "hermes_delete_campaign",
+    name: "newdone_delete_campaign",
     description: "Delete a campaign by ID.",
     action: "delete_campaign",
     schema: { campaignId: z.string() },
   },
   {
-    name: "hermes_list_users",
+    name: "newdone_list_users",
     description: "List all users (admin).",
     action: "list_users",
     schema: {},
   },
   {
-    name: "hermes_create_user",
+    name: "newdone_create_user",
     description: "Create a new user (admin).",
     action: "create_user",
     schema: {
@@ -199,7 +199,7 @@ const TOOLS: ToolDef[] = [
     },
   },
   {
-    name: "hermes_update_user",
+    name: "newdone_update_user",
     description: "Update a user by ID (admin).",
     action: "update_user",
     schema: {
@@ -209,100 +209,114 @@ const TOOLS: ToolDef[] = [
     },
   },
   {
-    name: "hermes_delete_user",
+    name: "newdone_delete_user",
     description: "Delete a user by ID (admin).",
     action: "delete_user",
     schema: { targetUserId: z.string() },
   },
   {
-    name: "hermes_change_user_role",
+    name: "newdone_change_user_role",
     description: "Change a user's role (admin).",
     action: "change_user_role",
     schema: { targetUserId: z.string(), role: z.string() },
   },
   {
-    name: "hermes_list_accounts",
+    name: "newdone_list_accounts",
     description: "List connected social accounts.",
     action: "list_accounts",
     schema: {},
   },
   {
-    name: "hermes_disconnect_account",
+    name: "newdone_disconnect_account",
     description: "Disconnect a social account by ID.",
     action: "disconnect_account",
     schema: { accountId: z.string() },
   },
   {
-    name: "hermes_refresh_account",
+    name: "newdone_refresh_account",
     description: "Refresh a social account's OAuth token by ID.",
     action: "refresh_account",
     schema: { accountId: z.string() },
   },
   {
-    name: "hermes_list_reels",
+    name: "newdone_list_reels",
     description: "List reels, optionally filtered by status.",
     action: "list_reels",
     schema: { status: z.string().optional() },
   },
   {
-    name: "hermes_delete_reel",
+    name: "newdone_delete_reel",
     description: "Delete a reel by ID.",
     action: "delete_reel",
     schema: { reelId: z.string() },
   },
   {
-    name: "hermes_get_analytics",
+    name: "newdone_get_analytics",
     description: "Get analytics for the last N days.",
     action: "get_analytics",
     schema: { days: z.number().optional().default(7) },
   },
   {
-    name: "hermes_list_notifications",
+    name: "newdone_list_notifications",
     description: "List notifications, optionally filtered by read state.",
     action: "list_notifications",
     schema: { isRead: z.boolean().optional() },
   },
   {
-    name: "hermes_get_settings",
+    name: "newdone_get_settings",
     description: "Get current agent/system settings.",
     action: "get_settings",
     schema: {},
   },
   {
-    name: "hermes_update_settings",
+    name: "newdone_update_settings",
     description: "Update settings (pass a settings object).",
     action: "update_settings",
     schema: { settings: z.record(z.any()) },
   },
   {
-    name: "hermes_monitor_health",
+    name: "newdone_monitor_health",
     description: "Run a system/health check.",
     action: "monitor_health",
     schema: {},
   },
   {
-    name: "hermes_analyze_accounts",
+    name: "newdone_analyze_accounts",
     description: "Analyze connected accounts for issues/opportunities.",
     action: "analyze_accounts",
     schema: {},
   },
   {
-    name: "hermes_custom",
+    name: "newdone_custom",
     description: "Run a custom autonomous-agent command from a free-form prompt.",
     action: "custom",
     schema: { prompt: z.string() },
   },
 ];
 
+// Add legacy alias support so hermes_* calls still resolve seamlessly
+const ALL_TOOLS: ToolDef[] = [];
+for (const tool of TOOLS) {
+  ALL_TOOLS.push(tool);
+  const legacyName = tool.name.replace("newdone_", "hermes_");
+  if (legacyName !== tool.name) {
+    ALL_TOOLS.push({
+      ...tool,
+      name: legacyName,
+      description: `[Legacy Alias] ${tool.description}`
+    });
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Server
 // ---------------------------------------------------------------------------
 const server = new McpServer({
-  name: "hermes-socialsched",
+  name: "newdone-socialsched",
   version: "1.0.0",
 });
 
-for (const def of TOOLS) {
+for (const def of ALL_TOOLS) {
   server.tool(
     def.name,
     def.description,
@@ -314,4 +328,4 @@ for (const def of TOOLS) {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-console.error(`[hermes-mcp] Connected to ${BASE_URL} (${TOOLS.length} tools)`);
+console.error(`[newdone-mcp] Connected to ${BASE_URL} (${TOOLS.length} Newdone tools active)`);

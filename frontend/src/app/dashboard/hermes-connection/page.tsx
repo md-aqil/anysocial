@@ -143,29 +143,29 @@ Create or update .mcp.json in my workspace with:
 
 {
   "mcpServers": {
-    "hermes-socialsched": {
+    "newdone-socialsched": {
       "command": "node",
       "args": ["mcp/dist/hermes-mcp-server.mjs"],
       "env": {
         "HERMES_BASE_URL": "${getOrigin()}",
-        "HERMES_API_KEY": "${apiKey || 'YOUR_HERMES_API_KEY'}"
+        "HERMES_API_KEY": "${apiKey || 'YOUR_NEWDONE_API_KEY'}"
       }
     }
   }
 }
 
-Once configured, call the hermes_status tool to confirm connection!`;
+Once configured, call the newdone_status or newdone_list_accounts tool to confirm connection!`;
 
   // Standard MCP JSON
   const mcpConfigJson = JSON.stringify(
     {
       mcpServers: {
-        'hermes-socialsched': {
+        'newdone-socialsched': {
           command: 'node',
           args: ['mcp/dist/hermes-mcp-server.mjs'],
           env: {
             HERMES_BASE_URL: getOrigin(),
-            HERMES_API_KEY: apiKey || 'YOUR_HERMES_API_KEY'
+            HERMES_API_KEY: apiKey || 'YOUR_NEWDONE_API_KEY'
           }
         }
       }
