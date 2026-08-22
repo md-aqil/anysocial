@@ -53,6 +53,7 @@ export default function HomePage() {
   const handleVideoEnded = () => {
     setCurrentVideoIndex((prev) => (prev + 1) % heroVideos.length);
   };
+
   return (
     <div className="min-h-screen bg-[#F2F3ED] text-stone-900 font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
 
@@ -71,23 +72,24 @@ export default function HomePage() {
 
         {/* Giant Watermarked Background Text */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none select-none z-10">
-          <span className="font-bebas text-[18vw] font-black leading-none text-white/10 uppercase tracking-widest block drop-shadow-xs">
-            SOCIALSCHED
+          <span className="font-bebas text-[22vw] font-black leading-none text-white/10 uppercase tracking-widest block drop-shadow-xs">
+            NEWDONE
           </span>
         </div>
 
         {/* Navigation Header */}
         <header className="container mx-auto max-w-7xl px-4 h-20 flex items-center justify-between relative z-20 border-b border-white/20 pb-4">
           <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="SocialSched Logo" className="h-12 w-auto object-contain brightness-0 invert" />
-            <span className="font-bebas text-3xl font-black text-white tracking-widest hidden sm:inline-block">SOCIALSCHED</span>
+            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-black text-xl text-[#CCFF00] shadow-sm">
+              N
+            </div>
+            <span className="font-bebas text-3xl font-black text-white tracking-widest">NEWDONE</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-8 uppercase tracking-widest text-sky-100/90 font-bebas text-lg font-bold">
             <Link href="#" className="hover:text-white transition-colors">Home</Link>
             <Link href="#speed-scale" className="hover:text-white transition-colors">Platform</Link>
-            <Link href="#about" className="hover:text-white transition-colors">Why SocialSched</Link>
+            <Link href="#about" className="hover:text-white transition-colors">Why Newdone</Link>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -161,7 +163,7 @@ export default function HomePage() {
 
         </div>
 
-        {/* 🎡 FULL SCREEN VIEWPORT EDGE-TO-EDGE 3D COVERFLOW INFINITE AUTO-SCROLL CAROUSEL */}
+        {/* 🎡 3D COVERFLOW INFINITE AUTO-SCROLL CAROUSEL */}
         <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] pt-2 pb-2 z-20 overflow-hidden swiper-linear-motion">
           <style jsx global>{`
             .swiper-linear-motion .swiper-wrapper {
@@ -226,7 +228,7 @@ export default function HomePage() {
                         <platform.Icon className="w-3.5 h-3.5 text-stone-700" />
                         POSTED ON {platform.name}
                       </span>
-                      <span className="text-[11px] font-black text-[#0284C7]">SocialSched</span>
+                      <span className="text-[11px] font-black text-[#0284C7]">Newdone</span>
                     </div>
                   </div>
                 </SwiperSlide>
@@ -234,8 +236,6 @@ export default function HomePage() {
             })}
           </Swiper>
         </div>
-
-
 
       </section>
 
@@ -295,7 +295,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Down Arrow for Mobile / Right Arrow for Desktop into SocialSched */}
+            {/* Down Arrow for Mobile / Right Arrow for Desktop into Newdone */}
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -326,9 +326,9 @@ export default function HomePage() {
             >
               <div className="bg-[#0284C7] text-white border border-[#0284C7] px-8 py-5 rounded-[2rem] shadow-xl flex flex-col justify-between relative overflow-hidden group hover:scale-105 transition-transform duration-300">
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0284C7] via-[#0284C7]/60 to-transparent" />
-                <h3 className="font-bebas text-4xl font-black tracking-widest uppercase leading-none relative z-10 flex items-center justify-between">
-                  SOCIALSCHED
-                  <span className="w-6 h-6 ml-3 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                <h3 className="font-bebas text-4xl font-black tracking-widest uppercase leading-none relative z-10 flex items-center justify-between gap-3">
+                  NEWDONE
+                  <span className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
                     <Zap className="w-3 h-3" />
                   </span>
                 </h3>
@@ -338,32 +338,7 @@ export default function HomePage() {
 
           </div>
 
-          {/* <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start mb-12">
-
-            <div className="md:col-span-8">
-              <h2 className="font-bebas text-4xl sm:text-6xl md:text-8xl font-black tracking-tight leading-[0.93] text-white uppercase">
-                WE PROVIDE 10X FASTER <br />
-                <span className="text-[#CCFF00]">CONTENT_AUTOMATION</span> <br />
-                FOR YOUR BRAND
-              </h2>
-            </div>
-
-            <div className="md:col-span-4 text-left md:text-right flex flex-col justify-between h-full space-y-5 pt-2">
-              <p className="text-stone-400 text-xs sm:text-sm leading-relaxed max-w-sm md:ml-auto font-medium">
-                Transform raw Shopify products into 5 unique visual directions, AI-written captions, and automated multi-channel posts in seconds.
-              </p>
-              <div>
-                <Link href="/signup">
-                  <span className="font-bebas text-base sm:text-lg tracking-widest text-white hover:text-[#CCFF00] uppercase font-bold inline-flex items-center gap-1.5 transition-colors group cursor-pointer border-b border-white/20 pb-1">
-                    EXPLORE PLATFORM ↗
-                  </span>
-                </Link>
-              </div>
-            </div>
-
-          </div> */}
-
-          {/* Center Video Container with Floating Action Pill */}
+          {/* Center Video Container */}
           <div className="relative rounded-[2.5rem] overflow-hidden bg-black aspect-video max-w-5xl mx-auto my-8 border border-stone-800 shadow-[0_30px_90px_rgba(0,0,0,0.8)] group z-20">
             <video
               src={heroVideos[currentVideoIndex]}
@@ -385,7 +360,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Marquee Social Channels Scrolling Text Animation Behind Video */}
+          {/* Marquee Social Channels */}
           <div className="w-full overflow-hidden my-8 opacity-25 pointer-events-none relative z-10">
             <div className="flex w-[200%] animate-marquee">
               {[...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS, ...SOCIAL_PLATFORMS].map((p, idx) => (
@@ -397,10 +372,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Bottom Row: Left Filter Pills + Right "SCALE WHAT YOU CREATE" Headline */}
+          {/* Bottom Row */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end pt-8 border-t border-stone-800/80 relative z-20">
 
-            {/* Bottom-Left Filter Pills */}
             <div className="md:col-span-6 flex flex-wrap gap-2.5">
               <span className="bg-white text-black px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider">
                 Shopify Direct Sync
@@ -416,9 +390,8 @@ export default function HomePage() {
               </span>
             </div>
 
-            {/* Bottom-Right Typography */}
             <div className="md:col-span-6 text-left md:text-right">
-              <h3 className="font-bebas text-7xl  font-black tracking-tight leading-[0.92] text-white uppercase">
+              <h3 className="font-bebas text-7xl font-black tracking-tight leading-[0.92] text-white uppercase">
                 ONE PRODUCT. <br />
                 <span className="text-[#CCFF00]">ONE WORKFLOW.</span>
               </h3>
@@ -441,7 +414,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="font-bebas text-7xl  text-stone-900 leading-[0.92] uppercase"
+              className="font-bebas text-7xl text-stone-900 leading-[0.92] uppercase"
             >
               BUILT FOR <span className="inline-block px-4 py-1 bg-[#CCFF00] text-black rounded-full text-3xl sm:text-5xl align-middle font-black mt-2 md:mt-0">EVERY MODERN</span> MARKETING TEAM.
             </motion.h2>
@@ -450,7 +423,7 @@ export default function HomePage() {
           {/* Inspiration Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
-            {/* Bento Card 1: Blue Image Card -> E-commerce Brands */}
+            {/* Bento Card 1: E-commerce Brands */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -478,7 +451,7 @@ export default function HomePage() {
               </div>
             </motion.div>
 
-            {/* Bento Card 2: Light Gray Testimonial Card -> Content Creators */}
+            {/* Bento Card 2: Content Creators */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -511,10 +484,9 @@ export default function HomePage() {
               </div>
             </motion.div>
 
-            {/* Bento Card 3 & 4 Right Column Stack */}
+            {/* Bento Card 3 & 4 Stack */}
             <div className="md:col-span-4 flex flex-col gap-6">
 
-              {/* Bento Card 3: Lime Green Highlight Card -> Marketing Teams */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -535,7 +507,6 @@ export default function HomePage() {
                 </p>
               </motion.div>
 
-              {/* Bento Card 4: Dark Obsidian Card -> Agencies */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -560,7 +531,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 🌤 CREATIVE WINNING FOOTER (SKY BLUE GRADIENT, CLOUD TEXTURE, WATERMARK & HIGH-CONTRAST READABLE TEXT) */}
+      {/* 🌤 CREATIVE WINNING FOOTER */}
       <footer className="relative bg-gradient-to-b from-[#0284C7] via-[#0082CD] to-[#0284C7] text-white pt-16 pb-12 px-6 rounded-t-[3.5rem] shadow-[0_-25px_80px_rgba(2,132,199,0.35)] overflow-hidden z-20">
 
         {/* Photorealistic Clouds Background Texture Layer */}
@@ -575,8 +546,8 @@ export default function HomePage() {
 
         {/* Giant Watermarked Background Text */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full text-center pointer-events-none select-none z-0">
-          <span className="font-bebas text-[18vw] font-black leading-none text-white/10 uppercase tracking-widest block drop-shadow-xs">
-            SOCIALSCHED
+          <span className="font-bebas text-[22vw] font-black leading-none text-white/10 uppercase tracking-widest block drop-shadow-xs">
+            NEWDONE
           </span>
         </div>
 
@@ -588,9 +559,10 @@ export default function HomePage() {
             {/* Column 1: Brand Info */}
             <div className="md:col-span-5 space-y-4">
               <div className="flex items-center gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png" alt="SocialSched Logo" className="h-10 w-auto object-contain brightness-0 invert" />
-                <span className="font-bebas text-3xl font-black text-white tracking-widest">SOCIALSCHED</span>
+                <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-black text-lg text-[#CCFF00] shadow-sm">
+                  N
+                </div>
+                <span className="font-bebas text-3xl font-black text-white tracking-widest">NEWDONE</span>
               </div>
               <p className="text-sky-100 text-xs sm:text-sm font-semibold leading-relaxed max-w-sm">
                 The all-in-one AI content engine for brands and creators. Import products, generate visual directions, write captions, and schedule everywhere automatically.
@@ -623,7 +595,7 @@ export default function HomePage() {
             <div className="md:col-span-2 space-y-3">
               <h4 className="font-bebas text-xl tracking-widest text-[#CCFF00] uppercase font-black">RESOURCES</h4>
               <ul className="space-y-2 text-xs font-bold text-sky-100">
-                <li><Link href="#about" className="hover:text-white transition-colors">Why SocialSched</Link></li>
+                <li><Link href="#about" className="hover:text-white transition-colors">Why Newdone</Link></li>
                 <li><Link href="#speed-scale" className="hover:text-white transition-colors">Platform Showcase</Link></li>
                 <li><Link href="/login" className="hover:text-white transition-colors">Client Portal</Link></li>
                 <li><Link href="/signup" className="hover:text-white transition-colors">Create Account</Link></li>
@@ -646,7 +618,7 @@ export default function HomePage() {
 
           {/* Bottom Bar: Copyright & Terms */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs font-bold text-sky-100 gap-4">
-            <p>&copy; {new Date().getFullYear()} SocialSched. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Newdone. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
