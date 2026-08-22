@@ -8,6 +8,7 @@
     "dev": "tsx watch src/app.ts",
     "build": "npx prisma generate && tsc",
     "start": "node dist/app.js",
+    "test:mcp": "tsx scripts/test-mcp.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio"

@@ -15,7 +15,14 @@ import {
   Shield,
   Zap,
   AlertTriangle,
-  Download
+  Download,
+  Terminal,
+  Sparkles,
+  Code2,
+  Layers,
+  Send,
+  Check,
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -41,11 +48,14 @@ export default function HermesConnectionPage() {
   const [maskedKey, setMaskedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [setupCopied, setSetupCopied] = useState(false);
-  const [setupLoading, setSetupLoading] = useState(false);
-  const [claudeCopied, setClaudeCopied] = useState(false);
-  const [instructionsCopied, setInstructionsCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [copiedMcp, setCopiedMcp] = useState(false);
+  const [copiedCurl, setCopiedCurl] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<'prompt' | 'mcp' | 'terminal' | 'api'>('prompt');
+  const [testResult, setTestResult] = useState<any>(null);
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     fetchConnectionStatus();
@@ -83,7 +93,7 @@ export default function HermesConnectionPage() {
   };
 
   const revokeKey = async () => {
-    if (!confirm('Are you sure you want to revoke your Hermes API key? Your Hermes Desktop will stop working immediately.')) {
+    if (!confirm('Are you sure you want to revoke your API key? Your AI agents will lose access immediately.')) {
       return;
     }
     setActionLoading(true);
@@ -93,6 +103,7 @@ export default function HermesConnectionPage() {
         setConnected(false);
         setApiKey(null);
         setMaskedKey(null);
+        setTestResult(null);
       }
     } catch (err: any) {
       alert(err.message || 'Failed to revoke key');
@@ -101,412 +112,442 @@ export default function HermesConnectionPage() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyText = (text: string, setter: (val: boolean) => void) => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setter(true);
+    setTimeout(() => setter(false), 2000);
   };
 
-  const downloadSetupGuide = async () => {
-    setSetupLoading(true);
+  const handleTestConnection = async () => {
+    setTesting(true);
     try {
-      const guide = await api.hermes.getSetupGuide();
-      const blob = new Blob([guide], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'hermes-agent-setup.md';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const data = await api.hermes.getConnection();
+      setTestResult(data);
     } catch (err: any) {
-      alert('Failed to download setup guide: ' + err.message);
+      setTestResult({ success: false, error: err.message });
     } finally {
-      setSetupLoading(false);
+      setTesting(false);
     }
   };
 
-  const copySetupGuide = async () => {
-    setSetupLoading(true);
-    try {
-      const guide = await api.hermes.getSetupGuide();
-      await navigator.clipboard.writeText(guide);
-      setSetupCopied(true);
-      setTimeout(() => setSetupCopied(false), 2000);
-    } catch (err: any) {
-      alert('Failed to copy setup guide: ' + err.message);
-    } finally {
-      setSetupLoading(false);
+  const getOrigin = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
     }
+    return 'https://socialsched.vibeship.in';
   };
 
-  // Build a paste-ready prompt for Claude Code to set up the MCP server itself.
-  const buildClaudeSetup = () => {
-    const baseUrl =
-      typeof window !== 'undefined' ? window.location.origin : 'https://socialsched.vibeship.in';
-    const serverPath = '/Users/mdaqil/Documents/anysocial/mcp/hermes-mcp-server.ts';
-    return `Please set up a Model Context Protocol (MCP) server for me named "hermes-socialsched" by writing a .mcp.json in this project (Claude Code auto-discovers it). Use these exact details:
+  // 1-Click AI Prompt for setup
+  const autoSetupPrompt = `Connect to my SocialSched account using Model Context Protocol (MCP).
+Create or update .mcp.json in my workspace with:
 
-- Type: stdio
-- Command: npx
-- Args: ["-y", "tsx", "${serverPath}"]
-- Environment variables:
-  - HERMES_BASE_URL: ${baseUrl}
-  - HERMES_API_KEY: ${apiKey || 'YOUR_API_KEY'}
-
-After registering it, confirm the hermes_* tools (hermes_status, hermes_schedule_post, hermes_list_accounts, etc.) are available so I can control my SocialSched account just by chatting.`;
-  };
-
-  const copyClaudeSetup = async () => {
-    try {
-      await navigator.clipboard.writeText(buildClaudeSetup());
-      setClaudeCopied(true);
-      setTimeout(() => setClaudeCopied(false), 2000);
-    } catch (err: any) {
-      alert('Failed to copy Claude setup: ' + err.message);
+{
+  "mcpServers": {
+    "hermes-socialsched": {
+      "command": "npx",
+      "args": ["-y", "tsx", "mcp/hermes-mcp-server.ts"],
+      "env": {
+        "HERMES_BASE_URL": "${getOrigin()}",
+        "HERMES_API_KEY": "${apiKey || 'YOUR_HERMES_API_KEY'}"
+      }
     }
-  };
+  }
+}
 
-  const downloadClaudeSetup = () => {
-    const blob = new Blob([buildClaudeSetup()], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'claude-mcp-setup.md';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+Once configured, call the hermes_status tool to confirm connection!`;
 
-  // Build usage instructions the user pastes into Claude so it knows the tools.
-  const buildClaudeInstructions = () => {
-    return `You have access to the Hermes SocialSched MCP server. Its tools are prefixed \`hermes_*\` and let you manage the user's social media on SocialSched. Auth is handled by the server (API key already configured) — just call the tools.
+  // Standard MCP JSON
+  const mcpConfigJson = JSON.stringify(
+    {
+      mcpServers: {
+        'hermes-socialsched': {
+          command: 'npx',
+          args: ['-y', 'tsx', 'mcp/hermes-mcp-server.ts'],
+          env: {
+            HERMES_BASE_URL: getOrigin(),
+            HERMES_API_KEY: apiKey || 'YOUR_HERMES_API_KEY'
+          }
+        }
+      }
+    },
+    null,
+    2
+  );
 
-## Tools
-- hermes_status — agent status, uptime, task stats.
-- hermes_schedule_post — schedule one post. Args: content (string, required), platforms (array, e.g. ["INSTAGRAM","FACEBOOK"], required), scheduledAt (ISO 8601, optional), timezone (IANA, default UTC), title (optional), postType (FEED|REEL|STORY, optional), platformOptions (optional).
-- hermes_bulk_schedule — schedule many posts. Args: posts (array of {content, platforms?, scheduledAt?, timezone?}), platforms? (fallback), timezone?.
-- hermes_list_posts — list posts. Args: status? (QUEUED|DRAFT|PUBLISHED..), platform?, limit? (default 50).
-- hermes_get_post / hermes_delete_post / hermes_cancel_scheduled_post — by postId.
-- hermes_generate_content — AI caption from a prompt.
-- hermes_create_campaign / hermes_list_campaigns / hermes_update_campaign / hermes_delete_campaign — campaign automation (websiteUrl, socialChannels, campaignSchedule).
-- hermes_list_accounts — list the user's connected social accounts (use to get real accountId).
-- hermes_disconnect_account / hermes_refresh_account — by accountId.
-- hermes_list_users / hermes_create_user / hermes_update_user / hermes_delete_user / hermes_change_user_role — admin user management.
-- hermes_list_reels / hermes_delete_reel.
-- hermes_get_analytics (days?, default 7) / hermes_list_notifications (isRead?).
-- hermes_get_settings / hermes_update_settings.
-- hermes_monitor_health / hermes_analyze_accounts.
-- hermes_custom — free-form autonomous-agent command (prompt).
-
-## How to help the user
-- For "post/schedule/share", confirm platforms + time if missing, then call the matching hermes_* tool.
-- Call hermes_list_accounts first when you need a real accountId.
-- Platform names: INSTAGRAM, FACEBOOK, TWITTER, LINKEDIN, YOUTUBE, THREADS, PINTEREST, SNAPCHAT.
-- Times: ISO 8601 (e.g. 2025-08-22T10:00:00Z) with IANA timezones (e.g. America/New_York).
-- Always report the tool result clearly; on failure, surface the error message.`;
-  };
-
-  const copyClaudeInstructions = async () => {
-    try {
-      await navigator.clipboard.writeText(buildClaudeInstructions());
-      setInstructionsCopied(true);
-      setTimeout(() => setInstructionsCopied(false), 2000);
-    } catch (err: any) {
-      alert('Failed to copy instructions: ' + err.message);
-    }
-  };
-
-  const downloadClaudeInstructions = () => {
-    const blob = new Blob([buildClaudeInstructions()], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'CLAUDE.md';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  // Terminal cURL command
+  const curlCommand = `curl -X POST "${getOrigin()}/api/hermes-external/execute" \\
+  -H "Content-Type: application/json" \\
+  -H "X-Hermes-API-Key: ${apiKey || 'YOUR_HERMES_API_KEY'}" \\
+  -d '{"action": "list_accounts", "payload": {}}'`;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-6 h-6 animate-spin text-stone-400" />
+        <RefreshCw className="w-8 h-8 animate-spin text-[#D27D50]" />
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-2xl border border-stone-100 p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-[#D27D50]/10 flex items-center justify-center">
-            <Bot className="w-6 h-6 text-[#D27D50]" />
+      {/* Banner */}
+      <div className="bg-gradient-to-r from-[#2F281F] to-[#1E1913] rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#D27D50]/10 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#D27D50]/20 border border-[#D27D50]/30 flex items-center justify-center shrink-0">
+              <Bot className="w-8 h-8 text-[#D27D50]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-black tracking-tight">AI Agent & MCP Control</h1>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#D27D50]/20 text-[#E89A72] border border-[#D27D50]/30">
+                  Live MCP Active
+                </span>
+              </div>
+              <p className="text-stone-400 text-sm mt-1">
+                Connect Claude, Antigravity, Hermes, or any AI assistant to schedule and manage your social posts automatically.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-[#2F281F]">Hermes Connection</h1>
-            <p className="text-sm text-stone-500">Connect your Hermes Desktop app to control SocialSched</p>
-          </div>
-        </div>
 
-        {/* Connection Status */}
-        <div className={cn(
-          "flex items-center gap-3 p-4 rounded-xl border",
-          connected 
-            ? "bg-emerald-50 border-emerald-200" 
-            : "bg-amber-50 border-amber-200"
-        )}>
-          {connected ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-          ) : (
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
-          )}
-          <div>
-            <p className={cn(
-              "text-sm font-bold",
-              connected ? "text-emerald-700" : "text-amber-700"
-            )}>
-              {connected ? 'Connected' : 'Not Connected'}
-            </p>
-            <p className={cn(
-              "text-xs",
-              connected ? "text-emerald-600" : "text-amber-600"
-            )}>
-              {connected 
-                ? 'Your Hermes Desktop is connected and ready to control your account' 
-                : 'Generate an API key to connect your Hermes Desktop'}
-            </p>
+          <div className="shrink-0">
+            {connected ? (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-bold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                Connected & Ready
+              </div>
+            ) : (
+              <Button
+                onClick={generateKey}
+                disabled={actionLoading}
+                className="bg-[#D27D50] hover:bg-[#C26032] text-white font-bold px-6 py-2.5 rounded-xl shadow-lg transition-all"
+              >
+                {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
+                Connect AI Agent
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* API Key Section */}
-      <div className="bg-white rounded-2xl border border-stone-100 p-6">
-        <h3 className="font-bold text-[#2F281F] mb-4 flex items-center gap-2">
-          <Key className="w-5 h-5" />
-          API Key
-        </h3>
-
-        {connected && apiKey ? (
-          <div className="space-y-4">
-            <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
-              <p className="text-xs text-stone-500 font-medium mb-2">Your Hermes API Key</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-white px-3 py-2 rounded-lg text-sm font-mono border border-stone-200 break-all">
-                  {apiKey}
-                </code>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyToClipboard(apiKey)}
-                  className="shrink-0"
-                >
-                  {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </Button>
-              </div>
-              <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
-                Save this key now — it won't be shown again for security
-              </p>
+      {/* STEP 1: API Key Management */}
+      <div className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center font-bold text-stone-700 text-sm">
+              1
             </div>
+            <div>
+              <h3 className="font-bold text-[#2F281F]">Your Hermes API Key</h3>
+              <p className="text-xs text-stone-500">Authentication key for your AI agents and MCP servers</p>
+            </div>
+          </div>
 
-            <div className="flex gap-3">
+          {connected && (
+            <div className="flex gap-2">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={generateKey}
                 disabled={actionLoading}
-                className="flex-1"
+                className="text-xs"
               >
-                {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                Regenerate Key
+                <RefreshCw className={cn("w-3.5 h-3.5 mr-1.5", actionLoading && "animate-spin")} />
+                Regenerate
               </Button>
               <Button
-                variant="destructive"
+                variant="outline"
+                size="sm"
                 onClick={revokeKey}
                 disabled={actionLoading}
-                className="flex-1"
+                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
               >
-                <XCircle className="w-4 h-4 mr-2" />
-                Revoke Key
+                <XCircle className="w-3.5 h-3.5 mr-1.5" />
+                Revoke
               </Button>
+            </div>
+          )}
+        </div>
+
+        {connected && apiKey ? (
+          <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-3">
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-white px-3.5 py-2.5 rounded-lg text-sm font-mono border border-stone-200 text-stone-800 break-all select-all font-semibold">
+                {apiKey}
+              </code>
+              <Button
+                onClick={() => copyText(apiKey, setCopiedKey)}
+                className="shrink-0 bg-[#2F281F] hover:bg-black text-white px-4"
+              >
+                {copiedKey ? (
+                  <>
+                    <Check className="w-4 h-4 mr-1 text-emerald-400" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-1" />
+                    Copy Key
+                  </>
+                )}
+              </Button>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-md border border-amber-200/60">
+              <Shield className="w-3.5 h-3.5 shrink-0" />
+              <span>Keep your API key private. It grants access to control your connected social media channels.</span>
             </div>
           </div>
         ) : (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-4">
-              <Key className="w-8 h-8 text-stone-400" />
-            </div>
-            <p className="text-stone-600 font-medium mb-2">No API key generated</p>
-            <p className="text-sm text-stone-500 mb-4">
-              Generate an API key to connect your Hermes Desktop app
-            </p>
+          <div className="text-center py-6 border-2 border-dashed border-stone-200 rounded-xl bg-stone-50/50">
+            <Key className="w-8 h-8 text-stone-400 mx-auto mb-2" />
+            <p className="text-stone-700 font-semibold text-sm">No Active API Key</p>
+            <p className="text-stone-500 text-xs mb-4">Generate an API key to enable MCP and agent control.</p>
             <Button
               onClick={generateKey}
               disabled={actionLoading}
-              className="bg-[#D27D50] hover:bg-[#C26032] text-white"
+              className="bg-[#D27D50] hover:bg-[#C26032] text-white font-bold"
             >
-              {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
-              Generate API Key
+              <Zap className="w-4 h-4 mr-2" />
+              Generate Hermes API Key
             </Button>
           </div>
         )}
       </div>
 
-      {/* Connection Instructions */}
+      {/* STEP 2: Choose Connection Method */}
       {connected && (
-        <div className="bg-white rounded-2xl border border-stone-100 p-6">
-          <h3 className="font-bold text-[#2F281F] mb-4 flex items-center gap-2">
-            <ExternalLink className="w-5 h-5" />
-            Connect Hermes Desktop
-          </h3>
-
-          <div className="space-y-4">
-            <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
-              <p className="text-xs text-stone-500 font-medium mb-2">1. Copy your API key above</p>
-              <p className="text-xs text-stone-500 font-medium mb-2">2. Open Hermes Desktop app</p>
-              <p className="text-xs text-stone-500 font-medium mb-2">3. Go to Settings → Integrations → Add SocialSched</p>
-              <p className="text-xs text-stone-500 font-medium mb-2">4. Paste these values:</p>
-              
-              <div className="mt-3 space-y-2">
-                <div>
-                  <p className="text-xs text-stone-400">API URL</p>
-                  <code className="block bg-white px-3 py-2 rounded-lg text-sm font-mono border border-stone-200">
-                    {typeof window !== 'undefined' ? window.location.origin : ''}/api/hermes-external/execute
-                  </code>
-                </div>
-                <div>
-                  <p className="text-xs text-stone-400">API Key</p>
-                  <code className="block bg-white px-3 py-2 rounded-lg text-sm font-mono border border-stone-200 break-all">
-                    {apiKey || 'your-api-key-here'}
-                  </code>
-                </div>
-              </div>
+        <div className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-sm space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center font-bold text-stone-700 text-sm">
+              2
             </div>
-
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-              <p className="text-xs text-blue-700 font-medium mb-1 flex items-center gap-1">
-                <Shield className="w-3 h-3" />
-                Security Note
-              </p>
-              <p className="text-xs text-blue-600">
-                Your API key gives full control over your SocialSched account. Never share it publicly. 
-                You can revoke it anytime from this page.
-              </p>
-            </div>
-
-            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-              <p className="text-xs text-emerald-700 font-medium mb-2 flex items-center gap-1">
-                <Bot className="w-3 h-3" />
-                Agent Auto-Setup
-              </p>
-              <p className="text-xs text-emerald-600 mb-3">
-                Download or copy the personalized agent setup guide. Paste it directly into your AI agent 
-                (Claude, ChatGPT, etc.) and it will auto-configure with your API key.
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={copySetupGuide}
-                  disabled={setupLoading}
-                  className="flex-1"
-                >
-                  {setupCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                  {setupCopied ? 'Copied!' : 'Copy Agent Guide'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={downloadSetupGuide}
-                  disabled={setupLoading}
-                  className="flex-1"
-                >
-                  {setupLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-                  Download .md
-                </Button>
-              </div>
-            </div>
-
-            {/* Claude Code MCP */}
-            <div className="bg-[#FBF3EE] rounded-xl p-4 border border-[#D27D50]/30">
-              <div className="flex items-center gap-2 mb-2">
-                <ClaudeIcon className="w-5 h-5" />
-                <p className="text-xs text-[#A8562F] font-bold">Set up in Claude Code</p>
-              </div>
-              <p className="text-xs text-[#A8562F] mb-3">
-                Copy the prompt below and paste it into{' '}
-                <span className="font-semibold">Claude Code</span>. Claude will configure the Hermes
-                MCP server for you automatically. Your key is embedded — keep it safe.
-              </p>
-              <div className="bg-stone-900 rounded-lg p-3 overflow-x-auto mb-3">
-                <pre className="text-[11px] text-emerald-300 font-mono whitespace-pre-wrap">
-                  {buildClaudeSetup()}
-                </pre>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={copyClaudeSetup} className="flex-1">
-                  {claudeCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                  {claudeCopied ? 'Copied!' : 'Copy Prompt'}
-                </Button>
-                <Button variant="outline" onClick={downloadClaudeSetup} className="flex-1">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download .md
-                </Button>
-              </div>
-            </div>
-
-            {/* Claude usage instructions */}
-            <div className="bg-white rounded-xl p-4 border border-stone-200">
-              <div className="flex items-center gap-2 mb-2">
-                <ClaudeIcon className="w-5 h-5" />
-                <p className="text-xs text-stone-700 font-bold">Instructions for Claude</p>
-              </div>
-              <p className="text-xs text-stone-500 mb-3">
-                Paste this into Claude Code (or save as{' '}
-                <code className="font-mono">CLAUDE.md</code>) so Claude knows what the Hermes tools
-                do and how to use them.
-              </p>
-              <div className="bg-stone-900 rounded-lg p-3 overflow-x-auto mb-3">
-                <pre className="text-[11px] text-emerald-300 font-mono whitespace-pre-wrap">
-                  {buildClaudeInstructions()}
-                </pre>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={copyClaudeInstructions} className="flex-1">
-                  {instructionsCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                  {instructionsCopied ? 'Copied!' : 'Copy Instructions'}
-                </Button>
-                <Button variant="outline" onClick={downloadClaudeInstructions} className="flex-1">
-                  <Download className="w-4 h-4 mr-2" />
-                  Save CLAUDE.md
-                </Button>
-              </div>
+            <div>
+              <h3 className="font-bold text-[#2F281F]">Connect Your AI Assistant</h3>
+              <p className="text-xs text-stone-500">Select how you want to connect your AI agent or desktop app</p>
             </div>
           </div>
+
+          {/* Navigation Tabs */}
+          <div className="flex flex-wrap gap-2 border-b border-stone-200 pb-3">
+            <button
+              onClick={() => setActiveTab('prompt')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
+                activeTab === 'prompt'
+                  ? "bg-[#D27D50] text-white shadow-md"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              )}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              1-Click AI Prompt (Easiest)
+            </button>
+            <button
+              onClick={() => setActiveTab('mcp')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
+                activeTab === 'mcp'
+                  ? "bg-[#D27D50] text-white shadow-md"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              )}
+            >
+              <ClaudeIcon className="w-3.5 h-3.5" />
+              Claude Desktop / MCP Config
+            </button>
+            <button
+              onClick={() => setActiveTab('terminal')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
+                activeTab === 'terminal'
+                  ? "bg-[#D27D50] text-white shadow-md"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              )}
+            >
+              <Terminal className="w-3.5 h-3.5" />
+              CLI / Terminal Command
+            </button>
+            <button
+              onClick={() => setActiveTab('api')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
+                activeTab === 'api'
+                  ? "bg-[#D27D50] text-white shadow-md"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              )}
+            >
+              <Code2 className="w-3.5 h-3.5" />
+              REST API / Custom Scripts
+            </button>
+          </div>
+
+          {/* TAB 1: AI PROMPT */}
+          {activeTab === 'prompt' && (
+            <div className="space-y-4">
+              <div className="bg-[#FBF3EE] border border-[#D27D50]/20 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#D27D50]" />
+                    <h4 className="text-xs font-bold text-[#2F281F]">Paste this into your AI Chat</h4>
+                  </div>
+                  <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded bg-[#D27D50]/20 text-[#D27D50]">
+                    Auto-Configures Everything
+                  </span>
+                </div>
+                <p className="text-xs text-stone-600 mb-3">
+                  Copy the prompt below and paste it directly into <strong>Claude, Antigravity, ChatGPT, or Cursor</strong>. Your AI assistant will write `.mcp.json` and start controlling your accounts immediately!
+                </p>
+                <div className="bg-stone-900 rounded-lg p-3 overflow-x-auto relative">
+                  <pre className="text-xs font-mono text-emerald-400 whitespace-pre-wrap">
+                    {autoSetupPrompt}
+                  </pre>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    onClick={() => copyText(autoSetupPrompt, setCopiedPrompt)}
+                    className="bg-[#D27D50] hover:bg-[#C26032] text-white text-xs font-bold px-4"
+                  >
+                    {copiedPrompt ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 mr-1" />
+                        Prompt Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 mr-1" />
+                        Copy Setup Prompt
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: MCP JSON */}
+          {activeTab === 'mcp' && (
+            <div className="space-y-4">
+              <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-[#2F281F]">Paste into .mcp.json or claude_desktop_config.json</h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyText(mcpConfigJson, setCopiedMcp)}
+                    className="text-xs"
+                  >
+                    {copiedMcp ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                    {copiedMcp ? 'Copied' : 'Copy Config'}
+                  </Button>
+                </div>
+                <div className="bg-stone-900 rounded-lg p-3 overflow-x-auto">
+                  <pre className="text-xs font-mono text-blue-300 whitespace-pre-wrap">
+                    {mcpConfigJson}
+                  </pre>
+                </div>
+                <p className="text-[11px] text-stone-500 mt-2">
+                  Location: Save to <code>.mcp.json</code> in your project root or in Claude Desktop settings.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: CLI */}
+          {activeTab === 'terminal' && (
+            <div className="space-y-4">
+              <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs font-bold text-stone-300">Run Hermes MCP Test CLI</span>
+                  </div>
+                </div>
+                <pre className="bg-black/60 p-3 rounded-lg text-xs font-mono text-emerald-400 overflow-x-auto">
+                  npm run test:mcp
+                </pre>
+                <p className="text-xs text-stone-400 mt-3">
+                  Or launch the interactive web inspector:
+                </p>
+                <pre className="bg-black/60 p-3 rounded-lg text-xs font-mono text-amber-400 overflow-x-auto mt-1">
+                  npx @modelcontextprotocol/inspector npx tsx ./mcp/hermes-mcp-server.ts
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: REST API */}
+          {activeTab === 'api' && (
+            <div className="space-y-4">
+              <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-[#2F281F]">Direct REST API Request (cURL)</h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyText(curlCommand, setCopiedCurl)}
+                    className="text-xs"
+                  >
+                    {copiedCurl ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                    {copiedCurl ? 'Copied' : 'Copy cURL'}
+                  </Button>
+                </div>
+                <div className="bg-stone-900 rounded-lg p-3 overflow-x-auto">
+                  <pre className="text-xs font-mono text-emerald-300 whitespace-pre-wrap">
+                    {curlCommand}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Test Connection */}
+      {/* STEP 3: Live Connection Health Check */}
       {connected && (
-        <div className="bg-white rounded-2xl border border-stone-100 p-6">
-          <h3 className="font-bold text-[#2F281F] mb-4">Test Connection</h3>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              try {
-                const data = await api.hermes.getConnection();
-                alert(JSON.stringify(data, null, 2));
-              } catch (err: any) {
-                alert('Test failed: ' + err.message);
-              }
-            }}
-            className="w-full"
-          >
-            <Bot className="w-4 h-4 mr-2" />
-            Test Hermes Connection
-          </Button>
+        <div className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center font-bold text-stone-700 text-sm">
+                3
+              </div>
+              <div>
+                <h3 className="font-bold text-[#2F281F]">Test Your Live Connection</h3>
+                <p className="text-xs text-stone-500">Verify that Hermes Agent can communicate with SocialSched</p>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleTestConnection}
+              disabled={testing}
+              className="bg-[#2F281F] hover:bg-black text-white text-xs font-bold px-4"
+            >
+              {testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Send className="w-3.5 h-3.5 mr-1.5" />}
+              Test Connection Now
+            </Button>
+          </div>
+
+          {testResult && (
+            <div className={cn(
+              "p-4 rounded-xl border text-xs font-mono overflow-x-auto space-y-2",
+              testResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-red-50 border-red-200 text-red-900"
+            )}>
+              <div className="flex items-center gap-2 font-bold font-sans text-sm">
+                {testResult.success ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Connection Active & Healthy!</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 text-red-600" />
+                    <span>Connection Test Failed</span>
+                  </>
+                )}
+              </div>
+              <pre className="text-[11px] whitespace-pre-wrap">
+                {JSON.stringify(testResult, null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
       )}
     </div>
