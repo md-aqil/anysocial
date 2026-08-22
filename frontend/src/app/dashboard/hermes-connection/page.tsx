@@ -138,12 +138,12 @@ export default function HermesConnectionPage() {
   };
 
   // 1-Click AI Prompt for setup
-  const autoSetupPrompt = `Connect to my SocialSched account using Model Context Protocol (MCP).
+  const autoSetupPrompt = `Connect to my account using Model Context Protocol (MCP).
 Create or update .mcp.json in my workspace with:
 
 {
   "mcpServers": {
-    "newdone-socialsched": {
+    "newdone": {
       "command": "node",
       "args": ["mcp/dist/hermes-mcp-server.mjs"],
       "env": {
@@ -160,7 +160,7 @@ Once configured, call the newdone_status or newdone_list_accounts tool to confir
   const mcpConfigJson = JSON.stringify(
     {
       mcpServers: {
-        'newdone-socialsched': {
+        newdone: {
           command: 'node',
           args: ['mcp/dist/hermes-mcp-server.mjs'],
           env: {

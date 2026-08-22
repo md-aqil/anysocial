@@ -312,7 +312,7 @@ for (const tool of TOOLS) {
 // Server
 // ---------------------------------------------------------------------------
 const server = new McpServer({
-  name: "newdone-socialsched",
+  name: "newdone",
   version: "1.0.0",
 });
 
