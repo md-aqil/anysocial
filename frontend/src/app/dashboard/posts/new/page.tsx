@@ -820,7 +820,7 @@ export default function NewPostPage() {
           </div>
         </div>
       )}
-      <div className="flex min-h-[calc(100vh-64px)]">
+      <div className="flex min-h-[calc(100vh-64px)] flex-col lg:flex-row">
         <aside className="sticky top-0 hidden h-[calc(100vh-64px)] w-24 shrink-0 border-r border-[#D9E3D9] bg-white/80 backdrop-blur-md px-4 pb-24 pt-8 lg:block z-40">
           <div className="flex flex-col items-center gap-4">
             <div className="mb-2 text-center">
@@ -892,9 +892,61 @@ export default function NewPostPage() {
           </div>
         </aside>
 
-        <main className="relative flex min-w-0 flex-1 flex-col bg-[#F2F6F2] px-5 pb-24 pt-8 lg:px-8">
+        <main className="relative flex min-w-0 flex-1 flex-col bg-[#F2F6F2] px-4 pb-24 pt-6 sm:px-6 sm:pt-8 lg:px-8">
           <div className="mx-auto w-full max-w-[880px]">
-            <div className="flex justify-end mb-6">
+            {/* Mobile / Tablet channel selector (replaces hidden left hub) */}
+            <div className="mb-6 lg:hidden">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#AAA39D]">Channels</p>
+                <button
+                  type="button"
+                  onClick={() => setShowOnboarding(true)}
+                  className="text-[11px] font-bold uppercase tracking-wider text-[#D9774B]"
+                >
+                  Edit
+                </button>
+              </div>
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 custom-scrollbar">
+                {accountsData?.accounts?.length ? (
+                  accountsData.accounts.map((account: any) => {
+                    const platformId = account.platform.toUpperCase();
+                    const config = platformStyles[platformId];
+                    if (!config) return null;
+                    const selected = selectedPlatforms?.includes(platformId);
+                    const Logo = config.icon;
+                    const isDisconnected = account.status !== 'CONNECTED';
+                    return (
+                      <button
+                        key={account.id}
+                        type="button"
+                        onClick={() => handlePlatformToggle(platformId)}
+                        className={cn(
+                          'flex min-w-[84px] shrink-0 flex-col items-center gap-1.5 rounded-2xl border p-3 transition',
+                          selected ? 'border-transparent' : 'border-[#D9E3D9] bg-white',
+                          isDisconnected && 'opacity-60'
+                        )}
+                        style={selected ? { backgroundColor: config.bg, borderColor: config.color } : undefined}
+                      >
+                        <Logo className="h-6 w-6" style={{ color: selected ? config.color : (isDisconnected ? '#F87171' : '#A1A1AA') }} />
+                        <span className="text-[10px] font-bold" style={{ color: selected ? config.color : '#78716C' }}>{config.name}</span>
+                        {isDisconnected && <span className="text-[9px] font-bold text-rose-500">Expired</span>}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/dashboard/social-accounts')}
+                    className="flex min-w-[84px] shrink-0 flex-col items-center gap-1.5 rounded-2xl border-2 border-dashed border-[#D9E3D9] p-3 text-stone-400"
+                  >
+                    <Plus className="h-6 w-6" strokeWidth={3} />
+                    <span className="text-[10px] font-bold">Add</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap justify-end gap-2 mb-6">
               <Button
                 type="button"
                 onClick={() => {
@@ -1135,7 +1187,7 @@ export default function NewPostPage() {
           </div>
         </main>
 
-        <aside className="sticky top-0 h-[calc(100vh-64px)] w-full shrink-0 overflow-y-auto border-l border-[#D9E3D9] bg-white pb-24 xl:w-[320px]">
+        <aside className="relative w-full shrink-0 border-l-0 border-[#D9E3D9] bg-white pb-24 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] lg:w-[300px] lg:border-l lg:overflow-y-auto xl:w-[320px]">
           <div className="sticky top-0 z-10 border-b border-[#D9E3D9] bg-white/80 px-6 py-4 backdrop-blur-sm">
             <h2 className="text-[16px] font-bold tracking-tight text-[#24211E]">Settings</h2>
             <p className="mt-0.5 text-[12px] text-[#AAA39D]">Configure platform-specific options.</p>
@@ -1478,7 +1530,7 @@ export default function NewPostPage() {
       </AnimatePresence>
 
 
-      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#D9E3D9] bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur-sm lg:left-[300px]">
+      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#D9E3D9] bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] backdrop-blur-sm lg:left-24">
         {publishLog.length > 0 && (
           <div className="absolute bottom-[calc(100%+16px)] right-4 lg:right-8 w-full max-w-sm rounded-2xl border border-stone-800 bg-stone-950/95 backdrop-blur-md p-4 font-mono text-xs shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className="mb-3 flex items-center justify-between">
