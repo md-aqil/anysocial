@@ -5,8 +5,8 @@
 Set these two values before running any code:
 
 ```python
-SOCIALSCHED_BASE_URL = "http://localhost:3001"
-HERMES_API_KEY = "hermes_a1b2c3d4e5f6..."
+SOCIALSCHED_BASE_URL = "https://socialsched.vibeship.in"
+HERMES_API_KEY = "hermes_b3260a2a9ee9488d340423bf5428a2ea6930a03676820df2e53c43bb2065f92d"
 ```
 
 Replace with:

@@ -14,7 +14,8 @@ import {
   ExternalLink,
   Shield,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  Download
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,8 @@ export default function HermesConnectionPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [setupCopied, setSetupCopied] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
 
   useEffect(() => {
     fetchConnectionStatus();
@@ -85,6 +88,40 @@ export default function HermesConnectionPage() {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadSetupGuide = async () => {
+    setSetupLoading(true);
+    try {
+      const guide = await api.hermes.getSetupGuide();
+      const blob = new Blob([guide], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'hermes-agent-setup.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Failed to download setup guide: ' + err.message);
+    } finally {
+      setSetupLoading(false);
+    }
+  };
+
+  const copySetupGuide = async () => {
+    setSetupLoading(true);
+    try {
+      const guide = await api.hermes.getSetupGuide();
+      await navigator.clipboard.writeText(guide);
+      setSetupCopied(true);
+      setTimeout(() => setSetupCopied(false), 2000);
+    } catch (err: any) {
+      alert('Failed to copy setup guide: ' + err.message);
+    } finally {
+      setSetupLoading(false);
+    }
   };
 
   if (loading) {
@@ -252,6 +289,37 @@ export default function HermesConnectionPage() {
                 Your API key gives full control over your SocialSched account. Never share it publicly. 
                 You can revoke it anytime from this page.
               </p>
+            </div>
+
+            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+              <p className="text-xs text-emerald-700 font-medium mb-2 flex items-center gap-1">
+                <Bot className="w-3 h-3" />
+                Agent Auto-Setup
+              </p>
+              <p className="text-xs text-emerald-600 mb-3">
+                Download or copy the personalized agent setup guide. Paste it directly into your AI agent 
+                (Claude, ChatGPT, etc.) and it will auto-configure with your API key.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={copySetupGuide}
+                  disabled={setupLoading}
+                  className="flex-1"
+                >
+                  {setupCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                  {setupCopied ? 'Copied!' : 'Copy Agent Guide'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={downloadSetupGuide}
+                  disabled={setupLoading}
+                  className="flex-1"
+                >
+                  {setupLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+                  Download .md
+                </Button>
+              </div>
             </div>
           </div>
         </div>

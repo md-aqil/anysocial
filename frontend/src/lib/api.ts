@@ -2,6 +2,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
+  responseType?: 'json' | 'text';
 }
 
 class ApiError extends Error {
@@ -14,7 +15,7 @@ class ApiError extends Error {
 }
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { params, ...fetchOptions } = options;
+  const { params, responseType, ...fetchOptions } = options;
 
   let url = `${API_BASE}${endpoint}`;
   if (params) {
@@ -39,6 +40,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'An error occurred' }));
     throw new ApiError(response.status, error.error || 'An error occurred', error.details);
+  }
+
+  if (responseType === 'text' || response.headers.get('content-type')?.includes('text/')) {
+    return response.text() as Promise<T>;
   }
 
   return response.json();
@@ -404,6 +409,12 @@ export const api = {
     revokeConnectionKey: () =>
       request<any>('/api/hermes/connection/revoke', {
         method: 'POST',
+      }),
+
+    getSetupGuide: () =>
+      request<string>('/api/hermes/connection/setup-guide', {
+        headers: { 'Accept': 'text/markdown' },
+        responseType: 'text'
       }),
   }
 };

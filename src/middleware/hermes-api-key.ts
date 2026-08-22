@@ -3,9 +3,9 @@ import { env } from '../config/env.js';
 import { prisma } from '../db/prisma.js';
 
 export async function hermesApiKey(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const apiKey = req.headers['x-hermes-api-key'];
+  const apiKey = (req.headers['x-hermes-api-key'] as string | undefined)?.trim();
 
-  if (!apiKey || typeof apiKey !== 'string') {
+  if (!apiKey) {
     res.status(401).json({ error: 'Unauthorized: Missing Hermes API key' });
     return;
   }
@@ -33,5 +33,6 @@ export async function hermesApiKey(req: Request, res: Response, next: NextFuncti
     console.error('[HERMES API KEY] Database error:', error);
   }
 
+  console.warn('[HERMES API KEY] Invalid key attempt', { keyLength: apiKey.length, keyPrefix: apiKey.slice(0, 10) });
   res.status(401).json({ error: 'Unauthorized: Invalid Hermes API key' });
 }
