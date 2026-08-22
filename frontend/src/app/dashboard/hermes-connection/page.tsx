@@ -146,12 +146,11 @@ export default function HermesConnectionPage() {
     const baseUrl =
       typeof window !== 'undefined' ? window.location.origin : 'https://socialsched.vibeship.in';
     const serverPath = '/Users/mdaqil/Documents/anysocial/mcp/hermes-mcp-server.ts';
-    const tsxPath = '/Users/mdaqil/Documents/anysocial/node_modules/.bin/tsx';
     return `Please set up a Model Context Protocol (MCP) server for me named "hermes-socialsched" by writing a .mcp.json in this project (Claude Code auto-discovers it). Use these exact details:
 
 - Type: stdio
-- Command: ${tsxPath}
-- Args: ${serverPath}
+- Command: npx
+- Args: ["-y", "tsx", "${serverPath}"]
 - Environment variables:
   - HERMES_BASE_URL: ${baseUrl}
   - HERMES_API_KEY: ${apiKey || 'YOUR_API_KEY'}
