@@ -6,7 +6,8 @@
   "main": "dist/app.js",
   "scripts": {
     "dev": "tsx watch src/app.ts",
-    "build": "npx prisma generate && tsc",
+    "build": "npx prisma generate && tsc && npm run build:mcp",
+    "build:mcp": "esbuild mcp/hermes-mcp-server.ts --bundle --platform=node --format=esm --target=node18 --outfile=mcp/dist/hermes-mcp-server.mjs",
     "start": "node dist/app.js",
     "test:mcp": "tsx scripts/test-mcp.ts",
     "db:generate": "prisma generate",

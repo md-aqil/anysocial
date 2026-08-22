@@ -144,8 +144,8 @@ Create or update .mcp.json in my workspace with:
 {
   "mcpServers": {
     "hermes-socialsched": {
-      "command": "npx",
-      "args": ["-y", "tsx", "mcp/hermes-mcp-server.ts"],
+      "command": "node",
+      "args": ["mcp/dist/hermes-mcp-server.mjs"],
       "env": {
         "HERMES_BASE_URL": "${getOrigin()}",
         "HERMES_API_KEY": "${apiKey || 'YOUR_HERMES_API_KEY'}"
@@ -161,8 +161,8 @@ Once configured, call the hermes_status tool to confirm connection!`;
     {
       mcpServers: {
         'hermes-socialsched': {
-          command: 'npx',
-          args: ['-y', 'tsx', 'mcp/hermes-mcp-server.ts'],
+          command: 'node',
+          args: ['mcp/dist/hermes-mcp-server.mjs'],
           env: {
             HERMES_BASE_URL: getOrigin(),
             HERMES_API_KEY: apiKey || 'YOUR_HERMES_API_KEY'

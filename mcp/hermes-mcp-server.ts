@@ -1,10 +1,22 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 
-// Load a local .env if present (convenience for manual runs).
-dotenv.config({ path: new URL("./.env", import.meta.url) });
+// Load a local .env if present without external dependencies
+try {
+  const envPath = path.resolve(process.cwd(), ".env");
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, "utf8");
+    for (const line of content.split("\n")) {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match && !process.env[match[1]]) {
+        process.env[match[1]] = (match[2] || "").trim().replace(/^['"]|['"]$/g, "");
+      }
+    }
+  }
+} catch (_) {}
 
 const BASE_URL = (process.env.HERMES_BASE_URL || "https://socialsched.vibeship.in").replace(/\/$/, "");
 const API_KEY = process.env.HERMES_API_KEY || "";
