@@ -19,6 +19,21 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+function ClaudeIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <rect width="24" height="24" rx="7" fill="#D97757" />
+      <path
+        d="M12 5.5v13M7.2 9.4c2.1 1.2 4.2 2.4 6.3 3.6M16.8 9.4c-2.1 1.2-4.2 2.4-6.3 3.6"
+        stroke="#fff"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function HermesConnectionPage() {
   const { user } = useAuthStore();
   const [connected, setConnected] = useState(false);
@@ -29,6 +44,8 @@ export default function HermesConnectionPage() {
   const [copied, setCopied] = useState(false);
   const [setupCopied, setSetupCopied] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
+  const [claudeCopied, setClaudeCopied] = useState(false);
+  const [instructionsCopied, setInstructionsCopied] = useState(false);
 
   useEffect(() => {
     fetchConnectionStatus();
@@ -122,6 +139,97 @@ export default function HermesConnectionPage() {
     } finally {
       setSetupLoading(false);
     }
+  };
+
+  // Build a paste-ready prompt for Claude Code to set up the MCP server itself.
+  const buildClaudeSetup = () => {
+    const baseUrl =
+      typeof window !== 'undefined' ? window.location.origin : 'https://socialsched.vibeship.in';
+    const serverPath = '/Users/mdaqil/Documents/anysocial/mcp/hermes-mcp-server.ts';
+    const tsxPath = '/Users/mdaqil/Documents/anysocial/node_modules/.bin/tsx';
+    return `Please set up a Model Context Protocol (MCP) server for me named "hermes-socialsched" by writing a .mcp.json in this project (Claude Code auto-discovers it). Use these exact details:
+
+- Type: stdio
+- Command: ${tsxPath}
+- Args: ${serverPath}
+- Environment variables:
+  - HERMES_BASE_URL: ${baseUrl}
+  - HERMES_API_KEY: ${apiKey || 'YOUR_API_KEY'}
+
+After registering it, confirm the hermes_* tools (hermes_status, hermes_schedule_post, hermes_list_accounts, etc.) are available so I can control my SocialSched account just by chatting.`;
+  };
+
+  const copyClaudeSetup = async () => {
+    try {
+      await navigator.clipboard.writeText(buildClaudeSetup());
+      setClaudeCopied(true);
+      setTimeout(() => setClaudeCopied(false), 2000);
+    } catch (err: any) {
+      alert('Failed to copy Claude setup: ' + err.message);
+    }
+  };
+
+  const downloadClaudeSetup = () => {
+    const blob = new Blob([buildClaudeSetup()], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'claude-mcp-setup.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Build usage instructions the user pastes into Claude so it knows the tools.
+  const buildClaudeInstructions = () => {
+    return `You have access to the Hermes SocialSched MCP server. Its tools are prefixed \`hermes_*\` and let you manage the user's social media on SocialSched. Auth is handled by the server (API key already configured) — just call the tools.
+
+## Tools
+- hermes_status — agent status, uptime, task stats.
+- hermes_schedule_post — schedule one post. Args: content (string, required), platforms (array, e.g. ["INSTAGRAM","FACEBOOK"], required), scheduledAt (ISO 8601, optional), timezone (IANA, default UTC), title (optional), postType (FEED|REEL|STORY, optional), platformOptions (optional).
+- hermes_bulk_schedule — schedule many posts. Args: posts (array of {content, platforms?, scheduledAt?, timezone?}), platforms? (fallback), timezone?.
+- hermes_list_posts — list posts. Args: status? (QUEUED|DRAFT|PUBLISHED..), platform?, limit? (default 50).
+- hermes_get_post / hermes_delete_post / hermes_cancel_scheduled_post — by postId.
+- hermes_generate_content — AI caption from a prompt.
+- hermes_create_campaign / hermes_list_campaigns / hermes_update_campaign / hermes_delete_campaign — campaign automation (websiteUrl, socialChannels, campaignSchedule).
+- hermes_list_accounts — list the user's connected social accounts (use to get real accountId).
+- hermes_disconnect_account / hermes_refresh_account — by accountId.
+- hermes_list_users / hermes_create_user / hermes_update_user / hermes_delete_user / hermes_change_user_role — admin user management.
+- hermes_list_reels / hermes_delete_reel.
+- hermes_get_analytics (days?, default 7) / hermes_list_notifications (isRead?).
+- hermes_get_settings / hermes_update_settings.
+- hermes_monitor_health / hermes_analyze_accounts.
+- hermes_custom — free-form autonomous-agent command (prompt).
+
+## How to help the user
+- For "post/schedule/share", confirm platforms + time if missing, then call the matching hermes_* tool.
+- Call hermes_list_accounts first when you need a real accountId.
+- Platform names: INSTAGRAM, FACEBOOK, TWITTER, LINKEDIN, YOUTUBE, THREADS, PINTEREST, SNAPCHAT.
+- Times: ISO 8601 (e.g. 2025-08-22T10:00:00Z) with IANA timezones (e.g. America/New_York).
+- Always report the tool result clearly; on failure, surface the error message.`;
+  };
+
+  const copyClaudeInstructions = async () => {
+    try {
+      await navigator.clipboard.writeText(buildClaudeInstructions());
+      setInstructionsCopied(true);
+      setTimeout(() => setInstructionsCopied(false), 2000);
+    } catch (err: any) {
+      alert('Failed to copy instructions: ' + err.message);
+    }
+  };
+
+  const downloadClaudeInstructions = () => {
+    const blob = new Blob([buildClaudeInstructions()], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'CLAUDE.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   if (loading) {
@@ -318,6 +426,62 @@ export default function HermesConnectionPage() {
                 >
                   {setupLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
                   Download .md
+                </Button>
+              </div>
+            </div>
+
+            {/* Claude Code MCP */}
+            <div className="bg-[#FBF3EE] rounded-xl p-4 border border-[#D27D50]/30">
+              <div className="flex items-center gap-2 mb-2">
+                <ClaudeIcon className="w-5 h-5" />
+                <p className="text-xs text-[#A8562F] font-bold">Set up in Claude Code</p>
+              </div>
+              <p className="text-xs text-[#A8562F] mb-3">
+                Copy the prompt below and paste it into{' '}
+                <span className="font-semibold">Claude Code</span>. Claude will configure the Hermes
+                MCP server for you automatically. Your key is embedded — keep it safe.
+              </p>
+              <div className="bg-stone-900 rounded-lg p-3 overflow-x-auto mb-3">
+                <pre className="text-[11px] text-emerald-300 font-mono whitespace-pre-wrap">
+                  {buildClaudeSetup()}
+                </pre>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={copyClaudeSetup} className="flex-1">
+                  {claudeCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                  {claudeCopied ? 'Copied!' : 'Copy Prompt'}
+                </Button>
+                <Button variant="outline" onClick={downloadClaudeSetup} className="flex-1">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download .md
+                </Button>
+              </div>
+            </div>
+
+            {/* Claude usage instructions */}
+            <div className="bg-white rounded-xl p-4 border border-stone-200">
+              <div className="flex items-center gap-2 mb-2">
+                <ClaudeIcon className="w-5 h-5" />
+                <p className="text-xs text-stone-700 font-bold">Instructions for Claude</p>
+              </div>
+              <p className="text-xs text-stone-500 mb-3">
+                Paste this into Claude Code (or save as{' '}
+                <code className="font-mono">CLAUDE.md</code>) so Claude knows what the Hermes tools
+                do and how to use them.
+              </p>
+              <div className="bg-stone-900 rounded-lg p-3 overflow-x-auto mb-3">
+                <pre className="text-[11px] text-emerald-300 font-mono whitespace-pre-wrap">
+                  {buildClaudeInstructions()}
+                </pre>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={copyClaudeInstructions} className="flex-1">
+                  {instructionsCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                  {instructionsCopied ? 'Copied!' : 'Copy Instructions'}
+                </Button>
+                <Button variant="outline" onClick={downloadClaudeInstructions} className="flex-1">
+                  <Download className="w-4 h-4 mr-2" />
+                  Save CLAUDE.md
                 </Button>
               </div>
             </div>
