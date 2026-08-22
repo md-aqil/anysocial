@@ -294,20 +294,6 @@ const TOOLS: ToolDef[] = [
   },
 ];
 
-// Add legacy alias support so hermes_* calls still resolve seamlessly
-const ALL_TOOLS: ToolDef[] = [];
-for (const tool of TOOLS) {
-  ALL_TOOLS.push(tool);
-  const legacyName = tool.name.replace("newdone_", "hermes_");
-  if (legacyName !== tool.name) {
-    ALL_TOOLS.push({
-      ...tool,
-      name: legacyName,
-      description: `[Legacy Alias] ${tool.description}`
-    });
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Server
 // ---------------------------------------------------------------------------
@@ -316,7 +302,7 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-for (const def of ALL_TOOLS) {
+for (const def of TOOLS) {
   server.tool(
     def.name,
     def.description,
