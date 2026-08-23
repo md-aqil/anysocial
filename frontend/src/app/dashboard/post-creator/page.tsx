@@ -1392,6 +1392,9 @@ export default function PostCreatorPage() {
                 }
               });
 
+              // Ensure newly created campaigns ALWAYS sit at the top of Campaign Archive (position #1)
+              campaignGroups.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
               return campaignGroups.map((group) => {
                 const groupRefImg = group.referenceImageUrl 
                   || group.items.find(i => i.referenceImageUrl || i.brief?.referenceImageUrl)?.referenceImageUrl 
@@ -1520,12 +1523,21 @@ export default function PostCreatorPage() {
                                   </div>
                                 )}
 
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none"></div>
-                                <div className="absolute bottom-3 left-3 right-3">
-                                  <span className="text-white text-xs font-extrabold tracking-wide block drop-shadow-md line-clamp-1">
-                                    <span className="text-amber-300 font-black uppercase text-[10px] tracking-wider mr-1.5">Narrative:</span>
-                                    {ad.brief?.tagline || ad.direction?.caption || ad.direction?.title || group.productName}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none"></div>
+                                <div className="absolute bottom-2.5 left-3 right-3 z-10 space-y-1">
+                                  <span className="text-white text-xs font-black tracking-tight block drop-shadow-lg line-clamp-2 leading-tight">
+                                    {ad.brief?.tagline || ad.brief?.headline || ad.direction?.caption || ad.direction?.title || group.productName}
                                   </span>
+                                  <div className="flex items-center justify-between gap-2 pt-0.5">
+                                    <span className="text-[10px] font-bold text-amber-300 drop-shadow line-clamp-1">
+                                      {ad.brief?.callToAction || ad.brief?.cta || ad.brief?.carousel?.caption || 'Tap Link in Bio'}
+                                    </span>
+                                    {isMcpCampaign && (
+                                      <span className="px-1.5 py-0.5 bg-black/80 text-amber-400 text-[9px] font-black rounded border border-amber-500/30 shrink-0">
+                                        ⚡ MCP
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
 

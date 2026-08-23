@@ -247,35 +247,44 @@ export default function SocialAccountsPage() {
     return accounts.filter(a => a.platform.toLowerCase() === platformId.toLowerCase() && a.status !== 'REVOKED');
   };
 
+  // Sort connected platforms FIRST so all connected cards sit at the very top of the grid!
+  const sortedPlatforms = [...platforms].sort((a, b) => {
+    const aConnected = getAccountsForPlatform(a.id).length > 0;
+    const bConnected = getAccountsForPlatform(b.id).length > 0;
+    if (aConnected && !bConnected) return -1;
+    if (!aConnected && bConnected) return 1;
+    return 0;
+  });
+
   return (
-    <div className="max-w-7xl mx-auto p-6 lg:p-10 space-y-12">
+    <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-        <div className="max-w-2xl">
-          <div className="flex items-center gap-2 mb-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 lg:p-8 rounded-3xl border border-stone-200/80 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
             <div className="h-2 w-2 rounded-full bg-[#D27D50] animate-pulse" />
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-500">Channel Management</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-900">Social Connections</h1>
-          <p className="mt-4 text-lg text-stone-500 font-medium leading-relaxed">
+          <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-slate-900">Social Connections</h1>
+          <p className="mt-2 text-sm text-stone-500 font-medium leading-relaxed max-w-2xl">
             Unify your social presence. Link your accounts once and broadcast across all platforms from a single command center.
           </p>
         </div>
         
-        <div className="flex items-center gap-4 bg-white p-2 rounded-3xl border border-[#D9E3D9] shadow-sm">
-          <div className="flex -space-x-3 overflow-hidden p-1">
+        <div className="flex items-center gap-4 bg-stone-50 p-2.5 px-4 rounded-2xl border border-stone-200/80 shrink-0">
+          <div className="flex -space-x-2.5 overflow-hidden">
             {platforms.slice(0, 5).map((p) => {
               const Logo = PlatformLogos[p.id];
               return (
-                <div key={p.id} className={cn("inline-block h-8 w-8 rounded-full border-2 border-white bg-white p-1.5 shadow-sm", p.color)}>
+                <div key={p.id} className={cn("inline-block h-7 w-7 rounded-full border-2 border-white bg-white p-1 shadow-2xs", p.color)}>
                   <Logo className="h-full w-full" />
                 </div>
               );
             })}
           </div>
-          <div className="pr-4 border-l border-[#D9E3D9] pl-4">
-            <p className="text-[10px] font-black text-stone-400 uppercase tracking-wider">Configured</p>
-            <p className="text-sm font-bold text-slate-900">{accounts.length} Active Channels</p>
+          <div className="pr-2 border-l border-stone-200 pl-3">
+            <p className="text-[9px] font-black text-stone-400 uppercase tracking-wider">Connected</p>
+            <p className="text-xs font-black text-slate-900">{accounts.length} Active Channels</p>
           </div>
         </div>
       </div>
@@ -283,22 +292,22 @@ export default function SocialAccountsPage() {
       <AnimatePresence>
         {(error || successMessage) && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: -10 }}
             className={cn(
-              "p-5 rounded-[24px] border-2 flex items-center gap-4 shadow-xl",
-              error ? "bg-rose-50 border-rose-100 text-rose-800" : "bg-emerald-50 border-emerald-100 text-emerald-800"
+              "p-4 rounded-2xl border flex items-center gap-3 shadow-md text-xs font-bold",
+              error ? "bg-rose-50 border-rose-200 text-rose-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"
             )}
           >
-            {error ? <AlertCircle className="h-6 w-6" /> : <ShieldCheck className="h-6 w-6" />}
-            <div className="flex-1 font-bold text-sm">
+            {error ? <AlertCircle className="h-5 w-5 shrink-0" /> : <ShieldCheck className="h-5 w-5 shrink-0" />}
+            <div className="flex-1">
               {error ? error : successMessage}
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="rounded-xl hover:bg-white/20"
+              className="rounded-lg h-7 px-2.5 text-xs hover:bg-white/20"
               onClick={() => { setError(null); setSuccessMessage(null); }}
             >
               Dismiss
@@ -307,10 +316,11 @@ export default function SocialAccountsPage() {
         )}
       </AnimatePresence>
 
-      {/* Modern Platform Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
-        {platforms.map((platform, idx) => {
+      {/* Sleek Compact 4-Column Platform Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {sortedPlatforms.map((platform, idx) => {
           const platformAccounts = getAccountsForPlatform(platform.id);
+          const isConnected = platformAccounts.length > 0;
           const Logo = PlatformLogos[platform.id];
           const isConnecting = connectingPlatform === platform.id;
           const isConfigured = configData?.configuredPlatforms?.includes(platform.id.toUpperCase()) ?? true;
@@ -318,87 +328,94 @@ export default function SocialAccountsPage() {
           return (
             <motion.div
               key={platform.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
+              transition={{ delay: idx * 0.03 }}
             >
               <Card className={cn(
-                "group h-full overflow-hidden border-[#D9E3D9] bg-white transition-all duration-500",
-                "hover:border-[#D27D50]/30 hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:-translate-y-1",
-                platformAccounts.length > 0 ? "ring-1 ring-[#D27D50]/10" : ""
+                "group h-full overflow-hidden border transition-all duration-300 flex flex-col rounded-2xl shadow-2xs hover:shadow-md",
+                isConnected
+                  ? "bg-white border-[#D27D50]/30 ring-1 ring-[#D27D50]/20"
+                  : "bg-white border-stone-200/80 hover:border-stone-300"
               )}>
-                <CardHeader className="p-8 pb-4">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={cn(
-                      "h-16 w-16 rounded-[22px] flex items-center justify-center p-3.5 transition-all duration-500 shadow-sm",
-                      platform.bg, platform.color,
-                      "group-hover:scale-110 group-hover:rotate-3"
-                    )}>
-                      <Logo className="h-full w-full" />
+                <CardHeader className="p-4 pb-2 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={cn(
+                        "h-10 w-10 rounded-xl flex items-center justify-center p-2 transition-transform duration-300 shrink-0 shadow-2xs",
+                        platform.bg, platform.color,
+                        "group-hover:scale-105"
+                      )}>
+                        <Logo className="h-full w-full" />
+                      </div>
+                      <div className="min-w-0">
+                        <CardTitle className="text-base font-black text-slate-900 truncate group-hover:text-[#D27D50] transition-colors leading-tight">
+                          {platform.name}
+                        </CardTitle>
+                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-tight">
+                          {isConnected ? `${platformAccounts.length} Linked` : 'Not Connected'}
+                        </p>
+                      </div>
                     </div>
-                    {platformAccounts.length > 0 && (
-                      <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-600 border border-emerald-100 uppercase tracking-widest">
-                        <CheckCircle className="h-3 w-3" /> Linked
+
+                    {isConnected ? (
+                      <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-black text-emerald-700 border border-emerald-200 uppercase tracking-wider shrink-0">
+                        <CheckCircle className="h-2.5 w-2.5" /> Active
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[9px] font-bold text-stone-400 uppercase tracking-wider shrink-0">
+                        Available
                       </span>
                     )}
                   </div>
-                  <CardTitle className="text-xl font-black text-slate-900 group-hover:text-[#D27D50] transition-colors">
-                    {platform.name}
-                  </CardTitle>
-                  <CardDescription className="text-stone-500 font-medium leading-relaxed min-h-[48px]">
+
+                  <CardDescription className="text-xs text-stone-500 font-medium leading-normal line-clamp-2 min-h-[32px]">
                     {platform.description}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="p-8 pt-4 space-y-6">
-                  {/* Linked Accounts List */}
-                  {platformAccounts.length > 0 && (
-                    <div className="space-y-3">
+                <CardContent className="p-4 pt-2 mt-auto space-y-3">
+                  {/* Linked Accounts Mini List */}
+                  {isConnected && (
+                    <div className="space-y-1.5 pt-1 border-t border-stone-100">
                       {platformAccounts.map((account) => (
-                        <div key={account.id} className="p-4 rounded-2xl bg-[#F9FAF9] border border-[#D9E3D9] group/account hover:border-[#D27D50]/20 transition-all">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="h-8 w-8 rounded-xl bg-white flex items-center justify-center font-black text-xs text-stone-400 border border-[#D9E3D9]">
-                                {account.metadata?.accountName?.[0] || 'A'}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-black text-slate-900 truncate">
-                                  {account.metadata?.accountName || account.externalAccountId}
+                        <div key={account.id} className="p-2 px-2.5 rounded-xl bg-stone-50/80 border border-stone-200/60 flex items-center justify-between gap-2 group/account hover:bg-white hover:border-[#D27D50]/30 transition-all">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="h-6 w-6 rounded-lg bg-white flex items-center justify-center font-black text-[10px] text-stone-600 border border-stone-200 shrink-0">
+                              {account.metadata?.accountName?.[0] || 'A'}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-black text-slate-900 truncate leading-tight">
+                                {account.metadata?.accountName || account.externalAccountId}
+                              </p>
+                              {account.metadata?.username && (
+                                <p className="text-[9px] font-bold text-stone-400 truncate leading-none">
+                                  @{account.metadata.username}
                                 </p>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">
-                                    {account.status}
-                                  </p>
-                                  {account.metadata?.username && account.metadata.username !== account.metadata?.accountName && (
-                                    <>
-                                      <span className="text-stone-300 text-[10px]">•</span>
-                                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter truncate max-w-[120px]">
-                                        @{account.metadata.username}
-                                      </p>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
+                              )}
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 rounded-lg hover:bg-white text-stone-400 hover:text-[#D27D50]"
-                                onClick={() => handleRefresh(platform.id, account.id)}
-                                disabled={refreshingAccount === account.id}
-                              >
-                                <RefreshCw className={cn("h-3.5 w-3.5", refreshingAccount === account.id && "animate-spin")} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 rounded-lg hover:bg-rose-50 text-stone-400 hover:text-rose-600"
-                                onClick={() => handleDisconnect(platform.id, account.id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 rounded-md hover:bg-stone-100 text-stone-400 hover:text-[#D27D50]"
+                              onClick={() => handleRefresh(platform.id, account.id)}
+                              disabled={refreshingAccount === account.id}
+                              title="Sync Channel Token"
+                            >
+                              <RefreshCw className={cn("h-3 w-3", refreshingAccount === account.id && "animate-spin")} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 rounded-md hover:bg-rose-50 text-stone-400 hover:text-rose-600"
+                              onClick={() => handleDisconnect(platform.id, account.id)}
+                              title="Disconnect Channel"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -409,19 +426,19 @@ export default function SocialAccountsPage() {
                     onClick={() => isConfigured && connectMutation.mutate(platform.id)}
                     disabled={isConnecting || !isConfigured}
                     className={cn(
-                      "w-full h-12 rounded-2xl font-black text-xs uppercase tracking-widest transition-all",
-                      platformAccounts.length > 0 
-                        ? "bg-white text-slate-900 border-2 border-[#D9E3D9] hover:bg-[#F2F6F2] hover:border-[#D27D50]/30"
-                        : cn(platform.color, platform.bg, "border border-transparent hover:brightness-95 shadow-sm"),
+                      "w-full h-9 rounded-xl font-extrabold text-[11px] uppercase tracking-wider transition-all shadow-2xs",
+                      isConnected 
+                        ? "bg-white text-slate-800 border border-stone-300 hover:bg-stone-50 hover:border-[#D27D50]"
+                        : cn(platform.color, platform.bg, "border border-transparent hover:brightness-95"),
                       !isConfigured && "opacity-50 grayscale cursor-not-allowed"
                     )}
                   >
                     {isConnecting ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
                     ) : (
-                      <Plus className="h-4 w-4 mr-2" strokeWidth={3} />
+                      <Plus className="h-3.5 w-3.5 mr-1.5" strokeWidth={2.5} />
                     )}
-                    {platformAccounts.length > 0 ? "Link Another" : `Activate ${platform.name}`}
+                    {isConnected ? "Add Account" : `Connect ${platform.name}`}
                   </Button>
                 </CardContent>
               </Card>

@@ -53,13 +53,44 @@ export default function HermesConnectionPage() {
   const [copiedMcp, setCopiedMcp] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
 
+  const [masterTab, setMasterTab] = useState<'mcp' | 'tasks'>('mcp');
   const [activeTab, setActiveTab] = useState<'prompt' | 'mcp' | 'terminal' | 'api'>('prompt');
   const [testResult, setTestResult] = useState<any>(null);
   const [testing, setTesting] = useState(false);
 
+  // Live Agent Tasks state
+  const [agentTasks, setAgentTasks] = useState<any[]>([]);
+  const [agentStatus, setAgentStatus] = useState<any>(null);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'agent' || params.get('tab') === 'tasks') {
+        setMasterTab('tasks');
+      }
+    }
+  }, []);
+
   useEffect(() => {
     fetchConnectionStatus();
   }, []);
+
+  const fetchAgentTasks = async () => {
+    setLoadingTasks(true);
+    try {
+      const [tasksRes, statusRes] = await Promise.all([
+        api.hermes.getTasks({ limit: 30 }),
+        api.hermes.getStatus()
+      ]);
+      setAgentTasks(tasksRes.tasks || []);
+      setAgentStatus(statusRes);
+    } catch (e) {
+      console.error('Failed to fetch agent tasks:', e);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
 
   const fetchConnectionStatus = async () => {
     try {
@@ -231,6 +262,41 @@ Once configured, call the newdone_status or newdone_list_accounts tool to confir
         </div>
       </div>
 
+      {/* Master Section Switcher */}
+      <div className="flex bg-stone-100 p-1.5 rounded-2xl border border-stone-200/60 max-w-md">
+        <button
+          type="button"
+          onClick={() => setMasterTab('mcp')}
+          className={cn(
+            "flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2",
+            masterTab === 'mcp'
+              ? "bg-white text-stone-900 shadow-sm border border-stone-200/80"
+              : "text-stone-500 hover:text-stone-800"
+          )}
+        >
+          <Key className="w-4 h-4 text-[#D27D50]" />
+          <span>🔌 MCP Setup & Keys</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMasterTab('tasks');
+            fetchAgentTasks();
+          }}
+          className={cn(
+            "flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2",
+            masterTab === 'tasks'
+              ? "bg-white text-stone-900 shadow-sm border border-stone-200/80"
+              : "text-stone-500 hover:text-stone-800"
+          )}
+        >
+          <Zap className="w-4 h-4 text-[#D27D50]" />
+          <span>⚡ Live Tasks & Status</span>
+        </button>
+      </div>
+
+      {masterTab === 'mcp' && (
+        <>
       {/* STEP 1: API Key Management */}
       <div className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -548,6 +614,91 @@ Once configured, call the newdone_status or newdone_list_accounts tool to confir
               </pre>
             </div>
           )}
+        </div>
+      )}
+        </>
+      )}
+
+      {masterTab === 'tasks' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between bg-white rounded-2xl border border-stone-200/80 p-5 shadow-sm">
+            <div>
+              <h3 className="font-bold text-lg text-stone-900 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-[#D27D50]" /> Live Agent Status & Execution History
+              </h3>
+              <p className="text-xs text-stone-500">Real-time status of agent tasks dispatched via MCP or Hermes API</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchAgentTasks}
+              disabled={loadingTasks}
+              className="text-xs"
+            >
+              <RefreshCw className={cn("w-3.5 h-3.5 mr-1.5", loadingTasks && "animate-spin")} />
+              Refresh Status
+            </Button>
+          </div>
+
+          {agentStatus && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-sm text-center">
+                <span className="text-2xl font-black text-stone-900 block">{agentStatus.stats?.total || 0}</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400">Total Tasks</span>
+              </div>
+              <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-sm text-center">
+                <span className="text-2xl font-black text-amber-600 block">{agentStatus.stats?.pending || 0}</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-500">Pending</span>
+              </div>
+              <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-sm text-center">
+                <span className="text-2xl font-black text-blue-600 block">{agentStatus.stats?.running || 0}</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-500">Running</span>
+              </div>
+              <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-sm text-center">
+                <span className="text-2xl font-black text-emerald-600 block">{agentStatus.stats?.completed || 0}</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-500">Completed</span>
+              </div>
+              <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-sm text-center">
+                <span className="text-2xl font-black text-red-600 block">{agentStatus.stats?.failed || 0}</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-red-500">Failed</span>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-2xl border border-stone-200/80 p-6 shadow-sm space-y-4">
+            <h4 className="font-bold text-stone-900 text-sm">Recent Agent Tasks</h4>
+            {loadingTasks ? (
+              <div className="flex items-center justify-center p-8">
+                <RefreshCw className="w-6 h-6 animate-spin text-[#D27D50]" />
+              </div>
+            ) : agentTasks.length === 0 ? (
+              <div className="text-center p-8 bg-stone-50 rounded-xl border border-stone-100 text-stone-400 text-xs">
+                No active or completed agent tasks recorded yet. Use MCP tools (`newdone_create_post_campaign`, `newdone_schedule_post`) from Cursor, Claude, or Hermes to dispatch tasks.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {agentTasks.map((t: any) => (
+                  <div key={t.id} className="p-4 bg-stone-50 rounded-xl border border-stone-200/70 flex items-center justify-between gap-4">
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-stone-850 truncate">{t.name}</span>
+                        <span className={cn(
+                          "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider",
+                          t.status === 'COMPLETED' ? "bg-emerald-100 text-emerald-800" :
+                          t.status === 'RUNNING' ? "bg-blue-100 text-blue-800 animate-pulse" :
+                          t.status === 'FAILED' ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"
+                        )}>
+                          {t.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-stone-500 truncate">{t.description || t.type}</p>
+                      <span className="text-[10px] text-stone-400 block font-mono">{new Date(t.createdAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

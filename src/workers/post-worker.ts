@@ -106,7 +106,7 @@ export class PostWorker {
       const customOptions = post.platformOptions 
         ? (post.platformOptions as any)[platform] || (post.platformOptions as any)[resolvedPlatform] || {}
         : {};
-      const platformContent = customOptions.content || content;
+      const platformContent = customOptions.caption || customOptions.customCaption || customOptions.content || content;
       
       const payload = adapter.prepareContent(platformContent, resolvedPlatform);
       payload.mediaUrls = adapter.formatMediaUrls(mediaUrls, resolvedPlatform);

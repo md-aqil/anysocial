@@ -683,7 +683,8 @@ export default function ReelsDashboard() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch campaigns');
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
     },
     refetchInterval: 10000
   });

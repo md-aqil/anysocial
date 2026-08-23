@@ -319,11 +319,74 @@ export class HermesAgentService {
     }
   }
 
+  /**
+   * Generates platform-customized captions adhering to social media best practices.
+   */
+  private async generatePlatformBestPracticeCaptions(
+    baseContent: string,
+    platforms: string[],
+    title?: string
+  ): Promise<Record<string, any>> {
+    const generatedOptions: Record<string, any> = {};
+
+    try {
+      const prompt = `You are an elite social media copywriter. Adapt the base content into platform-customized captions following strict best practice rules for each target platform:
+
+Base Title/Product: ${title || 'N/A'}
+Base Content: "${baseContent}"
+Target Platforms: ${platforms.join(', ')}
+
+STRICT PLATFORM BEST-PRACTICE RULES:
+1. INSTAGRAM ("INSTAGRAM"): Visual narrative hook, line breaks, 5-10 relevant high-volume hashtags (#fashion #luxury #style), emoji accents, clear CTA ("Tap link in bio ✨").
+2. LINKEDIN ("LINKEDIN"): Professional thought-leadership tone, readable spacing, 3-5 business hashtags (#Leadership #Innovation), discussion-starter CTA ("What are your thoughts?").
+3. TWITTER / X ("TWITTER"): Punchy, conversational, strictly UNDER 280 CHARACTERS, 1-2 trending hashtags, engagement hook.
+4. FACEBOOK ("FACEBOOK"): Warm community story, direct link callout, friendly question.
+5. TIKTOK / YOUTUBE SHORTS / REELS ("TIKTOK", "YOUTUBE", "SNAPCHAT"): High-energy viral hook, 3-5 trending tags (#FYP #Viral).
+6. PINTEREST ("PINTEREST"): Keyword-rich SEO description with search tags.
+7. THREADS ("THREADS"): Short, witty, conversational question.
+
+Return ONLY raw valid JSON (no markdown):
+{
+  "INSTAGRAM": { "caption": "..." },
+  "LINKEDIN": { "caption": "..." },
+  "TWITTER": { "caption": "..." },
+  "FACEBOOK": { "caption": "..." }
+}`;
+
+      const rawJson = await aiOrchestrator.generateContent(prompt);
+      const cleaned = rawJson.replace(/```json\n?|```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      for (const p of platforms) {
+        const upperP = p.toUpperCase();
+        if (parsed[upperP]?.caption) {
+          const customCap = parsed[upperP].caption;
+          const opt = { caption: customCap, customCaption: customCap, content: customCap };
+          generatedOptions[upperP] = opt;
+          generatedOptions[p] = opt;
+        }
+      }
+    } catch (err: any) {
+      logger.warn(`Failed to auto-generate platform best-practice captions: ${err.message || err}`);
+    }
+
+    return generatedOptions;
+  }
+
   // ==================== CONTENT & PUBLISHING ====================
 
   private async executeSchedulePost(userId: string, payload: any): Promise<any> {
     if (!payload.content || !payload.platforms || payload.platforms.length === 0) {
       throw new Error('Content and platforms are required for scheduling');
+    }
+
+    let platformOptions = payload.platformOptions || {};
+
+    // Auto-generate platform best-practice captions for every target platform if per-platform captions were not explicitly provided
+    const hasPerPlatformCaptions = Object.values(platformOptions).some((opt: any) => opt?.caption || opt?.customCaption || opt?.content);
+    if (!hasPerPlatformCaptions) {
+      const generatedOpts = await this.generatePlatformBestPracticeCaptions(payload.content, payload.platforms, payload.title);
+      platformOptions = { ...generatedOpts, ...platformOptions };
     }
 
     const result = await postingEngine.schedulePost(userId, {
@@ -333,7 +396,7 @@ export class HermesAgentService {
       platforms: payload.platforms,
       scheduledAt: payload.scheduledAt,
       timezone: payload.timezone || 'UTC',
-      platformOptions: payload.platformOptions || {}
+      platformOptions
     });
 
     let delaySeconds = 0;
@@ -552,12 +615,44 @@ export class HermesAgentService {
       mediaUrls = ['/logo.png'];
     }
 
-    // 4-Slide Storyboard definitions (Slide 1: Cover, Slide 2: Lifestyle, Slide 3: Spotlight, Slide 4: CTA)
+    // 4-Slide Storyboard definitions with hyper-converting copy, headlines, and CTAs
     const slideRoles = [
-      { index: 1, role: 'cover', title: 'Slide 1 — Hook', caption: `Discover ${productName}` },
-      { index: 2, role: 'lifestyle', title: 'Slide 2 — Lifestyle Action', caption: `Experience ${productName} in real life` },
-      { index: 3, role: 'detail', title: 'Slide 3 — Spotlight Detail', caption: `Intricate design & premium quality` },
-      { index: 4, role: 'cta', title: 'Slide 4 — Shop Now End-Card', caption: `Limited Batch — Tap link in bio to shop` },
+      {
+        index: 1,
+        role: 'cover',
+        title: 'Slide 1 — Hook',
+        tagline: payload.usp ? `${productName} — ${payload.usp}` : `Discover ${productName}`,
+        supportingCopy: description.length > 110 ? `${description.slice(0, 110)}...` : description,
+        callToAction: 'Explore Collection • Limited Edition',
+        typography: { headlineFont: 'Bold Condensed Serif, Uppercase', textPlacement: 'Top third overlay with subtle gradient scrim' }
+      },
+      {
+        index: 2,
+        role: 'lifestyle',
+        title: 'Slide 2 — Lifestyle Action',
+        tagline: payload.personality ? `${productName} — ${payload.personality} Elegance` : `Crafted for Aspirational Style`,
+        supportingCopy: 'Designed for seamless day-to-night movement, authentic posture, and effortless comfort.',
+        callToAction: 'Shop the Look',
+        typography: { headlineFont: 'Modern Semi-Bold Sans', textPlacement: 'Center left framing' }
+      },
+      {
+        index: 3,
+        role: 'detail',
+        title: 'Slide 3 — Spotlight Detail',
+        tagline: 'Intricate Craftsmanship & Premium Material Detail',
+        supportingCopy: 'Close-up focus on rich fabric textures, delicate embroidery, and hand-finished craftsmanship.',
+        callToAction: 'Inspect Quality',
+        typography: { headlineFont: 'Editorial Serif, Italic Accent', textPlacement: 'Bottom overlay' }
+      },
+      {
+        index: 4,
+        role: 'cta',
+        title: 'Slide 4 — Shop Now End-Card',
+        tagline: 'Limited Batch Release — Order Yours Today',
+        supportingCopy: '10,000+ Happy Customers • 100% Authentic Guarantee • Easy Returns & Fast Express Shipping',
+        callToAction: 'Tap Link in Bio to Shop Now',
+        typography: { headlineFont: 'Bold Commercial CTA Banner', textPlacement: 'Full overlay end-card' }
+      },
     ];
 
     const createdCreatives = [];
@@ -576,6 +671,35 @@ export class HermesAgentService {
         payload.textStyleGuide ? `Text Overlay Style: ${payload.textStyleGuide}` : ''
       ].filter(Boolean).join('\n');
 
+      let dynamicBrief: any = null;
+      try {
+        const briefPrompt = `You are an advertising art director creating Slide ${slideDef.index} of 4 for an Instagram Carousel campaign for "${productName}".
+Description: ${description}
+USP: ${payload.usp || 'High-end commercial release'}
+Personality: ${payload.personality || 'Luxury & Regal'}
+Mood: ${payload.mood || 'Festive Studio'}
+Slide Role: ${slideDef.role} (${slideDef.title})
+Special Pose / Directives: ${combinedSpecialInstructions || 'None'}
+
+Return ONLY valid JSON (no markdown):
+{
+  "tagline": "Scroll-stopping headline (3-6 words)",
+  "supportingCopy": "Product benefit copy (1 sentence)",
+  "callToAction": "Action phrase like Shop Now or Tap Link in Bio",
+  "headlineFont": "Font style e.g. Bold Condensed Serif",
+  "textPlacement": "Where text sits e.g. Top third overlay"
+}`;
+        const rawBrief = await aiOrchestrator.generateContent(briefPrompt);
+        const cleaned = rawBrief.replace(/```json\n?|```/g, '').trim();
+        dynamicBrief = JSON.parse(cleaned);
+      } catch (e) {
+        // Fallback to structured slideDef copy if AI call is offline
+      }
+
+      const tagline = dynamicBrief?.tagline || slideDef.tagline;
+      const supportingCopy = dynamicBrief?.supportingCopy || slideDef.supportingCopy;
+      const callToAction = dynamicBrief?.callToAction || slideDef.callToAction;
+
       const brief = {
         campaignId,
         productName,
@@ -585,14 +709,23 @@ export class HermesAgentService {
         personality: payload.personality || '',
         audience: payload.audience || '',
         mood: payload.mood || 'Festive Studio',
+        tagline,
+        headline: tagline,
+        supportingCopy,
+        copy: supportingCopy,
+        callToAction,
+        cta: callToAction,
         specialInstructions: combinedSpecialInstructions,
         aiGuidance: payload.aiGuidance || payload.specialInstructions || '',
         specialPose: payload.specialPose || '',
         cameraGuide: payload.cameraGuide || '',
         styleGuide: payload.styleGuide || '',
         textStyleGuide: payload.textStyleGuide || '',
+        typographyTreatment: {
+          headlineFont: dynamicBrief?.headlineFont || slideDef.typography.headlineFont,
+          textPlacement: dynamicBrief?.textPlacement || slideDef.typography.textPlacement
+        },
         campaignConcept: `MCP Carousel Campaign for ${productName}`,
-        tagline: slideDef.caption,
         createdVia: 'MCP',
         isMcp: true,
         referenceImageUrl: slideImage,
@@ -603,7 +736,7 @@ export class HermesAgentService {
           slideCount: 4,
           slideTitle: slideDef.title,
           role: slideDef.role,
-          caption: slideDef.caption,
+          caption: tagline,
         }
       };
 
