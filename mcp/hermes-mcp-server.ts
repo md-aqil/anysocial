@@ -22,7 +22,7 @@ const BASE_URL = (process.env.HERMES_BASE_URL || "https://socialsched.vibeship.i
 const API_KEY = process.env.HERMES_API_KEY || "";
 
 if (!API_KEY) {
-  console.error("[newdone-mcp] Missing HERMES_API_KEY. Set it in the env or a .env file next to this server.");
+  console.error("[hermes-mcp] Missing HERMES_API_KEY. Set it in the env or a .env file next to this server.");
 }
 
 type ToolDef = {
@@ -69,8 +69,9 @@ async function runTool(def: ToolDef, args: Record<string, unknown>) {
 
 // ---------------------------------------------------------------------------
 // Tool catalog — Newdone MCP actions for SocialSched
+// Supports both Reel Campaigns (reels-creator) and Post Campaigns (post-creator)
 // ---------------------------------------------------------------------------
-const TOOLS: ToolDef[] = [
+const BASE_TOOLS: ToolDef[] = [
   {
     name: "newdone_status",
     description: "Get the Newdone agent status (uptime + task stats).",
@@ -144,18 +145,62 @@ const TOOLS: ToolDef[] = [
     action: "generate_content",
     schema: { prompt: z.string() },
   },
+  // Campaign Creator Type 1: Reel Campaign (reels-creator - https://socialsched.vibeship.in/dashboard/reels-creator)
+  {
+    name: "newdone_create_reel_campaign",
+    description: "Create an automated AI Reel Video Campaign (reels-creator) from a website URL or product specs.",
+    action: "create_reel_campaign",
+    schema: {
+      websiteUrl: z.string().describe("Source website for the reel campaign"),
+      socialChannels: z.array(z.string()).optional().describe("Connected account IDs or platform names"),
+      campaignSchedule: z.enum(["daily", "weekly", "custom"]).optional().default("daily"),
+      language: z.string().optional().default("English"),
+      voiceId: z.string().optional().default("Aoede"),
+      niche: z.string().optional(),
+      targetRegion: z.string().optional(),
+      voicePrompt: z.string().optional().describe("Custom voice / style instructions"),
+      ingredientsToVideo: z.boolean().optional(),
+      imageToVideo: z.boolean().optional(),
+      animateImageCount: z.number().optional().default(3),
+    },
+  },
+  // Campaign Creator Type 2: Post Campaign (post-creator - https://socialsched.vibeship.in/dashboard/post-creator)
+  {
+    name: "newdone_create_post_campaign",
+    description: "Create a cohesive multi-slide Instagram Post / Carousel Ad Campaign (post-creator) with locked design system.",
+    action: "create_post_campaign",
+    schema: {
+      productName: z.string().describe("Product name e.g. Silk Anarkali Suit, Luxury Watch"),
+      description: z.string().describe("Product description & key features"),
+      platform: z.string().optional().default("INSTAGRAM").describe("Target platform e.g. INSTAGRAM, FACEBOOK"),
+      usp: z.string().optional().describe("Unique selling proposition e.g. Hand-crafted zari embroidery"),
+      personality: z.string().optional().describe("Brand personality / tone"),
+      audience: z.string().optional().describe("Target audience"),
+      mood: z.string().optional().describe("Visual mood e.g. Festive, Luxury Studio, Streetwear"),
+      specialInstructions: z.string().optional().describe("Art director instructions or layout directives"),
+      mediaUrls: z.array(z.string()).optional().describe("Product or reference image URLs"),
+    },
+  },
+  // Unified / General Create Campaign Tool
   {
     name: "newdone_create_campaign",
-    description: "Create an automated campaign from a website URL.",
+    description: "Create an automated campaign. Supports both 'reel' (reels-creator) and 'post' (post-creator) campaign types.",
     action: "create_campaign",
     schema: {
-      websiteUrl: z.string().describe("Source website for the campaign"),
+      campaignType: z.enum(["reel", "post"]).optional().default("reel").describe("Campaign type: 'reel' for video reel campaign or 'post' for carousel/image post campaign"),
+      websiteUrl: z.string().optional().describe("Source website URL (for reel campaigns)"),
+      productName: z.string().optional().describe("Product name (for post campaigns)"),
+      description: z.string().optional().describe("Product description (for post campaigns)"),
       socialChannels: z.array(z.string()).optional(),
       campaignSchedule: z.enum(["daily", "weekly", "custom"]).optional().default("daily"),
       language: z.string().optional(),
       voiceId: z.string().optional(),
       niche: z.string().optional(),
       targetRegion: z.string().optional(),
+      platform: z.string().optional(),
+      usp: z.string().optional(),
+      mood: z.string().optional(),
+      specialInstructions: z.string().optional(),
     },
   },
   {
@@ -294,6 +339,8 @@ const TOOLS: ToolDef[] = [
   },
 ];
 
+const TOOLS: ToolDef[] = BASE_TOOLS;
+
 // ---------------------------------------------------------------------------
 // Server
 // ---------------------------------------------------------------------------
@@ -315,3 +362,4 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 
 console.error(`[newdone-mcp] Connected to ${BASE_URL} (${TOOLS.length} Newdone tools active)`);
+

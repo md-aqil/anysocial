@@ -1346,8 +1346,8 @@ export default function PostCreatorPage() {
                 referenceImageUrl?: string | null;
               }[] = [];
 
-              // Prepend active campaign if it is generating
-              if (activeCampaign && activeCampaign.status !== 'completed') {
+              // Always prepend active campaign if it exists so it never hides or disappears
+              if (activeCampaign) {
                 campaignGroups.push({
                   campaignId: activeCampaign.id || 'active-campaign',
                   productName: activeCampaign.productName || 'Creative Campaign',
@@ -1365,11 +1365,6 @@ export default function PostCreatorPage() {
               history.forEach((item) => {
                 const itemCampId = item.brief?.campaignId || item.brief?.carousel?.campaignId;
                 
-                // If this item is already in activeCampaign, update or skip
-                if (activeCampaign && activeCampaign.items.some((i: any) => i.id === item.id)) {
-                  return;
-                }
-
                 const itemTime = new Date(item.createdAt).getTime();
 
                 const existing = campaignGroups.find((g) => {
@@ -1403,7 +1398,8 @@ export default function PostCreatorPage() {
                   || group.items.find(i => i.brief?.referenceImageUrl)?.brief?.referenceImageUrl;
 
                 const isActive = group.campaignId === 'active-campaign' || group.campaignId.startsWith('camp_');
-                const isCurrentlyGenerating = loading && activeCampaign && (group.campaignId === activeCampaign.id || group.campaignId === 'active-campaign') && activeCampaign.status === 'generating_ads';
+                const isCurrentlyGenerating = (loading || group.status === 'generating_ads') && activeCampaign && (group.campaignId === activeCampaign.id || group.campaignId === 'active-campaign');
+                const isMcpCampaign = group.items.some((i: any) => i.brief?.createdVia === 'MCP' || i.brief?.isMcp || i.createdVia === 'MCP') || group.campaignId.includes('mcp');
 
                 // Carousel-aware: keep the generated slides in Slide 1 → N order
                 const isCarouselGroup = group.items.some((i: any) =>
@@ -1425,6 +1421,11 @@ export default function PostCreatorPage() {
                           <span className="px-2.5 py-0.5 bg-stone-100 text-stone-700 text-[10px] font-extrabold rounded-full uppercase border border-stone-200/50">
                             {group.platform}
                           </span>
+                          {isMcpCampaign && (
+                            <span className="px-2.5 py-0.5 bg-[#D27D50]/20 text-[#D27D50] border border-[#D27D50]/40 text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                              ⚡ MCP
+                            </span>
+                          )}
                           {isCarouselGroup && (
                             <span className="px-2.5 py-0.5 bg-gradient-to-r from-[#D27D50] to-rose-500 text-white text-[10px] font-black rounded-md uppercase tracking-widest">
                               📸 {group.items.length}-Slide Carousel

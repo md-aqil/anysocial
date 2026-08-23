@@ -952,6 +952,11 @@ export default function ReelsDashboard() {
                           ) : (
                             <span className="px-2 py-0.5 bg-stone-100 text-stone-600 text-[10px] font-bold rounded-full uppercase">Paused</span>
                           )}
+                          {(campaign.voicePrompt?.includes('[MCP]') || campaign.isMcp) && (
+                            <span className="px-2 py-0.5 bg-[#D27D50]/20 text-[#D27D50] border border-[#D27D50]/40 text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1">
+                              ⚡ MCP
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-4 text-sm text-stone-500">
                           <span className="flex items-center gap-1">

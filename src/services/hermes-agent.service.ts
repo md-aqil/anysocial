@@ -168,6 +168,12 @@ export class HermesAgentService {
         case 'create_campaign':
           result = await this.executeCreateCampaign(userId, payload);
           break;
+        case 'create_reel_campaign':
+          result = await this.executeCreateReelCampaign(userId, payload);
+          break;
+        case 'create_post_campaign':
+          result = await this.executeCreatePostCampaign(userId, payload);
+          break;
         case 'list_campaigns':
           result = await this.executeListCampaigns(userId, payload);
           break;
@@ -387,32 +393,91 @@ export class HermesAgentService {
   // ==================== CAMPAIGN MANAGEMENT ====================
 
   private async executeCreateCampaign(userId: string, payload: any): Promise<any> {
-    if (!payload.websiteUrl || !payload.socialChannels || payload.socialChannels.length === 0) {
-      throw new Error('Website URL and social channels are required for campaign creation');
+    if (payload.campaignType === 'post' || (payload.productName && !payload.websiteUrl)) {
+      return this.executeCreatePostCampaign(userId, payload);
     }
+    return this.executeCreateReelCampaign(userId, payload);
+  }
+
+  private async executeCreateReelCampaign(userId: string, payload: any): Promise<any> {
+    const websiteUrl = payload.websiteUrl || payload.url || 'https://socialsched.vibeship.in';
+    const socialChannels = payload.socialChannels || ['INSTAGRAM'];
+    const voicePrompt = payload.voicePrompt ? `[MCP] ${payload.voicePrompt}` : '[MCP] Automated Reel Campaign';
 
     const campaign = await prisma.automatedCampaign.create({
       data: {
         userId,
-        websiteUrl: payload.websiteUrl,
+        websiteUrl,
         schedule: payload.campaignSchedule || 'daily',
-        socialChannels: payload.socialChannels,
+        socialChannels: Array.isArray(socialChannels) ? JSON.stringify(socialChannels) : String(socialChannels),
         isActive: payload.isActive !== false,
         language: payload.language || 'English',
         voiceId: payload.voiceId || 'Aoede',
         ingredientsToVideo: payload.ingredientsToVideo || false,
         imageToVideo: payload.imageToVideo || false,
         animateImageCount: payload.animateImageCount || 3,
-        voicePrompt: payload.voicePrompt
+        voicePrompt
       }
     });
 
     return {
-      action: 'campaign_created',
+      action: 'reel_campaign_created',
       campaignId: campaign.id,
+      type: 'reel',
+      createdVia: 'MCP',
       websiteUrl: campaign.websiteUrl,
       schedule: campaign.schedule,
       socialChannels: campaign.socialChannels
+    };
+  }
+
+  private async executeCreatePostCampaign(userId: string, payload: any): Promise<any> {
+    const productName = payload.productName || 'MCP Product Campaign';
+    const description = payload.description || 'Campaign created via Hermes MCP';
+    const platform = payload.platform || 'INSTAGRAM';
+    const campaignId = 'camp_mcp_' + Date.now();
+
+    const brief = {
+      campaignId,
+      productName,
+      platform,
+      description,
+      usp: payload.usp || '',
+      personality: payload.personality || '',
+      audience: payload.audience || '',
+      mood: payload.mood || 'Professional',
+      specialInstructions: payload.specialInstructions || '',
+      campaignConcept: `MCP Automated Campaign for ${productName}`,
+      tagline: `Discover ${productName}`,
+      createdVia: 'MCP',
+      isMcp: true,
+      carousel: {
+        campaignId,
+        slideIndex: 1,
+        slideCount: 4,
+        role: 'cover',
+      }
+    };
+
+    const adCreative = await prisma.adCreative.create({
+      data: {
+        userId,
+        productName,
+        platform,
+        direction: 'MCP Carousel Campaign',
+        brief: brief as any,
+        imageUrl: payload.imageUrl || payload.mediaUrls?.[0] || '/favicon.png'
+      }
+    });
+
+    return {
+      action: 'post_campaign_created',
+      campaignId,
+      adId: adCreative.id,
+      type: 'post',
+      createdVia: 'MCP',
+      productName,
+      platform
     };
   }
 

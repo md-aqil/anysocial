@@ -154,7 +154,7 @@ Create or update .mcp.json in my workspace with:
   }
 }
 
-Once configured, call the newdone_status or newdone_list_accounts tool to confirm connection!`;
+Once configured, call the newdone_status or newdone_list_accounts tool to confirm connection! You can create Reel Campaigns (reels-creator) using newdone_create_reel_campaign and Post Campaigns (post-creator) using newdone_create_post_campaign.`;
 
   // Standard MCP JSON
   const mcpConfigJson = JSON.stringify(
@@ -177,7 +177,7 @@ Once configured, call the newdone_status or newdone_list_accounts tool to confir
   // Terminal cURL command
   const curlCommand = `curl -X POST "${getOrigin()}/api/hermes-external/execute" \\
   -H "Content-Type: application/json" \\
-  -H "X-Hermes-API-Key: ${apiKey || 'YOUR_HERMES_API_KEY'}" \\
+  -H "X-Hermes-API-Key: ${apiKey || 'YOUR_NEWDONE_API_KEY'}" \\
   -d '{"action": "list_accounts", "payload": {}}'`;
 
   if (loading) {
@@ -200,13 +200,13 @@ Once configured, call the newdone_status or newdone_list_accounts tool to confir
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black tracking-tight">AI Agent & MCP Control</h1>
+                <h1 className="text-2xl font-black tracking-tight">Newdone AI Agent & MCP Control</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#D27D50]/20 text-[#E89A72] border border-[#D27D50]/30">
                   Live MCP Active
                 </span>
               </div>
               <p className="text-stone-400 text-sm mt-1">
-                Connect Claude, Antigravity, Hermes, or any AI assistant to schedule and manage your social posts automatically.
+                Your autonomous social media co-pilot — connect Claude, Antigravity, or any AI assistant to generate Reel Campaigns & Post Campaigns automatically.
               </p>
             </div>
           </div>
@@ -224,7 +224,7 @@ Once configured, call the newdone_status or newdone_list_accounts tool to confir
                 className="bg-[#D27D50] hover:bg-[#C26032] text-white font-bold px-6 py-2.5 rounded-xl shadow-lg transition-all"
               >
                 {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
-                Connect AI Agent
+                Connect Hermes AI Assistant
               </Button>
             )}
           </div>
