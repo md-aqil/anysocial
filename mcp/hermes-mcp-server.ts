@@ -33,38 +33,91 @@ type ToolDef = {
   schema: z.ZodRawShape;
 };
 
-async function hermesExecute(action: string, payload: unknown) {
-  const res = await fetch(`${BASE_URL}/api/hermes-external/execute`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Hermes-API-Key": API_KEY,
-    },
-    body: JSON.stringify({ action, payload }),
-  });
-  return res.json();
+async function hermesExecute(action: string, payload: unknown, retries = 2) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      const res = await fetch(`${BASE_URL}/api/hermes-external/execute`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Hermes-API-Key": API_KEY,
+        },
+        body: JSON.stringify({ action, payload }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      const text = await res.text();
+      try {
+        const json = JSON.parse(text);
+        if (!res.ok) {
+          return { success: false, error: json.error || `HTTP ${res.status}: ${res.statusText}`, details: json };
+        }
+        return json;
+      } catch (parseErr) {
+        return { success: false, error: `Invalid response from server (HTTP ${res.status})`, raw: text.slice(0, 300) };
+      }
+    } catch (err: any) {
+      if (i === retries) {
+        return {
+          success: false,
+          error: `Network error connecting to ${BASE_URL}: ${err.message || 'Connection timeout/unreachable'}`,
+          action,
+        };
+      }
+      await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+    }
+  }
+  return { success: false, error: "Request failed after retries" };
 }
 
 async function hermesStatus() {
-  const res = await fetch(`${BASE_URL}/api/hermes-external/status`, {
-    headers: { "X-Hermes-API-Key": API_KEY },
-  });
-  return res.json();
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch(`${BASE_URL}/api/hermes-external/status`, {
+      headers: { "X-Hermes-API-Key": API_KEY },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { success: false, error: `Invalid server response (HTTP ${res.status})` };
+    }
+  } catch (err: any) {
+    return { success: false, error: `Server unreachable: ${err.message}` };
+  }
 }
 
 async function runTool(def: ToolDef, args: Record<string, unknown>) {
-  const data =
-    def.method === "status" || !def.action
-      ? await hermesStatus()
-      : await hermesExecute(def.action, args);
+  try {
+    const data =
+      def.method === "status" || !def.action
+        ? await hermesStatus()
+        : await hermesExecute(def.action, args);
 
-  const text = JSON.stringify(data, null, 2);
-  const ok = data && data.success !== false;
+    const text = JSON.stringify(data, null, 2);
+    const ok = data && data.success !== false;
 
-  return {
-    content: [{ type: "text" as const, text }],
-    isError: !ok,
-  };
+    return {
+      content: [{ type: "text" as const, text }],
+      isError: !ok,
+    };
+  } catch (err: any) {
+    const text = JSON.stringify({ success: false, error: err.message || 'Tool execution error' }, null, 2);
+    return {
+      content: [{ type: "text" as const, text }],
+      isError: true,
+    };
+  }
 }
 
 // ---------------------------------------------------------------------------
