@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { tokenCrypto } from '../crypto/token-crypto.service.js';
 import { oauthService } from '../modules/oauth/oauth.service.js';
+import * as cheerio from 'cheerio';
 
 export interface HermesTaskPayload {
   action: string;
@@ -431,53 +432,177 @@ export class HermesAgentService {
     };
   }
 
+  private async scrapeUrlDetails(url: string): Promise<{ title: string; description: string; images: string[] }> {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) return { title: '', description: '', images: [] };
+      const html = await response.text();
+      const $ = cheerio.load(html);
+
+      const title = $('title').text() || $('meta[property="og:title"]').attr('content') || '';
+      const description = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
+
+      const images: string[] = [];
+      const ogImage = $('meta[property="og:image"]').attr('content');
+      if (ogImage) images.push(ogImage);
+
+      // Extract JSON-LD product images
+      $('script[type="application/ld+json"]').each((_: any, el: any) => {
+        try {
+          const data = JSON.parse($(el).text());
+          const items = Array.isArray(data['@graph']) ? data['@graph'] : [data];
+          for (const item of items) {
+            if (typeof item.image === 'string' && !images.includes(item.image)) {
+              images.push(item.image);
+            } else if (Array.isArray(item.image)) {
+              item.image.forEach((img: any) => {
+                const src = typeof img === 'string' ? img : img?.url;
+                if (src && !images.includes(src)) images.push(src);
+              });
+            } else if (item.image?.url && !images.includes(item.image.url)) {
+              images.push(item.image.url);
+            }
+          }
+        } catch (e) {}
+      });
+
+      // Extract img tags (filtering out UI icons / badges)
+      $('img').each((_: any, el: any) => {
+        let src = $(el).attr('src') || $(el).attr('data-src') || $(el).attr('data-lazy-src');
+        if (!src) return;
+
+        if (src.startsWith('//')) src = 'https:' + src;
+        else if (src.startsWith('/')) {
+          try {
+            const urlObj = new URL(url);
+            src = `${urlObj.protocol}//${urlObj.host}${src}`;
+          } catch (_) {}
+        }
+
+        if (src.startsWith('http') && !images.includes(src)) {
+          const lowerSrc = src.toLowerCase();
+          const isBadgeOrLogo = ['logo', 'icon', 'sprite', 'avatar', 'badge', 'banner', 'button', 'favicon'].some(k => lowerSrc.includes(k));
+          if (!isBadgeOrLogo) {
+            images.push(src);
+          }
+        }
+      });
+
+      return {
+        title: title.trim(),
+        description: description.trim(),
+        images: images.slice(0, 10)
+      };
+    } catch (err: any) {
+      logger.warn(`Failed to scrape URL ${url}: ${err.message}`);
+      return { title: '', description: '', images: [] };
+    }
+  }
+
   private async executeCreatePostCampaign(userId: string, payload: any): Promise<any> {
-    const productName = payload.productName || 'MCP Product Campaign';
-    const description = payload.description || 'Campaign created via Hermes MCP';
+    const targetUrl = payload.websiteUrl || payload.url || payload.link || payload.productUrl;
+    let productName = payload.productName;
+    let description = payload.description;
+    let mediaUrls: string[] = Array.isArray(payload.mediaUrls) ? payload.mediaUrls : (payload.imageUrl ? [payload.imageUrl] : []);
+
+    // Scrape product URL for photos & metadata if URL is provided
+    if (targetUrl) {
+      const scraped = await this.scrapeUrlDetails(targetUrl);
+      if (!productName && scraped.title) productName = scraped.title;
+      if (!description && scraped.description) description = scraped.description;
+      if (scraped.images.length > 0) {
+        mediaUrls = [...new Set([...mediaUrls, ...scraped.images])];
+      }
+    }
+
+    productName = productName || 'Product Carousel Campaign';
+    description = description || `Carousel Post Campaign for ${productName}`;
     const platform = payload.platform || 'INSTAGRAM';
     const campaignId = 'camp_mcp_' + Date.now();
 
-    const brief = {
-      campaignId,
-      productName,
-      platform,
-      description,
-      usp: payload.usp || '',
-      personality: payload.personality || '',
-      audience: payload.audience || '',
-      mood: payload.mood || 'Professional',
-      specialInstructions: payload.specialInstructions || '',
-      campaignConcept: `MCP Automated Campaign for ${productName}`,
-      tagline: `Discover ${productName}`,
-      createdVia: 'MCP',
-      isMcp: true,
-      carousel: {
-        campaignId,
-        slideIndex: 1,
-        slideCount: 4,
-        role: 'cover',
-      }
-    };
+    // Fall back to default logo if no photos extracted
+    if (mediaUrls.length === 0) {
+      mediaUrls = ['/logo.png'];
+    }
 
-    const adCreative = await prisma.adCreative.create({
-      data: {
-        userId,
+    // 4-Slide Storyboard definitions (Slide 1: Cover, Slide 2: Lifestyle, Slide 3: Spotlight, Slide 4: CTA)
+    const slideRoles = [
+      { index: 1, role: 'cover', title: 'Slide 1 — Hook', caption: `Discover ${productName}` },
+      { index: 2, role: 'lifestyle', title: 'Slide 2 — Lifestyle Action', caption: `Experience ${productName} in real life` },
+      { index: 3, role: 'detail', title: 'Slide 3 — Spotlight Detail', caption: `Intricate design & premium quality` },
+      { index: 4, role: 'cta', title: 'Slide 4 — Shop Now End-Card', caption: `Limited Batch — Tap link in bio to shop` },
+    ];
+
+    const createdCreatives = [];
+
+    for (let i = 0; i < slideRoles.length; i++) {
+      const slideDef = slideRoles[i];
+      // Rotate extracted images from link across all 4 carousel slides!
+      const slideImage = mediaUrls[i % mediaUrls.length];
+
+      const brief = {
+        campaignId,
         productName,
         platform,
-        direction: 'MCP Carousel Campaign',
-        brief: brief as any,
-        imageUrl: payload.imageUrl || payload.mediaUrls?.[0] || '/favicon.png'
-      }
-    });
+        description,
+        usp: payload.usp || '',
+        personality: payload.personality || '',
+        audience: payload.audience || '',
+        mood: payload.mood || 'Festive Studio',
+        specialInstructions: payload.specialInstructions || '',
+        campaignConcept: `MCP Carousel Campaign for ${productName}`,
+        tagline: slideDef.caption,
+        createdVia: 'MCP',
+        isMcp: true,
+        referenceImageUrl: slideImage,
+        mediaUrls,
+        carousel: {
+          campaignId,
+          slideIndex: slideDef.index,
+          slideCount: 4,
+          slideTitle: slideDef.title,
+          role: slideDef.role,
+          caption: slideDef.caption,
+        }
+      };
+
+      const creative = await prisma.adCreative.create({
+        data: {
+          userId,
+          productName,
+          platform,
+          direction: slideDef.title,
+          brief: brief as any,
+          imageUrl: slideImage
+        }
+      });
+
+      createdCreatives.push({
+        id: creative.id,
+        slideIndex: slideDef.index,
+        title: slideDef.title,
+        imageUrl: slideImage
+      });
+    }
 
     return {
       action: 'post_campaign_created',
       campaignId,
-      adId: adCreative.id,
       type: 'post',
       createdVia: 'MCP',
       productName,
-      platform
+      platform,
+      totalSlides: createdCreatives.length,
+      scrapedImagesCount: mediaUrls.length,
+      mediaUrls,
+      slides: createdCreatives
     };
   }
 

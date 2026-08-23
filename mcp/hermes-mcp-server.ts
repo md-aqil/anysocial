@@ -170,8 +170,10 @@ const BASE_TOOLS: ToolDef[] = [
     description: "Create a cohesive multi-slide Instagram Post / Carousel Ad Campaign (post-creator) with locked design system.",
     action: "create_post_campaign",
     schema: {
-      productName: z.string().describe("Product name e.g. Silk Anarkali Suit, Luxury Watch"),
-      description: z.string().describe("Product description & key features"),
+      productName: z.string().optional().describe("Product name e.g. Silk Anarkali Suit, Luxury Watch"),
+      description: z.string().optional().describe("Product description & key features"),
+      websiteUrl: z.string().optional().describe("Product or shop page URL to scrape product photos and details from"),
+      url: z.string().optional().describe("Alternative alias for product page URL"),
       platform: z.string().optional().default("INSTAGRAM").describe("Target platform e.g. INSTAGRAM, FACEBOOK"),
       usp: z.string().optional().describe("Unique selling proposition e.g. Hand-crafted zari embroidery"),
       personality: z.string().optional().describe("Brand personality / tone"),
