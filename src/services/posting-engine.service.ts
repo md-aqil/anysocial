@@ -730,6 +730,61 @@ export class PostingEngineService {
   }
 
   /**
+   * Immediately publish a post right now (bypasses any delay/queue wait or re-publishes existing post)
+   */
+  async publishNow(postId: string, userId: string): Promise<{ success: boolean; jobIds: string[] }> {
+    const post = await prisma.post.findUnique({
+      where: { id: postId }
+    });
+
+    if (!post || post.userId !== userId) {
+      throw new Error('Post not found or unauthorized');
+    }
+
+    const now = new Date();
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        status: 'QUEUED',
+        scheduledAt: now,
+        platformResults: post.platforms.map((platform) => ({
+          platform,
+          status: 'QUEUED',
+          error: null,
+          publishedAt: null
+        }))
+      }
+    });
+
+    const jobIds: string[] = [];
+    for (const platform of post.platforms) {
+      const jobId = `${post.id}:${platform}:${Date.now()}`;
+      const job = await postQueue.add(
+        'publish-post',
+        {
+          postId: post.id,
+          platform,
+          userId,
+          content: post.rawContent,
+          mediaUrls: post.mediaUrls,
+          scheduledAt: now.toISOString()
+        },
+        {
+          jobId,
+          delay: 0,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+          removeOnComplete: 100,
+          removeOnFail: false
+        }
+      );
+      jobIds.push(job.id!);
+    }
+
+    return { success: true, jobIds };
+  }
+
+  /**
    * Generate content hash for idempotency check
    */
   private generateContentHash(userId: string, content: string, scheduledAt: Date): string {

@@ -79,8 +79,17 @@ function PlatformResultBadge({ result }: { result: any }) {
   );
 }
 
-function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => void }) {
+function PostCard({ 
+  post, 
+  onDelete, 
+  onPublishNow 
+}: { 
+  post: any; 
+  onDelete: (id: string) => void; 
+  onPublishNow: (id: string) => Promise<void>; 
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const statusCfg = STATUS_CONFIG[post.status] || STATUS_CONFIG.DRAFT;
   const StatusIcon = statusCfg.icon;
   const mediaUrls: string[] = post.mediaUrls || [];
@@ -92,11 +101,21 @@ function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => voi
   const scheduleDate = post.scheduledAt ? new Date(post.scheduledAt) : null;
   const isUrgent = scheduleDate && isBefore(scheduleDate, addHours(new Date(), 1)) && isAfter(scheduleDate, new Date());
 
+  const handleInstantPublish = async () => {
+    try {
+      setPublishing(true);
+      await onPublishNow(post.id);
+    } catch (err) {
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   return (
     <div className="group relative">
       <Card className={cn(
-        "overflow-hidden border border-[#D9E3D9] bg-white transition-all duration-300",
-        "hover:border-[#D27D50]/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
+        "overflow-hidden border border-[#D9E3D9] bg-white transition-all duration-300 rounded-2xl",
+        "hover:border-[#D27D50]/40 hover:shadow-[0_12px_32px_rgb(0,0,0,0.06)]",
         expanded ? "ring-1 ring-[#D27D50]/20 shadow-lg shadow-[#D27D50]/5" : ""
       )}>
         <CardContent className="p-0">
@@ -104,7 +123,7 @@ function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => voi
             {/* Media/Visual Side */}
             <div className="relative shrink-0 sm:w-48 h-48 sm:h-auto bg-stone-50 border-b sm:border-b-0 sm:border-r border-[#D9E3D9]">
               {mediaUrls.length > 0 ? (
-                <div className="w-full h-full relative group/media overflow-hidden">
+                <div className="w-full h-full relative group/media overflow-hidden min-h-[160px]">
                   {mediaUrls[0].match(/\.(mp4|mov|webm)/i) ? (
                     <div className="w-full h-full flex items-center justify-center bg-stone-900">
                       <Video className="h-8 w-8 text-white opacity-40" />
@@ -114,73 +133,84 @@ function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => voi
                     <img 
                       src={mediaUrls[0]} 
                       alt="media" 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover/media:scale-110" 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover/media:scale-105" 
                     />
                   )}
                   {mediaUrls.length > 1 && (
-                    <div className="absolute top-2 right-2 bg-stone-900/80 backdrop-blur-md text-white text-[10px] font-black rounded-lg px-2 py-1 shadow-sm">
+                    <div className="absolute top-2 right-2 bg-stone-900/80 backdrop-blur-md text-white text-[10px] font-black rounded-lg px-2 py-0.5 shadow-xs">
                       +{mediaUrls.length - 1} FILES
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-[#F9FAF9]">
-                  <FileText className="h-10 w-10 text-stone-200" strokeWidth={1.5} />
+                <div className="w-full h-full min-h-[160px] flex items-center justify-center bg-[#F9FAF9]">
+                  <FileText className="h-10 w-10 text-stone-300" strokeWidth={1.5} />
                 </div>
               )}
 
               {/* Status Badge Over Image */}
               <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
                 <span className={cn(
-                  "flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider border shadow-sm backdrop-blur-md",
+                  "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider border shadow-xs backdrop-blur-md",
                   statusCfg.bg,
                   statusCfg.color
                 )}>
-                  <StatusIcon className={cn('h-3 w-3', post.status === 'PROCESSING' && 'animate-spin')} />
+                  <StatusIcon className={cn('h-2.5 w-2.5', post.status === 'PROCESSING' && 'animate-spin')} />
                   {statusCfg.label}
                 </span>
               </div>
             </div>
 
-            {/* Info Side */}
+            {/* Content & Direct Action Buttons */}
             <div className="flex-1 p-5 flex flex-col min-w-0">
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-3">
+                <div className="min-w-0 flex-1">
                   {post.title ? (
-                    <h3 className="text-base font-bold text-slate-900 truncate mb-1 leading-tight group-hover:text-[#D27D50] transition-colors">
+                    <h3 className="text-base font-black text-slate-900 truncate mb-1 leading-tight group-hover:text-[#D27D50] transition-colors">
                       {post.title}
                     </h3>
                   ) : (
-                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Untitled Content</p>
+                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Untitled Post</p>
                   )}
-                  <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                    {post.rawContent || <span className="italic opacity-50">No text content provided...</span>}
+                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                    {post.rawContent || <span className="italic opacity-50">No caption provided...</span>}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-[#F0F4F0] text-stone-400 hover:text-stone-600">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 rounded-xl border-[#D9E3D9] shadow-xl">
-                      {(post.status === 'DRAFT' || post.status === 'FAILED') && (
-                        <DropdownMenuItem asChild className="rounded-lg focus:bg-[#F9EEE8] focus:text-[#D27D50] cursor-pointer font-bold text-xs">
-                          <Link href={`/dashboard/posts/new?id=${post.id}`}>
-                            <Edit className="h-3.5 w-3.5 mr-2" /> Edit Content
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem 
-                        className="rounded-lg focus:bg-rose-50 focus:text-rose-600 cursor-pointer font-bold text-xs"
-                        onClick={() => { if (confirm('Delete this post permanently?')) onDelete(post.id); }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 mr-2 text-rose-500" /> Delete Post
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                {/* Direct Card Actions (NO THREE DOTS DROPDOWN - Visible Right on Card) */}
+                <div className="flex items-center gap-2 shrink-0 self-start">
+                  <Button
+                    size="sm"
+                    onClick={handleInstantPublish}
+                    disabled={publishing || post.status === 'PROCESSING'}
+                    className="h-8 px-3 rounded-xl bg-slate-900 hover:bg-[#D27D50] text-white font-extrabold text-[10px] uppercase tracking-wider transition-all shadow-2xs hover:shadow-xs active:scale-95"
+                    title="Publish immediately to all target platforms right now"
+                  >
+                    {publishing ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                    ) : (
+                      <Zap className="h-3 w-3 mr-1 text-amber-400 fill-amber-400 animate-pulse" />
+                    )}
+                    {isScheduled ? 'Post Instant' : 'Post Now'}
+                  </Button>
+
+                  {(post.status === 'DRAFT' || post.status === 'FAILED') && (
+                    <Button variant="outline" size="sm" asChild className="h-8 px-2.5 rounded-xl border-stone-200 text-stone-700 hover:border-[#D27D50] hover:text-[#D27D50] font-bold text-xs">
+                      <Link href={`/dashboard/posts/new?id=${post.id}`}>
+                        <Edit className="h-3.5 w-3.5 mr-1" /> Edit
+                      </Link>
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => { if (confirm('Delete this post permanently?')) onDelete(post.id); }}
+                    className="h-8 w-8 rounded-xl hover:bg-rose-50 text-stone-400 hover:text-rose-600"
+                    title="Delete Post"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
 
@@ -190,7 +220,7 @@ function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => voi
                   const pm = PLATFORM_META[p];
                   return (
                     <span key={p} className={cn(
-                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-black transition-all',
+                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[9px] font-black transition-all',
                       pm ? `${pm.bg} ${pm.color} ${pm.border}` : 'bg-slate-50 text-slate-500 border-slate-200'
                     )}>
                       {pm?.label || p}
@@ -200,12 +230,12 @@ function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => voi
               </div>
 
               {/* Footer Meta */}
-              <div className="mt-auto pt-4 border-t border-[#F2F6F2] flex flex-wrap items-center justify-between gap-4">
+              <div className="mt-auto pt-3 border-t border-[#F2F6F2] flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4 text-[11px] font-bold text-stone-500">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5 text-stone-400" />
                     {scheduleDate ? (
-                      <span className={cn(isUrgent ? "text-amber-600" : "text-stone-700")}>
+                      <span className={cn(isUrgent ? "text-amber-600 font-extrabold" : "text-stone-700")}>
                         {format(scheduleDate, 'MMM d, h:mm a')}
                       </span>
                     ) : (
@@ -214,15 +244,15 @@ function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => voi
                   </div>
 
                   {platformResults.length > 0 && (
-                    <div className="flex items-center gap-3 pl-4 border-l border-[#D9E3D9]">
+                    <div className="flex items-center gap-3 pl-3 border-l border-stone-200">
                       {publishedCount > 0 && (
-                        <div className="flex items-center gap-1 text-emerald-600">
+                        <div className="flex items-center gap-1 text-emerald-600 font-extrabold text-[10px]">
                           <CheckCircle2 className="h-3 w-3" />
-                          <span>{publishedCount} SUCCESS</span>
+                          <span>{publishedCount} SENT</span>
                         </div>
                       )}
                       {failedCount > 0 && (
-                        <div className="flex items-center gap-1 text-rose-500">
+                        <div className="flex items-center gap-1 text-rose-500 font-extrabold text-[10px]">
                           <XCircle className="h-3 w-3" />
                           <span>{failedCount} FAILED</span>
                         </div>
@@ -233,8 +263,8 @@ function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => voi
 
                 {scheduleDate && isScheduled && (
                   <div className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-black shadow-sm",
-                    isUrgent ? "bg-amber-500 text-white animate-pulse" : "bg-[#F1F5F1] text-[#3C342C]"
+                    "flex items-center gap-1.5 rounded-lg px-2.5 py-0.5 text-[9px] font-black shadow-2xs",
+                    isUrgent ? "bg-amber-500 text-white animate-pulse" : "bg-stone-100 text-stone-700"
                   )}>
                     <Clock className="h-3 w-3" />
                     <span>GO LIVE {formatDistanceToNow(scheduleDate, { addSuffix: true }).toUpperCase()}</span>
@@ -249,7 +279,7 @@ function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => voi
             <div className="border-t border-[#F2F6F2]">
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="w-full flex items-center justify-center gap-2 py-2 text-[10px] font-black text-stone-400 hover:text-[#D27D50] hover:bg-[#F9FAF9] transition-all uppercase tracking-widest"
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[9px] font-black text-stone-400 hover:text-[#D27D50] hover:bg-[#F9FAF9] transition-all uppercase tracking-widest"
               >
                 {expanded ? (
                   <>HIDE RESULTS <ChevronUp className="h-3 w-3" /></>
@@ -267,7 +297,7 @@ function PostCard({ post, onDelete }: { post: any; onDelete: (id: string) => voi
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
-                    <div className="p-4 bg-stone-50/50 grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="p-4 bg-stone-50/50 grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 border-t border-stone-100">
                       {platformResults.map((result: any) => (
                         <PlatformResultBadge key={result.platform} result={result} />
                       ))}
@@ -470,6 +500,10 @@ export default function PostsPage() {
                   <PostCard
                     post={post}
                     onDelete={(id) => deleteMutation.mutate(id)}
+                    onPublishNow={async (id) => {
+                      await api.posts.publishNow(id);
+                      queryClient.invalidateQueries({ queryKey: ['posts'] });
+                    }}
                   />
                 </motion.div>
               ))}

@@ -296,4 +296,21 @@ router.post('/preview', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/posts/:id/publish-now
+ * Immediately publish post right now (bypasses any delay/queue wait or re-publishes)
+ */
+router.post('/:id/publish-now', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const { id } = req.params;
+
+    const result = await postingEngine.publishNow(id, userId);
+    res.json(result);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: message });
+  }
+});
+
 export const postRoutes = router;

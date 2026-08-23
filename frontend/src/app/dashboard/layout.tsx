@@ -34,12 +34,12 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Grid2X2 },
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
+  { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'Post Creator', href: '/dashboard/post-creator', icon: Wand2 },
   { name: 'AI Product Reels', href: '/dashboard/reels-creator', icon: Star },
-  { name: 'Post Library', href: '/dashboard/posts', icon: FileText },
   { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film, adminOnly: true },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
-  { name: 'AI Agent & MCP', href: '/dashboard/hermes-connection', icon: Bot, adminOnly: true, superAdminOnly: true },
+  { name: 'AI Agent & MCP', href: '/dashboard/hermes-connection', icon: Bot },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
 
@@ -142,10 +142,12 @@ export default function DashboardLayout({
             })}
           </nav>
           <div className="border-t border-stone-50 px-3 py-5 bg-gradient-to-t from-stone-50/50 to-white">
-            <Link href="/dashboard/settings" className="mb-4 flex min-h-[40px] items-center gap-3 px-3 text-sm font-semibold text-stone-500 hover:text-stone-800 rounded-2xl hover:bg-stone-50 transition-colors">
-              <Settings className="h-4 w-4" strokeWidth={2} />
-              Settings
-            </Link>
+            {['super_admin', 'admin'].includes(user?.role || '') && (
+              <Link href="/dashboard/settings" className="mb-4 flex min-h-[40px] items-center gap-3 px-3 text-sm font-semibold text-stone-500 hover:text-stone-800 rounded-2xl hover:bg-stone-50 transition-colors">
+                <Settings className="h-4 w-4" strokeWidth={2} />
+                Settings
+              </Link>
+            )}
             <button
               type="button"
               onClick={handleLogout}

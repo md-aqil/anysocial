@@ -196,6 +196,11 @@ export const api = {
         method: 'DELETE',
       }),
 
+    publishNow: (id: string) =>
+      request<{ success: boolean; jobIds: string[] }>(`/api/posts/${id}/publish-now`, {
+        method: 'POST',
+      }),
+
     preview: (data: { content: string; platform: string }) =>
       request<{ platform: string; originalContent: string; formattedContent: string }>('/api/posts/preview', {
         method: 'POST',
