@@ -567,6 +567,15 @@ export class HermesAgentService {
       // Rotate extracted images from link across all 4 carousel slides!
       const slideImage = mediaUrls[i % mediaUrls.length];
 
+      const combinedSpecialInstructions = [
+        payload.specialInstructions,
+        payload.aiGuidance,
+        payload.specialPose ? `Special Pose / Model Guidance: ${payload.specialPose}` : '',
+        payload.cameraGuide ? `Camera Guide: ${payload.cameraGuide}` : '',
+        payload.styleGuide ? `Style Guide: ${payload.styleGuide}` : '',
+        payload.textStyleGuide ? `Text Overlay Style: ${payload.textStyleGuide}` : ''
+      ].filter(Boolean).join('\n');
+
       const brief = {
         campaignId,
         productName,
@@ -576,7 +585,12 @@ export class HermesAgentService {
         personality: payload.personality || '',
         audience: payload.audience || '',
         mood: payload.mood || 'Festive Studio',
-        specialInstructions: payload.specialInstructions || '',
+        specialInstructions: combinedSpecialInstructions,
+        aiGuidance: payload.aiGuidance || payload.specialInstructions || '',
+        specialPose: payload.specialPose || '',
+        cameraGuide: payload.cameraGuide || '',
+        styleGuide: payload.styleGuide || '',
+        textStyleGuide: payload.textStyleGuide || '',
         campaignConcept: `MCP Carousel Campaign for ${productName}`,
         tagline: slideDef.caption,
         createdVia: 'MCP',
