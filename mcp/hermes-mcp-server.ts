@@ -98,11 +98,22 @@ async function hermesStatus() {
 }
 
 async function runTool(def: ToolDef, args: Record<string, unknown>) {
+  const startTime = Date.now();
   try {
     const data =
       def.method === "status" || !def.action
         ? await hermesStatus()
         : await hermesExecute(def.action, args);
+
+    const durationMs = Date.now() - startTime;
+    const durationFormatted = `${(durationMs / 1000).toFixed(2)}s`;
+
+    if (data && typeof data === 'object') {
+      data.executionDuration = {
+        ms: durationMs,
+        formatted: durationFormatted
+      };
+    }
 
     const text = JSON.stringify(data, null, 2);
     const ok = data && data.success !== false;
@@ -112,7 +123,12 @@ async function runTool(def: ToolDef, args: Record<string, unknown>) {
       isError: !ok,
     };
   } catch (err: any) {
-    const text = JSON.stringify({ success: false, error: err.message || 'Tool execution error' }, null, 2);
+    const durationMs = Date.now() - startTime;
+    const text = JSON.stringify({
+      success: false,
+      error: err.message || 'Tool execution error',
+      executionDuration: { ms: durationMs, formatted: `${(durationMs / 1000).toFixed(2)}s` }
+    }, null, 2);
     return {
       content: [{ type: "text" as const, text }],
       isError: true,

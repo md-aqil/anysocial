@@ -336,11 +336,31 @@ export class HermesAgentService {
       platformOptions: payload.platformOptions || {}
     });
 
+    let delaySeconds = 0;
+    let delayFormatted = 'Immediate publication';
+
+    if (payload.scheduledAt) {
+      const scheduledTime = new Date(payload.scheduledAt).getTime();
+      const diffMs = scheduledTime - Date.now();
+      if (diffMs > 0) {
+        delaySeconds = Math.round(diffMs / 1000);
+        const hours = Math.floor(delaySeconds / 3600);
+        const mins = Math.floor((delaySeconds % 3600) / 60);
+        const secs = delaySeconds % 60;
+        delayFormatted = `${hours > 0 ? hours + 'h ' : ''}${mins > 0 ? mins + 'm ' : ''}${secs}s from now (${new Date(scheduledTime).toISOString()})`;
+      }
+    }
+
     return {
       action: 'post_scheduled',
       postId: result.postId,
       jobIds: result.jobIds,
-      status: result.status
+      status: result.status,
+      platforms: payload.platforms,
+      scheduledAt: payload.scheduledAt || new Date().toISOString(),
+      delaySeconds,
+      delayFormatted,
+      message: `Post scheduled successfully for ${payload.platforms.join(', ')}. ${delayFormatted}`
     };
   }
 
