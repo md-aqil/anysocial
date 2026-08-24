@@ -23,6 +23,7 @@ import companyReelsRoutes from './company-reels.routes.js';
 import publicVeoRoutes from './public-veo.routes.js';
 import { hermesRoutes } from './hermes.routes.js';
 import { hermesConnectionRoutes } from './hermes-connection.routes.js';
+import { autonomousRoutes } from './autonomous.routes.js';
 
 const router = Router();
 
@@ -119,5 +120,8 @@ router.use('/api/hermes', hermesRoutes);
 
 // Hermes Connection routes (user-specific API key management)
 router.use('/api/hermes', hermesConnectionRoutes);
+
+// Autonomous Agent routes (Trend Discovery, Reference Posts, Auto Content)
+router.use('/api/autonomous', autonomousRoutes);
 
 export const routes = router;

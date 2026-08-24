@@ -10,6 +10,13 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': __dirname + '/src',
+    };
+    return config;
+  },
   async rewrites() {
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     return [

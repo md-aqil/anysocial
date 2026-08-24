@@ -87,7 +87,8 @@ export default function HomePage() {
           </div>
 
           <nav className="hidden md:flex items-center gap-8 uppercase tracking-widest text-sky-100/90 font-bebas text-lg font-bold">
-            <Link href="#" className="hover:text-white transition-colors">Home</Link>
+            <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <Link href="/about" className="hover:text-white transition-colors">About</Link>
             <Link href="#speed-scale" className="hover:text-white transition-colors">Platform</Link>
             <Link href="#about" className="hover:text-white transition-colors">Why Newdone</Link>
           </nav>

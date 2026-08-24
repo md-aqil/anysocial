@@ -421,6 +421,85 @@ export const api = {
         headers: { 'Accept': 'text/markdown' },
         responseType: 'text'
       }),
+  },
+
+  autonomous: {
+    // Trend Discovery
+    scanTrends: (data?: { categories?: string[]; platforms?: string[] }) =>
+      request<any>('/api/autonomous/trends/scan', {
+        method: 'POST',
+        body: JSON.stringify(data || {}),
+      }),
+
+    getTrends: (params?: { category?: string; source?: string; minScore?: number; isSaved?: boolean; limit?: number; offset?: number }) =>
+      request<{ success: boolean; trends: any[]; total: number; stats: any }>('/api/autonomous/trends', { params: params as Record<string, string> }),
+
+    getTrendStats: () =>
+      request<{ success: boolean; stats: any }>('/api/autonomous/trends/stats'),
+
+    toggleTrendSave: (id: string) =>
+      request<any>(`/api/autonomous/trends/${id}/save`, { method: 'POST' }),
+
+    deleteTrend: (id: string) =>
+      request<any>(`/api/autonomous/trends/${id}`, { method: 'DELETE' }),
+
+    // Reference Posts
+    getReferences: (params?: { platform?: string; isFavorite?: boolean; limit?: number; offset?: number }) =>
+      request<{ success: boolean; posts: any[]; total: number }>('/api/autonomous/references', { params: params as Record<string, string> }),
+
+    getReferenceStats: () =>
+      request<{ success: boolean; stats: any }>('/api/autonomous/references/stats'),
+
+    getReference: (id: string) =>
+      request<any>(`/api/autonomous/references/${id}`),
+
+    createReference: (data: any) =>
+      request<any>('/api/autonomous/references', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    updateReference: (id: string, data: any) =>
+      request<any>(`/api/autonomous/references/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    deleteReference: (id: string) =>
+      request<any>(`/api/autonomous/references/${id}`, { method: 'DELETE' }),
+
+    analyzeReference: (id: string) =>
+      request<any>(`/api/autonomous/references/${id}/analyze`, { method: 'POST' }),
+
+    getSimilarReferences: (id: string, limit?: number) =>
+      request<any>(`/api/autonomous/references/${id}/similar?limit=${limit || 5}`),
+
+    // Auto Config
+    getConfig: () =>
+      request<{ success: boolean; config: any }>('/api/autonomous/config'),
+
+    updateConfig: (data: any) =>
+      request<any>('/api/autonomous/config', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    // Worker Control
+    startWorker: () =>
+      request<any>('/api/autonomous/worker/start', { method: 'POST' }),
+
+    stopWorker: () =>
+      request<any>('/api/autonomous/worker/stop', { method: 'POST' }),
+
+    triggerScan: () =>
+      request<any>('/api/autonomous/worker/scan', { method: 'POST' }),
+
+    getWorkerStatus: () =>
+      request<{ success: boolean; status: any }>('/api/autonomous/worker/status'),
+
+    // Stats
+    getStats: () =>
+      request<{ success: boolean; stats: any }>('/api/autonomous/stats'),
   }
 };
 

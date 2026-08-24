@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: anysocial_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mdaqil
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: oauth_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: anysocial_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: .
+    container_name: anysocial_backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://mdaqil:postgres@postgres:5432/oauth_service?schema=public
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+      PORT: 3001
+      BASE_URL: http://localhost:3001
+      FRONTEND_URL: http://localhost:3000
+      SESSION_SECRET: your-session-secret-key-at-least-32-chars-long
+      TOKEN_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/frontend/node_modules
+    command: npm run dev
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: anysocial_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/frontend/node_modules
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:

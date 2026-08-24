@@ -22,6 +22,7 @@ import { veoWorker } from './workers/veo-worker.js';
 import { campaignWorker } from './workers/campaign-worker.js';
 import { companyReelWorker } from './workers/company-reel-worker.js';
 import { companyReelScheduler } from './workers/company-reel-scheduler.js';
+import { autonomousWorker } from './workers/autonomous-content-worker.js';
 import { env } from './config/env.js';
 
 // Initialize Redis client for session store
@@ -132,6 +133,8 @@ app.listen(PORT, () => {
   campaignWorker.start();
   companyReelWorker.start().catch(console.error);
   companyReelScheduler.start();
+  // Start autonomous agent worker
+  autonomousWorker.start('system');
 });
 
 // Graceful shutdown
@@ -142,6 +145,7 @@ process.on('SIGTERM', async () => {
   await seriesReelWorker.shutdown();
   await veoWorker.shutdown();
   await companyReelWorker.shutdown();
+  await autonomousWorker.stop('system');
   process.exit(0);
 });
 
@@ -152,6 +156,7 @@ process.on('SIGINT', async () => {
   await seriesReelWorker.shutdown();
   await veoWorker.shutdown();
   await companyReelWorker.shutdown();
+  await autonomousWorker.stop('system');
   process.exit(0);
 });
 

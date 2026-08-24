@@ -30,7 +30,13 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-const navigation = [
+const navigation: Array<{
+  name: string;
+  href: string;
+  icon: typeof Grid2X2;
+  adminOnly?: boolean;
+  superAdminOnly?: boolean;
+}> = [
   { name: 'Dashboard', href: '/dashboard', icon: Grid2X2 },
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'New Post', href: '/dashboard/posts/new', icon: Plus },
@@ -40,6 +46,9 @@ const navigation = [
   { name: 'Cinematic Shorts', href: '/dashboard/veo-shorts', icon: Film, adminOnly: true },
   { name: 'Channels', href: '/dashboard/social-accounts', icon: Share2 },
   { name: 'AI Agent & MCP', href: '/dashboard/hermes-connection', icon: Bot },
+  { name: 'Trend Discovery', href: '/dashboard/trends', icon: Zap },
+  { name: 'Reference Posts', href: '/dashboard/reference-posts', icon: Star },
+  { name: 'Auto Config', href: '/dashboard/auto-config', icon: Settings },
   { name: 'Users', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
 
